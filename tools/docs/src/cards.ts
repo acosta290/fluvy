@@ -4,14 +4,16 @@
  * choice's values), its lists with their item's fields, the older names it still reads, and its example from the
  * gallery with each of its layouts. Everything `docs/` says about a card is made from this (`pages.ts`) and held to
  * it (`build.ts --check`), so the docs cannot drift from the editors' contract (`Card` in the cards' `shared/base.ts`).
- * What a key does is said in a sentence of the docs' own (`meanings.ts`) before the editor's helper.
+ * What a key does is said in a sentence of the docs' own (`meanings.ts`): the pages print that one, and the data
+ * keeps the editor's helper beside it.
  */
 import { GlobalRegistrator } from '@happy-dom/global-registrator';
 import type { HaFormSchemaItem, LovelaceCardConfig, LovelaceConfigForm } from '@fluvy/core';
 import about from '@fluvy/core/locales/en/cards-about.json';
 import core from '@fluvy/core/locales/en/core.json';
-import { drawn, GALLERY, shortName, type Drawn, type Example } from './gallery.js';
+import { drawn, GALLERY, layoutKey, shortName, type Drawn, type Example } from './gallery.js';
 import { MEANINGS } from './meanings.js';
+import type { OptionsCard } from './options.js';
 
 // the cards and core read the DOM as they load
 if (!GlobalRegistrator.isRegistered) GlobalRegistrator.register();
@@ -132,6 +134,11 @@ export interface CardDoc {
   /** Its example from the gallery, and that example as it is drawn: the base, then each other layout. */
   readonly example?: Example;
   readonly drawn: readonly Drawn[];
+  /**
+   * Its example with every option its editor shows for it, as YAML (`options.ts`): the keys left out written at their
+   * defaults, those that follow the house or have none said as comments, in the layout the picture shows.
+   */
+  readonly allOptions?: string;
   /** Every key a configuration of it may carry: the form's and the lists', with the older names of its lists. */
   readonly known: ReadonlySet<string>;
   /** Its configuration as the card reads it: the older names moved to the newer ones. */
@@ -323,11 +330,17 @@ function typeOf(field: HaFormSchemaItem): string {
   }
 }
 
+/** From where a bound of a number's field bounds nothing: the form's guard against a slip, far past any reading. */
+const NO_BOUND = 100_000;
+
 /** A number's range as its field holds it; none where it takes any. */
 function rangeOf(field: HaFormSchemaItem): string | undefined {
   const [kind, options] = selectorOf(field);
   if (kind !== 'number') return undefined;
-  const { min, max, step, unit_of_measurement: unit } = options;
+  const { step, unit_of_measurement: unit } = options;
+  const [min, max] = [options['min'], options['max']].map((bound) =>
+    typeof bound === 'number' && Math.abs(bound) >= NO_BOUND ? undefined : bound,
+  );
   const of = (value: unknown): string => `${String(value)}${unit ? ` ${String(unit)}` : ''}`;
   const span =
     min !== undefined && max !== undefined
@@ -338,7 +351,8 @@ function rangeOf(field: HaFormSchemaItem): string | undefined {
           ? `up to ${of(max)}`
           : '';
   const steps = typeof step === 'number' && step !== 1 ? `in steps of ${step}` : '';
-  return [span, steps].filter(Boolean).join(', ') || undefined;
+  // a step alone is the form's, not a range
+  return span ? [span, steps].filter(Boolean).join(', ') : undefined;
 }
 
 /**
@@ -401,10 +415,11 @@ const byKey = (
 
 /** Every card of the catalogue as the docs say it, in the index's order. */
 export async function readCards(): Promise<readonly CardDoc[]> {
-  const [{ catalogue }, rows, shared] = await Promise.all([
+  const [{ catalogue }, rows, shared, options] = await Promise.all([
     import('@fluvy/cards'),
     import('../../../packages/cards/src/shared/rows-editor.js'),
     import('../../../packages/cards/src/shared/config.js'),
+    import('./options.js'),
   ]);
   const word = (key: string | undefined): string | undefined =>
     key ? form.editorWord(key as Parameters<typeof form.editorWord>[0]) : undefined;
@@ -527,6 +542,18 @@ export async function readCards(): Promise<readonly CardDoc[]> {
           : {}),
         ...(example ? { example } : {}),
         drawn: example ? drawn(tag, example) : [],
+        ...(example
+          ? {
+              // the layout the picture shows where the example's card takes one by itself (a room with a picture)
+              allOptions: options.optionsYaml(
+                await options.cardOptions(card as unknown as OptionsCard, {
+                  ...example.config,
+                  ...(example.own ? { [layoutKey(example)]: example.own } : {}),
+                }),
+                true,
+              ),
+            }
+          : {}),
         known: new Set(['type', ...names, ...listed]),
         normalise: (given) => shared.normaliseConfig(given, ...specs),
       });

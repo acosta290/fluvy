@@ -27,7 +27,7 @@ tools/render/              screenshots, the alignment measurer, interaction test
 tools/icons/               the glyph outliner and the Material icon map
 tools/brand/               the brand files, derived from brand/mark.svg
 tools/release/             version bump, release invariants (with every chunk's budget), the leak scan
-tools/docs/                the card reference, generated from the code into docs/cards.md, and the facts guard
+tools/docs/                the card reference, generated from the code into docs/cards/, and the facts guard
 tools/dev/                 a throwaway Home Assistant, and the installer for any configuration folder
 ```
 
@@ -186,8 +186,9 @@ build:styles`), `packages/core/src/icons/generated.ts`, `generated-on-demand.ts`
 (`tools/icons/README.md`),
 `packages/theme/src/__tests__/ha-vars.json` (`packages/theme/scripts/ha-vars.mjs <clone of home-assistant/frontend>`),
 the brand files (`tools/brand/README.md`), the strategy's golden snapshot (`vitest -u`, with an explanation), the
-cards' docs (`docs/cards/`, the index in `docs/cards.md`, `docs/cards.json`, `docs/llms.txt`: `pnpm docs:cards`) and
-their pictures (`docs/images/cards/`: `pnpm docs:images`).
+cards' docs (`docs/cards/`, the index in `docs/cards.md`, `docs/cards.json`, `docs/llms.txt`: `pnpm docs:cards`; a
+card's guide alone is written by hand, in `tools/docs/guides/`) and their pictures (`docs/images/cards/`:
+`pnpm docs:images`).
 
 ## The editors
 
@@ -324,8 +325,8 @@ node tools/render/measure-fixtures.mjs                   # the measurer's self-t
 node tools/render/heights.mjs                            # every card's declared height is what it draws at 360 (the known drifts below)
 pnpm visual                                              # every interaction suite
 node tools/render/engines.mjs                            # where a label sits in its control, in Chromium and WebKit at 1×, 2× and 3× (below)
-pnpm docs:cards                                          # a page a card in docs/cards/, the index in docs/cards.md, cards.json and llms.txt, from the code
-pnpm docs:images                                         # each card's picture in light and dark from the gallery sheet, rewritten only where it changed
+pnpm docs:cards                                          # a page a card in docs/cards/, the index in docs/cards.md, cards.json and llms.txt, from the code and the guides
+pnpm docs:images                                         # each card's picture, its layouts' and its thumbnail in light and dark from the gallery sheet, rewritten only where it changed
 pnpm --filter @fluvy/docs check                          # the pages, the gallery, the pictures, the defaults and every key's sentence, and the facts guard
 node tools/render/render.mjs --page apps/design-lab/sheets/home.html --palette linen --mode all --width 900
 ```
@@ -502,26 +503,39 @@ it at a desktop's and a phone's width, and commit them.
 ## The cards' docs
 
 ```sh
-pnpm docs:cards                                   # docs/cards/<card>.md, the index in docs/cards.md, cards.json, llms.txt
-pnpm docs:images                                  # docs/images/cards/<card>-<mode>.webp (the playground running, ffmpeg on the PATH)
-pnpm docs:images -- --only tile,lights
+pnpm docs:cards                                   # docs/cards/<card>.md, the index (docs/cards.md, docs/cards/README.md), cards.json, llms.txt
+pnpm docs:images                                  # docs/images/cards/: every example, light and dark, and the index's thumbnails (the playground running, ffmpeg on the PATH)
+pnpm docs:images -- --only tile,lights            # those cards, each with its layouts
 ```
 
 One spec, `tools/docs/src/gallery.ts`, holds an example of every card on the demo house and one of each of its
 layouts; the playground's `gallery` sheet draws it (so the measurer holds it to the house's rules), the live demo
-shows it with its YAML (`tools/docs/src/yaml.ts`), and the docs print it. A card's page is generated from its editor:
-its picture in the reader's GitHub theme, the YAML of the picture, a link to the demo, and a table of every key with
-the editor's word for it, what it does, its type, its default and its values, then its lists' item fields and the
-older names it reads. What a key does is a sentence of `tools/docs/src/meanings.ts`, by the key's name on every card
-or by `<card>.<key>` on one, before the editor's helper. `pnpm check` holds it all to the code without a browser: an
-example for every card and a line for every value of its layout select, each a configuration its editor could have
-written (its newest names, no default written out); a picture in light and dark of each example as it stands (the
-manifest `pictures.json` keeps a digest of the example it was taken of); a declared default for every select and
-switch; a sentence for every key and field, and none for no key; the pages, the index and the data as the code
-writes them. `pnpm docs:images` takes each picture at 2× (392 wide shown for a full card, its column for a half card)
-on the Linen palette at the pinned moment, the page's clock held, at WebP quality 80, and rewrites a file only where
-it differs beyond a renderer's noise, so the history grows only where a card's look did. Change an example, run both,
-look at the pictures, and commit them.
+shows it with its YAML (`tools/docs/src/yaml.ts`), and the docs print it. A card's page is generated from its editor
+and kept short enough to scan: its picture in the reader's GitHub theme, the YAML of the picture, a picture of each
+other layout under the line that chooses it, a YAML with its every option, a table of its options (the default, what
+the option does in a sentence, the values it takes) with the keys every card shares folded under it, its lists' item
+fields, its guide, and the older names it reads, folded. What a key does is a sentence of
+`tools/docs/src/meanings.ts`, by the key's name on every card or by `<card>.<key>` on one; the editor's own word and
+the line under it stay in `cards.json`, with every key's type.
+
+A card's guide is the one part written by hand: `tools/docs/guides/<card>.md`, spliced into the page under "Guide".
+It has no title, heads its parts from `###` down, and writes its links from `docs/cards/`, where it is read
+(`../customising.md#thresholds`, `gauge.md`). What the cards share and the guides of no one card are
+`docs/customising.md`, written by hand. The index is generated whole, in `docs/cards.md` and again beside the pages
+in `docs/cards/README.md`, which GitHub shows under the folder: every card by section, three to a row, its thumbnail,
+its name and what it is.
+
+`pnpm check` holds it all to the code without a browser: an example for every card and a line for every value of its
+layout select, each a configuration its editor could have written (its newest names, no default written out); a
+picture in light and dark of each example and each layout as it stands (the manifest `pictures.json` keeps a digest
+of the example it was taken of) and a thumbnail of each card; a declared default for every select and switch; a
+sentence for every key and field, and none for no key; every guide a card's, under its page's own headings; the
+pages, the index and the data as the code and the guides write them. `pnpm docs:images` takes each picture at 2× (392
+wide shown for a full card, its column for a half card) on the Linen palette at the pinned moment, the page's clock
+and its own held on Madrid's whatever the machine's, at WebP quality 80, and each card's base once more as its
+thumbnail, fitted in 560 × 420 on the page's colour; it rewrites a file only where it differs beyond a renderer's
+noise, so the history grows only where a card's look did. Change an example, run both, look at the pictures, and
+commit them; change a guide, run `pnpm docs:cards`.
 
 ## The integration
 

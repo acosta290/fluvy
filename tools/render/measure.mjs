@@ -1494,6 +1494,12 @@ const context = await browser.newContext({
   reducedMotion: 'reduce',
 });
 const page = await context.newPage();
+// a slow runner on demand (`MEASURE_CPU=20`: the CPU twenty times slower), to reproduce a failure that wanders on CI
+const slower = Number(process.env.MEASURE_CPU);
+if (slower > 1) {
+  const devtools = await context.newCDPSession(page);
+  await devtools.send('Emulation.setCPUThrottlingRate', { rate: slower });
+}
 
 const url = isHttp ? new URL(pagePath) : new URL(pathToFileURL(pagePath));
 if (args.palette) url.searchParams.set('palette', args.palette);
@@ -1512,26 +1518,32 @@ await page.evaluate(() => document.fonts.ready);
 if (isHttp) await page.waitForTimeout(1500); // cards fit their pills after the font arrives, and once more at 1.2 s (the safety re-fit)
 // A card's entrance (`fv-enter`, 1 ms under reduced motion) holds its first keyframe until the page paints it: a heavy
 // sheet on a runner without a GPU (the see-through cards' blur) can still be at its start here, every box scaled to
-// 0.985. Measure once every finite animation has ended (the infinite ones, a liquid gauge's waves, never do), within
-// ten seconds.
+// 0.985. Measure once every finite animation has ended (the infinite ones, a liquid gauge's waves, never do), asked
+// again after each round has ended: a card drawn anew meanwhile (a chunk landing late on the gallery's 159 examples)
+// starts an entrance of its own after the first round was read. Within twenty seconds in all.
 if (isHttp)
   await page
-    .evaluate(() => {
-      // the document's own list leaves out the cards': each shadow root keeps its own
-      const animations = [];
-      const walk = (root) => {
-        animations.push(...root.getAnimations());
-        for (const el of root.querySelectorAll('*')) if (el.shadowRoot) walk(el.shadowRoot);
+    .evaluate(async () => {
+      /** The finite animations still running, the cards' among them (each shadow root keeps its own list). */
+      const running = () => {
+        const animations = [];
+        const walk = (root) => {
+          animations.push(...root.getAnimations());
+          for (const el of root.querySelectorAll('*')) if (el.shadowRoot) walk(el.shadowRoot);
+        };
+        walk(document);
+        return animations.filter(
+          (animation) =>
+            animation.playState !== 'finished' &&
+            Number.isFinite(animation.effect?.getComputedTiming().endTime),
+        );
       };
-      walk(document);
-      return Promise.race([
-        Promise.all(
-          animations
-            .filter((animation) => Number.isFinite(animation.effect?.getComputedTiming().endTime))
-            .map((animation) => animation.finished.catch(() => undefined)),
-        ),
-        new Promise((resolve) => setTimeout(resolve, 10_000)),
-      ]);
+      const until = performance.now() + 20_000;
+      for (let left = running(); left.length && performance.now() < until; left = running())
+        await Promise.race([
+          Promise.all(left.map((animation) => animation.finished.catch(() => undefined))),
+          new Promise((resolve) => setTimeout(resolve, until - performance.now())),
+        ]);
     })
     .catch(() => {});
 

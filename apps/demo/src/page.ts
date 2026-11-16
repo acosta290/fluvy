@@ -1,5 +1,5 @@
 import { css, html, LitElement, nothing, type PropertyValues, type TemplateResult } from 'lit';
-import { paletteOf } from '@fluvy/core';
+import { paletteOf, type HomeAssistant, type LovelaceCardConfig } from '@fluvy/core';
 import type { PaletteModeColors, PaletteName } from '@fluvy/tokens/runtime';
 import { baseStyles, fitPills, glyph, options, type GlyphName } from '@fluvy/ui';
 import '@fluvy/ui/select';
@@ -334,18 +334,26 @@ export class FluvyDemoHead extends PagePart {
   }
 }
 
-/** `demo-yaml`: an example asks for its YAML; `opener` gets the focus back. */
+/** A card as its frame holds it, for its YAML: its configuration as a person writes it, and the house it reads. */
+export interface YamlCard {
+  readonly config: LovelaceCardConfig;
+  readonly hass: HomeAssistant | undefined;
+}
+
+/** `demo-yaml`: a plate asks for the YAML of the cards on it; `opener` gets the focus back. */
 export interface YamlAsk {
-  readonly card: string;
+  readonly cards: readonly YamlCard[];
+  /** On a card's page, the layout the plate shows (`variant: compact`), empty on the card's base; none elsewhere. */
   readonly layout?: string;
   readonly opener: HTMLElement;
 }
 
 /**
- * One example of a card on its page: a plate with the layout's name (a link to it), its docs and its "View YAML" over
- * the frame the card stands in (its slot). The layout a link points at is marked (`marked`).
+ * A frame on a plate: the section's edge around a head — what the frame is, then its links at the row's end, "View
+ * YAML" the last — and the frame under it (its slot). "View YAML" asks for the YAML of the cards the frame holds
+ * (`source`, read as it is asked: the house they read is the one they are drawn on then).
  */
-export class FluvyDemoExample extends PagePart {
+abstract class Plate extends PagePart {
   static override styles = [
     ...baseStyles,
     partStyles,
@@ -354,14 +362,9 @@ export class FluvyDemoExample extends PagePart {
         border-radius: 24px;
         background: var(--fluvy-page);
         box-shadow: 0 0 0 1px var(--fluvy-border-strong);
-        scroll-margin-top: calc(var(--dm-bar, 64px) + 16px);
-        transition: box-shadow 240ms var(--fv-ease, ease);
       }
-      :host([marked]) {
-        box-shadow: 0 0 0 2px var(--fluvy-accent);
-      }
-      /* the layout's name, then its links at the row's end; where a column cannot hold them beside it, the links go
-         under it, every word whole */
+      /* what the frame is, then its links at the row's end; where a column cannot hold them beside it, "View YAML"
+         says "YAML" alone, and where it still cannot, the links go under it, every word whole */
       .ex-head {
         display: flex;
         flex-wrap: wrap;
@@ -379,6 +382,146 @@ export class FluvyDemoExample extends PagePart {
         line-height: 20px;
         white-space: nowrap;
       }
+      .ex-links {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .ex-yaml {
+        gap: 8px;
+      }
+      .ex-yaml svg {
+        width: 20px;
+        height: 20px;
+      }
+    `,
+  ];
+
+  static override properties = {
+    ...PagePart.properties,
+    source: { attribute: false },
+    brief: { state: true },
+  };
+
+  declare source: () => readonly YamlCard[];
+  /** "View YAML" says "YAML" alone: the head could not hold its words beside what the frame is. */
+  declare brief: boolean;
+  /** The plate's width as its words were last tried in, and whether they wait on the web font. */
+  private width: number | undefined;
+  private settled = false;
+  private readonly resized = new ResizeObserver(([entry]) => {
+    const width = entry?.contentRect.width;
+    if (this.width !== undefined && width !== this.width) this.retry();
+    this.width = width;
+  });
+
+  constructor() {
+    super();
+    this.source = () => [];
+    this.brief = false;
+  }
+
+  override connectedCallback(): void {
+    super.connectedCallback();
+    this.resized.observe(this);
+  }
+
+  override disconnectedCallback(): void {
+    super.disconnectedCallback();
+    this.resized.disconnect();
+  }
+
+  /** The words whole again, to give way anew where they still do not fit: the plate's width or their face changed. */
+  private retry(): void {
+    if (this.brief) this.brief = false;
+    else this.giveWay();
+  }
+
+  /** The links have gone under what the frame is: the head does not hold "View YAML" beside it, and it says "YAML". */
+  private giveWay(): void {
+    const name = this.renderRoot.querySelector<HTMLElement>('.ex-name');
+    const links = this.renderRoot.querySelector<HTMLElement>('.ex-links');
+    if (name && links && links.offsetTop > name.offsetTop) this.brief = true;
+  }
+
+  /**
+   * Once the pills are fitted: other words than those that gave way (a language, a layout) are tried whole first;
+   * whole, they give way where they wrap; and once more as the web font lands, after the pills are fitted in it.
+   */
+  protected override updated(changed: PropertyValues): void {
+    super.updated(changed);
+    if (!this.brief) this.giveWay();
+    else if (!changed.has('brief')) this.brief = false;
+    if (this.settled) return;
+    this.settled = true;
+    void document.fonts.ready.then(() => this.retry());
+  }
+
+  /** What the frame is, in the head's first words. */
+  protected abstract renderName(state: DemoState): TemplateResult;
+
+  /** The links before "View YAML", where the plate has its own. */
+  protected abstract renderLinks(state: DemoState): TemplateResult | typeof nothing;
+
+  /** The layout its "View YAML" names; none unless the plate is a card's page's. */
+  protected get asked(): string | undefined {
+    return undefined;
+  }
+
+  private ask(event: Event): void {
+    const { asked } = this;
+    this.dispatchEvent(
+      new CustomEvent<YamlAsk>('demo-yaml', {
+        detail: {
+          cards: this.source(),
+          ...(asked === undefined ? {} : { layout: asked }),
+          opener: event.currentTarget as HTMLElement,
+        },
+        bubbles: true,
+        composed: true,
+      }),
+    );
+  }
+
+  override render(): TemplateResult | typeof nothing {
+    const state = this.state;
+    if (!state) return nothing;
+    const lang = state.language;
+    return html`<div class="ex-head">
+        ${this.renderName(state)}
+        <span class="ex-links">
+          ${this.renderLinks(state)}
+          <button
+            class="fv-btn fv-btn--pill fv-btn--on-page ex-yaml"
+            data-target
+            data-fit="32"
+            aria-haspopup="dialog"
+            aria-label=${t(lang, 'yaml.view')}
+            @click=${this.ask}
+          >
+            ${glyph('code')}${t(lang, this.brief ? 'yaml.brief' : 'yaml.view')}
+          </button>
+        </span>
+      </div>
+      <slot></slot>`;
+  }
+}
+
+/**
+ * One example of a card on its page: the plate's head says the layout (a link to it) and links to the card's docs.
+ * The layout a link points at is marked (`marked`).
+ */
+export class FluvyDemoExample extends Plate {
+  static override styles = [
+    ...Plate.styles,
+    css`
+      :host {
+        scroll-margin-top: calc(var(--dm-bar, 64px) + 16px);
+        transition: box-shadow 240ms var(--fv-ease, ease);
+      }
+      :host([marked]) {
+        box-shadow: 0 0 0 2px var(--fluvy-accent);
+      }
       .ex-name code {
         display: inline-flex;
         align-items: center;
@@ -391,30 +534,20 @@ export class FluvyDemoExample extends PagePart {
         font-weight: 500;
         line-height: 20px;
       }
-      /* the docs' words on the column's edge where the links start a row of their own (the link's target reaches 14
-         past them) */
-      .ex-links {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        margin-left: -14px;
-      }
       :host([marked]) .ex-name code {
         background: var(--fluvy-accent-fill);
         box-shadow: inset 0 0 0 1px var(--fluvy-accent-fill-border);
         color: var(--fluvy-accent-on-fill);
       }
+      /* the docs' words on the column's edge where the links start a row of their own (the link's target reaches 14
+         past them) */
+      .ex-links {
+        margin-left: -14px;
+      }
       .ex-docs {
         display: inline-flex;
         align-items: center;
         margin-right: 0;
-      }
-      .ex-yaml {
-        gap: 8px;
-      }
-      .ex-yaml svg {
-        width: 20px;
-        height: 20px;
       }
       @media (prefers-reduced-motion: reduce) {
         :host {
@@ -425,7 +558,7 @@ export class FluvyDemoExample extends PagePart {
   ];
 
   static override properties = {
-    ...PagePart.properties,
+    ...Plate.properties,
     card: { attribute: false },
     layout: { attribute: false },
     key: { attribute: false },
@@ -450,53 +583,92 @@ export class FluvyDemoExample extends PagePart {
     this.marked = false;
   }
 
-  private ask(event: Event): void {
-    this.dispatchEvent(
-      new CustomEvent<YamlAsk>('demo-yaml', {
-        detail: {
-          card: this.card,
-          ...(this.layout ? { layout: this.layout } : {}),
-          opener: event.currentTarget as HTMLElement,
-        },
-        bubbles: true,
-        composed: true,
-      }),
-    );
+  protected override get asked(): string {
+    return this.layout ? `${this.key}: ${this.layout}` : '';
   }
 
-  override render(): TemplateResult | typeof nothing {
-    const state = this.state;
-    if (!state) return nothing;
-    const lang = state.language;
+  protected override renderName(state: DemoState): TemplateResult {
     const link = this.link({
       kind: 'card',
       card: this.card,
       ...(this.layout ? { layout: this.layout } : {}),
     });
-    return html`<div class="ex-head">
-        <a class="ex-name" href=${link.href} @click=${link.go}
-          >${
-            this.layout
-              ? html`<code data-fit="16">${this.key}: ${this.layout}</code>`
-              : t(lang, 'card.default')
-          }</a
-        >
-        <span class="ex-links">
-          <a class="fv-link ex-docs" data-target href=${this.docs} target="_blank" rel="noopener"
-            >${t(lang, 'card.docs')}</a
-          >
-          <button
-            class="fv-btn fv-btn--pill fv-btn--on-page ex-yaml"
-            data-target
-            data-fit="32"
-            aria-haspopup="dialog"
-            @click=${this.ask}
-          >
-            ${glyph('code')}${t(lang, 'yaml.view')}
-          </button>
-        </span>
-      </div>
-      <slot></slot>`;
+    return html`<a class="ex-name" href=${link.href} @click=${link.go}
+      >${
+        this.layout
+          ? html`<code data-fit="16">${this.asked}</code>`
+          : t(state.language, 'card.default')
+      }</a
+    >`;
+  }
+
+  protected override renderLinks(state: DemoState): TemplateResult {
+    return html`<a
+      class="fv-link ex-docs"
+      data-target
+      href=${this.docs}
+      target="_blank"
+      rel="noopener"
+      >${t(state.language, 'card.docs')}</a
+    >`;
+  }
+}
+
+/**
+ * A frame of a sheet or of the automatic dashboard: the plate's head names the card it holds, a link to that card's
+ * page, and how many other cards stand with it (`+2`; every one's name is the head's title).
+ */
+export class FluvyDemoFrame extends Plate {
+  static override styles = [
+    ...Plate.styles,
+    css`
+      .ex-name {
+        gap: 8px;
+      }
+      /* the card's name is a link of the row's height */
+      .ex-name a {
+        display: inline-flex;
+        align-items: center;
+        min-height: 44px;
+      }
+      .ex-more {
+        color: var(--fluvy-text-secondary);
+      }
+      @media (hover: hover) {
+        .ex-name a:hover {
+          text-decoration: underline;
+          text-underline-offset: 3px;
+        }
+      }
+    `,
+  ];
+
+  static override properties = { ...Plate.properties, cards: { attribute: false } };
+  /** The cards the frame holds, by their short names, each once, in the frame's order. */
+  declare cards: readonly string[];
+
+  constructor() {
+    super();
+    this.cards = [];
+  }
+
+  protected override renderName(): TemplateResult {
+    const names = this.cards.flatMap((short) => {
+      const card = cardOf(short);
+      return card ? [{ short, name: wordsOf(card).name }] : [];
+    });
+    const [first, ...rest] = names;
+    if (!first) return html`<span class="ex-name"></span>`;
+    const link = this.link({ kind: 'card', card: first.short });
+    return html`<span class="ex-name" title=${names.map(({ name }) => name).join(' · ')}
+      ><a href=${link.href} @click=${link.go}>${first.name}</a>${
+        rest.length ? html`<span class="ex-more">+${rest.length}</span>` : nothing
+      }</span
+    >`;
+  }
+
+  protected override renderLinks(): typeof nothing {
+    return nothing;
   }
 }
 
@@ -872,6 +1044,7 @@ export class FluvyDemoThemes extends PagePart {
 for (const [tag, element] of [
   ['fluvy-demo-head', FluvyDemoHead],
   ['fluvy-demo-example', FluvyDemoExample],
+  ['fluvy-demo-frame', FluvyDemoFrame],
   ['fluvy-demo-index', FluvyDemoIndex],
   ['fluvy-demo-themes', FluvyDemoThemes],
 ] as const)
@@ -881,6 +1054,7 @@ declare global {
   interface HTMLElementTagNameMap {
     'fluvy-demo-head': FluvyDemoHead;
     'fluvy-demo-example': FluvyDemoExample;
+    'fluvy-demo-frame': FluvyDemoFrame;
     'fluvy-demo-index': FluvyDemoIndex;
     'fluvy-demo-themes': FluvyDemoThemes;
   }

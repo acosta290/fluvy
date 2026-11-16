@@ -6,7 +6,8 @@
 | [Getting started](getting-started.md) | the first ten minutes: the look, the scope, the automatic dashboards, a first card |
 | [The settings panel](settings-panel.md) | the six tabs, house and personal settings, where they are stored |
 | [The theme](theme.md) | palettes, custom accents, shapes and buttons, the tokens, using the theme on its own |
-| [The cards](cards.md) | every card with its purpose, a minimal configuration and its options |
+| [The cards](cards.md) | every card with its picture, by section; a page a card with its example, its layouts, a YAML with every option and what each option does |
+| [Customising the cards](customising.md) | the options every card takes, details sheets, templates, conditions, groups by room, pictures of your own, a state's colour, thresholds |
 | [Energy](energy.md) | how the energy cards read a house (the Energy dashboard, or your sources: one sensor, two, per phase), and every case |
 | [The automatic dashboards](automatic-dashboard.md) | the seven templates (`custom:fluvy-home`, rooms, energy, security, wall, lights, climate), what they build from your home, and their options |
 | [A dashboard's sidebar](sidebar.md) | a panel beside a dashboard's views, the same on every view: `fluvy_sidebar:`, its head, menu, cards and foot, its styles, phones, coming from sidebar-card |

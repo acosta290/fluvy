@@ -66,7 +66,7 @@ Fluvy cannot keep it awake.
 each an object with options of its own, and sometimes a section's title or a divider among them. Every Fluvy card of
 a list reads them that way (the bars card takes them as its `rows`, the stat tiles as their `tiles`); the Bars and
 the Entities cards draw the titles and dividers among their rows (1.19, see
-[Sections and rows on a condition](cards.md#sections-and-rows-on-a-condition)), the others skip them. A condition for
+[Sections and rows on a condition](customising.md#sections-and-rows-on-a-condition)), the others skip them. A condition for
 every match goes on the card itself: `show_rows_when: { below: 30 }`. While the filter matches nothing, the card shows
 its head and an empty panel, then its rows the moment something matches; an empty list is never a configuration error.
 Say what nothing means with `empty_text`, or let the card step aside while it is empty with `hide_empty: true`

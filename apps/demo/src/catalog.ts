@@ -1,11 +1,10 @@
 import { drawn, GALLERY, shortName, type Drawn } from '../../../tools/docs/src/gallery.js';
-import { toYaml } from '../../../tools/docs/src/yaml.js';
 
 /**
  * The cards the demo has a page for: the documentation's gallery (`tools/docs/src/gallery.ts`), one example of every
  * card and of each of its layouts, the same examples the docs draw and print. A card's page is named by its short name
- * (`?card=tile`), a layout by its value (`&layout=compact`), and the YAML a page shows is the docs' own writer's
- * (`toYaml`) of the example drawn, so the page and the docs never say different things.
+ * (`?card=tile`), a layout by its value (`&layout=compact`), and the YAML a page shows is the docs' own (`card-yaml.ts`)
+ * of the example drawn, so the page and the docs never say different things.
  */
 export interface DemoCard {
   readonly tag: string;
@@ -26,12 +25,14 @@ const BY_SHORT = new Map(CARDS.map((card) => [card.short, card]));
 /** The card of a short name; none where there is no such card. */
 export const cardOf = (short: string): DemoCard | undefined => BY_SHORT.get(short);
 
+const BY_TYPE = new Map(CARDS.map((card) => [`custom:${card.tag}`, card]));
+
+/** The card a configuration's `type` names (`custom:fluvy-tile-card`); none where it is none of the catalogue's. */
+export const cardOfType = (type: string): DemoCard | undefined => BY_TYPE.get(type);
+
 /** The values of a card's other layouts, in the gallery's order. */
 export const layoutsOf = (card: DemoCard): readonly string[] =>
   card.examples.flatMap((example) => (example.layout ? [example.layout] : []));
-
-/** The YAML that draws an example, exactly as the docs print it. */
-export const yamlOf = (example: Drawn): string => toYaml(example.config);
 
 /** The key a card's layouts are chosen by (`variant`, a tile's `size`…), as its YAML writes it. */
 export const layoutKeyOf = (card: DemoCard): string => GALLERY[card.tag]?.layout ?? 'variant';

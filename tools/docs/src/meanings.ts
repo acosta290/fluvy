@@ -1,9 +1,9 @@
 /**
- * What each key of a card does, in a plain sentence: the docs' own words, which the cards' pages print before the
- * editor's helper (`cards.ts` reads them for every key of a card and every field of its lists' items). A key is looked
- * up as `<card>.<key>` (one card's own, the card by its short name), then `<key>` (what it does on every card that has
- * it); a list as `<card>.<list>[]`, then `<list>[]`; a field of its items as `<card>.<list>[].<field>`, then
- * `[].<field>`. `pnpm check` fails on a key or a field with no
+ * What each key of a card does, in a plain sentence: the docs' own words, the one thing a card's page says of a key
+ * beside its default and its values, so each is short and whole by itself (`cards.ts` reads them for every key of a
+ * card and every field of its lists' items). A key is looked up as `<card>.<key>` (one card's own, the card by its
+ * short name), then `<key>` (what it does on every card that has it); a list as `<card>.<list>[]`, then `<list>[]`; a
+ * field of its items as `<card>.<list>[].<field>`, then `[].<field>`. `pnpm check` fails on a key or a field with no
  * sentence here, and on a sentence no key reads (`checkMeanings`).
  */
 
@@ -28,9 +28,10 @@ export const MEANINGS: Readonly<Record<string, string>> = {
   badge_warn: 'The head’s badge while rows are outside their range; {count} is how many.',
   battery_entity: 'The battery sensor the card reads its charge from.',
   camera_view: 'Shows still pictures that refresh by themselves, or Home Assistant’s live stream.',
-  card_border: 'Draws the card’s hairline border, or leaves it out.',
+  card_border: 'Whether the card draws its hairline border. Left out, the house’s.',
   card_color: 'Paints the card’s surface in a colour of your own.',
-  card_opacity: 'How see-through the card’s surface is, in percent.',
+  card_opacity:
+    'How solid the card’s surface is, in percent: under 100 the view’s background shows through. Left out, the house’s.',
   chart: 'The chart’s style; left out, the style set for the whole house.',
   chevron_position: 'Where the chevron that opens and folds it stands.',
   chevron_size: 'How large the chevron is.',
@@ -343,7 +344,7 @@ export const MEANINGS: Readonly<Record<string, string>> = {
   stats: 'The figures shown in the row under the gauge, in this order.',
   status: 'What each camera’s line says.',
   style: 'Draws the card on its own surface, or plain on the page.',
-  subtitle: 'The line under the title.',
+  subtitle: 'The line under the title: your own words, an entity’s state or a template.',
   suction_style: 'Draws the suction speeds as chips that fill the row, or as content-sized chips.',
   switch_style: 'Draws the switch as a toggle, or as a wall rocker that only switches.',
   tap_action: 'What a tap on the card does.',
@@ -367,7 +368,8 @@ export const MEANINGS: Readonly<Record<string, string>> = {
   toggle_secondary: 'The line under that switch.',
   tone: 'The card’s colour from the palette’s tones; left out, the tone of what it shows.',
   transport: 'The playback keys, in this order.',
-  unavailable: 'How the card looks while its entity is unavailable: dashed, or quiet.',
+  unavailable:
+    'How the card looks while its entity is unavailable: dashed, or quiet as when it is off. Left out, the house’s.',
   unit: 'The unit the figures are written in; automatic keeps the sensor’s.',
   unload_after: 'How many minutes after a finish the card says it waits to be unloaded.',
   unload_reminder: 'Says when a finished cycle waits to be unloaded.',
@@ -453,7 +455,7 @@ export const MEANINGS: Readonly<Record<string, string>> = {
   'expander.columns': 'How many of its cards stand side by side.',
   'expander.entities': 'The entities the head’s line counts ("2 of 5 on").',
   'expander.title': 'The title in the head.',
-  'gauge.badge': 'The words in the head’s badge.',
+  'gauge.badge': 'The words in the head’s badge: your own, an entity’s state or a template.',
   'gauge.label': 'The words inside the ring, over the figure.',
   'gauge.max': 'The top of the ring, in the sensor’s unit.',
   'gauge.min': 'The bottom of the ring, in the sensor’s unit.',
@@ -491,7 +493,8 @@ export const MEANINGS: Readonly<Record<string, string>> = {
   'lights.tint': 'When each light’s tile shows its colour.',
   'map.entities': 'The people and trackers the map shows.',
   'media.controls': 'The rounds of the mini layout’s row, in this order.',
-  'media.secondary': 'The line under the title, in place of what is playing.',
+  'media.secondary':
+    'The line under the title, in place of what is playing: your own words, an entity’s state or a template.',
   'now-playing.controls': 'The rounds of the strip, in this order.',
   'openings.max_rows': 'How many rows the card shows before "All sensors".',
   'openings.show_count': 'Says on the head’s line how many are open.',

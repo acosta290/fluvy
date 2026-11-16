@@ -55,9 +55,13 @@ const en = {
   'card.docs': 'Docs',
   'card.default': 'Default',
   'yaml.view': 'View YAML',
+  'yaml.brief': 'YAML',
   'yaml.copy': 'Copy',
   'yaml.copied': 'Copied',
   'yaml.note': "The entities are the demo house's: put your own in their place.",
+  'yaml.all': 'All options',
+  'yaml.all_note':
+    "Lines with # are options left unset: they follow Fluvy's settings or have no value yet.",
   'yaml.close': 'Close',
   'overview.title': 'One design for all of Home Assistant',
   'overview.lead':
@@ -132,9 +136,13 @@ const es: Table = {
   'card.docs': 'Documentación',
   'card.default': 'Predeterminado',
   'yaml.view': 'Ver YAML',
+  'yaml.brief': 'YAML',
   'yaml.copy': 'Copiar',
   'yaml.copied': 'Copiado',
   'yaml.note': 'Las entidades son las de la casa de demostración: pon las tuyas en su lugar.',
+  'yaml.all': 'Todas las opciones',
+  'yaml.all_note':
+    'Las líneas con # son opciones sin fijar: siguen los ajustes de Fluvy o aún no tienen valor.',
   'yaml.close': 'Cerrar',
   'overview.title': 'Un solo diseño para todo Home Assistant',
   'overview.lead':
@@ -206,9 +214,13 @@ const de: Table = {
   'card.docs': 'Doku',
   'card.default': 'Standard',
   'yaml.view': 'YAML anzeigen',
+  'yaml.brief': 'YAML',
   'yaml.copy': 'Kopieren',
   'yaml.copied': 'Kopiert',
   'yaml.note': 'Die Entitäten sind die des Demo-Zuhauses: Setze deine eigenen an ihre Stelle.',
+  'yaml.all': 'Alle Optionen',
+  'yaml.all_note':
+    'Zeilen mit # sind nicht gesetzte Optionen: Sie folgen den Einstellungen von Fluvy oder haben noch keinen Wert.',
   'yaml.close': 'Schließen',
   'overview.title': 'Ein Design für ganz Home Assistant',
   'overview.lead':
@@ -280,9 +292,13 @@ const nl: Table = {
   'card.docs': 'Docs',
   'card.default': 'Standaard',
   'yaml.view': 'YAML bekijken',
+  'yaml.brief': 'YAML',
   'yaml.copy': 'Kopiëren',
   'yaml.copied': 'Gekopieerd',
   'yaml.note': 'De entiteiten zijn die van het demohuis: vervang ze door je eigen.',
+  'yaml.all': 'Alle opties',
+  'yaml.all_note':
+    'Regels met # zijn opties die niet zijn ingesteld: ze volgen de instellingen van Fluvy of hebben nog geen waarde.',
   'yaml.close': 'Sluiten',
   'overview.title': 'Eén ontwerp voor heel Home Assistant',
   'overview.lead':
@@ -354,9 +370,13 @@ const da: Table = {
   'card.docs': 'Dokumentation',
   'card.default': 'Standard',
   'yaml.view': 'Vis YAML',
+  'yaml.brief': 'YAML',
   'yaml.copy': 'Kopiér',
   'yaml.copied': 'Kopieret',
   'yaml.note': 'Entiteterne er demohjemmets: sæt dine egne ind i stedet.',
+  'yaml.all': 'Alle muligheder',
+  'yaml.all_note':
+    'Linjer med # er muligheder, der ikke er sat: de følger Fluvys indstillinger eller har endnu ingen værdi.',
   'yaml.close': 'Luk',
   'overview.title': 'Ét design til hele Home Assistant',
   'overview.lead':
@@ -428,10 +448,14 @@ const fr: Table = {
   'card.docs': 'Docs',
   'card.default': 'Par défaut',
   'yaml.view': 'Voir le YAML',
+  'yaml.brief': 'YAML',
   'yaml.copy': 'Copier',
   'yaml.copied': 'Copié',
   'yaml.note':
     'Les entités sont celles de la maison de démonstration : remplacez-les par les vôtres.',
+  'yaml.all': 'Toutes les options',
+  'yaml.all_note':
+    'Les lignes avec # sont des options non définies : elles suivent les réglages de Fluvy ou n’ont pas encore de valeur.',
   'yaml.close': 'Fermer',
   'overview.title': 'Un seul design pour tout Home Assistant',
   'overview.lead':
@@ -505,9 +529,13 @@ const it: Table = {
   'card.docs': 'Docs',
   'card.default': 'Predefinito',
   'yaml.view': 'Vedi YAML',
+  'yaml.brief': 'YAML',
   'yaml.copy': 'Copia',
   'yaml.copied': 'Copiato',
   'yaml.note': 'Le entità sono quelle della casa demo: sostituiscile con le tue.',
+  'yaml.all': 'Tutte le opzioni',
+  'yaml.all_note':
+    'Le righe con # sono opzioni non impostate: seguono le impostazioni di Fluvy o non hanno ancora un valore.',
   'yaml.close': 'Chiudi',
   'overview.title': 'Un solo design per tutto Home Assistant',
   'overview.lead':
@@ -579,9 +607,13 @@ const ptBR: Table = {
   'card.docs': 'Docs',
   'card.default': 'Padrão',
   'yaml.view': 'Ver YAML',
+  'yaml.brief': 'YAML',
   'yaml.copy': 'Copiar',
   'yaml.copied': 'Copiado',
   'yaml.note': 'As entidades são as da casa de demonstração: coloque as suas no lugar delas.',
+  'yaml.all': 'Todas as opções',
+  'yaml.all_note':
+    'As linhas com # são opções não definidas: seguem as configurações do Fluvy ou ainda não têm valor.',
   'yaml.close': 'Fechar',
   'overview.title': 'Um só design para todo o Home Assistant',
   'overview.lead':
@@ -654,9 +686,13 @@ const ptPT: Table = {
   'card.docs': 'Docs',
   'card.default': 'Predefinido',
   'yaml.view': 'Ver YAML',
+  'yaml.brief': 'YAML',
   'yaml.copy': 'Copiar',
   'yaml.copied': 'Copiado',
   'yaml.note': 'As entidades são as da casa de demonstração: substitua-as pelas suas.',
+  'yaml.all': 'Todas as opções',
+  'yaml.all_note':
+    'As linhas com # são opções por definir: seguem as definições do Fluvy ou ainda não têm valor.',
   'yaml.close': 'Fechar',
   'overview.title': 'Um só design para todo o Home Assistant',
   'overview.lead':
@@ -729,9 +765,13 @@ const tr: Table = {
   'card.docs': 'Belgeler',
   'card.default': 'Varsayılan',
   'yaml.view': 'YAML’ı göster',
+  'yaml.brief': 'YAML',
   'yaml.copy': 'Kopyala',
   'yaml.copied': 'Kopyalandı',
   'yaml.note': 'Varlıklar demo evine aittir: yerlerine kendi varlıklarınızı koyun.',
+  'yaml.all': 'Tüm seçenekler',
+  'yaml.all_note':
+    '# ile başlayan satırlar ayarlanmamış seçeneklerdir: Fluvy ayarlarını izler veya henüz bir değerleri yoktur.',
   'yaml.close': 'Kapat',
   'overview.title': 'Home Assistant’ın tamamı için tek tasarım',
   'overview.lead':
@@ -803,9 +843,12 @@ const ja: Table = {
   'card.docs': 'ドキュメント',
   'card.default': 'デフォルト',
   'yaml.view': 'YAMLを表示',
+  'yaml.brief': 'YAML',
   'yaml.copy': 'コピー',
   'yaml.copied': 'コピーしました',
   'yaml.note': 'エンティティはデモハウスのものです。ご自分のものに置き換えてください。',
+  'yaml.all': 'すべてのオプション',
+  'yaml.all_note': '# の行は未設定のオプションです。Fluvy の設定に従うか、まだ値がありません。',
   'yaml.close': '閉じる',
   'overview.title': 'Home Assistantのすべてを、ひとつのデザインで',
   'overview.lead':
@@ -877,9 +920,13 @@ const hu: Table = {
   'card.docs': 'Leírás',
   'card.default': 'Alapértelmezett',
   'yaml.view': 'YAML megtekintése',
+  'yaml.brief': 'YAML',
   'yaml.copy': 'Másolás',
   'yaml.copied': 'Kimásolva',
   'yaml.note': 'Az entitások a demó otthonéi: cserélje le őket a sajátjaira.',
+  'yaml.all': 'Minden opció',
+  'yaml.all_note':
+    'A # jelű sorok be nem állított opciók: a Fluvy beállításait követik, vagy még nincs értékük.',
   'yaml.close': 'Bezárás',
   'overview.title': 'Egy dizájn az egész Home Assistanthoz',
   'overview.lead':
@@ -952,9 +999,13 @@ const sk: Table = {
   'card.docs': 'Dokumentácia',
   'card.default': 'Predvolené',
   'yaml.view': 'Zobraziť YAML',
+  'yaml.brief': 'YAML',
   'yaml.copy': 'Kopírovať',
   'yaml.copied': 'Skopírované',
   'yaml.note': 'Entity patria demo domácnosti: nahraďte ich svojimi.',
+  'yaml.all': 'Všetky možnosti',
+  'yaml.all_note':
+    'Riadky s # sú nenastavené možnosti: riadia sa nastaveniami Fluvy alebo ešte nemajú hodnotu.',
   'yaml.close': 'Zavrieť',
   'overview.title': 'Jeden dizajn pre celý Home Assistant',
   'overview.lead':
@@ -1027,9 +1078,13 @@ const cs: Table = {
   'card.docs': 'Dokumentace',
   'card.default': 'Výchozí',
   'yaml.view': 'Zobrazit YAML',
+  'yaml.brief': 'YAML',
   'yaml.copy': 'Kopírovat',
   'yaml.copied': 'Zkopírováno',
   'yaml.note': 'Entity patří ukázkové domácnosti: nahraďte je svými.',
+  'yaml.all': 'Všechny možnosti',
+  'yaml.all_note':
+    'Řádky s # jsou nenastavené možnosti: řídí se nastavením Fluvy, nebo ještě nemají hodnotu.',
   'yaml.close': 'Zavřít',
   'overview.title': 'Jeden design pro celý Home Assistant',
   'overview.lead':
@@ -1102,9 +1157,13 @@ const pl: Table = {
   'card.docs': 'Dokumentacja',
   'card.default': 'Domyślny',
   'yaml.view': 'Pokaż YAML',
+  'yaml.brief': 'YAML',
   'yaml.copy': 'Kopiuj',
   'yaml.copied': 'Skopiowano',
   'yaml.note': 'Encje należą do domu demonstracyjnego: zastąp je własnymi.',
+  'yaml.all': 'Wszystkie opcje',
+  'yaml.all_note':
+    'Wiersze z # to nieustawione opcje: stosują się do ustawień Fluvy albo nie mają jeszcze wartości.',
   'yaml.close': 'Zamknij',
   'overview.title': 'Jeden projekt dla całego Home Assistanta',
   'overview.lead':
@@ -1177,9 +1236,12 @@ const zhHans: Table = {
   'card.docs': '文档',
   'card.default': '默认',
   'yaml.view': '查看 YAML',
+  'yaml.brief': 'YAML',
   'yaml.copy': '复制',
   'yaml.copied': '已复制',
   'yaml.note': '这些实体属于演示住宅：请换成您自己的。',
+  'yaml.all': '全部选项',
+  'yaml.all_note': '带 # 的行是未设置的选项：它们跟随 Fluvy 的设置，或尚无取值。',
   'yaml.close': '关闭',
   'overview.title': '为整个 Home Assistant 打造统一设计',
   'overview.lead':
@@ -1249,9 +1311,13 @@ const ru: Table = {
   'card.docs': 'Документация',
   'card.default': 'По умолчанию',
   'yaml.view': 'Показать YAML',
+  'yaml.brief': 'YAML',
   'yaml.copy': 'Копировать',
   'yaml.copied': 'Скопировано',
   'yaml.note': 'Сущности принадлежат демо-дому: замените их своими.',
+  'yaml.all': 'Все параметры',
+  'yaml.all_note':
+    'Строки с # — незаданные параметры: они следуют настройкам Fluvy или пока не имеют значения.',
   'yaml.close': 'Закрыть',
   'overview.title': 'Единый дизайн для всего Home Assistant',
   'overview.lead':
@@ -1324,9 +1390,13 @@ const uk: Table = {
   'card.docs': 'Документація',
   'card.default': 'Типово',
   'yaml.view': 'Показати YAML',
+  'yaml.brief': 'YAML',
   'yaml.copy': 'Копіювати',
   'yaml.copied': 'Скопійовано',
   'yaml.note': 'Сутності належать демо-дому: замініть їх своїми.',
+  'yaml.all': 'Усі параметри',
+  'yaml.all_note':
+    'Рядки з # — незадані параметри: вони наслідують налаштування Fluvy або ще не мають значення.',
   'yaml.close': 'Закрити',
   'overview.title': 'Єдиний дизайн для всього Home Assistant',
   'overview.lead':
@@ -1398,9 +1468,13 @@ const bg: Table = {
   'card.docs': 'Документация',
   'card.default': 'По подразбиране',
   'yaml.view': 'Преглед на YAML',
+  'yaml.brief': 'YAML',
   'yaml.copy': 'Копиране',
   'yaml.copied': 'Копирано',
   'yaml.note': 'Обектите са от демо дома: поставете своите на тяхно място.',
+  'yaml.all': 'Всички опции',
+  'yaml.all_note':
+    'Редовете с # са незададени опции: следват настройките на Fluvy или още нямат стойност.',
   'yaml.close': 'Затвори',
   'overview.title': 'Един дизайн за целия Home Assistant',
   'overview.lead':
@@ -1472,9 +1546,13 @@ const sv: Table = {
   'card.docs': 'Dokumentation',
   'card.default': 'Standard',
   'yaml.view': 'Visa YAML',
+  'yaml.brief': 'YAML',
   'yaml.copy': 'Kopiera',
   'yaml.copied': 'Kopierat',
   'yaml.note': 'Entiteterna är demohemmets: sätt dina egna i deras ställe.',
+  'yaml.all': 'Alla alternativ',
+  'yaml.all_note':
+    'Rader med # är alternativ som inte är satta: de följer Fluvys inställningar eller har inget värde än.',
   'yaml.close': 'Stäng',
   'overview.title': 'En design för hela Home Assistant',
   'overview.lead':

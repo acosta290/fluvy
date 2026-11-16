@@ -3,9 +3,14 @@
  * The demo, checked as a visitor would find it (a built site served by `vite preview`, or the dev server):
  * - the overview shows Fluvy and its frames, a palette recolours the page, a device changes the columns, dark mode and a
  *   language reach the cards in place, a card asking for more-info is answered with a notice and no navigation;
+ * - every frame of cards the demo shows stands on a plate with its "View YAML" (the overview's, the themes', every
+ *   family's, the automatic dashboard's sections; a frame of the playground's own stand-ins has none): it opens on
+ *   every option of each card the frame holds, the unset ones as comments; "All options" off leaves what a person has
+ *   to write; each card of several has its own Copy, which copies what is shown;
  * - every card has a page that mounts its examples and nothing else, without an error; every example's "View YAML"
- *   opens on exactly the docs' YAML of it (`toYaml` of the gallery's example, read from `tools/docs`), Copy writes that
- *   text and says it did, Escape closes the panel and gives the focus back;
+ *   shows, short, exactly the docs' YAML of it (`toYaml` of the gallery's example, read from `tools/docs`) and, with
+ *   every option, that and more, the switch staying as the visitor left it; Copy writes the text shown and says it
+ *   did, Escape closes the panel and gives the focus back;
  * - a link to a card's layout opens on that layout, marked; back and forward move between pages; the menu (the rail on
  *   a desktop, the drawer on a phone) and the search open cards, and say when they find none;
  * - every family of the showcase mounts at a desktop's width and a phone's, nothing wider than the screen, and between
@@ -74,6 +79,24 @@ const accent = (page) =>
   );
 const frames = (page) => page.locator('#stage [data-frame]').count();
 const frame = (page, name) => page.locator(`#stage [data-frame="${name}"]`);
+/** A frame's plate off a card's page: what names its cards and shows their YAML. */
+const plateOf = (page, name) =>
+  page.locator('#stage fluvy-demo-frame', { has: page.locator(`[data-frame="${name}"]`) });
+/**
+ * Whether every frame that holds a card of the catalogue stands on a plate with its "View YAML", and no other does
+ * (a frame of the playground's own stand-ins alone has no YAML to show): how many do, and how many should.
+ */
+const plated = async (page) => {
+  const [due, each] = await page.evaluate(() => {
+    const all = [...document.querySelectorAll('#stage [data-frame]')];
+    const holds = (frame) =>
+      [...frame.children].some((card) => /^fluvy-.+-card$/.test(card.localName));
+    const stands = (frame) => frame.parentElement?.localName === 'fluvy-demo-frame';
+    return [all.filter(holds).length, all.every((one) => holds(one) === stands(one))];
+  });
+  const pills = await page.locator('#stage fluvy-demo-frame .ex-yaml').count();
+  return { ok: each && pills === due && due > 0, said: `${pills} of ${due} with their YAML` };
+};
 /** What a frame says, through its cards' shadow roots; '' where there is no such frame. */
 const words = (page, name) =>
   page.evaluate((name) => {
@@ -123,17 +146,40 @@ const fromMenu = async (page, link, group) => {
   await entry.first().click();
   await page.waitForTimeout(800);
 };
-/** The YAML panel's text as a person would select it (the gutter's numbers are not text), and whether it is open. */
+/**
+ * The YAML panel: whether it is open, its title, whether "All options" is on, each card's text as a person would
+ * select it (the gutter's numbers are not text; `text` the first's) and what each Copy says (`copy` the first's).
+ */
 const panel = (page) =>
   page.evaluate(() => {
     const root = document.querySelector('fluvy-demo-yaml')?.shadowRoot;
     const dialog = root?.querySelector('dialog');
+    const texts = [...(root?.querySelectorAll('.ym-code') ?? [])].map((code) => code.textContent);
+    const copies = [...(root?.querySelectorAll('.ym-copy') ?? [])].map((button) =>
+      button.textContent.trim(),
+    );
     return {
       open: Boolean(dialog?.open),
-      text: root?.querySelector('.ym-code')?.textContent ?? '',
-      copy: root?.querySelector('.ym-copy')?.textContent?.trim() ?? '',
+      title: root?.querySelector('.fv-sheet__title')?.textContent ?? '',
+      all: root?.querySelector('.ym-all [role="switch"]')?.getAttribute('aria-checked') === 'true',
+      texts,
+      text: texts[0] ?? '',
+      copies,
+      copy: copies[0] ?? '',
     };
   });
+/** The panel's "All options" switch, and the panel once it is open or gone. */
+const ALL = 'fluvy-demo-yaml .ym-all [role="switch"]';
+const opened = (page) =>
+  page.waitForFunction(
+    () => document.querySelector('fluvy-demo-yaml')?.shadowRoot?.querySelector('dialog')?.open,
+  );
+const closed = (page) =>
+  page.waitForFunction(
+    () => !document.querySelector('fluvy-demo-yaml')?.shadowRoot?.querySelector('dialog'),
+  );
+/** A YAML's lines that a loader reads: the comments left out. */
+const loaded = (text) => text.split('\n').filter((line) => !line.startsWith('#'));
 /** A frame's chart (its first card's drawing): the style it is drawn in and its paths (the ids a page counts left out). */
 const chartOf = (page, name) =>
   frame(page, name)
@@ -148,11 +194,74 @@ const chartOf = (page, name) =>
 
 /* ---------- the overview and the chrome ---------- */
 {
-  const page = await open('');
+  const page = await open('', DESKTOP, { permissions: ['clipboard-read', 'clipboard-write'] });
   check(
     'the overview shows what Fluvy is and its frames',
     (await page.locator('fluvy-demo-head h1').count()) === 1 && (await frames(page)) >= 6,
     `${await frames(page)} frames`,
+  );
+  // every frame stands on a plate that names its card and shows its YAML: the first holds five tiles
+  const first = page.locator('#stage fluvy-demo-frame').first();
+  const overview = await plated(page);
+  check(
+    'every frame of the overview has its "View YAML", under its card’s name',
+    overview.ok &&
+      (await first.locator('.ex-name a').textContent()) === 'Tile' &&
+      (await first.locator('.ex-name a').getAttribute('href')).includes('card=tile'),
+    overview.said,
+  );
+  await first.locator('.ex-yaml').click();
+  await opened(page);
+  const every = await panel(page);
+  const tiles = await first.locator('[data-frame] > *').count();
+  check(
+    'it opens on every option of each card of the frame: the house’s and the unset ones as comments',
+    every.all &&
+      every.title === 'Tile' &&
+      every.texts.length === tiles &&
+      tiles > 1 &&
+      every.text.startsWith('type: custom:fluvy-tile-card\nentity: light.ceiling\n') &&
+      every.text.includes('\nsize: large\n') &&
+      every.text.includes('\n# card_opacity: 100\n') &&
+      every.text.includes('\n# name:\n'),
+    `${every.texts.length} cards, ${every.text.split('\n').length} lines`,
+  );
+  await page.locator(ALL).click();
+  await page.waitForTimeout(200);
+  const short = await panel(page);
+  check(
+    '"All options" off leaves what a person has to write: the same without the defaults',
+    !short.all &&
+      short.text === 'type: custom:fluvy-tile-card\nentity: light.ceiling' &&
+      short.texts.every(
+        (text, at) => !text.includes('#') && text.length < every.texts[at].length,
+      ) &&
+      short.texts.every((text, at) =>
+        text.split('\n').every((line) => loaded(every.texts[at]).includes(line)),
+      ),
+    JSON.stringify(short.text),
+  );
+  // each card of several has its own Copy, which copies what is shown
+  await page.locator('fluvy-demo-yaml .ym-copy').nth(1).click();
+  await page.waitForTimeout(200);
+  check(
+    'a card’s own Copy writes that card’s YAML as it is shown, and says it did',
+    (await page.evaluate(() => window.navigator.clipboard.readText())) === short.texts[1] &&
+      (await panel(page)).copies[1] === 'Copied',
+  );
+  await page.locator(ALL).click();
+  await page.waitForTimeout(200);
+  await page.locator('fluvy-demo-yaml .ym-copy').first().click();
+  await page.waitForTimeout(200);
+  check(
+    '…and with every option, the comments too',
+    (await page.evaluate(() => window.navigator.clipboard.readText())) === every.text,
+  );
+  await page.keyboard.press('Escape');
+  await closed(page);
+  check(
+    'Escape gives the focus back to the frame’s "View YAML"',
+    await first.locator('.ex-yaml').evaluate((el) => el.getRootNode().activeElement === el),
   );
   check('the look is on the page', (await accent(page)) !== '', await accent(page));
   const before = await accent(page);
@@ -250,6 +359,9 @@ const chartOf = (page, name) =>
   );
   const wrong = [];
   let examples = 0;
+  // "All options" is on until the visitor turns it off, and stays as it was left for the visit: each example is read
+  // both ways, the next opening the way this one was left
+  let all = true;
   for (const [tag, example] of Object.entries(GALLERY)) {
     const short = shortName(tag);
     const expected = drawn(tag, example);
@@ -275,26 +387,45 @@ const chartOf = (page, name) =>
     )
       wrong.push(`${short}: ${mounted} of ${expected.length} [${tags.join(' ')}]`);
     for (const [at, shownExample] of expected.entries()) {
+      const docs = toYaml(shownExample.config);
       await plates.nth(at).locator('.ex-yaml').click();
+      await opened(page);
+      const first = await panel(page);
+      await page.locator(ALL).click();
       await page.waitForFunction(
-        () => document.querySelector('fluvy-demo-yaml')?.shadowRoot?.querySelector('dialog')?.open,
+        (was) =>
+          (document
+            .querySelector('fluvy-demo-yaml')
+            ?.shadowRoot?.querySelector('.ym-all [role="switch"]')
+            ?.getAttribute('aria-checked') ===
+            'true') !==
+          was,
+        first.all,
       );
-      if ((await panel(page)).text !== toYaml(shownExample.config))
-        wrong.push(`${shownExample.name}: its YAML is not the docs'`);
+      const second = await panel(page);
+      const [every, brief] = first.all ? [first, second] : [second, first];
+      if (first.all !== all) wrong.push(`${shownExample.name}: opened ${all ? 'short' : 'whole'}`);
+      if (brief.text !== docs) wrong.push(`${shownExample.name}: its short YAML is not the docs'`);
+      // every option: its type first, every line of the docs' among those a loader reads, and more beside them
+      if (
+        !every.text.startsWith(`type: ${shownExample.config.type}\n`) ||
+        !docs.split('\n').every((line) => loaded(every.text).includes(line)) ||
+        every.text.split('\n').length <= docs.split('\n').length
+      )
+        wrong.push(`${shownExample.name}: its options are not the docs' YAML and more`);
+      all = !first.all;
       examples += 1;
       await page.keyboard.press('Escape');
-      await page.waitForFunction(
-        () => !document.querySelector('fluvy-demo-yaml')?.shadowRoot?.querySelector('dialog'),
-      );
+      await closed(page);
     }
   }
   check(
-    `every card's page mounts its examples alone, and each one's YAML is the docs' (${examples} examples)`,
+    `every card's page mounts its examples alone; each one's short YAML is the docs', its options that and more, as the visitor left the switch (${examples} examples)`,
     wrong.length === 0 && examples > Object.keys(GALLERY).length,
     wrong.slice(0, 6).join(' | '),
   );
 
-  // Copy writes the exact text and says so; Escape gives the focus back to the button that opened the panel
+  // Copy writes the exact text shown and says so; Escape gives the focus back to the button that opened the panel
   await page.evaluate(() =>
     document.dispatchEvent(
       new CustomEvent('demo-go', { detail: { kind: 'card', card: 'cover' }, bubbles: true }),
@@ -303,7 +434,9 @@ const chartOf = (page, name) =>
   await page.waitForTimeout(300);
   const button = page.locator('#stage fluvy-demo-example').first().locator('.ex-yaml');
   await button.click();
+  await opened(page);
   await page.waitForTimeout(400);
+  if ((await panel(page)).all) await page.locator(ALL).click();
   await page.locator('fluvy-demo-yaml .ym-copy').click();
   await page.waitForTimeout(200);
   const copied = await page.evaluate(() => window.navigator.clipboard.readText());
@@ -311,6 +444,17 @@ const chartOf = (page, name) =>
     'Copy writes the YAML, exactly, and says it did',
     copied === toYaml(GALLERY['fluvy-cover-card'].config) && (await panel(page)).copy === 'Copied',
     JSON.stringify((await panel(page)).copy),
+  );
+  await page.locator(ALL).click();
+  await page.waitForTimeout(200);
+  await page.locator('fluvy-demo-yaml .ym-copy').click();
+  await page.waitForTimeout(200);
+  const whole = await panel(page);
+  check(
+    '…and every option with "All options" on, as it is shown',
+    whole.all &&
+      whole.text.includes('\n# card_opacity: 100\n') &&
+      (await page.evaluate(() => window.navigator.clipboard.readText())) === whole.text,
   );
   check(
     'the YAML panel keeps the focus inside while it is open',
@@ -488,8 +632,10 @@ for (const viewport of [DESKTOP, PHONE]) {
     const shown = query(page).get('sheet');
     const count = await frames(page);
     const wide = await overflow(page);
-    if (shown !== family || count < 1 || wide > 0)
-      seen.push(`${family}: ${shown}, ${count}, +${wide}px`);
+    // every frame of cards on its plate, with its "View YAML"
+    const plates = await plated(page);
+    if (shown !== family || count < 1 || wide > 0 || !plates.ok)
+      seen.push(`${family}: ${shown}, ${count} frames, ${plates.said}, +${wide}px`);
     if (viewport === DESKTOP) {
       // every element of a card's tag, through the shadow roots (a card inside a card counts)
       const tags = await page.evaluate(() => {
@@ -508,7 +654,7 @@ for (const viewport of [DESKTOP, PHONE]) {
     }
   }
   check(
-    `every family mounts at ${viewport.width}, nothing wider than the screen`,
+    `every family mounts at ${viewport.width}, every frame with its "View YAML", nothing wider than the screen`,
     seen.length === 0,
     seen.join(' | '),
   );
@@ -539,6 +685,32 @@ check(
     'the automatic dashboard builds its views from the demo house, a chip each',
     views.length >= 5 && views.includes('Energy') && query(page).get('view') === 'energy',
     views.join(', '),
+  );
+  // a section's "View YAML": the cards the strategy built for it, each under its own name
+  const section = page.locator('#stage fluvy-demo-frame').first();
+  const held = await section.locator('[data-frame] > *').count();
+  await section.locator('.ex-yaml').click();
+  await opened(page);
+  const asked = await panel(page);
+  const sections = await plated(page);
+  check(
+    'every section of the automatic dashboard shows the YAML of the cards built for it',
+    sections.ok &&
+      held > 1 &&
+      asked.texts.length === held &&
+      asked.copies.length === held &&
+      asked.texts.every((text) => text.startsWith('type: custom:fluvy-')),
+    `${sections.said}; ${asked.texts.length} of ${held} cards`,
+  );
+  await page.close();
+}
+{
+  const page = await open('themes=1');
+  const picks = await plated(page);
+  check(
+    'the themes page’s frames have their "View YAML" too',
+    (await frames(page)) >= 6 && picks.ok,
+    picks.said,
   );
   await page.close();
 }
@@ -743,6 +915,15 @@ const running = (page) =>
   check(
     'the Items card lists the aircraft',
     (await frame(page, 'items/Items · flights').locator('.fv-row').count()) >= 3,
+  );
+  // its YAML names the page as the docs do, at the site's root, wherever the demo serves it
+  await plateOf(page, 'web/Plate · 16:9').locator('.ex-yaml').click();
+  await opened(page);
+  const web = await panel(page);
+  check(
+    'the Web page card’s YAML names its page at the site’s root, as the docs print it',
+    web.title === 'Web page' && loaded(web.text).includes('url: /web/page.html'),
+    web.text.split('\n').slice(0, 3).join(' | '),
   );
   await page.close();
 }

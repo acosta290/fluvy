@@ -41,7 +41,7 @@ import { sheet as web } from './web.js';
 /**
  * The gallery (#199): the documentation's example of every card, and of each of its layouts, drawn from the one spec
  * the docs print (`tools/docs/src/gallery.ts`). A frame an example, named `gallery/<card>` (a layout's
- * `gallery/<card> · <layout>`): `pnpm docs:images` takes each card's picture from its frame, and the measurer holds
+ * `gallery/<card> · <layout>`): `pnpm docs:images` takes each example's picture from its frame, and the measurer holds
  * what the docs show to the same rules as every other sheet.
  *
  * It brings no entity of its own: it stands on the houses of the sheets its examples name entities of, so a card

@@ -1,8 +1,8 @@
 /**
- * The cards' pictures in `docs/images/cards/`: each card's base example from the gallery in light and in dark, and
- * the manifest beside them that says what each was taken of and how large it is. `tools/render/cards.mjs` takes
- * them (Node reads this file as it is, its types stripped), `checks.ts` holds them to the gallery and `pages.ts`
- * shows them.
+ * The cards' pictures in `docs/images/cards/`: each card's example from the gallery in light and in dark, its base
+ * and each of its other layouts, the base once more as the index's thumbnail, and the manifest beside them that says
+ * what each was taken of and how large it is. `tools/render/cards.mjs` takes them (Node reads this file as it is, its
+ * types stripped), `checks.ts` holds them to the gallery and `pages.ts` shows them.
  */
 import { createHash } from 'node:crypto';
 
@@ -13,15 +13,32 @@ export const MANIFEST = 'pictures.json';
 export const MODES = ['light', 'dark'] as const;
 export type Mode = (typeof MODES)[number];
 
-/** A card's picture in a mode, by its short name: the file's name in the folder. */
-export const pictureName = (short: string, mode: Mode): string => `${short}-${mode}.webp`;
+/**
+ * What a picture is named by, and the manifest's key for it: the card's short name, then the layout's value after a
+ * dot where it is not the base's (`gauge`, `gauge.bar`).
+ */
+export const pictureStem = (short: string, layout?: string): string =>
+  layout ? `${short}.${layout}` : short;
 
-/** What the manifest keeps of a card's pictures: the digest of the example they are of, their size in pixels. */
+/**
+ * The stem of a card's thumbnail, in a folder of its own among the pictures: its base picture fitted in THUMB on the
+ * page's colour, so the index draws every card in a frame of one size and its grid stands even.
+ */
+export const thumbStem = (short: string): string => `thumbs/${short}`;
+
+/** A thumbnail's size in pixels, twice what the index shows it at. */
+export const THUMB = { width: 560, height: 420 } as const;
+
+/** A picture in a mode, by its stem: the file's name in the folder. */
+export const pictureName = (stem: string, mode: Mode): string => `${stem}-${mode}.webp`;
+
+/** What the manifest keeps of a picture: the digest of the example it is of, its size in pixels. */
 export interface PictureEntry {
   readonly example: string;
   readonly width: number;
   readonly height: number;
 }
+/** Every picture's entry, by its stem. */
 export type Manifest = Readonly<Record<string, PictureEntry | undefined>>;
 
 /** The digest of an example as the playground mounts it (`mounted()`): what a picture is known to be of. */
