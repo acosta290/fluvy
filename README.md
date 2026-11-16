@@ -23,7 +23,7 @@
   <a href="https://acosta290.github.io/fluvy/?palette=linen"><img src="https://raw.githubusercontent.com/acosta290/fluvy/main/docs/images/readme/hero.webp" width="822" alt="Fluvy on the Linen palette: light and plug tiles, a thermostat, the day's energy in the soft style and a media player"></a>
 </p>
 
-Fluvy brings one design to the whole of Home Assistant: a theme, sixty-seven cards, seven automatic dashboards, a
+Fluvy brings one design to the whole of Home Assistant: a theme, sixty-eight cards, seven automatic dashboards, a
 settings panel, the Activity and History pages, and Home Assistant's own pages restyled to match — all from one
 set of design tokens, installed as one integration through HACS. Every card is drawn on a 4 px grid, checked
 by an alignment measurer, and holds from a phone to a wall tablet, in light and dark, in twenty languages.
@@ -82,7 +82,7 @@ frame where less motion is asked for.
   <a href="https://acosta290.github.io/fluvy/?sheet=animated&amp;palette=linen"><img src="https://raw.githubusercontent.com/acosta290/fluvy/main/docs/media/gauge-battery.gif" width="274" alt="A battery gauge charging at 62 %: bubbles rising through the charge, the bolt glowing"></a><a href="https://acosta290.github.io/fluvy/?sheet=animated&amp;palette=linen"><img src="https://raw.githubusercontent.com/acosta290/fluvy/main/docs/media/gauge-pulse.gif" width="274" alt="A power gauge as a pulse: rings beating out from the bolt at 1.8 kW"></a><a href="https://acosta290.github.io/fluvy/?sheet=animated&amp;palette=linen"><img src="https://raw.githubusercontent.com/acosta290/fluvy/main/docs/media/gauge-sun.gif" width="274" alt="A solar gauge as the sun: long rays turning at 5.4 kW of production"></a>
 </p>
 
-## Sixty-seven cards
+## Sixty-eight cards
 
 Every card has an editor form and a live preview in the card picker. [The cards' gallery](docs/cards.md#everyday)
 shows each one with its picture, and its page the YAML that draws it and every option with what it does; each one can
@@ -204,7 +204,7 @@ a dashboard each — **Rooms** (a tab a floor, or a tab a room), **Energy**, **S
 
 - **One theme, light and dark**, generated from the same tokens the cards are drawn with, and as **Fluvy Light** and
   **Fluvy Dark** for an automation to switch at sunset.
-- **Sixty-seven cards** with editor forms, picker previews, and `unavailable`, `unknown` and missing states
+- **Sixty-eight cards** with editor forms, picker previews, and `unavailable`, `unknown` and missing states
   drawn on purpose, at the size and in the anatomy the card has live — among them a Template card for tiles of your
   own (Home Assistant templates, a Mushroom template card pasted in), a Cameras card for every camera at a glance and
   a Chart card for any time series, from a sensor's history to tomorrow's prices.

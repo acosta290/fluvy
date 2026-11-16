@@ -10857,6 +10857,425 @@
       ]
     },
     {
+      "type": "custom:fluvy-compass-card",
+      "name": "Compass",
+      "description": "Wind speed and direction, a vehicle’s heading or any bearing on a 360° compass ring, with a secondary marker and up to three readouts underneath.",
+      "section": "Everyday",
+      "page": "cards/compass.md",
+      "demo": "https://acosta290.github.io/fluvy/?card=compass",
+      "pictures": {
+        "light": "images/cards/compass-light.webp",
+        "dark": "images/cards/compass-dark.webp",
+        "width": 784,
+        "height": 848
+      },
+      "example": {
+        "type": "custom:fluvy-compass-card",
+        "entity": "sensor.am_wind_speed",
+        "direction_entity": "sensor.am_wind_bearing",
+        "stats": [
+          {
+            "entity": "sensor.am_wind_gust",
+            "name": "Gusts"
+          },
+          {
+            "entity": "sensor.am_wind_max_today",
+            "name": "Max today"
+          },
+          {
+            "entity": "sensor.am_wind_bearing_avg",
+            "name": "10m avg"
+          }
+        ]
+      },
+      "keys": [
+        {
+          "key": "entity",
+          "label": "Entity",
+          "does": "The numeric sensor shown in the centre of the compass ring, such as wind speed.",
+          "type": "entity (sensor, number, input_number)"
+        },
+        {
+          "key": "name",
+          "label": "Name",
+          "does": "The name the card shows, in place of the entity’s own.",
+          "type": "name"
+        },
+        {
+          "key": "subtitle",
+          "label": "Subtitle",
+          "does": "The line under the title.",
+          "helper": "Your own words, an entity (its state), or a template such as {{ states('sensor.x') }}",
+          "type": "text"
+        },
+        {
+          "key": "icon",
+          "label": "Icon",
+          "does": "The card’s icon, in place of the entity’s own.",
+          "type": "icon"
+        },
+        {
+          "key": "show_icon",
+          "label": "Show the icon",
+          "does": "Shows the icon, hides it, or lets the card decide.",
+          "type": "choice",
+          "default": "auto",
+          "values": {
+            "auto": "Automatic",
+            "always": "Always",
+            "never": "Never"
+          }
+        },
+        {
+          "key": "show_badge",
+          "label": "Show the badge",
+          "does": "Shows the badge at the end of the head, such as the card’s state or a count.",
+          "type": "boolean",
+          "default": true
+        },
+        {
+          "key": "name_lines",
+          "label": "Lines for the name",
+          "does": "Lets the name in the card’s head take two balanced lines where one would cut it; the head is a line taller whatever the name.",
+          "type": "choice",
+          "default": "1",
+          "values": {
+            "1": "1",
+            "2": "2"
+          }
+        },
+        {
+          "key": "tone",
+          "label": "Tone",
+          "does": "The card’s colour from the palette’s tones; left out, the tone of what it shows.",
+          "type": "choice",
+          "default_in_words": "the card’s own",
+          "values": {
+            "accent": "Accent",
+            "light": "Light",
+            "heat": "Heat",
+            "cool": "Cool",
+            "dry": "Dry",
+            "fan": "Fan",
+            "water": "Water",
+            "solar": "Solar",
+            "grid": "Grid",
+            "media": "Media",
+            "presence": "Presence",
+            "armed": "Armed",
+            "battery": "Battery",
+            "house": "House",
+            "gas": "Gas",
+            "vehicle": "Car",
+            "neutral": "Neutral",
+            "ok": "Good",
+            "warning": "Warning",
+            "danger": "Danger"
+          }
+        },
+        {
+          "key": "color",
+          "label": "Colour",
+          "does": "The card’s colour: its circle, its accents and its tints wear it. Left out, the colour of what it shows.",
+          "type": "colour"
+        },
+        {
+          "key": "card_color",
+          "label": "Card colour",
+          "does": "Paints the card’s surface in a colour of your own.",
+          "type": "colour"
+        },
+        {
+          "key": "card_opacity",
+          "label": "Card opacity",
+          "does": "How see-through the card’s surface is, in percent.",
+          "helper": "Untouched: every card’s, from Fluvy’s settings",
+          "type": "number",
+          "default": 100,
+          "range": "0 % to 100 %, in steps of 5"
+        },
+        {
+          "key": "card_border",
+          "label": "Card border",
+          "does": "Draws the card’s hairline border, or leaves it out.",
+          "helper": "Untouched: every card’s, from Fluvy’s settings",
+          "type": "boolean",
+          "default": true
+        },
+        {
+          "key": "unavailable",
+          "label": "When unavailable",
+          "does": "How the card looks while its entity is unavailable: dashed, or quiet.",
+          "helper": "Untouched: every card’s, from Fluvy’s settings",
+          "type": "choice",
+          "default": "dashed",
+          "values": {
+            "dashed": "Dashed",
+            "quiet": "As when off"
+          }
+        },
+        {
+          "key": "warn_above",
+          "label": "Warn above",
+          "does": "Above this value the card turns to a warning.",
+          "type": "number",
+          "range": "0 to 500"
+        },
+        {
+          "key": "danger_above",
+          "label": "Danger above",
+          "does": "Above this value the card turns to danger.",
+          "type": "number",
+          "range": "0 to 500"
+        },
+        {
+          "key": "direction_entity",
+          "label": "Direction entity",
+          "does": "The bearing sensor (0–360° or a cardinal point) that drives the primary pointer on the ring.",
+          "type": "entity (sensor, number, input_number, sun)"
+        },
+        {
+          "key": "indicator",
+          "label": "Primary indicator",
+          "does": "The shape of the primary pointer on the compass ring.",
+          "type": "choice",
+          "default": "pointer",
+          "values": {
+            "pointer": "Pointer",
+            "knob": "Knob",
+            "arrow_inward": "Arrow inward",
+            "arrow_outward": "Arrow outward",
+            "circle": "Circle"
+          }
+        },
+        {
+          "key": "indicator_opacity",
+          "label": "Primary opacity",
+          "does": "The opacity of the primary pointer on the ring.",
+          "type": "number",
+          "default": 1,
+          "range": "0.1 to 1, in steps of 0.05"
+        },
+        {
+          "key": "secondary_direction_entity",
+          "label": "Secondary direction entity",
+          "does": "A second bearing sensor drawn on the same ring, such as a 10-minute average wind direction or the sun’s azimuth.",
+          "type": "entity (sensor, number, input_number, sun)"
+        },
+        {
+          "key": "secondary_indicator",
+          "label": "Secondary indicator",
+          "does": "The shape of the secondary pointer on the compass ring.",
+          "type": "choice",
+          "default": "knob",
+          "values": {
+            "pointer": "Pointer",
+            "knob": "Knob",
+            "arrow_inward": "Arrow inward",
+            "arrow_outward": "Arrow outward",
+            "circle": "Circle"
+          }
+        },
+        {
+          "key": "secondary_opacity",
+          "label": "Secondary opacity",
+          "does": "The opacity of the secondary pointer on the ring.",
+          "type": "number",
+          "default": 0.55,
+          "range": "0.1 to 1, in steps of 0.05"
+        },
+        {
+          "key": "north_offset",
+          "label": "North offset (°)",
+          "does": "Rotates the compass dial by this many degrees when the view is not aligned with true north.",
+          "type": "number",
+          "default": 0,
+          "range": "-180 to 360"
+        },
+        {
+          "key": "label",
+          "label": "Label",
+          "does": "The word in the open centre of the ring, above the figure.",
+          "type": "text"
+        },
+        {
+          "key": "badge",
+          "label": "Badge",
+          "does": "The words in the head’s pill, in place of the cardinal direction.",
+          "helper": "Your own words, an entity (its state), or a template such as {{ states('sensor.x') }}",
+          "type": "text"
+        },
+        {
+          "key": "show_stats",
+          "label": "Show the readouts",
+          "does": "Shows the row of readouts under the compass.",
+          "type": "boolean",
+          "default": true
+        },
+        {
+          "key": "show_ticks",
+          "label": "Show ticks",
+          "does": "Draws the 48 degree ticks around the compass ring.",
+          "type": "boolean",
+          "default": true
+        },
+        {
+          "key": "show_cardinals",
+          "label": "Show cardinal points",
+          "does": "Shows N, E, S and W on the compass ring.",
+          "type": "boolean",
+          "default": true
+        },
+        {
+          "key": "unit",
+          "label": "Unit",
+          "does": "The unit the figures are written in; automatic keeps the sensor’s.",
+          "type": "choice or text",
+          "default": "auto",
+          "values": {
+            "auto": "Automatic",
+            "W": "W",
+            "kW": "kW",
+            "MW": "MW",
+            "Wh": "Wh",
+            "kWh": "kWh",
+            "MWh": "MWh",
+            "L": "L",
+            "m³": "m³",
+            "gal": "gal",
+            "ft³": "ft³"
+          }
+        },
+        {
+          "key": "decimals",
+          "label": "Decimals",
+          "does": "How many decimals the figures have; automatic decides by their size.",
+          "type": "choice",
+          "default": "auto",
+          "values": {
+            "0": "0",
+            "1": "1",
+            "2": "2",
+            "3": "3",
+            "auto": "Automatic"
+          }
+        },
+        {
+          "key": "tap_action",
+          "label": "Tap action",
+          "does": "What a tap on the card does.",
+          "type": "action",
+          "default": "more-info"
+        },
+        {
+          "key": "hold_action",
+          "label": "Hold action",
+          "does": "What a long press on the card does.",
+          "type": "action",
+          "default": "more-info"
+        },
+        {
+          "key": "double_tap_action",
+          "label": "Double tap action",
+          "does": "What two taps on the card do.",
+          "helper": "A tap waits a moment to tell it from a double tap",
+          "type": "action",
+          "default": "none"
+        },
+        {
+          "key": "icon_tap_action",
+          "label": "Icon tap action",
+          "does": "What a tap on the icon does.",
+          "type": "action",
+          "default": "none"
+        },
+        {
+          "key": "icon_hold_action",
+          "label": "Icon hold action",
+          "does": "What a long press on the icon does.",
+          "type": "action",
+          "default": "none"
+        },
+        {
+          "key": "icon_double_tap_action",
+          "label": "Icon double tap action",
+          "does": "What two taps on the icon do.",
+          "helper": "A tap waits a moment to tell it from a double tap",
+          "type": "action",
+          "default": "none"
+        }
+      ],
+      "lists": [
+        {
+          "key": "stats",
+          "label": "Readouts",
+          "does": "Up to three sensors read out under the compass, in this order.",
+          "id": "entity",
+          "item": [
+            {
+              "key": "entity",
+              "label": "Entity",
+              "does": "The entity the item shows.",
+              "type": "entity (sensor, number, input_number)",
+              "required": true
+            },
+            {
+              "key": "name",
+              "label": "Name",
+              "does": "The item’s own name, in place of the one the card would give it.",
+              "type": "name"
+            },
+            {
+              "key": "unit",
+              "label": "Unit",
+              "does": "The unit the figure is written in.",
+              "type": "choice or text",
+              "values": {
+                "auto": "Automatic",
+                "W": "W",
+                "kW": "kW",
+                "MW": "MW",
+                "Wh": "Wh",
+                "kWh": "kWh",
+                "MWh": "MWh",
+                "L": "L",
+                "m³": "m³",
+                "gal": "gal",
+                "ft³": "ft³"
+              }
+            },
+            {
+              "key": "decimals",
+              "label": "Decimals",
+              "does": "How many decimals the figure has.",
+              "type": "choice",
+              "values": {
+                "0": "0",
+                "1": "1",
+                "2": "2",
+                "3": "3",
+                "auto": "Automatic"
+              }
+            }
+          ]
+        }
+      ],
+      "older_names": [
+        {
+          "from": "sub",
+          "to": "subtitle"
+        },
+        {
+          "from": "meta",
+          "to": "subtitle"
+        },
+        {
+          "from": "accent",
+          "to": "color"
+        }
+      ]
+    },
+    {
       "type": "custom:fluvy-sensor-card",
       "name": "Sensor",
       "description": "A sensor with its curve, trend, min, max and average, or up to three sensors on one chart.",

@@ -573,6 +573,25 @@ export const MEANINGS: Readonly<Record<string, string>> = {
     'The tank’s size, so that a car which says only how much is in it shows its level.',
   'weather.days': 'How many days the forecast shows.',
   'weather.entity': 'The weather entity the card shows.',
+  'compass.badge': 'The words in the head’s pill, in place of the cardinal direction.',
+  'compass.danger_above': 'Above this value the card turns to danger.',
+  'compass.direction_entity':
+    'The bearing sensor (0–360° or a cardinal point) that drives the primary pointer on the ring.',
+  'compass.entity':
+    'The numeric sensor shown in the centre of the compass ring, such as wind speed.',
+  'compass.indicator': 'The shape of the primary pointer on the compass ring.',
+  'compass.indicator_opacity': 'The opacity of the primary pointer on the ring.',
+  'compass.label': 'The word in the open centre of the ring, above the figure.',
+  'compass.north_offset':
+    'Rotates the compass dial by this many degrees when the view is not aligned with true north.',
+  'compass.secondary_direction_entity':
+    'A second bearing sensor drawn on the same ring, such as a 10-minute average wind direction or the sun’s azimuth.',
+  'compass.secondary_indicator': 'The shape of the secondary pointer on the compass ring.',
+  'compass.secondary_opacity': 'The opacity of the secondary pointer on the ring.',
+  'compass.show_cardinals': 'Shows N, E, S and W on the compass ring.',
+  'compass.show_stats': 'Shows the row of readouts under the compass.',
+  'compass.show_ticks': 'Draws the 48 degree ticks around the compass ring.',
+  'compass.warn_above': 'Above this value the card turns to a warning.',
   'web.aspect_ratio': 'The page’s shape inside the card.',
   'web.refresh': 'Loads the page again every this many minutes; 0 never does.',
   'web.title': 'The title over the page.',
@@ -644,6 +663,7 @@ export const MEANINGS: Readonly<Record<string, string>> = {
   'tile.readouts[]': 'Sensors shown as readouts on the tile, in this order.',
   'vehicle.controls[]': 'The car’s controls, each a round that acts on it.',
   'vehicle.rows[]': 'The rows of readings under the battery or the tank, in this order.',
+  'compass.stats[]': 'Up to three sensors read out under the compass, in this order.',
 
   // ---- a field of a list's items, on every card that has it ----
   '[].above': 'Counts an entity whose state, or the attribute named, is above this number.',

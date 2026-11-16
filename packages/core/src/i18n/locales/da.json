@@ -841,7 +841,8 @@
     "vehicle": "Køretøj",
     "items": "Elementer",
     "chart": "Graf",
-    "swipe": "Karrusel"
+    "swipe": "Karrusel",
+    "compass": "Kompas"
   },
   "activity": {
     "title": "Aktivitet",
@@ -1549,7 +1550,8 @@
     "vehicle": "En bil, elektrisk, benzin, diesel eller plug-in-hybrid: dens batteri eller tank, rækkevidde og ladegrænse, hvornår den er fuld, hvor den er, og dens lås, klima, opladning, bagagerum og vinduer på én række. Tesla, BMW, Renault, Volvo, Kia, Hyundai, Volkswagen, Škoda, Polestar, MG, Toyota, Ford, Mercedes-Benz, Peugeot med flere.",
     "items": "Elementerne i en sensors listeegenskab, en række hver (fly over huset, afgange, leveringer), med en forudindstilling til FlightRadar24.",
     "chart": "Enhver tidsserie på én graf (historik, statistik, en liste i en egenskab som Nordpools priser eller en solprognose, eller en vejrudsigt) fra fortid til fremtid med nu markeret, tærskler i deres farver og de billigste timer fundet.",
-    "swipe": "Alle slags kort, ét pr. side, bladret med et stryg eller med sidemarkeringerne under dem: side om side på en bred skærm, rundt fra den sidste til den første."
+    "swipe": "Alle slags kort, ét pr. side, bladret med et stryg eller med sidemarkeringerne under dem: side om side på en bred skærm, rundt fra den sidste til den første.",
+    "compass": "Vindhastighed og -retning, et køretøjs kurs eller enhver retning på en 360°-kompasring med en sekundær retningsmarkør og op til tre aflæsninger nedenunder."
   },
   "chart-card": {
     "title": "Graf",
@@ -3575,5 +3577,27 @@
     "editor.show_open": "Vis knappen Åbn",
     "editor.show_fullscreen": "Vis knappen til fuld skærm",
     "editor.show_reload": "Vis knappen Genindlæs"
+  },
+  "compass": {
+    "direction": "Retning",
+    "direction_entity": "Retningsentitet",
+    "secondary_direction_entity": "Sekundær retningsentitet",
+    "indicator": "Primær viser",
+    "indicator_opacity": "Primær synlighed",
+    "secondary_indicator": "Sekundær viser",
+    "secondary_opacity": "Sekundær synlighed",
+    "warn_above": "Advar over",
+    "danger_above": "Fare over",
+    "north_offset": "Nord-forskydning (°)",
+    "label": "Etiket",
+    "badge": "Mærke",
+    "show_ticks": "Vis streger",
+    "show_cardinals": "Vis verdenshjørner",
+    "show_stats": "Vis aflæsninger",
+    "indicator_pointer": "Viser",
+    "indicator_knob": "Knap",
+    "indicator_arrow_in": "Pil indad",
+    "indicator_arrow_out": "Pil udad",
+    "indicator_circle": "Cirkel"
   }
 }

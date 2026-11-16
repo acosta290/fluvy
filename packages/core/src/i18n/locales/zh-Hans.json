@@ -705,7 +705,8 @@
     "vehicle": "电动车、燃油车或插电混动车：电量或油量、续航与充电上限、充满时间、位置，以及一行内的门锁、空调、充电、后备箱与车窗。支持 Tesla、BMW、Renault、Volvo、Kia、Hyundai、Volkswagen、Škoda、Polestar、MG、Toyota、Ford、Mercedes-Benz、Peugeot 等。",
     "items": "传感器列表属性里的条目，每行一条——头顶航班、出发、快递——内置 FlightRadar24 航班预设。",
     "chart": "任意时间序列画在一张图上：历史、统计、属性里的列表（Nordpool 电价、光伏预报）或天气预报；过去到未来并标出现在，阈值按颜色分段，并找出最便宜的时段。",
-    "swipe": "任意卡片，每页一张，滑动或点按下方的页标翻页：宽屏上并排显示，也可从最后一页回到第一页。"
+    "swipe": "任意卡片，每页一张，滑动或点按下方的页标翻页：宽屏上并排显示，也可从最后一页回到第一页。",
+    "compass": "在 360° 罗盘环上显示风速与风向、车辆的航向或任意方位，带第二方向标记，下方最多显示三个读数。"
   },
   "chart-card": {
     "title": "图表",
@@ -1608,7 +1609,8 @@
     "vehicle": "车辆",
     "items": "清单",
     "chart": "图表",
-    "swipe": "滑动"
+    "swipe": "滑动",
+    "compass": "罗盘"
   },
   "alarm": {
     "arm_home": "在家布防",
@@ -3575,5 +3577,27 @@
     "copy": "复制 YAML",
     "copied": "YAML 已复制",
     "copy_failed": "无法复制：选中文本后手动复制"
+  },
+  "compass": {
+    "direction": "方向",
+    "direction_entity": "方向实体",
+    "secondary_direction_entity": "次方向实体",
+    "indicator": "主指针",
+    "indicator_opacity": "主指针不透明度",
+    "secondary_indicator": "次指针",
+    "secondary_opacity": "次指针不透明度",
+    "warn_above": "警告阈值",
+    "danger_above": "危险阈值",
+    "north_offset": "正北偏移 (°)",
+    "label": "标签",
+    "badge": "徽章",
+    "show_ticks": "显示刻度",
+    "show_cardinals": "显示方位点",
+    "show_stats": "显示读数",
+    "indicator_pointer": "指针",
+    "indicator_knob": "旋钮",
+    "indicator_arrow_in": "向内箭头",
+    "indicator_arrow_out": "向外箭头",
+    "indicator_circle": "圆点"
   }
 }

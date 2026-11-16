@@ -1181,7 +1181,8 @@
     "vehicle": "Jármű",
     "items": "Elemek",
     "chart": "Diagram",
-    "swipe": "Lapozó"
+    "swipe": "Lapozó",
+    "compass": "Iránytű"
   },
   "activity": {
     "title": "Tevékenység",
@@ -1889,7 +1890,8 @@
     "vehicle": "Egy villanyautó, benzines vagy dízel autó, vagy plug-in hibrid: akkuja vagy tankja, hatótávja és töltési limitje, mikor lesz tele, hol van, valamint a zár, a klíma, a töltés, a csomagtartó és az ablakok egy sorban. Tesla, BMW, Renault, Volvo, Kia, Hyundai, Volkswagen, Škoda, Polestar, MG, Toyota, Ford, Mercedes-Benz, Peugeot és mások.",
     "items": "Egy érzékelő listaattribútumának elemei, elemenként egy sor (járatok a fejed fölött, indulások, csomagok), FlightRadar24-járatok előbeállítással.",
     "chart": "Bármely idősor egy diagramon (előzmények, statisztikák, egy attribútumban lévő lista, mint a Nordpool árai vagy egy napelemes előrejelzés, vagy egy időjárás előrejelzése), a múlttól a jövőig a jelen megjelölésével, a küszöbértékek a színeikben és a legolcsóbb órák megtalálva.",
-    "swipe": "Bármilyen kártyák, oldalanként egy, húzással vagy az alattuk lévő oldaljelekkel lapozva: széles kijelzőn egymás mellett, az utolsótól újra az elsőig."
+    "swipe": "Bármilyen kártyák, oldalanként egy, húzással vagy az alattuk lévő oldaljelekkel lapozva: széles kijelzőn egymás mellett, az utolsótól újra az elsőig.",
+    "compass": "Szélsebesség és szélirány, egy jármű iránya vagy bármely irány egy 360°-os iránytűgyűrűn, másodlagos irányjelzővel és legfeljebb három értékkel alatta."
   },
   "chart-card": {
     "title": "Diagram",
@@ -3575,5 +3577,27 @@
     "copy": "YAML másolása",
     "copied": "A YAML átmásolva",
     "copy_failed": "Nem sikerült másolni: jelöld ki a szöveget, és másold ki"
+  },
+  "compass": {
+    "direction": "Irány",
+    "direction_entity": "Irány entitás",
+    "secondary_direction_entity": "Másodlagos irány entitás",
+    "indicator": "Elsődleges mutató",
+    "indicator_opacity": "Elsődleges átlátszatlanság",
+    "secondary_indicator": "Másodlagos mutató",
+    "secondary_opacity": "Másodlagos átlátszatlanság",
+    "warn_above": "Figyelmeztetés efölött",
+    "danger_above": "Veszély efölött",
+    "north_offset": "Északi eltolás (°)",
+    "label": "Címke",
+    "badge": "Jelvény",
+    "show_ticks": "Beosztások megjelenítése",
+    "show_cardinals": "Égtájak megjelenítése",
+    "show_stats": "Kijelzők megjelenítése",
+    "indicator_pointer": "Mutató",
+    "indicator_knob": "Gomb",
+    "indicator_arrow_in": "Befelé mutató nyíl",
+    "indicator_arrow_out": "Kifelé mutató nyíl",
+    "indicator_circle": "Kör"
   }
 }

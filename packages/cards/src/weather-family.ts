@@ -2,8 +2,9 @@ import type { LovelaceCardConfig } from '@fluvy/core';
 import type { FamilyEntry } from './energy-family.js';
 
 /**
- * The weather card, announced at start and defined when its chunk lands (`weather-cards.ts`), as the energy and media
- * families are: what the picker lists and how tall it is at a 360 column, without the card itself.
+ * The weather and compass cards, announced at start and defined when their chunk lands (`weather-cards.ts`), as the
+ * energy and media families are: what the picker lists and how tall each is at a 360 column, without the cards
+ * themselves.
  */
 
 /** A day's row; the hero with the card's padding; a strip of columns (84) with the 16 above it; the compact head. */
@@ -47,4 +48,14 @@ export function weatherHeight(config: LovelaceCardConfig, features?: number): nu
   );
 }
 
-export const WEATHER_FAMILY: readonly FamilyEntry[] = [['fluvy-weather-card', weatherHeight]];
+/** The compass card at a 360 column: head (44) + dial (248) + padding (40) + gaps, plus 60 when the stats row shows. */
+export function compassHeight(config: LovelaceCardConfig): number {
+  const stats = config['stats'];
+  const hasStats = config['show_stats'] !== false && Array.isArray(stats) && stats.length > 0;
+  return hasStats ? 384 : 324;
+}
+
+export const WEATHER_FAMILY: readonly FamilyEntry[] = [
+  ['fluvy-weather-card', weatherHeight],
+  ['fluvy-compass-card', compassHeight],
+];

@@ -251,7 +251,8 @@ describe('the dashboard templates', () => {
     // the dashboards setting a player's volume, a number and a fan on their own cards; and the Vehicle card (#84); and the
     // remote card (#143), whose television, remote entity and receiver are the person's to say; and one scene's tile,
     // the dashboards gathering the scenes on one Scenes card (#172); and the Expander card (#180), which folds away the
-    // cards a person chooses to; and the Swipe card (#206), whose pages are the person's to choose
+    // cards a person chooses to; and the Swipe card (#206), whose pages are the person's to choose; and the Compass
+    // card, whose wind speed and its matching bearing sensor are a pairing only the person can name
     const byHand = new Set([
       'custom:fluvy-scene-card',
       'custom:fluvy-automations-card',
@@ -265,6 +266,7 @@ describe('the dashboard templates', () => {
       'custom:fluvy-vehicle-card',
       'custom:fluvy-expander-card',
       'custom:fluvy-swipe-card',
+      'custom:fluvy-compass-card',
     ]);
     expect(
       CATALOGUE.map(([tag]) => `custom:${tag}`).filter(

@@ -3,12 +3,15 @@ import { FluvyPeopleCard } from '../../../../packages/cards/src/people/people-ca
 import { FluvyMapCard } from '../../../../packages/cards/src/map/map-card.js';
 import { FluvyScenesCard } from '../../../../packages/cards/src/scenes/scenes-card.js';
 import { FluvySensorCard } from '../../../../packages/cards/src/sensor/sensor-card.js';
+import { FluvyCompassCard } from '../../../../packages/cards/src/weather/compass-card.js';
 import { FluvyWeatherCard } from '../../../../packages/cards/src/weather/weather-card.js';
 import type { FrameSpec, SheetSpec } from '../scenes.js';
 import type { StateSeed } from '../hass.js';
 
 if (!customElements.get('fluvy-weather-card'))
   customElements.define('fluvy-weather-card', FluvyWeatherCard);
+if (!customElements.get('fluvy-compass-card'))
+  customElements.define('fluvy-compass-card', FluvyCompassCard);
 if (!customElements.get('fluvy-sensor-card'))
   customElements.define('fluvy-sensor-card', FluvySensorCard);
 if (!customElements.get('fluvy-people-card'))
@@ -269,6 +272,54 @@ export const sheet: SheetSpec = {
         friendly_name: 'Barometer',
         unit_of_measurement: 'hPa',
         device_class: 'atmospheric_pressure',
+        state_class: 'measurement',
+      },
+    ],
+    [
+      'sensor.am_wind_speed',
+      '14',
+      {
+        friendly_name: 'Wind',
+        unit_of_measurement: 'km/h',
+        device_class: 'wind_speed',
+        state_class: 'measurement',
+      },
+    ],
+    [
+      'sensor.am_wind_bearing',
+      '248',
+      {
+        friendly_name: 'Wind direction',
+        unit_of_measurement: '°',
+        state_class: 'measurement',
+      },
+    ],
+    [
+      'sensor.am_wind_bearing_avg',
+      '232',
+      {
+        friendly_name: '10m avg',
+        unit_of_measurement: '°',
+        state_class: 'measurement',
+      },
+    ],
+    [
+      'sensor.am_wind_gust',
+      '22',
+      {
+        friendly_name: 'Gusts',
+        unit_of_measurement: 'km/h',
+        device_class: 'wind_speed',
+        state_class: 'measurement',
+      },
+    ],
+    [
+      'sensor.am_wind_max_today',
+      '34',
+      {
+        friendly_name: 'Max today',
+        unit_of_measurement: 'km/h',
+        device_class: 'wind_speed',
         state_class: 'measurement',
       },
     ],

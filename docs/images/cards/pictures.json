@@ -119,6 +119,11 @@
     "width": 784,
     "height": 912
   },
+  "compass": {
+    "example": "b819279e027e",
+    "width": 784,
+    "height": 848
+  },
   "sensor": {
     "example": "4a0c6a7254f7",
     "width": 784,

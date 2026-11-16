@@ -2076,7 +2076,8 @@
     "vehicle": "Une voiture électrique, essence, diesel ou hybride rechargeable : sa batterie ou son réservoir, son autonomie et sa limite de charge, quand elle sera pleine, où elle est, et sa serrure, sa climatisation, sa charge, son coffre et ses vitres sur une ligne. Tesla, BMW, Renault, Volvo, Kia, Hyundai, Volkswagen, Škoda, Polestar, MG, Toyota, Ford, Mercedes-Benz, Peugeot et d’autres.",
     "items": "Les éléments de l’attribut liste d’un capteur, une ligne chacun (vols au-dessus, départs, livraisons), avec un préréglage de vols pour FlightRadar24.",
     "chart": "Toute série temporelle sur un graphique (historique, statistiques, une liste dans un attribut comme les prix de Nordpool ou une prévision solaire, ou les prévisions d’une météo), du passé au futur avec maintenant marqué, les seuils dans leurs couleurs et les heures les moins chères trouvées.",
-    "swipe": "N’importe quelles cartes, une par page, qu’on fait défiler d’un balayage ou par les repères de page en dessous : côte à côte sur un grand écran, de la dernière à nouveau à la première."
+    "swipe": "N’importe quelles cartes, une par page, qu’on fait défiler d’un balayage ou par les repères de page en dessous : côte à côte sur un grand écran, de la dernière à nouveau à la première.",
+    "compass": "Vitesse et direction du vent, le cap d’un véhicule ou toute direction sur une rose de 360°, avec un second repère de cap et jusqu’à trois mesures en dessous."
   },
   "time": {
     "minutes_ago": "il y a {n} min",
@@ -2544,7 +2545,8 @@
     "vehicle": "Véhicule",
     "items": "Éléments",
     "chart": "Graphique",
-    "swipe": "Balayage"
+    "swipe": "Balayage",
+    "compass": "Boussole"
   },
   "appliance": {
     "kind_washer": "Lave-linge",
@@ -3575,5 +3577,27 @@
     "copy": "Copier le YAML",
     "copied": "YAML copié",
     "copy_failed": "Copie impossible : sélectionnez le texte et copiez-le"
+  },
+  "compass": {
+    "direction": "Direction",
+    "direction_entity": "Entité de direction",
+    "secondary_direction_entity": "Entité de direction secondaire",
+    "indicator": "Indicateur principal",
+    "indicator_opacity": "Opacité principale",
+    "secondary_indicator": "Indicateur secondaire",
+    "secondary_opacity": "Opacité secondaire",
+    "warn_above": "Alerte au-dessus de",
+    "danger_above": "Danger au-dessus de",
+    "north_offset": "Décalage nord (°)",
+    "label": "Libellé",
+    "badge": "Badge",
+    "show_ticks": "Afficher les graduations",
+    "show_cardinals": "Afficher les points cardinaux",
+    "show_stats": "Afficher les mesures",
+    "indicator_pointer": "Pointeur",
+    "indicator_knob": "Bouton",
+    "indicator_arrow_in": "Flèche vers l’intérieur",
+    "indicator_arrow_out": "Flèche vers l’extérieur",
+    "indicator_circle": "Cercle"
   }
 }
