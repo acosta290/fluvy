@@ -8,7 +8,7 @@ import { defineIconStubs } from '@fluvy/playground/ha-icons';
 import { createMemoryLook } from '@fluvy/playground/look-memory';
 import mark from '../../../custom_components/fluvy/brand/icon.png';
 import { installBridges } from './bridges.js';
-import { cardOf, layoutKeyOf, wordsOf, yamlOf } from './catalog.js';
+import { cardOfType, wordsOf } from './catalog.js';
 import { GO } from './nav.js';
 import './page.js';
 import type { YamlAsk } from './page.js';
@@ -153,20 +153,36 @@ window.addEventListener('popstate', () => {
   window.scrollTo({ top: 0, behavior: 'instant' });
 });
 
-// "View YAML": the example's YAML, exactly as the docs print it
+/** What reads a card's YAML (the cards' editors ride with it): fetched for the first "View YAML", or once the page rests. */
+const cardYaml = (): Promise<typeof import('./card-yaml.js')> => import('./card-yaml.js');
+
+// "View YAML": the YAML of each card of the plate, as the docs print it, under the card's name (the last one asked)
+let asked = 0;
 document.addEventListener('demo-yaml', (event) => {
-  const { card: short, layout, opener } = (event as CustomEvent<YamlAsk>).detail;
-  const card = cardOf(short);
-  const example = card?.examples.find((candidate) => candidate.layout === layout);
-  if (!card || !example) return;
-  yaml.open(
-    {
-      title: wordsOf(card).name,
-      ...(layout ? { layout: `${layoutKeyOf(card)}: ${layout}` } : {}),
-      yaml: yamlOf(example),
-    },
-    opener,
-  );
+  const { cards, layout, opener } = (event as CustomEvent<YamlAsk>).detail;
+  const mine = (asked += 1);
+  void cardYaml()
+    .then(({ yamlOf }) => yamlOf(cards))
+    .then((read) => {
+      if (mine !== asked || !read.length) return;
+      const named = read.map(({ type, all, minimal }) => {
+        const card = cardOfType(type);
+        return { name: card ? wordsOf(card).name : type, all, minimal };
+      });
+      const [first] = named;
+      yaml.open(
+        {
+          // a plate of several kinds of card is headed "Cards", each YAML under its own card's name
+          title:
+            first && named.every(({ name }) => name === first.name)
+              ? first.name
+              : t(state.language, 'nav.cards'),
+          ...(layout === undefined ? {} : { layout }),
+          cards: named,
+        },
+        opener,
+      );
+    });
 });
 
 // the settings panel changes the same settings: the chrome follows
@@ -221,6 +237,8 @@ void document.fonts.ready.then(() =>
   requestAnimationFrame(() =>
     requestAnimationFrame(() => {
       document.documentElement.dataset['ready'] = '1';
+      // the first "View YAML" opens at once: what reads it lands while the visitor looks at the page
+      void cardYaml();
     }),
   ),
 );

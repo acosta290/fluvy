@@ -1,16 +1,17 @@
 /**
- * The facts guard: what the prose says in numbers is what the code says. A count spelled in the README, the docs,
- * the package description, the contributing guide or the design language — "sixty-seven cards", "fifteen palettes",
- * "five automatic dashboards", "eight languages", "six tabs" — is read back and held to the catalogue, the palette
- * registry, the strategy's templates, the language registry and the panel's tabs; the every-page budget the
- * development guide names is held to `finish.mjs`, and its table of scripts to `check.mjs`'s `BUDGETS`, name for name
- * and kilobyte for kilobyte. The CHANGELOG is history and is never read.
+ * The facts guard: what the prose says in numbers is what the code says. A count spelled in the README, the docs, a
+ * card's guide, the package description, the contributing guide or the design language — "sixty-seven cards",
+ * "fifteen palettes", "five automatic dashboards", "eight languages", "six tabs" — is read back and held to the
+ * catalogue, the palette registry, the strategy's templates, the language registry and the panel's tabs; the
+ * every-page budget the development guide names is held to `finish.mjs`, and its table of scripts to `check.mjs`'s
+ * `BUDGETS`, name for name and kilobyte for kilobyte. The CHANGELOG is history and is never read.
  *
  *   tsx src/facts.ts --check    what `pnpm --filter @fluvy/docs check` runs: exit 1 with every stale figure named
  */
 import { readdir, readFile, realpath } from 'node:fs/promises';
 import { dirname, join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { GUIDES } from './pages.js';
 import { NUMBER_WORDS, numberOf, wordsOf } from './words.js';
 
 export const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..', '..');
@@ -235,7 +236,16 @@ export async function readFacts(): Promise<Facts> {
   };
 }
 
-/** The prose that may spell a count: the repository's guides, the package description and the design language. */
+/** A folder's Markdown files, by their paths from the repository's root; none where there is no such folder. */
+const markdownIn = async (folder: string): Promise<string[]> =>
+  (await readdir(join(ROOT, folder)).catch(() => [] as string[]))
+    .filter((f) => f.endsWith('.md'))
+    .map((f) => join(folder, f));
+
+/**
+ * The prose that may spell a count: the repository's guides, the cards' guides written by hand (the pages they are
+ * spliced into are generated, and say what these say), the package description and the design language.
+ */
 export async function proseFiles(): Promise<string[]> {
   return [
     'README.md',
@@ -243,9 +253,8 @@ export async function proseFiles(): Promise<string[]> {
     'package.json',
     join('design', 'language.md'),
     join('packages', 'cards', 'README.md'),
-    ...(await readdir(join(ROOT, 'docs')))
-      .filter((f) => f.endsWith('.md'))
-      .map((f) => join('docs', f)),
+    ...(await markdownIn('docs')),
+    ...(await markdownIn(GUIDES)),
   ].sort();
 }
 

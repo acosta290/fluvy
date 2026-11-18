@@ -1,10 +1,10 @@
 /**
- * The cards' docs, written from the code or held to it (#199): a page a card in `docs/cards/`, the index between
- * `<!-- generated:cards -->` and `<!-- /generated:cards -->` in `docs/cards.md` (the prose around it is written by
- * hand and kept), and the same for an assistant in `docs/cards.json` and `docs/llms.txt`. With `--check` nothing is
- * written: it fails where a file is not what the code says, and where the gallery, the pictures, the defaults or the
- * sentences fall short (`checks.ts`). The pictures are `pnpm docs:images`'s, taken in a browser; this reads only
- * their manifest.
+ * The cards' docs, written from the code or held to it (#199): a page a card in `docs/cards/`, each with the guide
+ * written by hand for it in `tools/docs/guides/<card>.md` where there is one, the index in `docs/cards.md` and the
+ * same beside the pages in `docs/cards/README.md`, and the same for an assistant in `docs/cards.json` and
+ * `docs/llms.txt`. With `--check` nothing is written: it fails where a file is not what the code and the guides say,
+ * and where the gallery, the pictures, the defaults, the sentences or the guides fall short (`checks.ts`). The
+ * pictures are `pnpm docs:images`'s, taken in a browser; this reads only their manifest.
  *
  *   pnpm docs:cards                     writes the pages, the index and the data
  *   pnpm --filter @fluvy/docs check     what `pnpm check` runs
@@ -20,38 +20,46 @@ import {
   checkPictures,
 } from './checks.js';
 import { ROOT } from './facts.js';
-import { cardPage, cardsData, indexBlock, llmsText } from './pages.js';
+import { cardPage, cardsData, GUIDES, indexPage, llmsText, type Guides } from './pages.js';
 import { FOLDER, MANIFEST, type Manifest } from './pictures.js';
 
 const check = process.argv.includes('--check');
-const DOCS = join(ROOT, 'docs');
-const PAGES = join(DOCS, 'cards');
-const INDEX = join(DOCS, 'cards.md');
-const OPEN = '<!-- generated:cards -->';
-const CLOSE = '<!-- /generated:cards -->';
+const PAGES = join(ROOT, 'docs', 'cards');
+/** The index as the folder of the pages shows it on GitHub, under its files. */
+const FOLDER_INDEX = 'README.md';
 
 const cards = await readCards();
 const sections = SECTIONS.map(([title]) => title);
 const pictures = join(ROOT, FOLDER);
-const files = await readdir(pictures).catch(() => [] as string[]);
+// the folder's files and its thumbnails', each by its way from the folder
+const files = await readdir(pictures, { recursive: true }).catch(() => [] as string[]);
 const manifest = JSON.parse(
   await readFile(join(pictures, MANIFEST), 'utf8').catch(() => '{}'),
 ) as Manifest;
 
-const current = await readFile(INDEX, 'utf8');
-const start = current.indexOf(OPEN);
-const end = current.indexOf(CLOSE);
-if (start < 0 || end < 0) throw new Error(`${INDEX}: the generated markers are missing`);
-const index = `${current.slice(0, start)}${OPEN}\n\n${indexBlock(cards, sections, manifest)}\n\n${current.slice(end)}`;
+/** The guides written by hand, each by its file's name without `.md`. */
+const guides: Guides = Object.fromEntries(
+  await Promise.all(
+    (await readdir(join(ROOT, GUIDES)).catch(() => [] as string[]))
+      .filter((name) => name.endsWith('.md'))
+      .map(
+        async (name) =>
+          [name.slice(0, -'.md'.length), await readFile(join(ROOT, GUIDES, name), 'utf8')] as const,
+      ),
+  ),
+);
 
 /** Every file this writes, by its path from the repository's root, and what it holds. */
 const written = new Map<string, string>([
-  ['docs/cards.md', index],
-  ...cards.map((card) => [`docs/cards/${card.short}.md`, cardPage(card, manifest)] as const),
+  ['docs/cards.md', indexPage(cards, sections)],
+  [`docs/cards/${FOLDER_INDEX}`, indexPage(cards, sections, { from: '../', pages: '' })],
+  ...cards.map(
+    (card) => [`docs/cards/${card.short}.md`, cardPage(card, manifest, guides)] as const,
+  ),
   ['docs/cards.json', `${JSON.stringify(cardsData(cards, manifest), null, 2)}\n`],
   ['docs/llms.txt', llmsText(cards, sections)],
 ]);
-const pages = new Set(cards.map((card) => `${card.short}.md`));
+const pages = new Set([FOLDER_INDEX, ...cards.map((card) => `${card.short}.md`)]);
 const strays = (await readdir(PAGES).catch(() => [] as string[])).filter(
   (name) => !pages.has(name),
 );
@@ -62,7 +70,7 @@ if (check) {
     ...checkPictures(cards, files, manifest),
     ...checkDefaults(cards),
     ...checkMeanings(cards),
-    ...checkGuides(cards, index),
+    ...checkGuides(cards, guides),
   ];
   for (const [path, text] of written)
     if ((await readFile(join(ROOT, path), 'utf8').catch(() => undefined)) !== text)
@@ -74,13 +82,13 @@ if (check) {
     process.exit(1);
   }
   console.log(
-    `✓ the cards' docs: ${cards.length} cards, their pages, pictures, sentences and data as the code says`,
+    `✓ the cards' docs: ${cards.length} cards, their pages, pictures, sentences, guides and data as the code says`,
   );
 } else {
   await mkdir(PAGES, { recursive: true });
   for (const [path, text] of written) await writeFile(join(ROOT, path), text);
   for (const name of strays) await rm(join(PAGES, name));
   console.log(
-    `docs: ${cards.length} cards in ${sections.length} sections, their pages, cards.json and llms.txt`,
+    `docs: ${cards.length} cards in ${sections.length} sections, their pages, the index, cards.json and llms.txt`,
   );
 }

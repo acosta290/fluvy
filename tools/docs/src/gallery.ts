@@ -1,8 +1,8 @@
 /**
  * The gallery: one example of every card on the demo house (Marta's flat, the house every design sheet shows), and of
  * each of its layouts. It is the one spec the docs and the demo are made from, so they cannot say different things:
- * the playground's `gallery` sheet draws it (and the measurer audits it there), `pnpm docs:images` takes each card's
- * picture from that sheet, `pnpm docs:cards` prints each example beside its picture as the YAML that draws it
+ * the playground's `gallery` sheet draws it (and the measurer audits it there), `pnpm docs:images` takes each
+ * example's picture from that sheet, `pnpm docs:cards` prints each example beside its picture as the YAML that draws it
  * (`yaml.ts`), and the live demo shows every example on its card's page with that same YAML.
  *
  * An example is a configuration a person could paste: the card's newest names, no key left at its default, nothing of

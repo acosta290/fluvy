@@ -367,7 +367,7 @@ export const toItem = (raw: unknown, idKey: string, also: readonly string[] = []
  * A number's "Automatic" (`unit`, `decimals`: `NUMBER_DEFAULTS`): what the card does where its config says nothing,
  * so it is dropped as an empty field is, never written.
  */
-const automatic = (key: string, value: unknown): boolean =>
+export const automatic = (key: string, value: unknown): boolean =>
   value === 'auto' && key in NUMBER_DEFAULTS;
 
 /** An item back to its config entry: empty fields (and a number's Automatic) dropped, an entity with nothing else goes back to its bare id — the config stays as small as the user wrote it. */
@@ -1360,6 +1360,40 @@ export function editorDefaults(
       })
     : defaults;
 }
+
+/**
+ * The keys whose default is the house's (fluvy's settings) on a card that leaves them to it: the ones `editorDefaults`
+ * reads there — a card's surface, its look out of reach, the words under its slider, when a device shows its state's
+ * colour and as what — and the ones a card's own defaults read there: a light's colours on its tile, its row or its
+ * room, the hours a chart of the past shows (`hours`, a Chart card's `span`), a gauge's style and whether it moves, and
+ * a chart's style with every fine key that style or the house's chart settings decide. Written into a config, such a
+ * key stops following the house: what prints a card's defaults as YAML (the docs' and the demo's "all options") says
+ * it and never writes it. By the key alone, so a card whose default for one is its own (a tile's `tint`) is not
+ * pinned either; a default that names the house out loud (`slider_style: house`, `show_grid: auto`) pins nothing and
+ * is not here. `house-keys.test.ts` holds the list to every card's defaults, under the factory's house and others.
+ */
+export const HOUSE_KEYS: ReadonlySet<string> = new Set([
+  'card_opacity',
+  'card_border',
+  'unavailable',
+  'slider_words',
+  'tint',
+  'tint_style',
+  'light_colors',
+  'hours',
+  'span',
+  'gauge',
+  'chart',
+  'curve',
+  'fill',
+  'line_width',
+  'glow',
+  'show_points',
+  'show_now',
+  'highlight',
+  'animate',
+  'points',
+]);
 
 /**
  * `static getConfigElement()` for a card that already has a form: the same fields and labels, plus its lists edited

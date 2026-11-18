@@ -2,7 +2,8 @@
  * A card's configuration as the YAML a person pastes into a dashboard: block style, two spaces, the keys in the order
  * the example names them. Home Assistant's loader speaks YAML 1.1, where an unquoted `on`, `yes` or `16:9` is not the
  * word it looks like (a boolean, a number in base sixty), so a string is written plain only where no reader could
- * take it for anything else, and in single quotes otherwise.
+ * take it for anything else, and in single quotes otherwise. A key that is there to be read and not loaded (a default
+ * the house decides, an option with nothing to write) is a comment in its place.
  */
 
 /** What YAML 1.1 reads as something other than a word: its booleans and its null, in any case. */
@@ -55,6 +56,19 @@ function block(value: unknown, indent: string): string[] {
   });
 }
 
-/** A configuration as YAML, without a trailing line break. */
-export const toYaml = (config: Readonly<Record<string, unknown>>): string =>
-  block(config, '').join('\n');
+/**
+ * A configuration as YAML, without a trailing line break. The keys of `unset` are written as comments, there to be
+ * read and never loaded: each with its value, every line of one that takes several (`# card_opacity: 100`), or alone
+ * where it has none (`# color:`). Taking the `# ` off a key's lines sets it.
+ */
+export const toYaml = (
+  config: Readonly<Record<string, unknown>>,
+  unset: ReadonlySet<string> = new Set(),
+): string =>
+  Object.entries(config)
+    .flatMap(([key, held]) => {
+      if (!unset.has(key)) return block({ [key]: held }, '');
+      const lines = held === undefined ? [`${scalar(key)}:`] : block({ [key]: held }, '');
+      return lines.map((line) => `# ${line}`);
+    })
+    .join('\n');

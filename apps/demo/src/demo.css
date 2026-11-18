@@ -77,8 +77,10 @@ body {
 .demo-lane > .pg-frame {
   width: auto;
 }
-.demo-lane > .demo-frame--own {
+.demo-lane > .demo-frame--own,
+.demo-lane > fluvy-demo-frame > .demo-frame--own {
   align-self: center;
+  margin-inline: auto;
 }
 /* a card's examples in columns of the device's width, in their order, kept level by the browser */
 .demo-plates {
@@ -92,9 +94,11 @@ body {
   break-inside: avoid;
   margin-bottom: 24px;
 }
-/* a card's example: its plate draws the section's edge, the frame its cards */
-fluvy-demo-example > .pg-frame {
-  background: none;
+/* a frame on a plate (a card's example, a sheet's frame): the plate draws the section's edge, the frame its cards on
+   the plate's ground, or on what the frame stands them on (a view's background) */
+fluvy-demo-example > .pg-frame,
+fluvy-demo-frame > .pg-frame {
+  background: var(--pg-backdrop, none);
   box-shadow: none;
 }
 /* a page (the settings panel, Activity, History) takes the whole width, as Home Assistant gives it */

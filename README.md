@@ -273,8 +273,8 @@ Open **Fluvy** in the sidebar.
 - **Wall** — what this tablet is, which dashboards are walls, the screensaver, day and night, the background.
 - **Preferences** — language, motion and haptics, per person.
 
-The cards are in the card picker under **Fluvy · …**, each with a preview; `docs/cards.md` lists them with their
-options.
+The cards are in the card picker under **Fluvy · …**, each with a preview; [the cards](docs/cards.md) lists them,
+each with a page of its options.
 
 ## Documentation
 
@@ -284,7 +284,8 @@ options.
 | [Getting started](docs/getting-started.md) | the first ten minutes |
 | [The settings panel](docs/settings-panel.md) | the six tabs, house and personal settings, where they are stored |
 | [The theme](docs/theme.md) | palettes, custom accents, shapes, the tokens |
-| [The cards](docs/cards.md) | every card, with its configuration |
+| [The cards](docs/cards.md) | every card with its picture, and a page a card: its YAML and what every option does |
+| [Customising the cards](docs/customising.md) | the options every card takes, details sheets, templates, conditions, thresholds |
 | [The automatic dashboards](docs/automatic-dashboard.md) | what the seven templates build from your home, and how to steer them |
 | [Wall mode](docs/wall.md) | a tablet on the wall: the kiosk, the screensaver, day and night |
 | [Activity and History](docs/pages.md) | the two pages |

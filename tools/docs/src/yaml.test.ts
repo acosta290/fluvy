@@ -43,6 +43,41 @@ describe('a configuration as YAML', () => {
     );
   });
 
+  it('says an unset key as a comment: its value on every line of it, or the key alone where it has none', () => {
+    expect(
+      toYaml(
+        {
+          type: 'custom:fluvy-cover-card',
+          entity: 'cover.blinds',
+          name: undefined,
+          card_opacity: 100,
+          tint: 'on',
+          favorites: [{ name: 'Night', position: 0 }, 'cover.awning'],
+          hold_action: { action: 'more-info' },
+          variant: 'full',
+        },
+        new Set(['name', 'card_opacity', 'tint', 'favorites', 'hold_action']),
+      ),
+    ).toBe(
+      [
+        'type: custom:fluvy-cover-card',
+        'entity: cover.blinds',
+        '# name:',
+        '# card_opacity: 100',
+        "# tint: 'on'",
+        '# favorites:',
+        '#   - name: Night',
+        '#     position: 0',
+        '#   - cover.awning',
+        '# hold_action:',
+        '#   action: more-info',
+        'variant: full',
+      ].join('\n'),
+    );
+    // a key that is set keeps its line, whatever it holds
+    expect(toYaml({ name: undefined, modes: [] })).toBe('name: null\nmodes: []');
+  });
+
   it('leaves a word plain: a name with spaces, an id, a path, a unit’s sign inside it', () => {
     for (const text of [
       'Living room',

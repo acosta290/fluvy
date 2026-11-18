@@ -214,7 +214,7 @@ goes past an option, one card hidden, moved or tuned, is [Customise](#customise)
 | --- | --- | --- | --- |
 | `hide` | view names: `rooms`, `lights`, `climate`, `energy`, `security`, `media`, `agenda`, `sensors` (home); `today`, `production`, `devices`, `water`, `meters` (energy); `cameras`, `openings` (security) | home, energy, security | views left out (the first view always stays) |
 | `thermostat_variant` | `dial` (default), `compact`, `ruler` | home, rooms, wall, climate | how the thermostats are drawn |
-| `thermostat_state` | `brief` (default), `detailed` | home, rooms, wall, climate | what the thermostats say of what they are doing: as each card does by itself, or (`detailed`) with how far its valve is open, an open window and a low battery, each found where there is one (the thermostat card's `show_valve`, `show_window` and `show_battery`), a room's climate row saying what its thermostat is doing and what it is set to (the room card's `show_action`). Nothing is written until it is chosen; see [Thermostat](cards.md#thermostat) |
+| `thermostat_state` | `brief` (default), `detailed` | home, rooms, wall, climate | what the thermostats say of what they are doing: as each card does by itself, or (`detailed`) with how far its valve is open, an open window and a low battery, each found where there is one (the thermostat card's `show_valve`, `show_window` and `show_battery`), a room's climate row saying what its thermostat is doing and what it is set to (the room card's `show_action`). Nothing is written until it is chosen; see [Thermostat](cards/thermostat.md#guide) |
 | `tile_size` | `large` (default), `compact` | home, rooms, lights | the tiles' size on the Lights view, the Home view and a room's page |
 | `tile_switch` | `show` (default), `hide`, `value`, `rocker` | home, rooms, lights | the large tiles' switches, the lights' and the appliances': beside their icon circles, hidden (a tap on a tile's circle switches it, a tap on the tile opens its details), the level's figure in their place (the tile card's `show_switch`), or wall rockers (the tile card's `switch_style: rocker`: each tile then switches and nothing more, with no ruler, and a compact tile's rocker stands at its row's end) |
 | `group_by` | `none` (default), `room` | home | which room a light or a scene belongs to (1.21): Home's lights under their rooms' quiet labels, and the scenes of Home and of the Lights view under theirs, the names short under each ([by room](#by-room)) |
@@ -228,7 +228,7 @@ goes past an option, one card hidden, moved or tuned, is [Customise](#customise)
 | `areas` | a list of area ids | wall | the rooms the wall shows, in that order, an empty one kept (default: every room with something in it) |
 | `camera_refresh` | `5`, `10` (default), `30` | security | seconds between the cameras' stills |
 | `scenes_max` | `4`, `6` (default), `8` | wall | how many scenes the wall offers as chips |
-| `name_lines` | `1` (default), `2` | all | the names of the cards it names after the house's entities (a light, a thermostat, a lock, a camera, an energy reading) in two lines where one would cut them, their heads a line taller (each card's `name_lines`, [The cards](cards.md)); a tile's name stays on its line. Nothing is written until it is chosen |
+| `name_lines` | `1` (default), `2` | all | the names of the cards it names after the house's entities (a light, a thermostat, a lock, a camera, an energy reading) in two lines where one would cut them, their heads a line taller (each card's `name_lines`, [Options every card takes](customising.md#options-every-card-takes)); a tile's name stays on its line. Nothing is written until it is chosen |
 | `greeting_tabs` | `hide` (default), `show` | home, rooms, energy, security, lights, climate | the views as chips under the greeting too, besides the header's tabs (until 1.4 they always were): the way between them on a kiosk with no header |
 | `rooms_as` | `pages` (default), `tabs` | rooms | each room a page behind its card, or a tab of its own after *All rooms*, in the house's order of its rooms (1.22, [Rooms as tabs](#rooms-as-tabs)) |
 | `background` | `type`: `plain`, `gradient`, `color` or `image`, and that type's own keys: `colors` (one hex, or two from the top to the bottom), `image` (a path of Home Assistant's such as `/local/backgrounds/garden.jpg`, or a web address), `dim` (0 to 80 in steps of 5, default 40), `blur` (default `false`) | all | what lies behind this dashboard's cards in place of the house's (default: the house's, the panel's *Appearance › Background*; below); `type: plain` keeps this dashboard plain whatever the house chooses |
@@ -306,7 +306,7 @@ strategy:
 
 What is named by its device or its place keeps its name either way: the batteries and the phones by their devices,
 the readings and the energy's meters by their places, the updates and the helpers as Home Assistant says them. A card
-written by hand takes its own `names` ([the cards](cards.md)).
+written by hand takes its own `names` ([Options every card takes](customising.md#options-every-card-takes)).
 
 ## A background of its own
 

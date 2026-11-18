@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { CARDS, yamlOf } from './catalog.js';
+import { toYaml } from '../../../tools/docs/src/yaml.js';
+import { CARDS } from './catalog.js';
 import { highlightLine, highlightYaml, type YamlPiece } from './highlight.js';
 
 /** A line's pieces as `kind:text`, the spaces left out. */
@@ -105,10 +106,17 @@ describe('the YAML panel’s colours', () => {
       expect(joined(highlightLine(line)), JSON.stringify(line)).toBe(line);
   });
 
+  it('reads an unset key as a comment, on every line of it', () => {
+    expect(pieces('# card_opacity: 100')).toEqual(['comment:# card_opacity: 100']);
+    expect(pieces('# color:')).toEqual(['comment:# color:']);
+    expect(pieces('#   action: more-info')).toEqual(['comment:#   action: more-info']);
+    expect(pieces("# tint: 'on'")).toEqual(["comment:# tint: 'on'"]);
+  });
+
   it('reads every card’s example as the docs print it: whole, keys where keys are, nothing left unread', () => {
     for (const card of CARDS)
       for (const example of card.examples) {
-        const yaml = yamlOf(example);
+        const yaml = toYaml(example.config);
         const lines = highlightYaml(yaml);
         expect(lines.map(joined).join('\n'), `${card.short} ${example.layout ?? ''}`).toBe(yaml);
         // every line of the writer's is a key, an item or both: its first piece after the indentation says which

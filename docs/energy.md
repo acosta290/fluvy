@@ -350,7 +350,8 @@ show_compare: true              # Compare: the period before beside the span, on
 
 The fine keys of [the cards](cards.md) change one thing of a style where it draws it, and `animate: false` draws the
 chart still. A gauge's `gauge` is `ticks` (its ring as before), `dial` or `ring`, or a gauge that moves with what it
-reads ([the cards](cards.md)): `pulse` or `sun` for a power, `battery` for a battery's charge, `tank` for water stored.
+reads ([the Gauge card](cards/gauge.md)): `pulse` or `sun` for a power, `battery` for a battery's charge, `tank` for
+water stored.
 
 ## A configuration each
 

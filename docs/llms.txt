@@ -2,11 +2,11 @@
 
 > Fluvy is a theme and a card library for Home Assistant, installed through HACS. Its cards are Lovelace custom cards: in YAML a card is `type: custom:fluvy-<name>-card` plus the entity or entities it draws and any option of its editor.
 
-To write a card’s configuration, read its page: it has the card’s picture, the YAML that draws the picture, a table of every key (what it does, its type, its default, its values), the fields of its lists’ items and the older names it still reads. A key left at its default is left out. The same facts for every card at once are in cards.json.
+To write a card’s configuration, read its page: it has the card’s picture, the YAML that draws the picture, each of its layouts with the lines that choose it, a table of every option (its default, what it does, the values it takes), the fields of its lists’ items, its guide where it has one, and the older names it still reads. A key left at its default is left out. The same facts for every card at once, with every key’s type, are in cards.json.
 
 ## Data
 
-- [cards.json](https://raw.githubusercontent.com/acosta290/fluvy/main/docs/cards.json): every card’s keys, what each does, types, defaults, values, the editor’s words, its example and its pictures
+- [cards.json](https://raw.githubusercontent.com/acosta290/fluvy/main/docs/cards.json): every card’s keys, what each does, types, defaults, values, the editor’s words, its example, its layouts and its pictures
 - [The live demo](https://acosta290.github.io/fluvy/): every card’s example on a simulated house, `?card=<card>` for one of them, with its YAML
 
 ## Everyday
@@ -96,7 +96,8 @@ To write a card’s configuration, read its page: it has the card’s picture, t
 
 ## Guides
 
-- [The cards](https://raw.githubusercontent.com/acosta290/fluvy/main/docs/cards.md): what every card shares (names, actions, colours, unavailable entities) and the longer guides
+- [The cards](https://raw.githubusercontent.com/acosta290/fluvy/main/docs/cards.md): the index of the cards, by section
+- [Customising the cards](https://raw.githubusercontent.com/acosta290/fluvy/main/docs/customising.md): what every card shares (names, actions, colours, unavailable entities), details sheets, templates, conditions, groups by room, thresholds
 - [Getting started](https://raw.githubusercontent.com/acosta290/fluvy/main/docs/getting-started.md): the first dashboard
 - [The automatic dashboards](https://raw.githubusercontent.com/acosta290/fluvy/main/docs/automatic-dashboard.md): the dashboards Fluvy builds from the house, and their options
 - [Energy](https://raw.githubusercontent.com/acosta290/fluvy/main/docs/energy.md): the energy cards together

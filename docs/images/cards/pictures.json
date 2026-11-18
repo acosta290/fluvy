@@ -4,50 +4,145 @@
     "width": 408,
     "height": 400
   },
+  "tile.compact": {
+    "example": "d5c51486a92a",
+    "width": 408,
+    "height": 216
+  },
+  "tile.mini": {
+    "example": "5c8233ca288c",
+    "width": 408,
+    "height": 280
+  },
   "tiles": {
     "example": "f51454c63c36",
     "width": 784,
     "height": 216
+  },
+  "tiles.mini": {
+    "example": "3573382b2ea0",
+    "width": 784,
+    "height": 280
+  },
+  "tiles.large": {
+    "example": "df8d181a0cd1",
+    "width": 784,
+    "height": 400
   },
   "template": {
     "example": "0292c51293c0",
     "width": 408,
     "height": 216
   },
+  "template.mini": {
+    "example": "16f51c8202ae",
+    "width": 408,
+    "height": 280
+  },
+  "template.large": {
+    "example": "e527cda992a1",
+    "width": 408,
+    "height": 400
+  },
   "light": {
     "example": "571b080950eb",
     "width": 784,
     "height": 920
+  },
+  "light.full": {
+    "example": "5c51778192b9",
+    "width": 784,
+    "height": 920
+  },
+  "light.compact": {
+    "example": "c37db5a8528e",
+    "width": 784,
+    "height": 440
   },
   "slider": {
     "example": "a20ca8d6c37a",
     "width": 784,
     "height": 600
   },
+  "slider.compact": {
+    "example": "664a6d2a2890",
+    "width": 784,
+    "height": 440
+  },
+  "slider.tile": {
+    "example": "6b1c2f39fee8",
+    "width": 784,
+    "height": 400
+  },
   "lights": {
     "example": "2fcb411e720c",
     "width": 784,
     "height": 232
+  },
+  "lights.chips": {
+    "example": "ecaab03f2caa",
+    "width": 784,
+    "height": 440
+  },
+  "lights.tiles": {
+    "example": "b9fee4db225f",
+    "width": 784,
+    "height": 616
   },
   "thermostat": {
     "example": "62b36e77c2d8",
     "width": 784,
     "height": 776
   },
+  "thermostat.compact": {
+    "example": "bc57c4db439b",
+    "width": 784,
+    "height": 392
+  },
+  "thermostat.ruler": {
+    "example": "4648d62d3802",
+    "width": 784,
+    "height": 600
+  },
   "entities": {
     "example": "5ea67b5f5984",
     "width": 784,
     "height": 1088
+  },
+  "entities.compact": {
+    "example": "363f628d6702",
+    "width": 784,
+    "height": 920
   },
   "items": {
     "example": "71f2a74dec0f",
     "width": 784,
     "height": 864
   },
+  "items.compact": {
+    "example": "75014db17419",
+    "width": 784,
+    "height": 744
+  },
+  "items.tiles": {
+    "example": "938e462d6faa",
+    "width": 784,
+    "height": 752
+  },
   "media": {
     "example": "e291745324a6",
     "width": 784,
     "height": 768
+  },
+  "media.mini": {
+    "example": "b02e8dd05ba8",
+    "width": 784,
+    "height": 216
+  },
+  "media.hero": {
+    "example": "d71b56188861",
+    "width": 784,
+    "height": 1264
   },
   "now-playing": {
     "example": "049fb20a48f4",
@@ -59,30 +154,70 @@
     "width": 784,
     "height": 920
   },
+  "remote.compact": {
+    "example": "369f5420cdb1",
+    "width": 784,
+    "height": 352
+  },
+  "remote.pad": {
+    "example": "a90cfb436dbd",
+    "width": 784,
+    "height": 616
+  },
+  "remote.row": {
+    "example": "764148228c63",
+    "width": 784,
+    "height": 216
+  },
   "cover": {
     "example": "09b09fb39dfa",
     "width": 784,
     "height": 928
+  },
+  "cover.compact": {
+    "example": "8234ada595cb",
+    "width": 784,
+    "height": 352
   },
   "fan": {
     "example": "ef3bd1ccf2c9",
     "width": 784,
     "height": 792
   },
+  "fan.compact": {
+    "example": "3f04d14066ff",
+    "width": 784,
+    "height": 352
+  },
   "vacuum": {
     "example": "457485d10086",
     "width": 784,
     "height": 960
+  },
+  "vacuum.compact": {
+    "example": "d9c125f55fe8",
+    "width": 784,
+    "height": 352
   },
   "lock": {
     "example": "60f0d913cff8",
     "width": 784,
     "height": 744
   },
+  "lock.compact": {
+    "example": "9f7f70bd0a47",
+    "width": 784,
+    "height": 352
+  },
   "alarm": {
     "example": "a1a06d692c06",
     "width": 784,
     "height": 760
+  },
+  "alarm.compact": {
+    "example": "ded0c5b0c7b6",
+    "width": 784,
+    "height": 352
   },
   "camera": {
     "example": "9331ee82442f",
@@ -94,38 +229,113 @@
     "width": 784,
     "height": 872
   },
+  "cameras.list": {
+    "example": "6c18414f2c5f",
+    "width": 784,
+    "height": 744
+  },
+  "cameras.compact": {
+    "example": "57633bfa250e",
+    "width": 784,
+    "height": 664
+  },
   "printer": {
     "example": "d54c3b377b96",
     "width": 784,
     "height": 1472
+  },
+  "printer.compact": {
+    "example": "cc0fdfa55ff1",
+    "width": 784,
+    "height": 560
+  },
+  "printer.row": {
+    "example": "6c366d481662",
+    "width": 784,
+    "height": 216
   },
   "appliance": {
     "example": "126aaaa1a692",
     "width": 784,
     "height": 816
   },
+  "appliance.compact": {
+    "example": "904150c3c9a2",
+    "width": 784,
+    "height": 488
+  },
+  "appliance.ring": {
+    "example": "1f2e628dafe6",
+    "width": 784,
+    "height": 864
+  },
+  "appliance.row": {
+    "example": "d7667022bf6a",
+    "width": 784,
+    "height": 240
+  },
   "appliances": {
     "example": "fd9cfa62fc93",
     "width": 784,
     "height": 848
+  },
+  "appliances.compact": {
+    "example": "ccafa4a7977b",
+    "width": 784,
+    "height": 624
+  },
+  "appliances.tiles": {
+    "example": "daee21d29406",
+    "width": 784,
+    "height": 632
+  },
+  "appliances.cards": {
+    "example": "d5a2b47429c1",
+    "width": 784,
+    "height": 2000
   },
   "vehicle": {
     "example": "411e9115cfa6",
     "width": 784,
     "height": 1296
   },
+  "vehicle.compact": {
+    "example": "6ada58dc37b7",
+    "width": 784,
+    "height": 536
+  },
+  "vehicle.mini": {
+    "example": "945ddd5230f3",
+    "width": 784,
+    "height": 216
+  },
   "weather": {
     "example": "8823374dd329",
     "width": 784,
     "height": 912
+  },
+  "weather.compact": {
+    "example": "55c5cba0d6e0",
+    "width": 784,
+    "height": 632
   },
   "sensor": {
     "example": "4a0c6a7254f7",
     "width": 784,
     "height": 672
   },
+  "sensor.tile": {
+    "example": "b7076acbd84f",
+    "width": 784,
+    "height": 400
+  },
   "readouts": {
     "example": "dad09f967672",
+    "width": 784,
+    "height": 240
+  },
+  "readouts.row": {
+    "example": "8ab91f13821d",
     "width": 784,
     "height": 240
   },
@@ -134,25 +344,80 @@
     "width": 784,
     "height": 440
   },
+  "people.rows": {
+    "example": "cbc106ad14be",
+    "width": 784,
+    "height": 624
+  },
   "openings": {
     "example": "6a30d119569f",
     "width": 784,
     "height": 744
+  },
+  "openings.compact": {
+    "example": "f2ac654234dc",
+    "width": 784,
+    "height": 648
+  },
+  "openings.tiles": {
+    "example": "7af87561c745",
+    "width": 784,
+    "height": 616
   },
   "alerts": {
     "example": "f6e4acc1a40f",
     "width": 784,
     "height": 552
   },
+  "alerts.mini": {
+    "example": "abbcef20e879",
+    "width": 784,
+    "height": 512
+  },
+  "alerts.chips": {
+    "example": "6617522dfd5a",
+    "width": 784,
+    "height": 328
+  },
+  "alerts.rows": {
+    "example": "fbc39dbae9ae",
+    "width": 784,
+    "height": 960
+  },
+  "alerts.banner": {
+    "example": "6efce3a39cdb",
+    "width": 784,
+    "height": 216
+  },
   "room": {
     "example": "e892436ad0cb",
     "width": 784,
     "height": 1064
   },
+  "room.tile": {
+    "example": "d69bda797754",
+    "width": 784,
+    "height": 744
+  },
+  "room.row": {
+    "example": "7ac731bcd65e",
+    "width": 784,
+    "height": 216
+  },
   "map": {
     "example": "2792a9bb7afc",
     "width": 784,
     "height": 520
+  },
+  "map.map": {
+    "example": "e68dbc51e5a8",
+    "width": 784,
+    "height": 520
+  },
+  "map.rows": {
+    "example": "7bc2d273d6cb",
+    "width": 784,
+    "height": 864
   },
   "hello": {
     "example": "021953a8538a",
@@ -169,20 +434,45 @@
     "width": 784,
     "height": 112
   },
+  "heading.plain": {
+    "example": "8a9df6763460",
+    "width": 784,
+    "height": 112
+  },
   "expander": {
     "example": "60ce4db501c1",
     "width": 784,
     "height": 1344
+  },
+  "expander.plain": {
+    "example": "de45c6830d5b",
+    "width": 784,
+    "height": 1280
   },
   "swipe": {
     "example": "a9e2ff4d8ba7",
     "width": 784,
     "height": 1112
   },
+  "swipe.plain": {
+    "example": "37e3c42d30dd",
+    "width": 784,
+    "height": 1152
+  },
   "web": {
     "example": "5224146c0ee7",
     "width": 784,
     "height": 624
+  },
+  "web.frame": {
+    "example": "3aef6ac0558b",
+    "width": 784,
+    "height": 504
+  },
+  "web.bare": {
+    "example": "22ea2ee8b039",
+    "width": 784,
+    "height": 472
   },
   "scene": {
     "example": "d746cc2c81b9",
@@ -193,6 +483,11 @@
     "example": "f52e9d694774",
     "width": 784,
     "height": 400
+  },
+  "scenes.chips": {
+    "example": "36b00be6e450",
+    "width": 784,
+    "height": 320
   },
   "actions": {
     "example": "9530c3e4f20b",
@@ -224,8 +519,33 @@
     "width": 784,
     "height": 1104
   },
+  "automations.compact": {
+    "example": "a17a10862b80",
+    "width": 784,
+    "height": 936
+  },
+  "automations.tiles": {
+    "example": "a1553968c901",
+    "width": 784,
+    "height": 984
+  },
   "energy-period": {
     "example": "2187772588f9",
+    "width": 784,
+    "height": 232
+  },
+  "energy-period.compact": {
+    "example": "c2e0c1cbb8b7",
+    "width": 784,
+    "height": 184
+  },
+  "energy-period.stacked": {
+    "example": "334357a7b322",
+    "width": 784,
+    "height": 336
+  },
+  "energy-period.bar": {
+    "example": "781bb0e0bda4",
     "width": 784,
     "height": 232
   },
@@ -234,13 +554,48 @@
     "width": 784,
     "height": 1008
   },
+  "energy-usage.compact": {
+    "example": "7d579c5999dd",
+    "width": 784,
+    "height": 544
+  },
+  "energy-usage.mini": {
+    "example": "473e36c29785",
+    "width": 784,
+    "height": 400
+  },
   "energy": {
     "example": "03e8efba467b",
     "width": 784,
     "height": 824
   },
+  "energy.compact": {
+    "example": "297c9c637e59",
+    "width": 784,
+    "height": 544
+  },
+  "energy.sources": {
+    "example": "c730e3212817",
+    "width": 784,
+    "height": 1000
+  },
+  "energy.overview": {
+    "example": "9311aa73a1bb",
+    "width": 784,
+    "height": 1048
+  },
   "energy-flow": {
     "example": "0b3f86ecef05",
+    "width": 784,
+    "height": 848
+  },
+  "energy-flow.cross": {
+    "example": "52c7faf5a5d4",
+    "width": 784,
+    "height": 968
+  },
+  "energy-flow.list": {
+    "example": "02c0af69711f",
     "width": 784,
     "height": 848
   },
@@ -284,43 +639,108 @@
     "width": 784,
     "height": 760
   },
+  "meters.rows": {
+    "example": "1540cfaaeb10",
+    "width": 784,
+    "height": 808
+  },
   "gauge": {
     "example": "af500b381b31",
     "width": 784,
     "height": 832
+  },
+  "gauge.bar": {
+    "example": "a063f3405c8a",
+    "width": 784,
+    "height": 576
+  },
+  "gauge.signed": {
+    "example": "95d63c2eb27d",
+    "width": 784,
+    "height": 808
   },
   "stat-tiles": {
     "example": "b61a3392e733",
     "width": 784,
     "height": 768
   },
+  "stat-tiles.compact": {
+    "example": "df2b6da0591e",
+    "width": 784,
+    "height": 664
+  },
   "production": {
     "example": "2f16929f4e8d",
     "width": 784,
     "height": 752
+  },
+  "production.compact": {
+    "example": "f4a52772fe24",
+    "width": 784,
+    "height": 472
   },
   "history-bars": {
     "example": "3d83cd5b9076",
     "width": 784,
     "height": 1032
   },
+  "history-bars.compact": {
+    "example": "ec8ad8068840",
+    "width": 784,
+    "height": 608
+  },
+  "history-bars.mini": {
+    "example": "0eb5a6cbb02d",
+    "width": 784,
+    "height": 360
+  },
   "chart": {
     "example": "1b4bf99041c5",
     "width": 784,
     "height": 704
+  },
+  "chart.compact": {
+    "example": "27e17ffaf441",
+    "width": 784,
+    "height": 544
+  },
+  "chart.tile": {
+    "example": "47f5cc4e6877",
+    "width": 784,
+    "height": 400
   },
   "bars": {
     "example": "7d8a08beecdc",
     "width": 784,
     "height": 840
   },
+  "bars.compact": {
+    "example": "a162ae475051",
+    "width": 784,
+    "height": 648
+  },
   "distribution": {
     "example": "b2c646525dfc",
     "width": 784,
     "height": 600
   },
+  "distribution.rows": {
+    "example": "b430b6b2784c",
+    "width": 784,
+    "height": 744
+  },
   "humidity": {
     "example": "18193b0f06ba",
+    "width": 784,
+    "height": 808
+  },
+  "humidity.ruler": {
+    "example": "7dd43755e93b",
+    "width": 784,
+    "height": 808
+  },
+  "humidity.liquid": {
+    "example": "54b8b084bb63",
     "width": 784,
     "height": 808
   },
@@ -329,9 +749,49 @@
     "width": 784,
     "height": 744
   },
+  "clock.side": {
+    "example": "a179791b38a4",
+    "width": 784,
+    "height": 480
+  },
+  "clock.tile": {
+    "example": "41a65dc3c5fb",
+    "width": 784,
+    "height": 400
+  },
   "calendar": {
     "example": "f27af355fe51",
     "width": 784,
     "height": 896
+  },
+  "calendar.month": {
+    "example": "f4f77fbeb839",
+    "width": 784,
+    "height": 784
+  },
+  "calendar.week": {
+    "example": "88d0e4729f89",
+    "width": 784,
+    "height": 920
+  },
+  "calendar.month-day": {
+    "example": "7f6c16474aa3",
+    "width": 784,
+    "height": 1352
+  },
+  "calendar.timeline": {
+    "example": "10b693ffb3a1",
+    "width": 784,
+    "height": 1016
+  },
+  "calendar.upcoming": {
+    "example": "ccd550c4a190",
+    "width": 784,
+    "height": 744
+  },
+  "calendar.tile": {
+    "example": "7fcad05c932b",
+    "width": 784,
+    "height": 400
   }
 }

@@ -1,17 +1,27 @@
 /**
- * What `pnpm check` holds the gallery, the pictures, the editors' defaults and the docs' sentences to, without a
- * browser: every card has its example and every value of its layout select its line; an example is a configuration
- * its card's editor could have written (its newest names, no key it does not show, no default written out, no test
- * hook); every example has its picture in light and in dark, taken of that very example; every select and switch of a
- * card's form says what the card does without it; and every key and field says what it does. Each returns what is
- * wrong, a line a finding; nothing wrong is an empty list.
+ * What `pnpm check` holds the gallery, the pictures, the editors' defaults, the docs' sentences and the guides to,
+ * without a browser: every card has its example and every value of its layout select its line; an example is a
+ * configuration its card's editor could have written (its newest names, no key it does not show, no default written
+ * out, no test hook); every example, a card's base and each of its layouts, has its picture in light and in dark,
+ * taken of that very example; every select and switch of a card's form says what the card does without it; every key
+ * and field says what it does; and every guide written by hand is a card's, under its page's own headings. Each
+ * returns what is wrong, a line a finding; nothing wrong is an empty list.
  */
 import type { LovelaceCardConfig } from '@fluvy/core';
 import type { CardDoc } from './cards.js';
-import { GALLERY, layoutKey, mounted, shortName, type Example } from './gallery.js';
+import { GALLERY, layoutKey, mounted, type Example } from './gallery.js';
 import { MEANINGS } from './meanings.js';
-import { GUIDES, anchorOf } from './pages.js';
-import { digest, FOLDER, MANIFEST, MODES, pictureName, type Manifest } from './pictures.js';
+import { GUIDE_OF, GUIDES, type Guides } from './pages.js';
+import {
+  digest,
+  FOLDER,
+  MANIFEST,
+  MODES,
+  pictureName,
+  pictureStem,
+  thumbStem,
+  type Manifest,
+} from './pictures.js';
 
 const isRecord = (value: unknown): value is Readonly<Record<string, unknown>> =>
   typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -135,7 +145,8 @@ export function checkGallery(
 
 /**
  * The pictures held to the gallery: each example's in light and in dark among `files` (the names in
- * `docs/images/cards/`), each taken of the example as it stands (the manifest's digest), and no picture of no card.
+ * `docs/images/cards/`, a thumbnail's with its folder), a card's base, its thumbnail and each of its other layouts,
+ * each taken of the example as it stands (the manifest's digest), and no picture of no example.
  */
 export function checkPictures(
   cards: readonly CardDoc[],
@@ -143,26 +154,30 @@ export function checkPictures(
   manifest: Manifest,
 ): string[] {
   const found: string[] = [];
-  const expected = new Set<string>();
-  for (const card of cards) {
-    const [base] = card.drawn;
-    if (!base) continue;
-    for (const mode of MODES) {
-      const name = pictureName(card.short, mode);
-      expected.add(name);
-      if (!files.includes(name)) found.push(`${FOLDER}/${name} is missing`);
+  const names = new Set<string>();
+  const stems = new Set<string>();
+  for (const card of cards)
+    for (const one of card.drawn) {
+      const stem = pictureStem(card.short, one.layout);
+      const what = one.layout ? `${card.tag} · ${one.layout}` : card.tag;
+      stems.add(stem);
+      // the base is drawn once more as the card's thumbnail, of the same example by the same run
+      for (const taken of one.layout ? [stem] : [stem, thumbStem(card.short)])
+        for (const mode of MODES) {
+          const name = pictureName(taken, mode);
+          names.add(name);
+          if (!files.includes(name)) found.push(`${FOLDER}/${name} is missing`);
+        }
+      const entry = manifest[stem];
+      if (!entry) found.push(`${what}: its picture is not in ${FOLDER}/${MANIFEST}`);
+      else if (entry.example !== digest(mounted(one)))
+        found.push(`${what}: its picture is of another example than the gallery's`);
     }
-    const entry = manifest[card.short];
-    if (!entry) found.push(`${card.tag}: its picture is not in ${FOLDER}/${MANIFEST}`);
-    else if (entry.example !== digest(mounted(base)))
-      found.push(`${card.tag}: its picture is of another example than the gallery's`);
-  }
   for (const name of files)
-    if (name.endsWith('.webp') && !expected.has(name))
-      found.push(`${FOLDER}/${name} is the picture of no card`);
-  for (const name of Object.keys(manifest))
-    if (!cards.some((card) => card.short === name))
-      found.push(`${FOLDER}/${MANIFEST}: \`${name}\` is no card`);
+    if (name.endsWith('.webp') && !names.has(name))
+      found.push(`${FOLDER}/${name} is the picture of no example`);
+  for (const stem of Object.keys(manifest))
+    if (!stems.has(stem)) found.push(`${FOLDER}/${MANIFEST}: \`${stem}\` is no example`);
   return found.length
     ? [...found, 'run `pnpm docs:images` (the playground running) for the pictures']
     : [];
@@ -210,20 +225,41 @@ export function checkMeanings(
   return found;
 }
 
-/** Every guide a card's page links to is a heading of `docs/cards.md`, and every section of the index too. */
-export function checkGuides(cards: readonly CardDoc[], index: string): string[] {
-  const anchors = new Set(
-    [...index.matchAll(/^#{1,6} (.+)$/gm)].map((match) => anchorOf(match[1] as string)),
-  );
+/** A guide's lines outside its fenced blocks: a YAML comment in one is no heading. */
+function prose(guide: string): string[] {
+  let fenced = false;
+  return guide.split('\n').filter((line) => {
+    const fence = /^\s*(?:```|~~~)/.test(line);
+    if (fence) fenced = !fenced;
+    return !fenced && !fence;
+  });
+}
+
+/**
+ * The guides written by hand held to the pages they are spliced into (`guides`: each by the name of its file in
+ * `tools/docs/guides/`, without `.md`): each is a card's, says something, and heads its parts from `###` down, under
+ * its page's own "Guide"; and a card whose guide is another's (`guideOf`) names a card.
+ */
+export function checkGuides(
+  cards: readonly CardDoc[],
+  guides: Guides,
+  guideOf: typeof GUIDE_OF = GUIDE_OF,
+): string[] {
+  const shorts = new Set(cards.map((card) => card.short));
   return [
-    ...Object.entries(GUIDES)
-      .filter(([, [, anchor]]) => !anchors.has(anchor))
+    ...Object.entries(guides).flatMap(([short, guide = '']) => {
+      const file = `${GUIDES}/${short}.md`;
+      if (!shorts.has(short)) return [`${file} is the guide of no card`];
+      if (!guide.trim()) return [`${file} says nothing: write the guide, or take the file away`];
+      return prose(guide)
+        .filter((line) => /^#{1,2} /.test(line))
+        .map((line) => `${file}: "${line}" heads a page: a guide's headings start at \`###\``);
+    }),
+    ...Object.entries(guideOf)
+      .filter(([short, [other]]) => !shorts.has(short) || !shorts.has(other))
       .map(
-        ([tag, [words]]) =>
-          `${shortName(tag)}: docs/cards.md has no heading "${words}" for its page to link to`,
+        ([short, [other]]) =>
+          `GUIDE_OF: \`${short}\` reads the guide of \`${other}\`, and one of them is no card`,
       ),
-    ...[...new Set(cards.map((card) => card.section))]
-      .filter((section) => !anchors.has(anchorOf(section)))
-      .map((section) => `docs/cards.md has no heading "${section}"`),
   ];
 }

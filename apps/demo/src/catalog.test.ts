@@ -1,13 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { GALLERY } from '../../../tools/docs/src/gallery.js';
-import { toYaml } from '../../../tools/docs/src/yaml.js';
 import {
   CARDS,
   cardOf,
+  cardOfType,
   docsOf,
   layoutsOf,
   searchCards,
-  yamlOf,
   type CardWords,
 } from './catalog.js';
 import { CARD_GROUPS, FAMILIES, groupOf } from './families.js';
@@ -36,12 +35,13 @@ describe('the demo’s cards', () => {
     expect(cardOf('fluvy-tile-card')).toBeUndefined();
   });
 
-  it('shows each example’s YAML exactly as the docs print it', () => {
+  it('knows the card a configuration’s type names, and one that is none of the catalogue’s', () => {
     for (const card of CARDS)
-      for (const example of card.examples) {
-        expect(yamlOf(example)).toBe(toYaml(example.config));
-        expect(yamlOf(example).startsWith(`type: custom:${card.tag}`)).toBe(true);
-      }
+      for (const example of card.examples) expect(cardOfType(example.config.type)).toBe(card);
+    expect(cardOfType('custom:fluvy-tile-card')).toBe(cardOf('tile'));
+    // a stand-in of the playground's, and Home Assistant's own card of a Fluvy card's short name
+    expect(cardOfType('custom:pg-means-line')).toBeUndefined();
+    expect(cardOfType('entities')).toBeUndefined();
   });
 
   it('lists every card once in the README’s groups, and nothing that is not a card', () => {

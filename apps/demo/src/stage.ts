@@ -1,4 +1,9 @@
-import { lookRule, type HomeAssistant } from '@fluvy/core';
+import {
+  lookRule,
+  type HomeAssistant,
+  type LovelaceCard,
+  type LovelaceCardConfig,
+} from '@fluvy/core';
 import { parseStatuses, statusesKey, type StatusColours } from '@fluvy/tokens/runtime';
 import type { ActivityMoment } from '@fluvy/playground/activity';
 import type { HistoryMoment } from '@fluvy/playground/history';
@@ -11,10 +16,10 @@ import {
 } from '@fluvy/playground/house';
 import type { MemoryLook } from '@fluvy/playground/look-memory';
 import { SHEETS, type FrameSpec, type SheetSpec } from '@fluvy/playground/scenes';
-import { cardOf, docsOf, layoutKeyOf, wordsOf, type DemoCard } from './catalog.js';
+import { cardOf, cardOfType, docsOf, layoutKeyOf, wordsOf, type DemoCard } from './catalog.js';
 import { familyOf, groupOf, sheetsOf } from './families.js';
 import { INSTALL, REPO } from './nav.js';
-import type { FluvyDemoExample, HeadSpec, ThemeSwatch } from './page.js';
+import type { FluvyDemoExample, FluvyDemoFrame, HeadSpec, ThemeSwatch } from './page.js';
 import {
   AUTO_HOME,
   columns,
@@ -72,6 +77,13 @@ interface Placed {
   readonly shown: Shown;
 }
 
+/** A card of the catalogue on a frame: its short name, its configuration as a person writes it, and it mounted. */
+interface Held {
+  readonly short: string;
+  readonly config: LovelaceCardConfig;
+  readonly card: LovelaceCard;
+}
+
 /** The space between two lanes, and a frame's sides (the section's 16 each way). */
 const GAP = 24;
 const SIDES = 32;
@@ -92,8 +104,12 @@ const PICKS: readonly (readonly [sheet: string, title: string])[] = [
   ['vehicle', 'Teslemetry · charging at home'],
 ];
 
-/** The playground's own pages a Web page card shows (`apps/playground/public/web`), as a person's site names them. */
+/**
+ * The playground's own pages a Web page card shows (`apps/playground/public/web`): as a person's site names them, and
+ * where the demo serves them.
+ */
 const WEB_PAGES = /^\/web\//;
+const SERVED = `${import.meta.env.BASE_URL}web/`;
 
 /**
  * A frame whose cards show the playground's own pages at the site's root (`/web/radar.html`, the gallery's: what the
@@ -105,11 +121,45 @@ const servedHere = (frame: FrameSpec): FrameSpec =>
         ...frame,
         cards: frame.cards.map((card) =>
           typeof card['url'] === 'string'
-            ? { ...card, url: card['url'].replace(WEB_PAGES, `${import.meta.env.BASE_URL}web/`) }
+            ? { ...card, url: card['url'].replace(WEB_PAGES, SERVED) }
             : card,
         ),
       }
     : frame;
+
+/**
+ * A frame's card as a person writes it: without the columns its frame gives it, and a page of the playground's at the
+ * site's root, as the docs print it, wherever the demo serves it.
+ */
+const asWritten = (card: FrameSpec['cards'][number]): LovelaceCardConfig =>
+  Object.fromEntries(
+    Object.entries(card)
+      .filter(([key]) => key !== 'cols')
+      .map(([key, value]) => [
+        key,
+        key === 'url' && typeof value === 'string' && value.startsWith(SERVED)
+          ? `/web/${value.slice(SERVED.length)}`
+          : value,
+      ]),
+  ) as LovelaceCardConfig;
+
+/**
+ * The cards of the catalogue a frame holds (a stand-in of the playground's own is none): what its plate names, and
+ * what its "View YAML" shows.
+ */
+const cardsOf = (frame: FrameSpec, mounted: readonly MountedCard[]): Held[] =>
+  frame.cards.flatMap((config, index) => {
+    const known = cardOfType(config.type);
+    const card = mounted[index]?.card;
+    return card && known ? [{ short: known.short, config: asWritten(config), card }] : [];
+  });
+
+/** A frame's plate off a card's page: its head names the cards the frame holds, each once, in the frame's order. */
+function framePlate(held: readonly Held[]): FluvyDemoFrame {
+  const plate = document.createElement('fluvy-demo-frame');
+  plate.cards = [...new Set(held.map(({ short }) => short))];
+  return plate;
+}
 
 /**
  * The demo's stage: a page's head, then its frames in lanes (one per column the device has and the screen holds, each
@@ -238,23 +288,23 @@ export function createStage(root: HTMLElement, look: MemoryLook, options: StageO
   };
 
   /**
-   * The frames in lanes, each to the shortest lane. With `wrap`, each frame stands in something of its own (an
-   * example's plate) and the plates fill columns in their order, the browser keeping the columns level as the cards
-   * grow.
+   * The frames in lanes, each to the shortest lane, each on a plate that names the cards it holds and shows their
+   * YAML (a frame that holds none of the catalogue's stands bare). With `example`, the plates are a card's page's
+   * (each example's own) and fill columns in their order, the browser keeping the columns level as the cards grow.
    */
   const mountLanes = (
     state: DemoState,
     placed: readonly Placed[],
-    wrap?: (el: HTMLElement, index: number) => HTMLElement,
+    example?: (index: number) => FluvyDemoExample,
   ): void => {
     const box = document.createElement('div');
-    box.className = wrap ? 'demo-plates' : 'demo-lanes';
+    box.className = example ? 'demo-plates' : 'demo-lanes';
     box.style.setProperty('--demo-frame', `${frameWidth(state)}px`);
     root.append(box);
     lanes = box;
     laid = laneCount(state);
     box.style.setProperty('--demo-columns', String(laid));
-    const columnsOf = wrap
+    const columnsOf = example
       ? [box]
       : Array.from({ length: laid }, () => {
           const lane = document.createElement('div');
@@ -264,9 +314,10 @@ export function createStage(root: HTMLElement, look: MemoryLook, options: StageO
         });
     const shortest = (): HTMLElement =>
       columnsOf.reduce((low, lane) => (lane.offsetHeight < low.offsetHeight ? lane : low));
+    const plates: (FluvyDemoExample | FluvyDemoFrame)[] = [];
     placed.forEach(({ sheet, frame, shown: house }, index) => {
       const hass = withEnvironment(house.house.hass(), state);
-      const { el, cards } = mountFrame(sheet, frame, hass, {
+      const { el, cards } = mountFrame(sheet, servedHere(frame), hass, {
         fit: true,
         wearStatuses: (frameEl, own) => {
           const key = statusesKey(parseStatuses(own));
@@ -277,7 +328,23 @@ export function createStage(root: HTMLElement, look: MemoryLook, options: StageO
       // a frame of a width of its own stands in the middle of its lane
       if (frame.width !== undefined) el.classList.add('demo-frame--own');
       house.cards.push(...cards);
-      shortest().append(wrap ? wrap(el, index) : el);
+      const held = cardsOf(frame, cards);
+      const plate = example?.(index) ?? (held.length ? framePlate(held) : undefined);
+      if (plate) {
+        plate.state = state;
+        // each card as it stands when it is asked: the house it reads is the one it is drawn on then
+        plate.source = () => held.map(({ config, card }) => ({ config, hass: card.hass }));
+        plate.append(el);
+        plates.push(plate);
+      }
+      shortest().append(plate ?? el);
+    });
+    refresh.push((next) => {
+      for (const plate of plates) {
+        plate.state = next;
+        // a card's name is the catalogue's, in a language that lands after the state names it: drawn again then
+        plate.requestUpdate();
+      }
     });
     restyle(state);
   };
@@ -375,19 +442,17 @@ export function createStage(root: HTMLElement, look: MemoryLook, options: StageO
     const house = houseOf([gallery], state);
     const placed = card.examples.flatMap((example) => {
       const frame = gallery.frames.find((candidate) => candidate.title === example.name);
-      return frame ? [{ sheet: 'gallery', frame: servedHere(frame), shown: house }] : [];
+      return frame ? [{ sheet: 'gallery', frame, shown: house }] : [];
     });
     const key = layoutKeyOf(card);
-    mountLanes(state, placed, (el, index) => {
+    mountLanes(state, placed, (index) => {
       const example = card.examples[index];
       const plate = document.createElement('fluvy-demo-example');
-      plate.state = state;
       plate.card = card.short;
       plate.layout = example?.layout;
       plate.key = key;
       plate.docs = docsOf(card);
       plate.id = `layout-${example?.layout ?? 'default'}`;
-      plate.append(el);
       examples.push(plate);
       return plate;
     });
@@ -395,7 +460,6 @@ export function createStage(root: HTMLElement, look: MemoryLook, options: StageO
       const layout = next.view.kind === 'card' ? next.view.layout : undefined;
       let target: FluvyDemoExample | undefined;
       for (const plate of examples) {
-        plate.state = next;
         plate.marked = layout !== undefined && plate.layout === layout;
         if (plate.marked) target = plate;
       }
