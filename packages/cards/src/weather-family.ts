@@ -51,12 +51,16 @@ export function weatherHeight(config: LovelaceCardConfig, features?: number): nu
 
 /**
  * The Compass card at a 360 column: the head, its ring (R 96 and its ticks in a 240 box, as the gauge's), and the row
- * of its readouts (16 and a line of 44) while it lists one.
+ * of its readouts (16 and a line of 44) while it lists one; compact, the head, its small ring (a 104 box) beside its
+ * figure and its readouts at the extra-small size (16 and 40); one row, 76.
  */
 export function compassHeight(config: LovelaceCardConfig): number {
+  if (config['variant'] === 'row') return 76;
   const stats = config['stats'];
   const row = config['show_stats'] !== false && Array.isArray(stats) && stats.length > 0;
-  return HEAD + 240 + (row ? 60 : 0);
+  return config['variant'] === 'compact'
+    ? HEAD + 104 + (row ? 56 : 0)
+    : HEAD + 240 + (row ? 60 : 0);
 }
 
 export const WEATHER_FAMILY: readonly FamilyEntry[] = [

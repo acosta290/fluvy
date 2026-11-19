@@ -344,6 +344,16 @@
     "width": 784,
     "height": 864
   },
+  "compass.compact": {
+    "example": "f457539db002",
+    "width": 784,
+    "height": 584
+  },
+  "compass.row": {
+    "example": "7aad5afbeb83",
+    "width": 408,
+    "height": 216
+  },
   "sensor": {
     "example": "4a0c6a7254f7",
     "width": 784,

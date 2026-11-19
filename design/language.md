@@ -947,6 +947,17 @@ azimuth. No shape of its own: each part is a control the house already has, read
 - **Words**: a bearing is read in degrees or in English's sixteen letters, never another language's (German's O is
   East, Spanish's West); it is said in the page's language, a point between two as the language joins them
   (`compass.point16`: "NNE", 北北東, "Pn-Pn-Wsch"); 359.6° is 0°.
+- **Layouts** (`variant`): `full` (the default, above); `compact`, the head, then a small ring at the column's start (R 28
+  in a 104 box, a tile's 20 knob, its points in its ticks' band) with the readout 16 beside it — the word, the figure
+  at the large readout's size where it holds, else the small one, the point and the degrees under it, the stack centred
+  on the ring — the figure under the ring where the column cannot hold it beside (half a section), and the readouts at
+  the extra-small size (204, 260 with them); `row`, the house's row (76, 16 in, half a section; the printer's, a car's
+  mini): the card's circle ringed by the compass 3 clear of it (R 26.5: its track in the hairline, north's notch in the
+  text's ink where `north_offset` turns it, the bearing a knob in small, the arc across its sixteenth for lit ticks, or
+  a dot, the second in the secondary ink), its name over its figure, its point and its degrees. The row's line keeps
+  its figure whole: the degrees leave first, then the point (the ring says it), then a band's words; where the figure
+  would not hold beside the circle, the circle and its ring give way. The row is the card's button, its circle a button
+  of its own where it has actions (#179); a row draws no head, no readouts and no letters, and its editor offers none.
 - **The rest** is the gauge's: a figure past a threshold takes its band's colour (the knob, the lit ticks, the figure's
   ink, the badge's words, the card's wash or edge by `tint`); the readouts under the ring are laid out by the widest
   figure they write, never a dash; out of reach the ring keeps its ticks and points, the figure and the point read

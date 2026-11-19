@@ -20,12 +20,13 @@ import {
   numberFields,
   onlyWhen,
   ownTextField,
+  selectField,
   textField,
   thresholdsList,
   unitChoicesOf,
 } from '../shared/form.js';
 import type { EditorChoices, EditorDefaults, RowsListSpec } from '../shared/rows-editor.js';
-import { COMPASS_POINTERS, type CompassCardConfig } from './compass-card.js';
+import { COMPASS_POINTERS, COMPASS_VARIANTS, type CompassCardConfig } from './compass-card.js';
 
 /** The Compass card's editor: fetched by its `editor()` the first time the card is edited, never by a dashboard. */
 
@@ -37,6 +38,7 @@ const READINGS: readonly string[] = ['sensor', 'number', 'input_number'];
 export const base = BADGE_BASE;
 
 export const keys = configKeys<CompassCardConfig>()([
+  'variant',
   'subtitle',
   'direction_entity',
   'direction_attribute',
@@ -84,6 +86,9 @@ const reads = (data: Data): boolean => {
   );
 };
 
+/** Whether the card has a head, a ring of its own and its readouts: every layout but the row. */
+const ringed = (data: Data): boolean => data['variant'] !== 'row';
+
 /** Whether a field names an entity: what its attribute and its pointer act on. */
 const names =
   (key: string) =>
@@ -92,6 +97,7 @@ const names =
 
 /** What the editor shows where the config says nothing: what the card does then. */
 export const defaults: EditorDefaults = () => ({
+  variant: 'full',
   indicator: 'knob',
   secondary_indicator: 'dot',
   north_offset: 0,
@@ -120,9 +126,10 @@ export function getConfigForm(): LovelaceConfigForm {
   return {
     schema: [
       entityField(READINGS, 'entity', false),
-      fieldRow(nameField(), ownTextField('subtitle')),
-      iconField(),
-      headFields({ badge: true }),
+      fieldRow(nameField(), onlyWhen(ringed, ownTextField('subtitle'))),
+      fieldRow(iconField(), selectField('variant', COMPASS_VARIANTS)),
+      // a row has no head: its circle ringed by the bearing, its name over its line
+      onlyWhen(ringed, headFields({ badge: true })),
       ...colourFields(),
       // the bearing and how it is marked; a second one to compare against, in the secondary ink
       { ...entityField(undefined, 'direction_entity', false), helper: 'compass.direction_helper' },
@@ -137,15 +144,18 @@ export function getConfigForm(): LovelaceConfigForm {
           number: { min: -180, max: 180, step: 1, mode: 'box', unit_of_measurement: '°' },
         },
       },
-      fieldRow(boolField('show_ticks'), boolField('show_cardinals')),
-      fieldRow(
-        textField('label'),
-        onlyWhen((data) => data['show_badge'] !== false, ownTextField('badge')),
+      onlyWhen(ringed, fieldRow(boolField('show_ticks'), boolField('show_cardinals'))),
+      onlyWhen(
+        ringed,
+        fieldRow(
+          textField('label'),
+          onlyWhen((data) => data['show_badge'] !== false, ownTextField('badge')),
+        ),
       ),
       // the readouts under the ring (the rows editor draws the list), shown while it lists one
-      entitiesField('stats', READINGS),
+      onlyWhen(ringed, entitiesField('stats', READINGS)),
       onlyWhen(
-        (data) => Array.isArray(data['stats']) && data['stats'].length > 0,
+        (data) => ringed(data) && Array.isArray(data['stats']) && data['stats'].length > 0,
         boolField('show_stats'),
       ),
       // the colours its figure takes past a threshold, and the card's own in them (the rows editor draws the list)

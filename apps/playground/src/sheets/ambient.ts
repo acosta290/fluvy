@@ -1554,5 +1554,63 @@ export const sheet: SheetSpec = {
         },
       ],
     },
+
+    /* its two other layouts: compact (the head, a small ring beside its figure, the readouts at the extra-small size)
+       and one row (its circle ringed by the bearing), in a section and in half of one */
+    { title: 'Compass · compact', cards: [{ ...COMPASS_STATION, variant: 'compact' }] },
+    {
+      title: 'Compass · compact · half a section',
+      cards: [
+        { ...COMPASS_WIND, variant: 'compact', cols: 6 },
+        { ...COMPASS_CAR, variant: 'compact', cols: 6 },
+      ],
+    },
+    {
+      title: 'Compass · rows',
+      heights: [152, 172],
+      cards: [
+        { ...COMPASS_WIND, variant: 'row' },
+        { ...COMPASS_CAR, variant: 'row' },
+        {
+          type: 'custom:fluvy-compass-card',
+          variant: 'row',
+          name: 'Pier',
+          entity: 'sensor.am_pier_wind_speed',
+          direction_entity: 'sensor.am_pier_wind_direction',
+          indicator: 'ticks',
+          thresholds: [{ value: 40, tone: 'warning', label: 'Strong wind' }],
+        },
+        {
+          type: 'custom:fluvy-compass-card',
+          variant: 'row',
+          direction_entity: 'sun.sun',
+          indicator: 'dot',
+        },
+      ].map((card) => ({ ...card, cols: 6 })),
+    },
+    {
+      title: 'Compass · a row in a section',
+      cards: [{ ...COMPASS_WIND, variant: 'row', cols: 12 }],
+    },
+    {
+      title: 'Compass · compact and a row out of reach',
+      cards: [
+        {
+          ...COMPASS_WIND,
+          variant: 'compact',
+          entity: 'sensor.am_wind_speed_gone',
+          direction_entity: 'sensor.am_wind_bearing_gone',
+          secondary_direction_entity: 'sensor.am_wind_bearing_gone',
+          stats: [{ entity: 'sensor.am_wind_speed_gone', name: 'Gusts' }],
+        },
+        {
+          ...COMPASS_WIND,
+          variant: 'row',
+          entity: 'sensor.am_wind_speed_gone',
+          direction_entity: 'sensor.am_wind_bearing_gone',
+          cols: 12,
+        },
+      ],
+    },
   ],
 };

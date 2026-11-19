@@ -14,7 +14,16 @@ import {
   type LovelaceCardConfig,
   type LovelaceGridOptions,
 } from '@fluvy/core';
-import { dialDiscRadius, head, readout, sheetStyles, textWidth, type Tone } from '@fluvy/ui';
+import {
+  dialDiscRadius,
+  head,
+  ico,
+  pressCover,
+  readout,
+  sheetStyles,
+  textWidth,
+  type Tone,
+} from '@fluvy/ui';
 import { css, html, nothing, svg, type CSSResultGroup, type TemplateResult } from 'lit';
 
 import { HeadFit } from '../energy/head.js';
@@ -22,6 +31,7 @@ import { gaugeLabel, widestFigure, widestOf, windowRow } from '../gauge/gauge-ca
 import { Card, type CardEditor } from '../shared/base.js';
 import { toneOf } from '../shared/colour.js';
 import { classWord, iconOf, stateWord } from '../shared/domain.js';
+import { withUnit } from '../shared/duration.js';
 import { statsSize } from '../shared/readouts.js';
 import { bandTint, type TintConfig } from '../shared/state-tint.js';
 import type { Band, ThresholdsConfig } from '../shared/thresholds.js';
@@ -40,6 +50,10 @@ const weatherWords = words('weather');
 export type CompassPointer = 'knob' | 'ticks' | 'dot';
 export const COMPASS_POINTERS: readonly CompassPointer[] = ['knob', 'ticks', 'dot'];
 
+/** The card's layouts: the ring in its column, the head over a small ring beside its figure, one row. */
+export type CompassVariant = 'full' | 'compact' | 'row';
+export const COMPASS_VARIANTS: readonly CompassVariant[] = ['full', 'compact', 'row'];
+
 /** One readout of the row under the ring: a sensor, its name, its unit and decimals. */
 export interface CompassStatConfig extends NumberKeys {
   entity: string;
@@ -48,6 +62,12 @@ export interface CompassStatConfig extends NumberKeys {
 
 export interface CompassCardConfig
   extends FluvyCardConfig, NumberKeys, ThresholdsConfig, TintConfig {
+  /**
+   * `full` (default): the ring sized from its column, its figure in it. `compact`: the head and a small ring beside its
+   * figure, the readouts at the extra-small size. `row`: one 76 row, its circle ringed by the bearing, its name over
+   * its figure and its point.
+   */
+  variant?: CompassVariant;
   /** The line under the title. */
   subtitle?: string;
   /**
@@ -167,6 +187,13 @@ const RADIUS = 96;
 /** Under this radius the reading is written under the ring: its open centre would not hold it (half a section). */
 const INSIDE = 56;
 
+/** The compact card's small ring, beside its figure: R 28 and its ticks in a 104 box. */
+const COMPACT_RADIUS = 28;
+
+/** Where north is drawn, in degrees clockwise from the top: the config's, held to −180…180. */
+const offsetOf = (config: CompassCardConfig): number =>
+  typeof config.north_offset === 'number' ? Math.max(-180, Math.min(180, config.north_offset)) : 0;
+
 /** The four cardinal points, by their bearings, in the weather's words. */
 const CARDINALS: readonly (readonly [bearing: number, word: CompassKey])[] = [
   [0, 'dir.n'],
@@ -284,8 +311,92 @@ export class FluvyCompassCard extends Card<CompassCardConfig> {
       .cp-under .fv-readout__value {
         justify-content: center;
       }
+      /* the compact card: its small ring at the start, its figure beside it, the point and the degrees under that */
+      .so-gauge.cp-beside {
+        align-items: center;
+        gap: 16px;
+      }
+      .cp-reading {
+        flex: 1 1 auto;
+        min-width: 0;
+      }
+      .cp-reading .fv-readout__label {
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+      }
+      .cp-reading .fv-dial__sub {
+        white-space: nowrap;
+      }
       .so-cols .fv-readout__label {
         white-space: nowrap;
+      }
+      /* the row: the house's (76, 16 in), the card's circle ringed by the compass 3 clear of it; the row is the card's
+         button (a cover over it, the head's rule) */
+      .cp-row {
+        position: relative;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        height: 76px;
+        padding: 16px;
+      }
+      /* held by another card's surface (the Expander's), the row stands out by its own padding */
+      :host:has(> .cp-row) {
+        --fv-pad: 16px;
+      }
+      .cp-row .fv-row__text {
+        flex: 1 1 auto;
+        min-width: 0;
+      }
+      .cp-row > .fv-tile__tap {
+        border-radius: inherit;
+      }
+      .cp-ringed {
+        position: relative;
+        display: grid;
+        place-items: center;
+        flex: 0 0 44px;
+        width: 44px;
+        height: 44px;
+      }
+      /* a circle with actions of its own (#179) is a button raised over the row's cover */
+      .cp-ringed:has(> .fv-ico--tap) {
+        z-index: 1;
+      }
+      .cp-ringed > svg {
+        position: absolute;
+        top: -7px;
+        left: -7px;
+        width: 58px;
+        height: 58px;
+        overflow: visible;
+      }
+      .cp-track {
+        fill: none;
+        stroke: var(--fluvy-border);
+        stroke-width: 2;
+      }
+      .cp-notch {
+        stroke: var(--fluvy-text);
+        stroke-width: 2;
+        stroke-linecap: round;
+      }
+      .cp-arc {
+        fill: none;
+        stroke: var(--tone-ink);
+        stroke-width: 3;
+        stroke-linecap: round;
+      }
+      /* the knob in small: the card's disc, the tone's ring */
+      .cp-mini-knob {
+        fill: var(--fv-solid-card, var(--fluvy-card));
+        stroke: var(--tone-ink);
+        stroke-width: 2;
+      }
+      /* the second bearing in the secondary ink, as the thermostat's current reading */
+      .cp-ringed .is-second {
+        --tone-ink: var(--fluvy-text-secondary);
       }
     `,
   ];
@@ -334,9 +445,17 @@ export class FluvyCompassCard extends Card<CompassCardConfig> {
     return Math.ceil(FluvyCompassCard.layoutHeight(this.config ?? { type: '' }) / 50);
   }
 
-  /** The ring takes a section; half a section is its floor, the reading then written under it. */
+  /**
+   * The ring and the compact card take a section, half a section their floor (the reading then written under the
+   * ring); the row half a section, as the house's rows.
+   */
   override getGridOptions(): LovelaceGridOptions {
-    return { columns: 12, rows: 'auto', min_columns: 6 };
+    return { columns: this.variant === 'row' ? 6 : 12, rows: 'auto', min_columns: 6 };
+  }
+
+  private get variant(): CompassVariant {
+    const asked = this.config?.variant;
+    return asked === 'compact' || asked === 'row' ? asked : 'full';
   }
 
   protected override watched(): readonly string[] {
@@ -451,23 +570,60 @@ export class FluvyCompassCard extends Card<CompassCardConfig> {
     const headTone: Tone = unusable ? 'off' : tone;
     const tinted = bandTint(this.accents, c, band);
 
-    // the ring from the column, as the gauge's: R 96 in a 240 box from a 240 column, down to half a section's
-    const r = Math.min(RADIUS, Math.max(32, Math.floor((width / 2 - TICK - 12) / 4) * 4));
+    const point = bearing === null ? null : pointOf(bearing);
+    const pointWords = point === null ? '—' : pointWord(this.hass, point);
+    const degrees = bearing === null ? '' : degreesText(this.hass, bearing);
+    if (this.variant === 'row')
+      return this.renderRow({
+        main,
+        bearing,
+        second,
+        reading,
+        unusable,
+        tone,
+        pointWords,
+        degrees,
+      });
+
+    // the ring from the column, as the gauge's: R 96 in a 240 box from a 240 column, down to half a section's; the
+    // compact card's small one beside its figure
+    const compact = this.variant === 'compact';
+    const r = compact
+      ? COMPACT_RADIUS
+      : Math.min(RADIUS, Math.max(32, Math.floor((width / 2 - TICK - 12) / 4) * 4));
     // the box's half: the ring, its ticks and the knob's 12 past them, on the 4 grid as the radius is
     const half = r + TICK + 12;
     const inset = Math.max(0, Math.floor(width / 2 - half));
     const large = r >= 72;
-    const inside = r >= INSIDE;
-
-    const point = bearing === null ? null : pointOf(bearing);
-    const pointWords = point === null ? '—' : pointWord(this.hass, point);
-    const degrees = bearing === null ? '' : degreesText(this.hass, bearing);
+    // the figure in the ring's open centre (the full card's, from R 56), beside the compact card's small ring where
+    // the column holds it at the small readout's size, else under the ring
+    const besideRoom = width - 2 * half - 16;
+    const where: 'inside' | 'beside' | 'under' = compact
+      ? this.figureWidth(reading, 's') <= besideRoom
+        ? 'beside'
+        : 'under'
+      : r >= INSIDE
+        ? 'inside'
+        : 'under';
     // the word over the figure: the person's (a name: it ends in an ellipsis), else what the figure is, which leaves
     // where its line cannot hold it
-    const room = inside ? 2 * (dialDiscRadius(r) - 8) : width;
+    const room =
+      where === 'inside' ? 2 * (dialDiscRadius(r) - 8) : where === 'beside' ? besideRoom : width;
     const label = gaugeLabel(c.label, reading.word, room, (text) =>
-      this.head.ruler.width(inside ? 'fv-dial__label-in' : 'fv-readout__label', text),
+      this.head.ruler.width(where === 'inside' ? 'fv-dial__label-in' : 'fv-readout__label', text),
     );
+    // the readout over the point and the degrees, where the figure is not in the ring: large beside the compact
+    // card's ring where it holds there
+    const outside = (size: 'l' | 's' | 'xs'): TemplateResult =>
+      html`${readout({
+        label: label?.text ?? '',
+        name: label ? !label.fits : false,
+        ...(label ? {} : { glyph: null }),
+        value: reading.value,
+        unit: reading.unit,
+        size,
+        ink: band?.ink,
+      })}${this.renderPoint(reading, pointWords, degrees)}`;
 
     const own = this.ownText(c.badge, false)?.text ?? band?.label;
     const badgeText = !this.showBadge ? undefined : unusable ? stateWord(this.hass, main) : own;
@@ -528,35 +684,34 @@ export class FluvyCompassCard extends Card<CompassCardConfig> {
         ...this.headActions(main.id),
         name: true,
       })}
-      <div class="so-gauge">
+      <div class="so-gauge ${where === 'beside' ? 'cp-beside' : ''}">
         ${this.renderDial({
           r,
           half,
-          inset,
+          inset: where === 'beside' ? 0 : inset,
           large,
           tone: unusable ? 'neutral' : tone,
           bearing,
           second,
-          centre: inside
-            ? this.renderCentre(reading, label, large, r, half, pointWords, degrees, band?.ink)
-            : nothing,
+          centre:
+            where === 'inside'
+              ? this.renderCentre(reading, label, large, r, half, pointWords, degrees, band?.ink)
+              : nothing,
         })}
+        ${
+          where === 'beside'
+            ? html`<div class="cp-reading">
+                ${outside(this.figureWidth(reading, 'l') <= besideRoom ? 'l' : 's')}
+              </div>`
+            : nothing
+        }
       </div>
       ${
-        inside
-          ? nothing
-          : html`<div class="cp-under">
-              ${readout({
-                label: label?.text ?? '',
-                name: label ? !label.fits : false,
-                ...(label ? {} : { glyph: null }),
-                value: reading.value,
-                unit: reading.unit,
-                size: statsSize(this.head.ruler, width, [{ label: '', ...reading }], 1),
-                ink: band?.ink,
-              })}
-              ${this.renderPoint(reading, pointWords, degrees)}
+        where === 'under'
+          ? html`<div class="cp-under">
+              ${outside(statsSize(this.head.ruler, width, [{ label: '', ...reading }], 1))}
             </div>`
+          : nothing
       }
       ${
         row
@@ -565,11 +720,120 @@ export class FluvyCompassCard extends Card<CompassCardConfig> {
               style="grid-template-columns:repeat(${row.columns}, minmax(0, 1fr))"
               data-align="center"
             >
-              ${stats.map((stat) => readout({ label: stat.label, value: stat.value, unit: stat.unit, tight: stat.unit === '°', size: row.size }))}
+              ${stats.map((stat) => readout({ label: stat.label, value: stat.value, unit: stat.unit, tight: stat.unit === '°', size: compact ? 'xs' : row.size }))}
             </div>`
           : nothing
       }
     </article>`;
+  }
+
+  /** A figure's width with its unit at a readout's size. */
+  private figureWidth(reading: Reading, size: 'l' | 's'): number {
+    return this.head.ruler.width(
+      `fv-readout fv-readout--${size} > fv-readout__value`,
+      reading.value,
+      'fv-unit',
+      reading.unit,
+    );
+  }
+
+  /**
+   * One 76 row, the house's (a printer's, a car's mini): the card's circle ringed by the compass 3 clear of it — its
+   * track, north's notch, the bearing on it as its pointer marks it (a knob in small, the arc across its sixteenth for
+   * lit ticks, a dot) and the second in the secondary ink — its name over its figure, its point and its degrees. In a
+   * narrow row the degrees leave the line first, then the point (the ring says it), then a band's words; where the
+   * figure would still not hold beside the circle, the circle and its ring give way, the line taking the whole row.
+   */
+  private renderRow(o: {
+    readonly main: EntityView;
+    readonly bearing: number | null;
+    readonly second: number | null;
+    readonly reading: Reading;
+    readonly unusable: boolean;
+    readonly tone: Tone;
+    readonly pointWords: string;
+    readonly degrees: string;
+  }): TemplateResult {
+    const c = this.config!;
+    const { reading } = o;
+    const band = reading.band;
+    const name = this.nameFor(o.main, c.name);
+    // the figure, whole, then its point (the ring says it too) and the degrees, which leave first; a band's words lead
+    // the line and leave last; the bearing as the figure says its degrees and its point
+    const figure = withUnit(reading.value, reading.unit);
+    const segments = o.unusable
+      ? [{ text: stateWord(this.hass, o.main) }]
+      : [
+          ...(band?.label ? [{ text: band.label, optional: true }] : []),
+          { text: figure },
+          ...(reading.bearing && o.bearing === null
+            ? []
+            : [{ text: o.pointWords, optional: true }]),
+          ...(!reading.bearing && o.degrees ? [{ text: o.degrees, optional: true }] : []),
+        ];
+    // the row's words: its column less its 16 sides (the card's are 20), less the circle's 56 while it is drawn
+    const room = this.contentWidth + 8;
+    const ringed =
+      this.head.ruler.width('fv-row__sub', o.unusable ? segments[0]!.text : figure) <= room - 56;
+    const line = this.head.fitRowSegments(segments, room - (ringed ? 56 : 0));
+    const tone: Tone = o.unusable ? 'off' : o.tone;
+    const tinted = bandTint(this.accents, c, band);
+    const actions = this.headActions(o.main.id, `${name} · ${line}`);
+    const { onTap, onHold } = actions;
+    return html`<article
+      class="fv-card so-card cp-row ${tinted.cls} ${o.unusable ? 'is-unavailable is-off' : ''}"
+      data-card
+      data-accent=${band?.accent ?? nothing}
+      data-surface=${tinted.surface}
+      data-edge=${tinted.edge}
+    >
+      ${
+        ringed
+          ? html`<span class="cp-ringed fv-tone--${tone}">
+              ${this.renderRing(o.bearing, o.second)}
+              ${ico(iconOf(o.main, band?.icon ?? c.icon), tone, {
+                onTap: actions.onIconTap,
+                onHold: actions.onIconHold,
+                label: actions.iconLabel?.(name),
+              })}
+            </span>`
+          : nothing
+      }
+      <span class="fv-row__text"
+        ><span class="fv-row__title" data-name>${name}</span
+        ><span class="fv-row__sub">${line}</span></span
+      >
+      ${onTap || onHold ? pressCover(`${name} · ${line}`, onTap, onHold) : nothing}
+    </article>`;
+  }
+
+  /**
+   * The ring round a row's circle (R 26.5 in a 58 box, the printer's): its track, north's notch where `north_offset`
+   * turns it, and each bearing as its pointer marks it, the second's in the secondary ink under the first.
+   */
+  private renderRing(bearing: number | null, second: number | null): TemplateResult {
+    const c = this.config!;
+    const offset = offsetOf(c);
+    const R = 26.5;
+    const at = (deg: number, radius = R): string => {
+      const a = ((deg + offset) * Math.PI) / 180;
+      return `${(29 + radius * Math.sin(a)).toFixed(2)} ${(29 - radius * Math.cos(a)).toFixed(2)}`;
+    };
+    const mark = (deg: number | null, pointer: CompassPointer, cls: string) => {
+      if (deg === null) return nothing;
+      const [x, y] = at(deg).split(' ');
+      if (pointer === 'ticks')
+        return svg`<path class="cp-arc ${cls}" d="M ${at(deg - 11.25)} A ${R} ${R} 0 0 1 ${at(deg + 11.25)}" />`;
+      return pointer === 'knob'
+        ? svg`<circle class="cp-mini-knob ${cls}" cx=${x} cy=${y} r="4.5" />`
+        : svg`<circle class="cp-dot ${cls}" cx=${x} cy=${y} r="3" />`;
+    };
+    return svg`<svg viewBox="0 0 58 58" aria-hidden="true" data-measure="drawn">
+      <circle class="cp-track" cx="29" cy="29" r=${R} />
+      <path class="cp-notch" d="M ${at(0, R - 3)} L ${at(0, R + 3)}" />
+      ${mark(second, c.secondary_indicator ?? 'dot', 'is-second')}
+      ${mark(bearing, c.indicator ?? 'knob', '')}
+    </svg>`;
   }
 
   /** The line under the figure: the point, and the degrees where the figure is not already them. */
@@ -644,8 +908,7 @@ export class FluvyCompassCard extends Card<CompassCardConfig> {
     const c = this.config!;
     const { r, half } = o;
     const box = half * 2;
-    const offset =
-      typeof c.north_offset === 'number' ? Math.max(-180, Math.min(180, c.north_offset)) : 0;
+    const offset = offsetOf(c);
     const showTicks = c.show_ticks !== false;
     const points =
       c.show_cardinals === false
@@ -679,7 +942,8 @@ export class FluvyCompassCard extends Card<CompassCardConfig> {
     };
     const knob = (bearing: number | null, pointer: CompassPointer, tone: Tone) => {
       if (bearing === null || pointer !== 'knob') return nothing;
-      const size = o.large ? 36 : 28;
+      // the knob its ring can carry: the thermostat's 36, its small dial's 28, a tile's 20
+      const size = o.r >= 72 ? 36 : o.r >= 40 ? 28 : 20;
       const [x, y] = at(bearing, r);
       // half pixels: crisp at 2× and 3×, never off the ring
       const place = (v: number): number => Math.round((v - size / 2) * 2) / 2;

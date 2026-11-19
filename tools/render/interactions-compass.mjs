@@ -53,10 +53,10 @@ const drawn = (card) =>
         (l) => polar(l.getBoundingClientRect()).bearing,
       ),
       label: root
-        .querySelector('.fv-dial__label-in, .cp-under .fv-readout__label')
+        .querySelector('.fv-dial__label-in, :is(.cp-under, .cp-reading) .fv-readout__label')
         ?.textContent.trim(),
       figure: root
-        .querySelector('.fv-dial__value, .cp-under .fv-readout__value')
+        .querySelector('.fv-dial__value, :is(.cp-under, .cp-reading) .fv-readout__value')
         ?.textContent.replace(/\s+/g, ''),
       line: root.querySelector('.fv-dial__sub')?.textContent.replace(/\s+/g, ' ').trim(),
       under: root.querySelector('.cp-under') !== null,
@@ -210,12 +210,101 @@ const near = (a, b, within = 1.5) => Math.abs(((a - b + 540) % 360) - 180) <= wi
   await page.close();
 }
 
+/* ---------- its other layouts: compact and the row ---------- */
+{
+  const page = await suite.sheet('ambient', { width: 360 });
+  const compact = compass(page, 'Compass · compact');
+  await compact.scrollIntoViewIfNeeded();
+  const laid = await compact.evaluate((c) => {
+    const root = c.shadowRoot;
+    const box = (selector) => root.querySelector(selector)?.getBoundingClientRect();
+    const [ring, reading, card] = [box('.cp-dial'), box('.cp-reading'), box('.fv-card')];
+    return {
+      ring: Math.round(ring.width),
+      gap: Math.round(reading.left - ring.right),
+      ringLeft: Math.round(ring.left - card.left),
+      middle: Math.abs(ring.top + ring.height / 2 - (reading.top + reading.height / 2)),
+      height: Math.round(card.height),
+      xs: root.querySelectorAll('.so-cols .fv-readout--xs').length,
+    };
+  });
+  const words = await drawn(compact);
+  check(
+    'compact: a 104 ring at the column’s start, its figure 16 beside it, centred on it, the readouts at the extra-small size, 260 tall',
+    laid.ring === 104 &&
+      laid.gap === 16 &&
+      laid.ringLeft === 20 &&
+      laid.middle < 1 &&
+      laid.xs === 3 &&
+      laid.height === 260 &&
+      words.figure === '14.2km/h' &&
+      words.line === 'WSW · 248°' &&
+      words.knobs[0]?.size === 20,
+    JSON.stringify({ laid, words }),
+  );
+  const halves = await Promise.all(
+    [0, 1].map((n) => drawn(compass(page, 'Compass · compact · half a section', n))),
+  );
+  check(
+    'compact in half a section: the figure under its ring, which holds in its column',
+    halves.every((h) => h.under && h.box <= h.column),
+    JSON.stringify(halves.map(({ box, column, under }) => ({ box, column, under }))),
+  );
+
+  const rows = frame(page, 'Compass · rows');
+  const strips = await rows.locator('fluvy-compass-card').evaluateAll((cards) =>
+    cards.map((c) => {
+      const root = c.shadowRoot;
+      const card = root.querySelector('.fv-card').getBoundingClientRect();
+      const ringed = root.querySelector('.cp-ringed');
+      return {
+        height: Math.round(card.height),
+        ringed: ringed !== null,
+        line: root.querySelector('.fv-row__sub').textContent.trim(),
+        arc: root.querySelector('.cp-arc') !== null,
+        tone: ringed ? [...ringed.classList].find((n) => n.startsWith('fv-tone--')) : '',
+        cut: [...root.querySelectorAll('.fv-row__sub')].some(
+          (el) => el.scrollWidth > el.clientWidth + 1,
+        ),
+      };
+    }),
+  );
+  check(
+    'rows in half a section: 76 each, the circle ringed by the bearing, the figure kept whole, the point left to the ring where the line runs short, the pier past its warning in its colour',
+    strips.length === 4 &&
+      strips.every((s) => s.height === 76 && s.ringed && !s.cut) &&
+      strips[0].line.startsWith('14.2 km/h') &&
+      strips[2].arc &&
+      strips[2].tone === 'fv-tone--warning' &&
+      strips[3].line === '291° · WNW',
+    JSON.stringify(strips),
+  );
+  await reset(page);
+  const row = compass(page, 'Compass · a row in a section');
+  await row.scrollIntoViewIfNeeded();
+  const whole = await row.evaluate((c) =>
+    c.shadowRoot.querySelector('.fv-row__sub').textContent.trim(),
+  );
+  await row.locator('.fv-tile__tap').click();
+  check(
+    'a row in a section says its figure, its point and its degrees; a tap on it opens the wind sensor',
+    whole === '14.2 km/h · WSW · 248°' &&
+      JSON.stringify(await moreInfo(page)) === '["sensor.am_wind_speed"]',
+    `${whole} ${JSON.stringify(await moreInfo(page))}`,
+  );
+  await page.close();
+}
+
 /* ---------- every language: its points, nothing cut ---------- */
 {
   const wrong = [];
   for (const lang of await everyLanguage()) {
     const page = await suite.sheet('ambient', { width: 360, lang });
-    for (const title of ['Compass · a weather station', 'Compass · half a section']) {
+    for (const title of [
+      'Compass · a weather station',
+      'Compass · half a section',
+      'Compass · compact',
+    ]) {
       const card = compass(page, title);
       const said = await card.evaluate((c) => {
         const root = c.shadowRoot;
@@ -231,10 +320,20 @@ const near = (a, b, within = 1.5) => Math.abs(((a - b + 540) % 360) - 180) <= wi
       if (said.points.length !== 4 || said.points.some((p) => !p) || !said.line || said.cut)
         wrong.push(`${lang} ${title}: ${JSON.stringify(said)}`);
     }
+    // a row's line, its figure first, is never cut: what does not hold leaves it whole
+    const lines = await frame(page, 'Compass · rows')
+      .locator('fluvy-compass-card')
+      .evaluateAll((cards) =>
+        cards.map((c) => {
+          const sub = c.shadowRoot.querySelector('.fv-row__sub');
+          return { line: sub.textContent.trim(), cut: sub.scrollWidth > sub.clientWidth + 1 };
+        }),
+      );
+    if (lines.some((l) => l.cut || !l.line)) wrong.push(`${lang} rows: ${JSON.stringify(lines)}`);
     await page.close();
   }
   check(
-    'in every language the four points and the line under the figure are said, nothing cut',
+    'in every language the four points and the line under the figure are said, a row’s line too, nothing cut',
     wrong.length === 0,
     wrong.join(' | '),
   );

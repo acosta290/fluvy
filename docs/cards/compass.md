@@ -27,6 +27,17 @@ stats:
 
 The picture above, on the demo house: put your own entities in place of its.
 
+## Layouts
+
+`variant` chooses the layout. The picture above is `full`, the default; each of the others is the example plus the line over it, and opens in the live demo.
+
+<table>
+<tbody><tr>
+<td align="center" valign="top" width="50%"><code>variant: compact</code><br><a href="https://acosta290.github.io/fluvy/?card=compass&amp;layout=compact"><picture><source media="(prefers-color-scheme: dark)" srcset="../images/cards/compass.compact-dark.webp"><img src="../images/cards/compass.compact-light.webp" width="392" alt="The Compass card in its compact layout"></picture></a></td>
+<td align="center" valign="top" width="50%"><code>variant: row</code><br><a href="https://acosta290.github.io/fluvy/?card=compass&amp;layout=row"><picture><source media="(prefers-color-scheme: dark)" srcset="../images/cards/compass.row-dark.webp"><img src="../images/cards/compass.row-light.webp" width="204" alt="The Compass card in its row layout"></picture></a></td>
+</tr></tbody>
+</table>
+
 ## All options
 
 ```yaml
@@ -35,6 +46,7 @@ entity: sensor.am_wind_speed
 name: Garden station
 # subtitle:
 # icon:
+variant: full
 show_icon: auto
 show_badge: true
 name_lines: 1
@@ -88,6 +100,7 @@ show_stats: true
 | `name` |  | The name the card shows, in place of the entity’s own. |
 | `subtitle` |  | The line under the title: your own words, an entity’s state or a template. |
 | `icon` |  | The card’s icon, in place of the entity’s own. |
+| `variant` | `full` | The card’s layout. `full` · `compact` · `row`. |
 | `direction_entity` |  | The bearing: a state in degrees or in English letters (N, NNE … NNW), the sun’s azimuth, a weather entity’s wind. |
 | `direction_attribute` |  | The attribute the bearing is read from, on any entity (a car tracker’s `heading`). |
 | `indicator` | `knob` | How the bearing is marked: the knob on the ring, the ticks lit across it, or a dot outside them. `knob` · `ticks` (Lit ticks) · `dot`. |
@@ -198,6 +211,8 @@ indicator: ticks
 - `north_offset` turns the ring for a window that does not face north: `-90` puts east at the top. The letters stay
   upright.
 - In half a section the figure, the point and the degrees stand under the ring.
+- `variant: compact` puts a small ring beside the figure under the head, its readouts smaller; `variant: row` is one
+  row for half a section, its circle ringed by the bearing, its name over the figure and the point.
 
 <details>
 <summary>Older names the card still reads</summary>
@@ -206,6 +221,8 @@ indicator: ticks
 | --- | --- |
 | `sub` | `subtitle` |
 | `meta` | `subtitle` |
+| `layout` | `variant` |
+| `view` | `variant` |
 | `accent` | `color` |
 
 </details>

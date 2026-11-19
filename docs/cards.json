@@ -11948,6 +11948,75 @@
           }
         ]
       },
+      "layout": {
+        "key": "variant",
+        "values": [
+          "full",
+          "compact",
+          "row"
+        ],
+        "default": "full"
+      },
+      "layouts": {
+        "compact": {
+          "type": "custom:fluvy-compass-card",
+          "name": "Garden station",
+          "entity": "sensor.am_wind_speed",
+          "direction_entity": "sensor.am_wind_bearing",
+          "secondary_direction_entity": "sensor.am_wind_bearing_avg",
+          "stats": [
+            {
+              "entity": "sensor.am_wind_gust",
+              "name": "Gusts"
+            },
+            {
+              "entity": "sensor.am_wind_max_today",
+              "name": "Max today"
+            },
+            {
+              "entity": "sensor.am_wind_bearing_avg",
+              "name": "10-min avg"
+            }
+          ],
+          "variant": "compact"
+        },
+        "row": {
+          "type": "custom:fluvy-compass-card",
+          "name": "Garden station",
+          "entity": "sensor.am_wind_speed",
+          "direction_entity": "sensor.am_wind_bearing",
+          "secondary_direction_entity": "sensor.am_wind_bearing_avg",
+          "stats": [
+            {
+              "entity": "sensor.am_wind_gust",
+              "name": "Gusts"
+            },
+            {
+              "entity": "sensor.am_wind_max_today",
+              "name": "Max today"
+            },
+            {
+              "entity": "sensor.am_wind_bearing_avg",
+              "name": "10-min avg"
+            }
+          ],
+          "variant": "row"
+        }
+      },
+      "layout_pictures": {
+        "compact": {
+          "light": "images/cards/compass.compact-light.webp",
+          "dark": "images/cards/compass.compact-dark.webp",
+          "width": 784,
+          "height": 584
+        },
+        "row": {
+          "light": "images/cards/compass.row-light.webp",
+          "dark": "images/cards/compass.row-dark.webp",
+          "width": 408,
+          "height": 216
+        }
+      },
       "keys": [
         {
           "key": "entity",
@@ -11973,6 +12042,18 @@
           "label": "Icon",
           "does": "The card’s icon, in place of the entity’s own.",
           "type": "icon"
+        },
+        {
+          "key": "variant",
+          "label": "Style",
+          "does": "The card’s layout.",
+          "type": "choice",
+          "default": "full",
+          "values": {
+            "full": "Full",
+            "compact": "Compact",
+            "row": "Row"
+          }
         },
         {
           "key": "show_icon",
@@ -12410,6 +12491,14 @@
         {
           "from": "meta",
           "to": "subtitle"
+        },
+        {
+          "from": "layout",
+          "to": "variant"
+        },
+        {
+          "from": "view",
+          "to": "variant"
         },
         {
           "from": "accent",

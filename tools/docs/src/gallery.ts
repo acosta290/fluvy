@@ -310,6 +310,7 @@ export const GALLERY: Readonly<Record<string, Example>> = {
         { entity: 'sensor.am_wind_bearing_avg', name: '10-min avg' },
       ],
     },
+    variants: { compact: {}, row: { cols: 6 } },
   },
   'fluvy-sensor-card': {
     config: {

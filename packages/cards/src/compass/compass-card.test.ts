@@ -262,6 +262,66 @@ describe('the Compass card', () => {
     expect(compassHeight({ ...config, stats: ['sensor.wind_gust'] })).toBe(400);
     expect(compassHeight({ ...config, stats: ['sensor.wind_gust'], show_stats: false })).toBe(340);
     expect(compassHeight({ ...config, stats: [] })).toBe(340);
+    // compact: the head, a 104 box, its readouts at the extra-small size (16 and 40); a row, 76 whatever it lists
+    expect(compassHeight({ ...config, variant: 'compact' })).toBe(204);
+    expect(compassHeight({ ...config, variant: 'compact', stats: ['sensor.wind_gust'] })).toBe(260);
+    expect(compassHeight({ ...config, variant: 'row', stats: ['sensor.wind_gust'] })).toBe(76);
+  });
+
+  it('compact: the head, a small ring at the start (R 28, a 104 box, a tile’s 20 knob), the figure beside it', async () => {
+    const card = await mount({
+      variant: 'compact',
+      entity: 'sensor.wind_speed',
+      direction_entity: 'sensor.wind_bearing',
+      stats: ['sensor.wind_gust'],
+    });
+    const root = card.shadowRoot!;
+    expect(root.querySelector('.cp-dial svg')?.getAttribute('width')).toBe('104');
+    expect((root.querySelector('.fv-knob') as HTMLElement).style.width).toBe('20px');
+    expect(root.querySelector('.so-gauge')?.classList.contains('cp-beside')).toBe(true);
+    expect(text(card, '.cp-reading .fv-readout__label')).toBe('Speed');
+    expect(text(card, '.cp-reading .fv-readout__value')).toBe('14.2km/h');
+    expect(text(card, '.cp-reading .fv-dial__sub')).toBe('WSW · 248°');
+    // nothing in the ring's centre; the readouts at the extra-small size
+    expect(root.querySelector('.fv-dial__disc')).toBeNull();
+    expect(root.querySelector('.so-cols .fv-readout--xs')).not.toBeNull();
+    expect(card.getGridOptions()).toMatchObject({ columns: 12, min_columns: 6 });
+  });
+
+  it('a row: the circle ringed by the bearing, its name over its figure, its point and its degrees', async () => {
+    const card = await mount({
+      variant: 'row',
+      name: 'Wind',
+      entity: 'sensor.wind_speed',
+      direction_entity: 'sensor.wind_bearing',
+      secondary_direction_entity: 'sensor.wind_average',
+      stats: ['sensor.wind_gust'],
+    });
+    const root = card.shadowRoot!;
+    expect(root.querySelector('.cp-row')).not.toBeNull();
+    expect(root.querySelector('.fv-card__head')).toBeNull();
+    expect(text(card, '.fv-row__title')).toBe('Wind');
+    expect(text(card, '.fv-row__sub')).toBe('14.2 km/h · WSW · 248°');
+    // its track, north's notch, the bearing's knob in small and the second's dot in the secondary ink; no readouts
+    expect(root.querySelector('.cp-ringed circle.cp-track')).not.toBeNull();
+    expect(root.querySelector('.cp-ringed path.cp-notch')).not.toBeNull();
+    expect(root.querySelector('.cp-ringed circle.cp-mini-knob:not(.is-second)')).not.toBeNull();
+    expect(root.querySelector('.cp-ringed circle.cp-dot.is-second')).not.toBeNull();
+    expect(root.querySelector('.so-cols')).toBeNull();
+    // the row is the card's button; it takes half a section
+    expect(root.querySelector('.fv-tile__tap')).not.toBeNull();
+    expect(card.getGridOptions()).toMatchObject({ columns: 6, min_columns: 6 });
+    // the ticks across its sixteenth: an arc on the ring; the bearing as the figure, its degrees and its point
+    const sun = await mount({ variant: 'row', direction_entity: 'sun.sun', indicator: 'ticks' });
+    expect(sun.shadowRoot?.querySelector('.cp-ringed path.cp-arc')).not.toBeNull();
+    expect(text(sun, '.fv-row__sub')).toBe('291° · WNW');
+    const gone = await mount({
+      variant: 'row',
+      entity: 'sensor.wind_gone',
+      direction_entity: 'sensor.bearing_gone',
+    });
+    expect(text(gone, '.fv-row__sub')).toBe('Unavailable');
+    expect(gone.shadowRoot?.querySelector('.cp-ringed circle.cp-mini-knob')).toBeNull();
   });
 
   it('asks for a bearing or a figure, and offers the house’s wind, never its speed as a direction', () => {
@@ -330,5 +390,33 @@ describe('the Compass card’s editor', () => {
     expect(shown({ show_badge: false })).not.toContain('badge');
     expect(shown({})).not.toContain('show_stats');
     expect(shown({ stats: ['sensor.wind_gust'] })).toContain('show_stats');
+  });
+
+  it('offers its layouts, and hides in a row what a row does not draw: its head, its ring’s letters, its readouts', () => {
+    const wind = {
+      entity: 'sensor.wind_speed',
+      direction_entity: 'sensor.wind_bearing',
+      stats: ['sensor.wind_gust'],
+    };
+    const full = shown(wind);
+    const row = shown({ ...wind, variant: 'row' });
+    const gone = ['subtitle', 'show_icon', 'show_badge', 'show_ticks', 'show_cardinals', 'label'];
+    for (const key of [...gone, 'badge', 'stats', 'show_stats']) {
+      expect(full).toContain(key);
+      expect(row).not.toContain(key);
+    }
+    // the bearing, its pointers and its colours act in a row as on the ring
+    expect(row).toEqual(
+      expect.arrayContaining([
+        'variant',
+        'name',
+        'icon',
+        'indicator',
+        'north_offset',
+        'thresholds',
+      ]),
+    );
+    expect(shown({ ...wind, variant: 'compact' })).toEqual(full);
+    expect(compassEditor.defaults?.({ type: 'x' }, undefined)['variant']).toBe('full');
   });
 });
