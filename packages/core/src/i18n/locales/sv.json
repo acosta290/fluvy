@@ -1594,6 +1594,7 @@
     "editor.highlight_hours": "Timmar att markera",
     "editor.show_legend": "Visa förklaring",
     "editor.show_head": "Visa värdet nu",
+    "editor.kind_states": "Tillstånd",
     "editor.stat_last": "Senaste mätvärdet"
   },
   "chart": {

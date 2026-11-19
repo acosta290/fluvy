@@ -28,10 +28,11 @@ const ACTIVITY =
 
 /**
  * What only the History page uses (its folder but the takeover, the window it reads — not `series.ts`, which the
- * sensor and energy cards draw their sparklines from — and its English): fetched the first time `/history` is opened.
+ * sensor and energy cards draw their sparklines from, nor `spans.ts`, the stretches the chart engine's chunk carries —
+ * and its English): fetched the first time `/history` is opened.
  */
 const HISTORY =
-  /\/packages\/(cards\/src\/history\/(?!takeover\.ts)|core\/src\/history\/(?!series\.ts)|core\/src\/i18n\/locales\/en\/history\.json)/;
+  /\/packages\/(cards\/src\/history\/(?!takeover\.ts)|core\/src\/history\/(?!(series|spans)\.ts)|core\/src\/i18n\/locales\/en\/history\.json)/;
 
 /**
  * Our history in Home Assistant's details dialog (all of its folder but the takeover, and its English): fetched the
@@ -103,13 +104,14 @@ const HISTORY_BARS_READINGS = /\/packages\/cards\/src\/history-bars\/(readings|h
 
 /**
  * The chart engine (its scales, paths, bars, axes, rings, styles and sheet, the gauges that move and their English,
- * and the tokens' fitting of a house's set of series colours): fetched as the bundle starts, with the families. A core
- * card reaches it through `shared/chart-load.ts` (a dynamic import: the sensor's chart waits on it behind the skeleton
- * it shows while its history loads), a card in a lazy chunk (energy, history bars, the History page, the Chart card)
- * by a static import from its own chunk.
+ * the tokens' fitting of a house's set of series colours, and a thing's states as stretches, `@fluvy/core/spans`, which
+ * the History page, the details dialog and the Chart card lay theirs from): fetched as the bundle starts, with the
+ * families. A core card reaches it through `shared/chart-load.ts` (a dynamic import: the sensor's chart waits on it
+ * behind the skeleton it shows while its history loads), a card in a lazy chunk (energy, history bars, the History
+ * page, the Chart card) by a static import from its own chunk.
  */
 const CHART =
-  /\/packages\/(cards\/src\/chart\/(engine\/|english\.ts)|tokens\/src\/build\/series\.ts|core\/src\/i18n\/locales\/en\/chart\.json)/;
+  /\/packages\/(cards\/src\/chart\/(engine\/|english\.ts)|tokens\/src\/build\/series\.ts|core\/src\/history\/spans\.ts|core\/src\/i18n\/locales\/en\/chart\.json)/;
 
 /**
  * The Chart card (the card, what reads its series — history, statistics, a list in an attribute, a forecast — its

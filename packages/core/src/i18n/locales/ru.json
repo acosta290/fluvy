@@ -1691,6 +1691,7 @@
     "editor.highlight_hours": "Длина выделения (ч)",
     "editor.show_legend": "Показывать легенду",
     "editor.show_head": "Показывать текущее значение",
+    "editor.kind_states": "Состояния",
     "editor.stat_last": "Последнее значение"
   },
   "chart": {

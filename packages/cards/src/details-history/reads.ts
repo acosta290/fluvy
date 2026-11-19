@@ -1,12 +1,13 @@
 import { isActiveState, type HassEntity } from '@fluvy/core';
+import type { Span } from '@fluvy/core/history';
 import { momentOf, numberOf } from '../chart/data/attribute.js';
 import type { StatRow } from '../chart/data/statistics.js';
 
 /*
  * What the details dialog's history reads of an entity, pure, so the block and its tests share it: the kind of history
  * it has, the windows its chips offer, a meter's gains and its day so far from the recorder's buckets, where its total
- * was reset (the line breaks there), and the stretches a thing spent in each state. The block (`view.ts`) asks the
- * recorder and draws.
+ * was reset (the line breaks there), and how long a thing was on in the stretches it spent in each state (laid by the
+ * Chart card's `stateReadings`). The block (`view.ts`) asks the recorder and draws.
  */
 
 export const MINUTE = 60_000;
@@ -242,50 +243,6 @@ export function reachOf(readings: readonly Read[], start: number, end: number): 
   };
 }
 
-/** A stretch spent in one state, from `from` to `to` (now, while it lasts). */
-export interface Stretch {
-  readonly from: number;
-  readonly to: number;
-  readonly state: string;
-}
-
-/** A recorded state, as `history/history_during_period` sends it at its smallest: the state, and when (seconds). */
-export interface Recorded {
-  readonly s: string;
-  readonly lu: number;
-}
-
-/**
- * The stretches a thing spent in each state over a window: a run of one state is one stretch, the first clipped to
- * the window's start, the last running to its end — brought up to the state now (`live`, since it last changed), which
- * the recorder may not have sent yet.
- */
-export function stretchesOf(
-  rows: readonly Recorded[],
-  start: number,
-  end: number,
-  live?: { readonly state: string; readonly since: number },
-): Stretch[] {
-  const changes = rows.map((row) => ({ state: row.s, at: row.lu * 1000 }));
-  const latest = changes[changes.length - 1];
-  if (live && (!latest || (live.since > latest.at && live.state !== latest.state)))
-    changes.push({ state: live.state, at: live.since });
-  const stretches: Stretch[] = [];
-  for (const { state, at } of changes) {
-    const from = Math.max(start, at);
-    if (from >= end) break;
-    const previous = stretches[stretches.length - 1];
-    if (previous?.state === state) continue;
-    if (previous) stretches[stretches.length - 1] = { ...previous, to: from };
-    stretches.push({ from, to: end, state });
-  }
-  return stretches;
-}
-
-/** The stretch an instant falls in. */
-export const stretchAt = (stretches: readonly Stretch[], t: number): Stretch | undefined =>
-  stretches.find((stretch) => t >= stretch.from && t <= stretch.to);
-
 const UNKNOWN = new Set(['unavailable', 'unknown', '']);
 
 /**
@@ -294,7 +251,7 @@ const UNKNOWN = new Set(['unavailable', 'unknown', '']);
  */
 export function timeOn(
   domain: string,
-  stretches: readonly Stretch[],
+  stretches: readonly Span[],
 ): { readonly state: string; readonly ms: number } | null {
   const active = stretches.filter(
     (stretch) => !UNKNOWN.has(stretch.state) && isActiveState(domain, stretch.state),

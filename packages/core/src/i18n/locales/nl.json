@@ -3250,6 +3250,7 @@
     "editor.highlight_hours": "Uren om uit te lichten",
     "editor.show_legend": "Legenda tonen",
     "editor.show_head": "Huidige waarde tonen",
+    "editor.kind_states": "Toestanden",
     "editor.stat_last": "De laatste meting"
   },
   "slider": {

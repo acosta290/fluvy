@@ -3250,6 +3250,7 @@
     "editor.highlight_hours": "ハイライトする時間",
     "editor.show_legend": "凡例を表示",
     "editor.show_head": "現在の値を表示",
+    "editor.kind_states": "状態",
     "editor.stat_last": "最後の値"
   },
   "slider": {

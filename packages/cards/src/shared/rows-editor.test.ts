@@ -25,6 +25,7 @@ import {
   numberFields,
   onlyWhen,
   selectField,
+  stateColoursField,
   stateTintFields,
   textField,
 } from './form.js';
@@ -243,6 +244,68 @@ describe('an editor with a list default', () => {
     const next = written(element);
     (element as unknown as Private).onAdd(colours, change({ color: 'pink' }));
     expect(await next).toEqual({ type: 'custom:x', colors: ['pink'] });
+  });
+});
+
+describe('an item’s own group and what it is picked as (#228)', () => {
+  /** A chart's series: a switch picked is its states, coloured by state in a group of its own. */
+  const series: RowsListSpec = {
+    key: 'series',
+    title: 'editor.rows',
+    schema: [{ name: 'entity', selector: { entity: {} } }, stateColoursField(['on', 'off'])],
+    picked: (entity) => (entity.startsWith('switch.') ? { entity, kind: 'states' } : { entity }),
+  };
+  type Private = {
+    onAdd(list: RowsListSpec, event: CustomEvent<{ value: Record<string, unknown> }>): void;
+    onItem(
+      list: RowsListSpec,
+      index: number,
+      event: CustomEvent<{ value: Record<string, unknown> }>,
+    ): void;
+  };
+  const editor = (config: Record<string, unknown>): FluvyRowsEditor => {
+    const element = listsEditor({ schema: [] }, [series]) as FluvyRowsEditor;
+    element.setConfig({ type: 'custom:x', ...config });
+    return element;
+  };
+  const written = (element: FluvyRowsEditor): Promise<Record<string, unknown>> =>
+    new Promise((resolve) =>
+      element.addEventListener('config-changed', (event) =>
+        resolve((event as CustomEvent<{ config: Record<string, unknown> }>).detail.config),
+      ),
+    );
+  const change = (value: Record<string, unknown>) =>
+    new CustomEvent('value-changed', { detail: { value } });
+
+  it('adds an entity as what its list says it is picked as', async () => {
+    const element = editor({ series: ['sensor.a'] });
+    const next = written(element);
+    (element as unknown as Private).onAdd(series, change({ entity: 'switch.plug' }));
+    expect(await next).toEqual({
+      type: 'custom:x',
+      series: ['sensor.a', { entity: 'switch.plug', kind: 'states' }],
+    });
+  });
+
+  it('keeps what was chosen in the group alone: a colour cleared leaves it, a group of none the item', async () => {
+    const element = editor({ series: [{ entity: 'switch.plug', state_colors: { on: 'ok' } }] });
+    const next = written(element);
+    (element as unknown as Private).onItem(
+      series,
+      0,
+      change({ entity: 'switch.plug', state_colors: { on: 'ok', off: '' } }),
+    );
+    expect(await next).toEqual({
+      type: 'custom:x',
+      series: [{ entity: 'switch.plug', state_colors: { on: 'ok' } }],
+    });
+    const cleared = written(element);
+    (element as unknown as Private).onItem(
+      series,
+      0,
+      change({ entity: 'switch.plug', state_colors: { on: '' } }),
+    );
+    expect(await cleared).toEqual({ type: 'custom:x', series: ['switch.plug'] });
   });
 });
 

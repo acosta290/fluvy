@@ -156,7 +156,7 @@ An item is an entity id, or a map with `entity` and any of these fields.
 
 | Field | What it does |
 | --- | --- |
-| `entity` | The entity the item shows. A `sensor`, `weather`, `number`, `input_number` or `counter`. |
+| `entity` | The entity the item shows. A `sensor`, `weather`, `number`, `input_number`, `counter`, `binary_sensor`, `input_boolean` or `switch`. |
 | `name` | The item’s own name, in place of the one the card would give it. |
 | `source` | Where the readings come from. `auto` · `history` · `statistics` · `attribute` (A list in its attributes) · `forecast`. |
 | `attribute` | The attribute that holds the list of readings. `auto`, or your own. |
@@ -164,13 +164,14 @@ An item is an entity id, or a map with `entity` and any of these fields.
 | `value_key` | The key of each entry that holds its value. |
 | `stat` | What each reading of the statistics is, or what each point and step of a history reads. `mean` (The mean) · `min` (The lowest reading) · `max` (The highest reading) · `sum` · `change` (What it gained) · `last` (The last reading). |
 | `period` | How long each statistic’s reading lasts. `hour` (An hour) · `day` (A day) · `week` (A week) · `month` (A month). |
-| `kind` | How the series is drawn: a line, an area, columns, or a band. `line` · `area` · `columns` · `band`. |
+| `kind` | How the series is drawn: a line, an area, columns, a band, or its states as a strip under the chart. `line` · `area` · `columns` · `band` · `states`. |
 | `curve` | How this series’ line joins its readings. `smooth` · `straight` · `step`. |
 | `fill` | What lies under this series’ line. `gradient` · `flat` · `none`. |
 | `tone` | The item’s colour from the palette’s tones. `accent` · `light` · `heat` · `cool` · `dry` · `fan` · `water` · `solar` · `grid` · `media` · `presence` · `armed` · `battery` · `house` · `gas` · `vehicle` (Car) · `neutral` · `ok` (Good) · `warning` · `danger`. |
 | `color` | The item’s colour, in place of the one the card gives it. `graph-1` (Series 1) · `graph-2` (Series 2) · `graph-3` (Series 3) · `graph-4` (Series 4) · `graph-5` (Series 5) · `graph-6` (Series 6) · `graph-7` (Series 7) · `graph-8` (Series 8) · `graph-9` (Series 9) · `graph-10` (Series 10) · `graph-11` (Series 11) · `graph-12` (Series 12) · `accent` · `ok` (Good) · `warning` · `danger` · `notice` · `light` · `solar` · `grid` · `battery` · `water` · `gas` · `home` (House), or your own. |
 | `unit` | The unit this series is written in. `auto` · `W` · `kW` · `MW` · `Wh` · `kWh` · `MWh` · `L` · `m³` · `gal` · `ft³`, or your own. |
 | `decimals` | How many decimals the figure has. `auto` · `0` · `1` · `2` · `3`. |
+| `state_colors` | A series of states’ colour for each of its states: a tone, none for the strip’s own fill, or a colour of your own. Its keys: `on` · `off`. |
 
 ### `thresholds`
 
@@ -221,13 +222,31 @@ series:
 span: today+tomorrow
 ```
 
+```yaml
+# a wall tablet's battery, its charger's plug as a strip under the chart
+type: custom:fluvy-chart-card
+title: Hall tablet
+series:
+  - entity: sensor.hall_tablet_battery
+  - entity: switch.hall_tablet_charger
+    kind: states # on and off as a strip, on the chart's time
+    name: Charger
+span: 24h
+```
+
 ### Series
 
 - `source`: `history`, `statistics`, `attribute` or `forecast`. Left out: a weather's forecast, else a known list in
   its attributes, else its history.
 - Lists read by themselves: Nordpool, Tibber, ENTSO-E, Frank Energie, Solcast (its 10 % and 90 % as a band), and any
   list of times and values. `time_key` and `value_key` name other keys.
-- `kind`: `line`, `area`, `columns` or `band` (lows and highs).
+- `kind`: `line`, `area`, `columns`, `band` (lows and highs) or `states`: any entity's states (a switch, a door, a
+  heat pump's mode) as a strip under the chart. On takes the series' colour, `unavailable` and `unknown` are striped,
+  and `state_colors` gives a state its own: `{ heating: heat, hot_water: water, standby: none }` (`none` leaves it
+  empty).
+- `stat` on a history: `mean` (the default), `min`, `max` or `last`, what each point or step reads. A template sensor
+  of 0 and 100 drawn with `stat: max` and `curve: step` reads 0 or 100, never a value between.
+- A sensor that was `unavailable` or `unknown` leaves a gap in its line and its columns.
 - `unit`: one the sensor's converts to, or the unit its list is written in (Solcast's kW under a kWh sensor).
 - `color` takes a colour or a palette name that follows the palette: `graph-1` to `graph-12`, `accent`, `ok`,
   `warning`, `danger`, `solar`, `grid`, `battery`, `water`, `gas`, `home`.

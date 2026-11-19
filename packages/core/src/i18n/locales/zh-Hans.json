@@ -745,6 +745,7 @@
     "editor.highlight_hours": "高亮时段",
     "editor.show_legend": "显示图例",
     "editor.show_head": "显示当前值",
+    "editor.kind_states": "状态",
     "editor.stat_last": "最后读数"
   },
   "chart": {

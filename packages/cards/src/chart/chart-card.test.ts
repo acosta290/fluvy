@@ -2,6 +2,7 @@
 import {
   CHART_DEFAULTS,
   setChartDefaults,
+  type EntityView,
   type HaFormSchemaItem,
   type HassEntity,
   type HomeAssistant,
@@ -15,7 +16,7 @@ import { visibleFields } from '../shared/form.js';
 import { FluvyChartCard, legendColumns, type ChartCardConfig } from './chart-card.js';
 import { capsIn, defaultWindows, isPrice, SERIES_LIST, seriesOf, windowAt } from './config.js';
 import type { Reading } from './data/attribute.js';
-import { historyReadings, sourceOf } from './data/sources.js';
+import { historyReadings, sourceOf, stateReadings } from './data/sources.js';
 import { evenEdges, gains, slotted, spanOf, stepOf, windowOf } from './data/span.js';
 
 // the chart family lands with the index: the card's tag is defined before a page needs it
@@ -71,13 +72,41 @@ const STATES = [
   state('sensor.cellar', '14.2', { unit_of_measurement: '°C', state_class: 'measurement' }),
   state('weather.home', 'sunny', { temperature: 16.8, temperature_unit: '°C' }),
   state('sensor.gone', 'unavailable', { unit_of_measurement: 'EUR/kWh' }),
-  // #228: a room sensor that went away, a 0/100 template
+  // #228: a charger's plug, a back door, a heat pump's mode as words, a room sensor that went away, a 0/100 template
+  state('switch.charger', 'on'),
+  state('binary_sensor.door', 'off', { device_class: 'door' }),
+  state('sensor.mode', 'heating', { device_class: 'enum' }),
   state('sensor.flaky', '21', { unit_of_measurement: '°C', state_class: 'measurement' }),
   state('sensor.boiler', '0'),
 ];
 
 /** What the recorder kept of these at their own moments (from MIDNIGHT, in hours): each state until the next. */
 const RECORDED: Readonly<Record<string, ReadonlyArray<readonly [number, string]>>> = {
+  // on 02:00–04:00; off the network 05:00–05:30; on again from 20:00
+  'switch.charger': [
+    [-30, 'off'],
+    [2, 'on'],
+    [4, 'off'],
+    [5, 'unavailable'],
+    [5.5, 'off'],
+    [20, 'on'],
+  ],
+  // open a quarter of an hour at 08:00, and a minute at noon
+  'binary_sensor.door': [
+    [-30, 'off'],
+    [8, 'on'],
+    [8.25, 'off'],
+    [12, 'on'],
+    [12 + 1 / 60, 'off'],
+  ],
+  'sensor.mode': [
+    [-30, 'standby'],
+    [6, 'heating'],
+    [7, 'hot_water'],
+    [7.5, 'heating'],
+    [9, 'standby'],
+    [16, 'heating'],
+  ],
   // 20 °C, unavailable 03:00–06:00, 21 °C, unknown 12:00–13:00, 21 °C
   'sensor.flaky': [
     [-30, '20'],
@@ -1309,7 +1338,7 @@ describe('following a date picker (#181)', () => {
   });
 });
 
-/* ---------- #228: the history's own stat, an unavailable stretch a gap ---------- */
+/* ---------- #228: a thing's states as a strip, the history's own stat, an unavailable stretch a gap ---------- */
 
 type Scrubbed = Inner & { scrubber: { set(value: number | null): void } };
 
@@ -1322,6 +1351,15 @@ async function readAt(card: Inner, fraction: number | null): Promise<void> {
   (card as Scrubbed).scrubber.set(fraction);
   await card.updateComplete;
 }
+
+/** Each legend line as "name: value". */
+const legendWords = (card: Inner): string[] =>
+  [...root(card).querySelectorAll('.fc-legend__item')].map(
+    (item) =>
+      `${item.querySelector('.fc-legend__name')?.textContent?.trim()}: ${item
+        .querySelector('.fc-legend__value')
+        ?.textContent?.trim()}`,
+  );
 
 describe('a sensor that went away (#228)', () => {
   it('ends a reading where the sensor said no number: a gap, never its last number carried across', async () => {
@@ -1346,6 +1384,166 @@ describe('a sensor that went away (#228)', () => {
       await readAt(card, along(9));
       expect(texts(card, '.ch-now .fv-readout__value')[0]?.replace(/\s+/g, ''), kind).toBe('21°C');
     }
+  });
+});
+
+describe('a series of states (#228, requested by SentinelXS)', () => {
+  const CHARGER = { entity: 'switch.charger', kind: 'states' as const, name: 'Charger' };
+  const TABLET = { series: ['sensor.temperature', CHARGER], span: '24h' };
+
+  it('lays a thing’s states as the stretches it spent in each, brought up to its state now', () => {
+    const rows = [
+      { s: 'off', lu: 0 },
+      { s: 'on', lu: 10 },
+      { s: 'on', lu: 15 },
+      { s: 'unavailable', lu: 20 },
+    ];
+    const view = {
+      stateObj: { state: 'off', last_changed: new Date(30_000).toISOString() },
+    } as unknown as EntityView;
+    expect(stateReadings(rows, 5_000, 40_000, view)).toEqual([
+      { from: 5_000, to: 10_000, state: 'off' },
+      { from: 10_000, to: 20_000, state: 'on' },
+      { from: 20_000, to: 30_000, state: 'unavailable' },
+      { from: 30_000, to: 40_000, state: 'off' },
+    ]);
+  });
+
+  it('is a strip under the plot, from its start to its end, each stretch on its time, unknown striped', async () => {
+    const card = await draw({ ...TABLET, chart: 'step' });
+    const strips = root(card).querySelector<HTMLElement>('.ch-strips');
+    const axis = root(card).querySelector<HTMLElement>('.ch-axis');
+    const left = parseFloat(axis?.style.marginInlineStart ?? '');
+    // the step style's scale takes a column: the strip starts where the plot does, and ends where it ends
+    expect(left).toBeGreaterThan(0);
+    expect(parseFloat(strips?.style.marginInlineStart ?? '')).toBe(left);
+    expect(parseFloat(strips?.style.width ?? '') + left).toBe(
+      parseFloat(root(card).querySelector<HTMLElement>('.ch-chart')?.style.width ?? ''),
+    );
+    expect(root(card).querySelectorAll('.ch-strips > .ch-strip')).toHaveLength(1);
+    // the plot keeps its room: the strip's 16 is the card's own
+    expect(root(card).querySelector<HTMLElement>('.ch-chart')?.style.height).toBe('120px');
+    expect(card.getCardSize()).toBe(7);
+    // on the plot's time: a line's window is the 24 hours to now
+    const line = await draw(TABLET);
+    const on = [...root(line).querySelectorAll<HTMLElement>('.ch-strip .fv-stretch.is-on')];
+    expect(on).toHaveLength(2);
+    const share = (hours: number): number => along(hours) * 100;
+    expect(parseFloat(on[0]?.style.left ?? '')).toBeCloseTo(share(2), 2);
+    expect(parseFloat(on[0]?.style.width ?? '')).toBeCloseTo(share(4) - share(2), 2);
+    // off the network: striped, never off; off is the strip's own fill
+    const away = root(line).querySelectorAll<HTMLElement>('.ch-strip .fv-stretch.is-away');
+    expect(away).toHaveLength(1);
+    expect(parseFloat(away[0]?.style.left ?? '')).toBeCloseTo(share(5), 2);
+    expect(root(line).querySelectorAll('.ch-strip .fv-stretch')).toHaveLength(3);
+  });
+
+  it('stays out of the scales: the plot is its numbers’ alone, the lead the first of them', async () => {
+    const card = await draw({ series: [CHARGER, 'sensor.temperature'], span: '24h' });
+    expect(root(card).querySelectorAll('.curve-line')).toHaveLength(1);
+    expect(legendWords(card)).toEqual(['Charger: On', 'temperature: 21.4 °C']);
+    // the lead is the first series of numbers: it is asked from the day before, for its change
+    const asked: Asked = { messages: [], subscriptions: [] };
+    const noon = '2026-09-17T12:00:00Z';
+    await draw({ series: [CHARGER, 'sensor.temperature'], span: '24h', _now: noon }, house(asked));
+    const starts = asked.messages
+      .filter((m) => m['type'] === 'history/history_during_period')
+      .map((m) => [(m['entity_ids'] as string[])[0], Date.parse(String(m['start_time']))]);
+    expect(starts).toContainEqual(['sensor.temperature', Date.parse(noon) - 48 * HOUR]);
+    expect(starts).toContainEqual(['switch.charger', Date.parse(noon) - 24 * HOUR]);
+  });
+
+  it('reads its state at the cursor in Home Assistant’s words, and "—" where nothing was known', async () => {
+    const card = await draw(TABLET);
+    expect(legendWords(card)).toContain('Charger: On');
+    await readAt(card, along(3));
+    expect(legendWords(card)).toContain('Charger: On');
+    expect(root(card).querySelector('.ch-chart')?.getAttribute('aria-label')).toContain(
+      'Charger: On',
+    );
+    await readAt(card, along(5.25));
+    expect(legendWords(card)).toContain('Charger: —');
+    await readAt(card, along(10));
+    expect(legendWords(card)).toContain('Charger: Off');
+    // the cursor runs down the strip at the chart's x
+    expect(root(card).querySelector('.ch-strips__cursor')).not.toBeNull();
+  });
+
+  it('wears the colours its series gives its states, `none` the strip’s own fill, its legend the first of them', async () => {
+    const card = await draw({
+      series: [
+        'sensor.temperature',
+        {
+          entity: 'sensor.mode',
+          kind: 'states',
+          state_colors: { standby: 'none', heating: 'heat', hot_water: 'water' },
+        },
+      ],
+      span: '24h',
+    });
+    expect(root(card).querySelectorAll('.ch-strip .fv-stretch.is-own.fv-tone--heat')).toHaveLength(
+      3,
+    );
+    expect(root(card).querySelectorAll('.ch-strip .fv-stretch.fv-tone--water')).toHaveLength(1);
+    expect(root(card).querySelectorAll('.ch-strip .fv-stretch')).toHaveLength(4);
+    expect(root(card).querySelectorAll('.fc-legend__item.fv-tone--heat')).toHaveLength(1);
+    // a switch's own: its on in the colour named, in the YAML dashboard's `true` too
+    for (const on of ['on', 'true']) {
+      const own = await draw({
+        series: ['sensor.temperature', { ...CHARGER, state_colors: { [on]: 'ok' } }],
+        span: '24h',
+      });
+      expect(root(own).querySelectorAll('.ch-strip .fv-tone--ok'), on).toHaveLength(2);
+    }
+  });
+
+  it('alone, takes the plot’s room: one tall strip under the row that reads it', async () => {
+    const card = await draw({
+      series: [{ entity: 'binary_sensor.door', kind: 'states' }],
+      span: '24h',
+    });
+    const chart = root(card).querySelector<HTMLElement>('.ch-chart');
+    expect(chart?.style.height).toBe('136px');
+    expect(chart?.querySelector('.ch-strips.is-tall > .ch-strip')).not.toBeNull();
+    expect(card.getCardSize()).toBe(7);
+    expect(texts(card, '.ch-now .fv-readout__value')).toEqual(['Off']);
+    await readAt(card, along(8.1));
+    expect(texts(card, '.ch-now .fv-readout__value')).toEqual(['On']);
+    expect(texts(card, '.ch-now .fv-readout__label')).toEqual(['08:06']);
+    // a minute's opening is drawn two pixels wide (about nine minutes of a day at 360), and read where it is drawn
+    await readAt(card, along(12 + 4 / 60));
+    expect(texts(card, '.ch-now .fv-readout__value')).toEqual(['On']);
+    await readAt(card, along(12 + 15 / 60));
+    expect(texts(card, '.ch-now .fv-readout__value')).toEqual(['Off']);
+    // the compact card: the bubble says it, over the strip
+    const compact = await draw({
+      series: [{ entity: 'binary_sensor.door', kind: 'states' }],
+      span: '24h',
+      variant: 'compact',
+    });
+    await readAt(compact, along(8.1));
+    expect(texts(compact, '.fv-bubble b')).toEqual(['On']);
+    // a tile: its state now over its strip
+    const tile = await draw({
+      series: [{ entity: 'binary_sensor.door', kind: 'states' }],
+      span: '24h',
+      variant: 'tile',
+    });
+    expect(texts(tile, '.fv-readout__value')).toEqual(['Off']);
+    expect(root(tile).querySelector('.ch-spark > .ch-strip .fv-stretch.is-on')).not.toBeNull();
+  });
+
+  it('adds 16 to the card a series of states, from its config alone', () => {
+    const height = (config: Record<string, unknown>) =>
+      chartHeight({ type: 'custom:fluvy-chart-card', ...config });
+    const strip = { entity: 'switch.a', kind: 'states' };
+    expect(height({ series: ['sensor.a', strip] })).toBe(336);
+    expect(height({ series: [strip, { ...strip, entity: 'switch.b' }] })).toBe(352);
+    expect(height({ series: ['a', 'b', 'c', strip] })).toBe(380);
+    expect(height({ series: ['sensor.a', strip], variant: 'compact' })).toBe(256);
+    expect(height({ series: ['sensor.a', strip], variant: 'tile' })).toBe(168);
+    // a word "states" is no series of states: only an item says so
+    expect(height({ series: ['states'] })).toBe(320);
   });
 });
 
@@ -1399,5 +1597,73 @@ describe('a history’s own stat (#228, with twodrops)', () => {
         (o) => o.value,
       ),
     ).toEqual(['mean', 'min', 'max', 'last']);
+  });
+});
+
+describe('a series of states in the editor (#228)', () => {
+  it('reads any entity, and shows what acts: no source, curve, fill, stat, unit or decimals', () => {
+    const names = (item: Record<string, unknown>) => fieldsOf(item).map((field) => field.name);
+    // its colour, and folded under their own title its states' colours: a switch's on and off
+    expect(names({ entity: 'switch.charger', kind: 'states' })).toEqual([
+      'entity',
+      'name',
+      'kind',
+      'tone',
+      'color',
+      'on',
+      'off',
+    ]);
+  });
+
+  it('asks a colour for each state its entity lists, the same form for the same states', () => {
+    const hass = {
+      ...house(),
+      states: {
+        ...house().states,
+        'sensor.mode': state('sensor.mode', 'heating', {
+          device_class: 'enum',
+          options: ['standby', 'heating', 'hot_water'],
+        }),
+      },
+    } as HomeAssistant;
+    const form = (entity: string) =>
+      SERIES_LIST.schemaOf?.({ entity, kind: 'states' }, {}, hass) ?? [];
+    const colours = form('sensor.mode').find((field) => field.name === 'state_colors');
+    expect(colours?.type).toBe('expandable');
+    expect(colours?.schema?.map((field) => field.name)).toEqual([
+      'standby',
+      'heating',
+      'hot_water',
+    ]);
+    expect(form('sensor.mode')).toBe(form('sensor.mode'));
+    // a state is named in Home Assistant's words where it has them, else tidied
+    const label = (name: string) =>
+      SERIES_LIST.computeLabel?.({ name }, (key) =>
+        key === 'component.switch.entity_component._.state.on' ? 'Ein' : key,
+      );
+    expect([label('on'), label('hot_water'), label('kind')]).toEqual([
+      'Ein',
+      'Hot water',
+      'Drawn as',
+    ]);
+  });
+
+  it('is what a switch, a binary sensor or a toggle picked becomes; a sensor stays a line', () => {
+    expect(SERIES_LIST.domains).toEqual(
+      expect.arrayContaining(['sensor', 'binary_sensor', 'input_boolean', 'switch']),
+    );
+    // a switch, a binary sensor or a toggle picked is a strip of its states; a sensor its line
+    expect(SERIES_LIST.picked?.('switch.charger')).toEqual({
+      entity: 'switch.charger',
+      kind: 'states',
+    });
+    expect(SERIES_LIST.picked?.('binary_sensor.door')).toMatchObject({ kind: 'states' });
+    expect(SERIES_LIST.picked?.('sensor.temperature')).toEqual({ entity: 'sensor.temperature' });
+  });
+
+  it('a chart of states alone reads no line: its points are offered nowhere', () => {
+    const charger = { entity: 'switch.charger', kind: 'states' };
+    expect(capsIn({ series: [charger] }).time).toBe(false);
+    expect(capsIn({ series: ['sensor.temperature', charger] }).time).toBe(true);
   });
 });

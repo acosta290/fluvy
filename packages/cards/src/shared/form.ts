@@ -665,49 +665,64 @@ export const tintFields = (): HaFormSchemaItem =>
   );
 
 /**
- * A device card's state in colour (1.22, #196): its tint (`tintFields`) and, folded under a title of their own, its
- * states' colours (`state_colors`, held under that key) — for each of `states` a tone, None, or a colour typed, empty
- * while it keeps the card's own. A state is named in Home Assistant's own words (`stateLabels`).
+ * States' colours, folded under a title of their own (`state_colors`, held under that key): for each of `states` a
+ * tone, None, or a colour typed, empty while it keeps its own — a device card's (1.22, #196), a chart's series of
+ * states' (#228).
+ */
+export const stateColoursField = (states: readonly string[]): HaFormSchemaItem => ({
+  type: 'expandable',
+  name: 'state_colors',
+  helper: 'editor.item_color_own_helper',
+  schema: states.map((name) => ({
+    name,
+    selector: {
+      select: {
+        mode: 'dropdown',
+        custom_value: true,
+        options: [...optionChoices(['none']), ...toneSelector().select.options],
+      },
+    },
+  })),
+});
+
+/**
+ * A device card's state in colour (1.22, #196): its tint (`tintFields`) and its states' colours (`stateColoursField`).
+ * A state is named in Home Assistant's own words (`stateLabels`).
  */
 export const stateTintFields = (states: readonly string[]): HaFormSchemaItem[] => [
   tintFields(),
-  {
-    type: 'expandable',
-    name: 'state_colors',
-    helper: 'editor.item_color_own_helper',
-    schema: states.map((name) => ({
-      name,
-      selector: {
-        select: {
-          mode: 'dropdown',
-          custom_value: true,
-          options: [...optionChoices(['none']), ...toneSelector().select.options],
-        },
-      },
-    })),
-  },
+  stateColoursField(states),
 ];
 
 /**
- * A form's labels with its states' (`stateTintFields`) in Home Assistant's own words, where the editor is told them
- * (`localize`): a state of one of `domains` (a robot's, a mower's), or a value of an attribute of one
- * (`climate.hvac_action`: a thermostat's action), the first that has a word; else the state, tidied.
+ * A state's colour named by the state in Home Assistant's own words, where the editor is told them (`localize`): a
+ * state of one of `domains` (a robot's, a mower's), or a value of an attribute of one (`climate.hvac_action`: a
+ * thermostat's action), the first that has a word; else the state, tidied.
  */
+export function stateLabel(
+  state: string,
+  localize: (key: string) => string,
+  domains: readonly string[],
+): string {
+  for (const source of domains) {
+    const [domain, attribute] = source.split('.');
+    const key = `component.${domain}.entity_component._.${attribute ? `state_attributes.${attribute}.` : ''}state.${state}`;
+    const word = localize(key);
+    if (word && word !== key) return word;
+  }
+  return pretty(state);
+}
+
+/** A form's labels with its states' (`stateTintFields`) named as `stateLabel` names them. */
 export const stateLabels = (
   labels: { readonly computeLabel: FormLabeler },
   states: readonly string[],
   ...domains: readonly string[]
 ): { readonly computeLabel: FormLabeler } => ({
-  computeLabel: (schema, localize) => {
-    if (!states.includes(schema.name)) return labels.computeLabel(schema, localize);
-    for (const source of domains) {
-      const [domain, attribute] = source.split('.');
-      const key = `component.${domain}.entity_component._.${attribute ? `state_attributes.${attribute}.` : ''}state.${schema.name}`;
-      const word = localize(key);
-      if (word && word !== key) return word;
-    }
-    return pretty(schema.name);
-  },
+  computeLabel: (schema, localize) =>
+    states.includes(schema.name)
+      ? stateLabel(schema.name, localize, domains)
+      : labels.computeLabel(schema, localize),
 });
 
 /**

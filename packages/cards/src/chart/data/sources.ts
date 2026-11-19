@@ -1,4 +1,6 @@
 import type { EntityView, HomeAssistant } from '@fluvy/core';
+import type { RawState, Span } from '@fluvy/core/history';
+import { spansOf } from '@fluvy/core/spans';
 import type { ReactiveController, ReactiveControllerHost } from 'lit';
 import {
   momentOf,
@@ -14,7 +16,8 @@ import { remember, statisticsDuring, type StatPeriod, type StatType } from './st
  * Where a Chart card's series come from: a sensor's history (the recorder's states), its long-term statistics (a
  * bucket an hour, a day …: their mean, min, max, sum or change), a list in its attributes (`attribute.ts`), or a
  * weather's forecast (`weather/subscribe_forecast`, as the weather card subscribes) — each read as readings in time,
- * which the card lays on its window's slots.
+ * which the card lays on its window's slots; or a thing's states as words (`kind: states`, #228), read as the
+ * stretches it spent in each.
  */
 
 export type Source = 'history' | 'statistics' | 'attribute' | 'forecast';
@@ -39,13 +42,16 @@ export interface SourceKeys extends ListKeys {
   readonly attribute?: string | undefined;
   readonly stat?: Stat | undefined;
   readonly period?: Period | undefined;
+  readonly kind?: string | undefined;
 }
 
 /**
- * Where a series is read from: the one named, else by its entity — a weather's forecast; an attribute named, or one
- * of the usual lists its attributes hold (a price's, a solar forecast's); else its history.
+ * Where a series is read from: a series of states its history, whatever it names; else the one named, else by its
+ * entity — a weather's forecast; an attribute named, or one of the usual lists its attributes hold (a price's, a solar
+ * forecast's); else its history.
  */
 export function sourceOf(item: SourceKeys, attributes?: Readonly<Record<string, unknown>>): Source {
+  if (item.kind === 'states') return 'history';
   if (item.source && SOURCES.includes(item.source)) return item.source;
   if (item.entity.startsWith('weather.')) return 'forecast';
   return item.attribute || (attributes && usualList(attributes)) ? 'attribute' : 'history';
@@ -75,10 +81,32 @@ export const PERIOD_MS: Readonly<Record<StatPeriod, number>> = {
 };
 
 /** One row of `history/history_during_period` in its minimal form: the state and when it was written (seconds). */
-interface RawState {
-  readonly s: string;
-  readonly lu: number;
-}
+export type StateRow = Pick<RawState, 's' | 'lu'>;
+
+const MINUTE = 60_000;
+
+/** What the recorder is asked for a thing's history over a window, kept by `key` for every card that asks the same. */
+const historyOf = (
+  hass: HomeAssistant,
+  id: string,
+  start: number,
+  end: number,
+  key: string,
+  extra: Readonly<Record<string, unknown>> = {},
+): Promise<readonly StateRow[]> =>
+  remember(`${key}|${id}|${Math.floor(start / MINUTE)}|${Math.floor(end / (5 * MINUTE))}`, () =>
+    hass
+      .callWS<Record<string, StateRow[]>>({
+        type: 'history/history_during_period',
+        start_time: new Date(start).toISOString(),
+        end_time: new Date(end).toISOString(),
+        entity_ids: [id],
+        minimal_response: true,
+        no_attributes: true,
+        ...extra,
+      })
+      .then((result) => result?.[id] ?? []),
+  );
 
 /**
  * A sensor's history over a window as readings: each state where it is a number, held until the next — a word, an
@@ -91,32 +119,51 @@ export function historyReadings(
   start: number,
   end: number,
 ): Promise<Reading[]> {
-  const minute = 60_000;
-  const key = `history|${id}|${Math.floor(start / minute)}|${Math.floor(end / (5 * minute))}`;
-  return remember(key, () =>
-    hass
-      .callWS<Record<string, RawState[]>>({
-        type: 'history/history_during_period',
-        start_time: new Date(start).toISOString(),
-        end_time: new Date(end).toISOString(),
-        entity_ids: [id],
-        minimal_response: true,
-        no_attributes: true,
-        significant_changes_only: false,
-      })
-      .then((result) => {
-        const readings: Reading[] = [];
-        for (const row of result?.[id] ?? []) {
-          if (!Number.isFinite(row.lu)) continue;
-          const t = row.lu * 1000;
-          const v = numberOf(row.s);
-          const last = readings[readings.length - 1];
-          if (v !== null) readings.push({ t, v });
-          else if (last && last.end === undefined)
-            readings[readings.length - 1] = { ...last, end: t };
-        }
-        return readings;
-      }),
+  return historyOf(hass, id, start, end, 'history', { significant_changes_only: false }).then(
+    (rows) => {
+      const readings: Reading[] = [];
+      for (const row of rows) {
+        if (!Number.isFinite(row.lu)) continue;
+        const t = row.lu * 1000;
+        const v = numberOf(row.s);
+        const last = readings[readings.length - 1];
+        if (v !== null) readings.push({ t, v });
+        else if (last && last.end === undefined)
+          readings[readings.length - 1] = { ...last, end: t };
+      }
+      return readings;
+    },
+  );
+}
+
+/**
+ * A thing's states over a window as Home Assistant's history keeps them (each state and when it was written), kept
+ * five minutes for every card and dialog that reads the same thing and window: what `stateReadings` lays.
+ */
+export const recordedStates = (
+  hass: HomeAssistant,
+  id: string,
+  start: number,
+  end: number,
+): Promise<readonly StateRow[]> => historyOf(hass, id, start, end, 'states');
+
+/**
+ * A thing's states as the stretches it spent in each over a window (`spansOf`): the recorder's, brought up to the state
+ * it is in now, since it last changed (`view`), which the recorder may not have sent yet.
+ */
+export function stateReadings(
+  rows: readonly StateRow[],
+  start: number,
+  end: number,
+  view?: EntityView,
+): Span[] {
+  const state = view?.stateObj;
+  const since = state?.last_changed ? Date.parse(state.last_changed) : NaN;
+  return spansOf(
+    rows,
+    start,
+    end,
+    state && Number.isFinite(since) ? { state: state.state, since } : undefined,
   );
 }
 

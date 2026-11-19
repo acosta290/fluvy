@@ -43,16 +43,23 @@ export interface RowsListSpec {
   /** The item's fields; the id field (`entity`, or `idKey`) is the first and required. */
   readonly schema: readonly HaFormSchemaItem[];
   /**
-   * The fields one item shows, when they depend on the item (a grid source has no state of charge) or on what the
-   * card's form holds (a remote's app opens by its own deep link only where the card names a remote): a part of
-   * `schema`, the same array for the same answer so its form is not rebuilt on every render.
+   * The fields one item shows, when they depend on the item (a grid source has no state of charge), on what the
+   * card's form holds (a remote's app opens by its own deep link only where the card names a remote) or on the house
+   * (a chart's series of states is coloured by the states its entity lists): a part of `schema`, the same array for
+   * the same answer so its form is not rebuilt on every render.
    */
   readonly schemaOf?: (
     item: Readonly<Record<string, unknown>>,
     card?: Readonly<Record<string, unknown>>,
+    hass?: HomeAssistant,
   ) => readonly HaFormSchemaItem[];
   /** Domains the add-picker offers; default: those of the schema's entity field. */
   readonly domains?: readonly string[];
+  /**
+   * The item an entity picked from the add-picker becomes, where its domain asks for more than the entity (a switch
+   * on a chart is a strip of its states); none: the entity alone.
+   */
+  readonly picked?: (entity: string) => Item;
   /** The field that identifies an item: `entity` (an entity picker adds items) or a text field such as a chip's `name`. */
   readonly idKey?: string;
   /** Other fields that identify an item as well (a battery read by two sensors has no `power`): an entry that carries one is kept. */
@@ -931,7 +938,7 @@ export class FluvyRowsEditor extends LitElement {
     key: string,
     scope: readonly string[] | undefined,
   ): readonly HaFormSchemaItem[] {
-    const own = list.schemaOf?.(item, card) ?? list.schema;
+    const own = list.schemaOf?.(item, card, this.hass) ?? list.schema;
     const asked = list.choices?.(item as LovelaceCardConfig, this.hass);
     const stands = standsOf(own, item, this.hass, card);
     const answer = `${asked ? JSON.stringify(asked) : key}${scope ? JSON.stringify(scope) : ''}${JSON.stringify(stands)}`;
@@ -993,11 +1000,13 @@ export class FluvyRowsEditor extends LitElement {
     if (!this.config) return;
     const entries = this.written(list);
     // a toggle among an item's select's own choices goes back as the toggle, as the card's form writes its own, and a
-    // row's condition as its config holds it, on the card's that it may keep to; a section has none
+    // row's condition as its config holds it, on the card's that it may keep to; a section has none; a group of its
+    // own (a series' colours by state) holds what was chosen in it alone
     const held = this.items(list)[index] ?? {};
+    const own = list.schemaOf?.(held, this.config, this.hass) ?? list.schema;
     const entry = entryOf(
       foldConditions(
-        unworded(event.detail.value, held, selectsOf(list.schema)),
+        unworded(chosenOf(event.detail.value, own), held, selectsOf(list.schema)),
         held,
         isSection(held, list) ? [] : conditionsOf(list.schema),
         this.config,
@@ -1015,7 +1024,10 @@ export class FluvyRowsEditor extends LitElement {
     const idKey = idKeyOf(list);
     const id = event.detail.value[idKey];
     if (!this.config || typeof id !== 'string' || !id) return;
-    const entry = entryOf({ [idKey]: id }, list);
+    const entry = entryOf(
+      (idKey === 'entity' ? list.picked?.(id) : undefined) ?? { [idKey]: id },
+      list,
+    );
     if (entry === null) return;
     this.commit(withList(this.config, list, [...this.written(list), entry]));
     this.requestUpdate(); // the picker goes back to empty

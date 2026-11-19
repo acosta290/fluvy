@@ -27,6 +27,7 @@ import {
   type HomeAssistant,
   type KeyOf,
 } from '@fluvy/core';
+import { spanAt } from '@fluvy/core/spans';
 import {
   axis,
   baseStyles,
@@ -41,8 +42,13 @@ import {
 } from '@fluvy/ui';
 import { html, LitElement, nothing, type PropertyValues, type TemplateResult } from 'lit';
 
-import { historyReadings } from '../chart/data/sources.js';
-import { remember, statisticsDuring } from '../chart/data/statistics.js';
+import {
+  historyReadings,
+  recordedStates,
+  stateReadings,
+  type StateRow,
+} from '../chart/data/sources.js';
+import { statisticsDuring } from '../chart/data/statistics.js';
 import { roundGrid, type Grid } from '../chart/data/slots.js';
 import { dayStart, readSlots } from '../chart/data/span.js';
 import {
@@ -91,8 +97,6 @@ import {
   reachOf,
   resetsOf,
   slotOf,
-  stretchAt,
-  stretchesOf,
   timeOn,
   totalsOf,
   windowsOf,
@@ -100,8 +104,6 @@ import {
   type Kind,
   type Laid,
   type Read,
-  type Recorded,
-  type Stretch,
 } from './reads.js';
 import { detailsStyles } from './styles.js';
 
@@ -118,7 +120,7 @@ type Source = '5minute' | 'hour' | 'states';
 type Answer =
   | { readonly kind: 'measure'; readonly readings: readonly Read[]; readonly source: Source }
   | { readonly kind: 'counter'; readonly buckets: readonly Gained[]; readonly source: Source }
-  | { readonly kind: 'states'; readonly rows: readonly Recorded[] };
+  | { readonly kind: 'states'; readonly rows: readonly StateRow[] };
 
 /** An answer, with what it was asked for: its entity, its window (hours) and its kind. */
 interface Shown {
@@ -184,25 +186,15 @@ async function readCounter(
   return { kind: 'counter', buckets: bucketsOf(readings, increase), source: 'states' };
 }
 
-/** A thing's states over a window, as Home Assistant's history keeps them (five minutes for every block that asks). */
+/** A thing's states over a window, as Home Assistant's history keeps them (five minutes for every block and card that asks). */
 function readStates(
   hass: HomeAssistant,
   id: string,
   window: { readonly start: number; readonly end: number },
 ): Promise<Answer> {
-  const key = `states|${id}|${Math.floor(window.start / MINUTE)}|${Math.floor(window.end / (5 * MINUTE))}`;
-  return remember(key, () =>
-    hass.callWS<Record<string, Recorded[]>>({
-      type: 'history/history_during_period',
-      start_time: new Date(window.start).toISOString(),
-      end_time: new Date(window.end).toISOString(),
-      entity_ids: [id],
-      minimal_response: true,
-      no_attributes: true,
-    }),
-  )
-    .catch(() => ({}) as Record<string, never>)
-    .then((rows): Answer => ({ kind: 'states', rows: rows?.[id] ?? [] }));
+  return recordedStates(hass, id, window.start, window.end)
+    .catch((): readonly StateRow[] => [])
+    .then((rows): Answer => ({ kind: 'states', rows }));
 }
 
 export class FluvyDetailsHistory extends LitElement {
@@ -954,21 +946,13 @@ export class FluvyDetailsHistory extends LitElement {
    */
   private band(
     view: EntityView,
-    rows: readonly Recorded[],
+    rows: readonly StateRow[],
     hours: number,
     width: number,
     now: number,
   ): Drawn {
     const start = now - hours * HOUR;
-    const changed = view.stateObj?.last_changed ? Date.parse(view.stateObj.last_changed) : NaN;
-    const stretches = stretchesOf(
-      rows,
-      start,
-      now,
-      view.stateObj && Number.isFinite(changed)
-        ? { state: view.stateObj.state, since: changed }
-        : undefined,
-    );
+    const stretches = stateReadings(rows, start, now, view);
     const word = (state: string): string =>
       stateText(this.hass, {
         ...view,
@@ -988,7 +972,7 @@ export class FluvyDetailsHistory extends LitElement {
       return { sub, lead: null, body: this.empty(BAND_HEIGHT, ticks), stats: nothing };
     const fraction = this.scrubber.value;
     const at = fraction === null ? null : start + fraction * (now - start);
-    const read: Stretch | undefined = at === null ? undefined : stretchAt(stretches, at);
+    const read = at === null ? null : spanAt(stretches, at);
     const share = (t: number): string => (((t - start) / (now - start)) * 100).toFixed(3);
     const x = fraction === null ? 0 : fraction * width;
     // a stretch read: its state, from when to when ("now" while it lasts)

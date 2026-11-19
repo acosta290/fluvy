@@ -9,6 +9,7 @@ import {
   setChartDefaults,
   type HomeAssistant,
 } from '@fluvy/core';
+import { spansOf } from '@fluvy/core/spans';
 import { html, LitElement, type PropertyDeclarations } from 'lit';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
@@ -19,7 +20,6 @@ import {
   kindOf,
   reachOf,
   resetsOf,
-  stretchesOf,
   timeOn,
   windowsOf,
 } from './reads.js';
@@ -257,7 +257,7 @@ describe('what the details dialog reads of an entity', () => {
       { s: 'on', lu: 20 },
       { s: 'off', lu: 30 },
     ];
-    const stretches = stretchesOf(rows, 5_000, 100_000, { state: 'on', since: 90_000 });
+    const stretches = spansOf(rows, 5_000, 100_000, { state: 'on', since: 90_000 });
     expect(stretches).toEqual([
       { from: 5_000, to: 10_000, state: 'off' },
       { from: 10_000, to: 30_000, state: 'on' },

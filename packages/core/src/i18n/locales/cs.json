@@ -763,6 +763,7 @@
     "editor.highlight_hours": "Počet zvýrazněných hodin",
     "editor.show_legend": "Zobrazit legendu",
     "editor.show_head": "Zobrazit aktuální hodnotu",
+    "editor.kind_states": "Stavy",
     "editor.stat_last": "Poslední hodnota"
   },
   "chart": {

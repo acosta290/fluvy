@@ -3250,6 +3250,7 @@
     "editor.highlight_hours": "Vurgulanacak saatler",
     "editor.show_legend": "Göstergeyi göster",
     "editor.show_head": "Şimdiki değeri göster",
+    "editor.kind_states": "Durumlar",
     "editor.stat_last": "Son okuma"
   },
   "slider": {

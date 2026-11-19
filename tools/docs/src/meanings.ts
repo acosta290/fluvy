@@ -820,10 +820,13 @@ export const MEANINGS: Readonly<Record<string, string>> = {
   'automations.targets[].entity': 'An entity a new schedule may switch.',
   'automations.targets[].level': 'The brightness a new schedule turns a light on to.',
   'chart.series[].attribute': 'The attribute that holds the list of readings.',
-  'chart.series[].kind': 'How the series is drawn: a line, an area, columns, or a band.',
+  'chart.series[].kind':
+    'How the series is drawn: a line, an area, columns, a band, or its states as a strip under the chart.',
   'chart.series[].period': 'How long each statistic’s reading lasts.',
   'chart.series[].stat':
     'What each reading of the statistics is, or what each point and step of a history reads.',
+  'chart.series[].state_colors':
+    'A series of states’ colour for each of its states: a tone, none for the strip’s own fill, or a colour of your own.',
   'chart.series[].unit': 'The unit this series is written in.',
   'energy.legend[].period': 'What the legend’s figure shows.',
   'energy-sankey.devices[].parent': 'Another device’s meter this device is part of.',

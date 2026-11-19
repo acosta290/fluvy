@@ -2107,6 +2107,44 @@ forecast. It is the engine's (§ Charts) in its house's style or its own.
 - Its chunk is its own (`chart-card`, beside the engine's `chart`): every page carries only its tag and height
   (`chart-family.ts`).
 
+### A series of states (1.23, #228)
+
+A series may be drawn as its states (`kind: states`): a switch's on and off, a door's open and closed, a heat pump's
+mode as words, on the same time as the numbers over it — so the reason a number moved stands under it.
+
+- **The strip.** One a series, under the plot and over the axis: 12 tall with 4 above it, corners of 4, on the track's
+  own fill (the inset, as the History page's state lines), from the plot's start to its end (after a scale's column),
+  so a stretch lies under the readings of its time. Each stretch is painted by the house's rule for a thing's states
+  (`stretchTone`, § History page): on in the series' own colour (its legend's), doing something quieter the neutral,
+  resting the track's fill, `unavailable` and `unknown` the neutral striped — a gap, never "off". A series may give a
+  state its own colour (`state_colors`, the devices' key: a tone, a colour, `none` for the track's fill; its editor
+  folds one under "Colours by state" for each state its entity lists, a select's options or a climate's modes, else
+  on and off, each named in Home Assistant's words). A stretch
+  with a look keeps 2 px (a minute's open door is a mark); two side by side of one look are parted by a hairline of
+  the card's fill. Out of reach the track is edged in the unavailable border, the card being the page's fill.
+- **Its place among the series.** It stays out of the scales and the plot: the lead is the first series of numbers
+  (its reading heads the row, its change, its thresholds and marks). It takes a series colour and a line in the
+  legend like any other, its swatch the colour it shows on (its `on`'s, else the first state it names a colour for).
+- **Reading.** The chart's cursor runs on down the strips in its look (a style's hairline, classic's dashes), and a
+  pointer on a strip reads the chart as one on the plot does. The legend's lines, the value row and the spoken label
+  say the state then in Home Assistant's words ("Open", "Heating"), "—" where nothing was known.
+- **States alone.** With no series of numbers (or none with a reading in the window) the strips take the plot's
+  room, each as tall as the room leaves them, 4 apart, corners the controls'; under a row that reads the chart the
+  row says the state ("Closed", large), else the bubble does, over the strips. A tile of states alone says its state
+  now over its strip, 12 tall, 4 over the spark's floor.
+- **Heights.** 16 more a series of states, from the config alone (`chartHeight`); loading or empty, the skeleton and
+  the empty panel take the strips' room too.
+- **Motion.** A strip draws itself in from the start as the line does (a clip, 900 ms after 120), at once where the
+  chart may not move.
+
+**What a history reads (`stat`, #228).** A slot or a point of a sensor's history reads its mean by default; a series
+may ask for the lowest, the highest or the last reading instead — a template sensor's 0 and 100 drawn with `stat: max`
+and `curve: step` reads 0 or 100, never a mean between.
+
+**A gap.** A sensor that said `unavailable`, `unknown` or no number at all is a gap from then until its next number:
+its line breaks, its area under it, its columns stand empty where none of their slot was known, and the value row
+reads "—" there; a slot that knew part of its time reads that part.
+
 ## People (1.6)
 
 - **Each their own**: a name, a colour (a 2 px ring round the avatar, 2 clear of it on the card: a picture would hide a

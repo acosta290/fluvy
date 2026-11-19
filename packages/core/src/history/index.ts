@@ -1,4 +1,5 @@
 export * from './read.js';
+export * from './spans.js';
 export * from './statistics.js';
 export * from './stream.js';
 export * from './types.js';

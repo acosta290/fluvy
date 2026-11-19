@@ -18,9 +18,12 @@ import {
   nameField,
   numberFields,
   selectField,
+  stateColoursField,
+  stateLabel,
   textField,
   toneField,
   unitChoices,
+  type FormLabeler,
 } from '../shared/form.js';
 import type { EditorChoices, FormHelper, RowsListSpec } from '../shared/rows-editor.js';
 import { ladderOf, type NumberKeys } from '../shared/units.js';
@@ -49,8 +52,11 @@ import { CHART_PRESETS, resolveStyle, seriesColourField } from './engine/index.j
 
 const s = strings('chart-card');
 
-/** How a series is drawn: its line as the style draws it, an area under it, columns, or its band of lows and highs. */
-export type SeriesKind = 'line' | 'area' | 'columns' | 'band';
+/**
+ * How a series is drawn: its line as the style draws it, an area under it, columns, its band of lows and highs, or its
+ * states as words (#228) — a strip under the plot of the stretches it spent in each, on the plot's time.
+ */
+export type SeriesKind = 'line' | 'area' | 'columns' | 'band' | 'states';
 /** The windows a card marks (`highlight`): the lowest, the highest, both, or none. */
 export type Windows = 'none' | 'min' | 'max' | 'both';
 
@@ -76,7 +82,15 @@ export interface ChartSeriesConfig extends NumberKeys {
   curve?: Curve;
   fill?: FillKind;
   kind?: SeriesKind;
+  /**
+   * A series of states (`kind: states`): a state's colour, by the state as Home Assistant writes it (`on: ok`) — a
+   * tone's name, a colour (a name, a hex), or `none` for the strip's own fill. A state left out keeps the house's.
+   */
+  state_colors?: Readonly<Record<string, string>>;
 }
+
+/** A series drawn as its states (#228): a strip under the plot, out of the scales. */
+export const isStates = (item: Pick<ChartSeriesConfig, 'kind'>): boolean => item.kind === 'states';
 
 /** The most series a card draws: the palette's six series colours. */
 export const MOST_SERIES = 6;
@@ -155,8 +169,10 @@ export function capsIn(data: Readonly<Record<string, unknown>>, hass?: HomeAssis
   const ahead =
     span.kind !== 'rolling' ||
     sources.some((source) => source === 'attribute' || source === 'forecast');
+  // a series of states is a strip: it draws no line
   const grains = items.flatMap((item, index) => {
     const source = sources[index];
+    if (isStates(item)) return [];
     return source === 'history'
       ? [0]
       : source === 'statistics'
@@ -224,6 +240,7 @@ const kindField = (): HaFormSchemaItem =>
     ['area', 'chart-card.editor.kind_area'],
     ['columns', 'option.columns'],
     ['band', 'option.band'],
+    ['states', 'chart-card.editor.kind_states'],
   ]);
 /**
  * What a series reads of its readings (`stat`): a statistic's buckets their mean, lowest, highest, sum or change; a
@@ -250,7 +267,10 @@ const periodField = (): HaFormSchemaItem =>
     PERIODS.map((period) => [period, `chart-card.editor.period_${period}`] as const),
   );
 
-const ENTITY = entityField(['sensor', 'weather', 'number', 'input_number', 'counter']);
+/** The entities a series of numbers reads; a series of states reads any (#228), the picker offering the usual. */
+const NUMBERS_FROM = ['sensor', 'weather', 'number', 'input_number', 'counter'];
+const STATES_FROM = ['binary_sensor', 'input_boolean', 'switch'];
+const ENTITY = entityField(NUMBERS_FROM);
 const NAME = fieldRow(nameField(), sourceField());
 const ATTRIBUTE = selectField('attribute', ['auto'], { custom: true });
 const KEYS = fieldRow(textField('time_key'), textField('value_key'));
@@ -270,6 +290,39 @@ const SCHEMAS: Readonly<Record<Source, readonly HaFormSchemaItem[]>> = {
   attribute: [ENTITY, NAME, ATTRIBUTE, KEYS, DRAWN, FILL, COLOUR, NUMBERS],
   forecast: [ENTITY, NAME, VALUE_KEY, DRAWN, FILL, COLOUR, NUMBERS],
 };
+
+/** The most states a series of states is coloured for in its editor: a select of a hundred options asks no hundred. */
+const MOST_STATES = 24;
+
+/**
+ * The states a series of states is coloured for in its editor: the list its entity says it may be in (a select's or
+ * an enum sensor's options, a climate's modes, a water heater's), else on and off.
+ */
+function statesFor(entity: unknown, hass: HomeAssistant | undefined): readonly string[] {
+  const attributes = (typeof entity === 'string' && hass?.states[entity]?.attributes) || {};
+  const listed = ['options', 'hvac_modes', 'operation_list']
+    .map((key) => attributes[key])
+    .find(Array.isArray);
+  const states = (listed ?? []).filter((state): state is string => typeof state === 'string');
+  return states.length ? states.slice(0, MOST_STATES) : ['on', 'off'];
+}
+
+/** The forms of a series of states, by the states they colour: the same array for the same answer. */
+const STATES_SCHEMAS = new Map<string, readonly HaFormSchemaItem[]>();
+
+/**
+ * A series of states (#228): any entity, its name and how it is drawn, its colour and its states' (`state_colors`) —
+ * no source (its history's), no curve, fill, statistic, unit or decimals: it is a strip of words.
+ */
+function statesSchema(states: readonly string[]): readonly HaFormSchemaItem[] {
+  const key = states.join('\n');
+  let schema = STATES_SCHEMAS.get(key);
+  if (!schema) {
+    schema = [entityField(), fieldRow(nameField(), kindField()), COLOUR, stateColoursField(states)];
+    STATES_SCHEMAS.set(key, schema);
+  }
+  return schema;
+}
 
 /** A series' selects as its entity has them: its attributes that read as a list, the units its class converts to. */
 const seriesChoices: EditorChoices = (item, hass) => {
@@ -291,6 +344,45 @@ const seriesChoices: EditorChoices = (item, hass) => {
   };
 };
 
+/** The keys a series may carry: its fields' names, and its states' colours. */
+const SERIES_KEYS = [
+  'entity',
+  'name',
+  'source',
+  'attribute',
+  'time_key',
+  'value_key',
+  'stat',
+  'period',
+  'kind',
+  'curve',
+  'fill',
+  'tone',
+  'color',
+  'unit',
+  'decimals',
+  'state_colors',
+];
+
+const seriesLabels = editorLabels(s, {
+  source: 'editor.source',
+  attribute: 'editor.attribute',
+  time_key: 'editor.time_key',
+  value_key: 'editor.value_key',
+  stat: 'editor.stat',
+  period: 'editor.period',
+  kind: 'editor.kind',
+}).computeLabel;
+
+/**
+ * A series' fields by their words; any other is a state its colour is asked for, named in Home Assistant's words (a
+ * switch's on and off, a climate's modes), else tidied.
+ */
+const seriesLabel: FormLabeler = (schema, localize) =>
+  SERIES_KEYS.includes(schema.name)
+    ? seriesLabels(schema, localize)
+    : stateLabel(schema.name, localize, ['switch', 'climate', 'water_heater']);
+
 const seriesHelper: FormHelper = (schema) => {
   const lang = editorLanguage();
   if (schema.name === 'source') return s(lang, 'editor.source_helper');
@@ -304,27 +396,16 @@ const seriesHelper: FormHelper = (schema) => {
 export const SERIES_LIST: RowsListSpec = {
   key: 'series',
   title: 'chart-card.editor.series',
-  domains: ['sensor', 'weather', 'number', 'input_number', 'counter'],
-  keys: [
-    'entity',
-    'name',
-    'source',
-    'attribute',
-    'time_key',
-    'value_key',
-    'stat',
-    'period',
-    'kind',
-    'curve',
-    'fill',
-    'tone',
-    'color',
-    'unit',
-    'decimals',
-  ],
-  // every field a series may show, a statistic's stat and a history's together
+  domains: [...NUMBERS_FROM, ...STATES_FROM],
+  // a switch, a binary sensor or a helper's toggle picked is a strip of its states
+  picked: (entity) =>
+    STATES_FROM.includes(entity.slice(0, entity.indexOf('.')))
+      ? { entity, kind: 'states' }
+      : { entity },
+  keys: SERIES_KEYS,
+  // every field a series may show, a statistic's stat and a history's together, and a series of states' colours
   schema: [
-    ENTITY,
+    entityField([...NUMBERS_FROM, ...STATES_FROM]),
     NAME,
     ATTRIBUTE,
     KEYS,
@@ -333,20 +414,18 @@ export const SERIES_LIST: RowsListSpec = {
     FILL,
     COLOUR,
     NUMBERS,
+    stateColoursField(['on', 'off']),
   ],
-  schemaOf: (item) =>
-    SCHEMAS[
-      sourceOf({ ...(item as Partial<ChartSeriesConfig>), entity: String(item['entity'] ?? '') })
-    ],
+  schemaOf: (item, _card, hass) =>
+    isStates(item)
+      ? statesSchema(statesFor(item['entity'], hass))
+      : SCHEMAS[
+          sourceOf({
+            ...(item as Partial<ChartSeriesConfig>),
+            entity: String(item['entity'] ?? ''),
+          })
+        ],
   choices: seriesChoices,
-  computeLabel: editorLabels(s, {
-    source: 'editor.source',
-    attribute: 'editor.attribute',
-    time_key: 'editor.time_key',
-    value_key: 'editor.value_key',
-    stat: 'editor.stat',
-    period: 'editor.period',
-    kind: 'editor.kind',
-  }).computeLabel,
+  computeLabel: seriesLabel,
   computeHelper: seriesHelper,
 };

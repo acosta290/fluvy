@@ -25,12 +25,6 @@ export function stateAt(spans: readonly Span[], t: number): string {
   return '';
 }
 
-/** The stretch `t` falls in, with its ends — what a scrubbed state line reads out ("Running · 09:12 → 11:40"). */
-export function spanAt(spans: readonly Span[], t: number): Span | null {
-  for (const span of spans) if (t >= span.from && t <= span.to) return span;
-  return null;
-}
-
 /**
  * A track's readings as `count` evenly spaced values across the window, each the value in force at that step (what the
  * curve draws). Steps before the first reading take it, so a curve starts where its data does instead of at zero.

@@ -1600,6 +1600,7 @@
     "editor.highlight_hours": "Брой откроени часове",
     "editor.show_legend": "Показване на легендата",
     "editor.show_head": "Показване на текущата стойност",
+    "editor.kind_states": "Състояния",
     "editor.stat_last": "Последна стойност"
   },
   "chart": {

@@ -13,6 +13,8 @@ import {
   type LovelaceConfigForm,
   type LovelaceGridOptions,
 } from '@fluvy/core';
+import type { Span as StateSpan } from '@fluvy/core/history';
+import { spanAt } from '@fluvy/core/spans';
 import {
   activateKey,
   axis,
@@ -57,7 +59,7 @@ import {
 } from '../shared/base.js';
 import type { ChartKeys, Curve } from '../shared/chart-config.js';
 import { toneOf } from '../shared/colour.js';
-import { configKeys } from '../shared/config.js';
+import { byState, configKeys } from '../shared/config.js';
 import { iconOf, stateWord } from '../shared/domain.js';
 import {
   actionFields,
@@ -82,6 +84,7 @@ import type {
   FormHelper,
   RowsListSpec,
 } from '../shared/rows-editor.js';
+import { stateLook } from '../shared/state-tint.js';
 import type { ThresholdsConfig } from '../shared/thresholds.js';
 import { decimalsOf, figure, precisionOf, scaleNamed, type Scale } from '../shared/units.js';
 import { attributeSeries, timedAttributes, type Day, type Reading } from './data/attribute.js';
@@ -92,12 +95,15 @@ import {
   historyReadings,
   periodOf,
   PERIOD_MS,
+  recordedStates,
   sourceOf,
+  stateReadings,
   statisticsReadings,
   statOf,
   type ForecastType,
   type Source,
   type Statistic,
+  type StateRow,
 } from './data/sources.js';
 import type { StatPeriod } from './data/statistics.js';
 import { bucketGrid, roundGrid, roundStep, type Grid } from './data/slots.js';
@@ -126,6 +132,7 @@ import {
   defaultWindows,
   houseSpanValue,
   isPrice,
+  isStates,
   SERIES_LIST,
   seriesOf,
   spanField,
@@ -140,6 +147,7 @@ import {
   barGeometry,
   barPath,
   chartKeysOf,
+  chartBubble,
   chartDefaultsFor,
   chartSection,
   chartStyles,
@@ -161,6 +169,7 @@ import {
   ScrubController,
   seriesPaint,
   slotTicks,
+  stretchTone,
   tickText,
   timeLine,
   yOf,
@@ -248,6 +257,9 @@ const GAP = 12;
 const PLOT_MIN = 120;
 /** The readout sizes the value row may take, largest first. */
 const SIZES = ['l', 'm', 's', 'xs'] as const;
+/** A series of states' strip under the plot (#228): 12 tall, 4 over it (`chartHeight` counts the 16). */
+const STRIP = 12;
+const STRIP_GAP = 4;
 
 const down4 = (n: number): number => Math.max(4, Math.floor(n / 4) * 4);
 /** How tall `lines` legend lines stand. */
@@ -265,9 +277,11 @@ export function legendColumns(count: number, width: number, reading: boolean): n
 }
 const capitalise = (text: string): string => text.charAt(0).toLocaleUpperCase() + text.slice(1);
 
-/** One series as this render draws it. */
+/** One series of numbers as this render draws it. */
 interface Drawn {
   readonly item: ChartSeriesConfig;
+  /** Its place among the card's series: its colour, its line in the legend. */
+  readonly index: number;
   readonly view: EntityView;
   readonly source: Source;
   readonly name: string;
@@ -301,6 +315,43 @@ interface Drawn {
   readonly price: boolean;
 }
 
+/** A series drawn as its states (`kind: states`, #228): a strip of the stretches it spent in each, under the plot. */
+interface Strip {
+  readonly item: ChartSeriesConfig;
+  /** Its place among the card's series: its colour, its line in the legend. */
+  readonly index: number;
+  readonly view: EntityView;
+  readonly name: string;
+  readonly colour: SeriesColour;
+  readonly accent: string | undefined;
+  /** Its stretches across the window, up to now and the state now; undefined while they are asked for. */
+  readonly spans: readonly StateSpan[] | undefined;
+}
+
+/** A series as the legend, the value row and the spoken label say it: its place, name and colour, what it reads. */
+interface Named {
+  readonly index: number;
+  readonly name: string;
+  readonly colour: SeriesColour;
+  readonly accent: string | undefined;
+  /** What it reads where the chart is read, else now: a figure and its unit, or a state in its words. */
+  readonly value: string;
+  readonly unit: string;
+}
+
+/** Where a strip is read: the moment, and its two pixels in time (the least a stretch with a look is drawn). */
+interface Moment {
+  readonly t: number;
+  readonly least: number;
+}
+
+/** How a stretch of a series of states is painted: its class (`stretchTone`'s, or `is-own`), and a tone of its own. */
+interface StretchLook {
+  readonly cls: string;
+  readonly tone?: Tone;
+  readonly accent?: string;
+}
+
 /** A window marked: its ends (fractions of the window), its tone, its words in their forms, longest first. */
 interface Marked {
   readonly from: number;
@@ -315,18 +366,22 @@ interface Specs {
   readonly over: ChartSpec | null;
 }
 
-/** Where the chart is read: the cursor (a line through time's snaps to its round time), its x, the moment, each value. */
+/**
+ * Where the chart is read: the cursor (a line through time's snaps to its round time), its x, the moment and its words,
+ * each value.
+ */
 interface Read {
   readonly cursor: number;
   readonly x: number;
+  readonly t: number;
   readonly time: string;
   readonly values: ReadonlyArray<number | null>;
 }
 
 /** What a series' history or statistics answered: what it asked for (its entity, source, keys and span), its readings. */
-interface Answer {
+interface Answer<T = readonly Reading[]> {
   readonly id: string;
-  readonly readings: readonly Reading[];
+  readonly readings: T;
 }
 
 /** What a series' history or statistics answer is for: its entity, its source and keys, and its window's (`spanKey`). */
@@ -336,7 +391,7 @@ const answerId = (item: ChartSeriesConfig, source: Source, span: string): string
     source,
     item.stat ?? '',
     item.period ?? '',
-    item.kind === 'band' ? 'band' : '',
+    item.kind === 'band' || item.kind === 'states' ? item.kind : '',
     span,
   ].join('|');
 
@@ -379,6 +434,13 @@ function fillFor(d: Drawn, style: ResolvedStyle): Pick<ChartSeries, 'fill'> {
   if (d.kind === 'band') return { fill: d.band ? 'band' : 'none' };
   return {};
 }
+
+/** The chart's cursor down its strips at `x`, in its look: a style's hairline, classic's dashes. */
+const stripsCursor = (x: number, dashed: boolean): TemplateResult =>
+  html`<i
+    class="ch-strips__cursor ${dashed ? 'is-dashed' : ''}"
+    style="left:${x.toFixed(2)}px"
+  ></i>`;
 
 /** The value at a fraction of a line's points, between the two nearest; a gap's neighbour where one side is a gap. */
 function between(points: ReadonlyArray<number | null>, fraction: number): number | null {
@@ -457,6 +519,79 @@ export class FluvyChartCard extends Card<ChartCardConfig> {
       .ch-several .fc-future {
         stroke: var(--tone-ink, var(--fluvy-accent));
         stroke-opacity: 0.6;
+      }
+      /* a series of states (#228): a strip of its stretches under the plot, on the plot's time from its start to its
+         end — 12 tall, 4 under what is over it, its corners a third of it — drawn in as the line is */
+      .ch-strips {
+        position: relative;
+      }
+      .ch-strip {
+        position: relative;
+        height: ${STRIP}px;
+        margin-top: ${STRIP_GAP}px;
+        overflow: hidden;
+        border-radius: 4px;
+        background: var(--fluvy-inset, var(--fluvy-page));
+        animation: ch-reveal 900ms var(--fv-ease-out) both;
+        animation-delay: calc(var(--fv-enter-delay, 0ms) + 120ms);
+      }
+      .ch-strips.is-still > .ch-strip {
+        animation: none;
+      }
+      /* out of reach the card is the page's fill, as the strip is: its edge says where it runs */
+      .is-off .ch-strip {
+        box-shadow: inset 0 0 0 1px var(--fluvy-unavailable-border);
+      }
+      @keyframes ch-reveal {
+        from {
+          clip-path: inset(0 100% 0 0);
+        }
+      }
+      /* a chart of states alone: its strips take the plot's room, each as tall as it leaves them, 4 apart */
+      .ch-strips.is-tall {
+        position: absolute;
+        right: 0;
+        bottom: 8px;
+        left: 0;
+        display: flex;
+        flex-direction: column;
+        gap: ${STRIP_GAP}px;
+      }
+      .ch-strips.is-tall > .ch-strip {
+        flex: 1;
+        height: auto;
+        margin: 0;
+        border-radius: var(--fluvy-radius-control);
+      }
+      .ch-strip > .fv-stretch {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+      }
+      /* a minute on in a day is a mark, never nothing: a stretch with a look keeps two pixels */
+      .ch-strip > .fv-stretch:is(.is-on, .is-quiet, .is-away, .is-own) {
+        min-width: 2px;
+      }
+      /* on: the series' colour, the strip's ink; a state's own colour: its tone's */
+      .ch-strip > .fv-stretch:is(.is-on, .is-own) {
+        background: var(--tone-ink, var(--fluvy-accent));
+      }
+      /* two stretches of one look side by side (two words both quiet) are told apart by a hairline of the card's fill */
+      .ch-strip > .fv-stretch.is-after {
+        box-shadow: inset 1px 0 var(--fluvy-card);
+      }
+      /* the chart's cursor down the strips, in its look: a style's hairline, classic's dashes */
+      .ch-strips__cursor {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        width: 0;
+        border-left: 1px solid var(--fluvy-border-strong);
+        pointer-events: none;
+      }
+      .ch-strips__cursor.is-dashed {
+        transform: translateX(-0.75px);
+        border-left: 1.5px dashed var(--fluvy-border-strong);
       }
       /* the axis under the plot starts where the plot does (after a scale's column) */
       .ch-axis {
@@ -595,6 +730,10 @@ export class FluvyChartCard extends Card<ChartCardConfig> {
       .ch-spark > .fv-skeleton {
         height: ${SPARK}px;
       }
+      /* a tile of states alone: its strip 4 over the spark's floor, where a spark's line is drawn to */
+      .ch-spark > .ch-strip {
+        margin-top: ${SPARK - STRIP - 4}px;
+      }
       .fv-tile.is-off {
         background: var(--fluvy-page);
         box-shadow: none;
@@ -611,11 +750,14 @@ export class FluvyChartCard extends Card<ChartCardConfig> {
   static override properties = {
     ...Card.properties,
     answers_: { state: true },
+    states_: { state: true },
     ghost_: { state: true },
   };
 
   /** What each series' history or statistics answered, by its index: kept while a newer read is asked. */
   declare answers_: ReadonlyArray<Answer | undefined>;
+  /** What the recorder kept of each series of states, by its index (#228): kept while a newer read is asked. */
+  declare states_: ReadonlyArray<Answer<readonly StateRow[]> | undefined>;
   /** What the first series' answered over the range a followed picker compares with. */
   declare ghost_: Answer | undefined;
   /** What each series asked last, and when: asked again once the key moves or five minutes pass (the ghost's last). */
@@ -629,6 +771,7 @@ export class FluvyChartCard extends Card<ChartCardConfig> {
   constructor() {
     super();
     this.answers_ = [];
+    this.states_ = [];
     this.ghost_ = undefined;
   }
 
@@ -929,9 +1072,9 @@ export class FluvyChartCard extends Card<ChartCardConfig> {
 
   /**
    * Each series that reads the recorder asks it once a key (its entity, source, keys and window, and its window's
-   * start to the five minutes) and again once five minutes have passed — the first series from as far before its
-   * window as the period it is compared with, for its change, and over the range a followed picker compares with; the
-   * forecasts subscribed, as the weathers push them.
+   * start to the five minutes) and again once five minutes have passed — the first series of numbers from as far
+   * before its window as the period it is compared with, for its change, and over the range a followed picker compares
+   * with; a series of states its states across the window; the forecasts subscribed, as the weathers push them.
    */
   protected override willUpdate(changed: PropertyValues): void {
     super.willUpdate(changed);
@@ -942,26 +1085,43 @@ export class FluvyChartCard extends Card<ChartCardConfig> {
     const window = this.windowAt(new Date(now), Infinity);
     const span = this.spanKey();
     const forecasts: Array<readonly [string, ForecastType]> = [];
-    const ask = (
+    const ask = <T>(
       at: number,
       key: string,
-      read: () => Promise<Reading[]>,
-      land: (readings: Reading[]) => void,
+      read: () => Promise<T>,
+      land: (answer: T) => void,
     ): void => {
       const last = this.reads[at];
       if (last?.key === key && Date.now() - last.at < 300_000) return;
       this.reads[at] = { key, at: Date.now() };
-      void read().then((readings) => {
-        if (this.reads[at]?.key === key) land(readings);
+      void read().then((answer) => {
+        if (this.reads[at]?.key === key) land(answer);
       });
     };
     const items = seriesOf(this.config);
+    const lead = items.findIndex((item) => !isStates(item));
     items.forEach((item, index) => {
       const source = this.sourceFor(item);
       if (source === 'forecast') forecasts.push([item.entity, this.forecastType]);
       if (source !== 'history' && source !== 'statistics') return;
       const id = answerId(item, source, span);
-      const from = window.start - (index === 0 ? this.back() : 0);
+      if (isStates(item)) {
+        ask(
+          index,
+          `${id}|${Math.floor(window.start / 300_000)}`,
+          () =>
+            recordedStates(hass, item.entity, window.start, Math.min(window.end, now)).catch(
+              (): readonly StateRow[] => [],
+            ),
+          (rows) => {
+            const next = [...this.states_];
+            next[index] = { id, readings: rows };
+            this.states_ = next;
+          },
+        );
+        return;
+      }
+      const from = window.start - (index === lead ? this.back() : 0);
       ask(
         index,
         `${id}|${Math.floor(from / 300_000)}`,
@@ -972,8 +1132,8 @@ export class FluvyChartCard extends Card<ChartCardConfig> {
           this.answers_ = next;
         },
       );
-      // the range a followed picker compares with, of the first series: its ghost
-      const before = index === 0 ? this.picked()?.before : undefined;
+      // the range a followed picker compares with, of the first series of numbers: its ghost
+      const before = index === lead ? this.picked()?.before : undefined;
       if (before) {
         const ghost = `${id}|${before.start}`;
         ask(
@@ -1029,7 +1189,8 @@ export class FluvyChartCard extends Card<ChartCardConfig> {
    * The slots a window is read in. Bars, columns, a band and a stepped line read whole round periods of the house's
    * clock (`roundGrid`): the finest round step its series come in, its width draws calmly and the style asks (`points`)
    * — a statistic's weeks and months, the buckets themselves. A line reads the window cut evenly, as fine as its finest
-   * series (a list's quarter, a statistic's hour, the recorder's window in 48), never finer than 192.
+   * series (a list's quarter, a statistic's hour, the recorder's window in 48), never finer than 192. A series of
+   * states is no line: it reads none, and a chart of states alone is read as the recorder's window is, in 48.
    */
   private gridOf(
     window: Window,
@@ -1043,13 +1204,16 @@ export class FluvyChartCard extends Card<ChartCardConfig> {
     const band = items.some((item) => item.kind === 'band');
     const round = columns || stepped || band;
     const statistics = items.map((item) => this.sourceFor(item) === 'statistics');
-    const grains = items.map((item, index) => {
+    const history = round ? 5 * 60_000 : Math.max(5 * 60_000, length / 48);
+    const grains = items.flatMap((item, index) => {
+      if (isStates(item)) return [];
       const source = this.sourceFor(item);
-      if (source === 'statistics') return PERIOD_MS[this.periodFor(item)];
-      if (source === 'history') return round ? 5 * 60_000 : Math.max(5 * 60_000, length / 48);
+      if (source === 'statistics') return [PERIOD_MS[this.periodFor(item)]];
+      if (source === 'history') return [history];
       const readings = this.readingsOf(item, index, source, this.entity(item.entity), days);
-      return readings?.length ? stepOf(readings) : HOUR;
+      return [readings?.length ? stepOf(readings) : HOUR];
     });
+    if (!grains.length) grains.push(history);
     if (!round) {
       const step = Math.max(length / MOST_SLOTS, Math.min(...grains, length / 2));
       return {
@@ -1093,16 +1257,43 @@ export class FluvyChartCard extends Card<ChartCardConfig> {
       step,
       hass: this.hass,
       hours: hourly,
-      // a statistic's running hour is not compiled until it ends: the chart ends on the last whole one
-      whole: hourly && step === HOUR && statistics.every(Boolean),
+      // a statistic's running hour is not compiled until it ends: the chart ends on the last whole one (its strips
+      // with it)
+      whole:
+        hourly &&
+        step === HOUR &&
+        items.every((item, index) => statistics[index] || isStates(item)),
     });
   }
 
   /**
-   * The series as this render draws them, laid on the window: each slot what was in force across it (an hour's mean
-   * of four quarter prices), a line's points between the slots, its band, its reading now, its unit, its decimals and
-   * its colour — a lone series its card's colour, several each a series colour of the palette, a colour of its own
-   * over either; one out of reach in the off skin.
+   * A series' colour: a lone series its card's colour, several each a series colour of the palette, a colour of its
+   * own over either — a name or a hex as the card's accent sheet derives it, or one of the palette's by its token (it
+   * follows the palette and the mode); one out of reach in the off skin.
+   */
+  private paintOf(
+    item: ChartSeriesConfig,
+    index: number,
+    view: EntityView,
+    several: boolean,
+  ): { readonly colour: SeriesColour; readonly accent: string | undefined } {
+    const usable = isUsable(view) || (view.status === 'missing' && !several);
+    const accent = usable ? this.accents.item(item.color) : undefined;
+    const colour: SeriesColour = !isUsable(view)
+      ? 'off'
+      : accent
+        ? 'accent'
+        : item.color && isPaletteRef(item.color)
+          ? (refInk(item.color) as SeriesColour)
+          : (item.tone ??
+            (several ? (`series-${index + 1}` as SeriesColour) : toneOf(this.config, 'accent')));
+    return { colour, accent };
+  }
+
+  /**
+   * The series of numbers as this render draws them, laid on the window: each slot what was in force across it (an
+   * hour's mean of four quarter prices, or what its `stat` reads), a line's points between the slots, its band, its
+   * reading now, its unit, its decimals and its colour (`paintOf`). A series of states is a strip (`strips`).
    */
   private drawn(
     window: Window,
@@ -1119,7 +1310,8 @@ export class FluvyChartCard extends Card<ChartCardConfig> {
     const edges = { start: window.start - half, end: window.end + half };
     // a band's points sit in the middle of its slots, the values of those periods
     const middles = Array.from({ length: count }, (_unused, k) => (k + 0.5) / count);
-    return items.map((item, index) => {
+    return items.flatMap((item, index): Drawn[] => {
+      if (isStates(item)) return [];
       const view = this.entity(item.entity);
       const source = this.sourceFor(item);
       const readings = this.readingsOf(item, index, source, view, days);
@@ -1140,18 +1332,7 @@ export class FluvyChartCard extends Card<ChartCardConfig> {
         decimalsOf(item.decimals) ??
         (scale.unit === view.unit ? precisionOf(this.hass, view) : undefined) ??
         (scale.divisor === 1 ? carried(readings, written) : undefined);
-      const usable = isUsable(view) || (view.status === 'missing' && !several);
-      // a colour of its own: a name or a hex as the card's accent sheet derives it, or one of the palette's by its
-      // token (it follows the palette and the mode)
-      const accent = usable ? this.accents.item(item.color) : undefined;
-      const colour: SeriesColour = !isUsable(view)
-        ? 'off'
-        : accent
-          ? 'accent'
-          : item.color && isPaletteRef(item.color)
-            ? (refInk(item.color) as SeriesColour)
-            : (item.tone ??
-              (several ? (`series-${index + 1}` as SeriesColour) : toneOf(this.config, 'accent')));
+      const { colour, accent } = this.paintOf(item, index, view, several);
       const holding: Holding =
         recorded && source === 'history'
           ? { hold: Infinity, until: window.now }
@@ -1236,41 +1417,44 @@ export class FluvyChartCard extends Card<ChartCardConfig> {
       const curve = item.curve ?? style.curve;
       const slots = readings ? layOn(readings) : [];
       const cover = (Math.min(window.end, window.now) - window.start) / (window.end - window.start);
-      return {
-        item,
-        view,
-        source,
-        name: this.nameFor(view, item.name),
-        scale,
-        digits,
-        colour,
-        accent,
-        kind,
-        curve,
-        readings,
-        holding,
-        slots,
-        layOn,
-        // bars are read and drawn by the slot: they have no line's points to read between
-        points:
-          kind === 'columns' || bars
-            ? []
-            : line
-              ? shown(line.values)
-              : grid.round && (kind === 'band' || curve === 'step')
-                ? slots
-                : lay(edges, count + 1),
-        line,
-        cover,
-        at: line
-          ? line.at.map((f) => f * cover)
-          : grid.round && kind === 'band' && curve !== 'step'
-            ? middles
-            : undefined,
-        band: banded ? { low: lows as number[], high: highs as number[] } : undefined,
-        now: live === null || live === undefined ? null : live / scale.divisor,
-        price: isPrice(scale.unit, view.deviceClass),
-      };
+      return [
+        {
+          item,
+          index,
+          view,
+          source,
+          name: this.nameFor(view, item.name),
+          scale,
+          digits,
+          colour,
+          accent,
+          kind,
+          curve,
+          readings,
+          holding,
+          slots,
+          layOn,
+          // bars are read and drawn by the slot: they have no line's points to read between
+          points:
+            kind === 'columns' || bars
+              ? []
+              : line
+                ? shown(line.values)
+                : grid.round && (kind === 'band' || curve === 'step')
+                  ? slots
+                  : lay(edges, count + 1),
+          line,
+          cover,
+          at: line
+            ? line.at.map((f) => f * cover)
+            : grid.round && kind === 'band' && curve !== 'step'
+              ? middles
+              : undefined,
+          band: banded ? { low: lows as number[], high: highs as number[] } : undefined,
+          now: live === null || live === undefined ? null : live / scale.divisor,
+          price: isPrice(scale.unit, view.deviceClass),
+        },
+      ];
     });
   }
 
@@ -1281,6 +1465,32 @@ export class FluvyChartCard extends Card<ChartCardConfig> {
   private historyStat(item: ChartSeriesConfig): 'min' | 'max' | 'last' | undefined {
     const stat = item.stat;
     return stat === 'min' || stat === 'max' || stat === 'last' ? stat : undefined;
+  }
+
+  /**
+   * The series of states as this render draws them (#228): each its stretches across the window as the recorder kept
+   * them, brought up to now and the state now, and its colour (`paintOf`).
+   */
+  private strips(items: readonly ChartSeriesConfig[], window: Window): Strip[] {
+    const several = items.length > 1;
+    const span = this.spanKey();
+    const end = Math.min(window.end, window.now);
+    return items.flatMap((item, index): Strip[] => {
+      if (!isStates(item)) return [];
+      const view = this.entity(item.entity);
+      const answer = this.states_[index];
+      const rows = answer?.id === answerId(item, 'history', span) ? answer.readings : undefined;
+      return [
+        {
+          item,
+          index,
+          view,
+          name: this.nameFor(view, item.name),
+          ...this.paintOf(item, index, view, several),
+          spans: rows && stateReadings(rows, window.start, end, view),
+        },
+      ];
+    });
   }
 
   /**
@@ -1533,26 +1743,32 @@ export class FluvyChartCard extends Card<ChartCardConfig> {
       running: grid.running,
     };
     const drawn = this.drawn(window, grid, items, days, style);
+    const strips = this.strips(items, window);
     return this.variant === 'tile'
-      ? this.renderTile(drawn, window)
-      : this.renderChartCard(drawn, window, grid, style);
+      ? this.renderTile(drawn, strips, window)
+      : this.renderChartCard(drawn, strips, window, grid, style);
   }
 
   private renderChartCard(
     drawn: readonly Drawn[],
+    strips: readonly Strip[],
     window: Window,
     grid: Grid,
     style: ResolvedStyle,
   ): TemplateResult {
     const config = this.config;
     const count = grid.edges.length - 1;
-    const lead = drawn[0] as Drawn;
-    const view = lead.view;
-    const several = drawn.length > 1;
+    // the lead is the first series of numbers: its reading heads the row, its unit the scale's; a chart of states
+    // alone is headed by its first
+    const lead = drawn[0];
+    const first = strips[0] as Strip;
+    const view = lead?.view ?? first.view;
+    const total = drawn.length + strips.length;
+    const several = total > 1;
     const off = !several && !isUsable(view);
     const full = this.variant === 'full';
     const width = down4(this.contentWidth);
-    const title = config?.title ?? (several ? s(this.hass, 'title') : lead.name);
+    const title = config?.title ?? (several ? s(this.hass, 'title') : (lead ?? first).name);
     // "Unavailable" is said once, under the title; several series each say theirs in the off skin
     const stated = !several && view.status !== 'ok';
     const sub = stated ? stateText(this.hass, view) : (config?.subtitle ?? this.spanWords(window));
@@ -1565,38 +1781,44 @@ export class FluvyChartCard extends Card<ChartCardConfig> {
       shorter: !stated ? [''] : view.status === 'missing' ? [stateWord(this.hass, view)] : [],
     });
     const tone: Tone = off ? 'off' : toneOf(config, 'accent');
-    const loading = drawn.some((d) => d.readings === undefined);
-    const empty = !loading && drawn.every((d) => !d.slots.some((v) => v !== null));
-    const marks = !several && !loading && !empty ? this.marked(lead, window, grid) : [];
-    const ghost = this.ghostOf(lead);
+    const loading =
+      drawn.some((d) => d.readings === undefined) || strips.some((d) => d.spans === undefined);
+    // the plot draws the series of numbers where one has a reading in the window; where none has, the strips of the
+    // series of states take its room; where they have nothing either, there is nothing to chart
+    const plotted = !loading && drawn.some((d) => d.slots.some((v) => v !== null));
+    const tracks = !loading && !plotted && strips.some((d) => Boolean(d.spans?.length));
+    const marks = !several && plotted && lead ? this.marked(lead, window, grid) : [];
+    const ghost = lead ? this.ghostOf(lead) : null;
     const showHead = config?.show_head !== false;
     const legendShown = several && config?.show_legend !== false;
     // a legend of four or more under the axis in the columns that hold its items; two or three series', and one whose
     // columns would cut its names (a narrow card), the value row's lines, one a row, each reading at its end
-    const cols = legendColumns(drawn.length, width, showHead);
-    const inRow = legendShown && (drawn.length <= 3 || cols === 0);
+    const cols = legendColumns(total, width, showHead);
+    const inRow = legendShown && (total <= 3 || cols === 0);
     const row = full && (showHead || marks.length > 0 || inRow);
     const under = full && legendShown && !inRow;
     // the card's height is its config's alone (`chartHeight`): its room for a legend of four or more (two lines under
     // the axis) is the plot's where the legend takes less, and what it takes more of — a third line under the axis,
     // lines past the value row's — the plot gives; the value row's room is the chart's where the row has nothing to say
-    const room = full && legendShown && drawn.length > 3 ? UNDER + linesTall(2) : 0;
+    const room = full && legendShown && total > 3 ? UNDER + linesTall(2) : 0;
     const legendMore = under
-      ? UNDER + linesTall(Math.ceil(drawn.length / cols))
+      ? UNDER + linesTall(Math.ceil(total / cols))
       : row && inRow
-        ? Math.max(0, linesTall(drawn.length) - TOP)
+        ? Math.max(0, linesTall(total) - TOP)
         : 0;
     const height = CHART + (full && !row ? ROW : 0) + room - legendMore;
+    // and 16 a series of states: its strip under the plot, or the plot's own room where the strips take it (and where
+    // the chart waits, or has nothing to say)
+    const stripRoom = strips.length * (STRIP + STRIP_GAP);
     // a row that says the reading reads the chart with it — the value, the time its label, or the legend's lines, the
     // time on the axis — and no bubble is drawn: the plot takes the bubble's room. A row of the marked windows' pills
     // alone leaves the bubble its room, over the plot and under the pills.
     const rowReads = full && (showHead || inRow);
     const headroom = rowReads ? TIGHT : HEADROOM;
     // the scale's column folds first where it would leave the plot under its least (half a section)
-    const scaled =
-      loading || empty
-        ? null
-        : this.specs(drawn, window, style, marks, { width, height, headroom }, ghost);
+    const scaled = plotted
+      ? this.specs(drawn, window, style, marks, { width, height, headroom }, ghost)
+      : null;
     const specs =
       scaled && width - plotOf(scaled.main).left < PLOT_MIN
         ? this.specs(
@@ -1610,10 +1832,20 @@ export class FluvyChartCard extends Card<ChartCardConfig> {
         : scaled;
     const fraction = this.scrubber.value;
     const read =
-      specs && fraction !== null ? this.readAt(specs, drawn, window, grid, fraction) : null;
+      fraction === null
+        ? null
+        : specs
+          ? this.readAt(specs, drawn, window, grid, fraction)
+          : tracks
+            ? this.readTracks(window, width, fraction)
+            : null;
     const values = drawn.map((d, i) => (read ? (read.values[i] ?? null) : d.now));
     const plot = specs ? plotOf(specs.main) : null;
     const left = plot?.left ?? 0;
+    // a strip's two pixels, in time: the least a stretch with a look is drawn, and read
+    const least = (2 * (window.end - window.start)) / Math.max(1, plot?.width ?? width);
+    const named = this.named(drawn, strips, values, read ? { t: read.t, least } : null);
+    const headline = (lead ? named.find((n) => n.index === lead.index) : named[0]) as Named;
     // the keys read from where the chart rests: the end of what has happened where the window runs past now, else
     // the window's end
     const rest =
@@ -1638,29 +1870,42 @@ export class FluvyChartCard extends Card<ChartCardConfig> {
       })}
       ${
         row
-          ? this.valueRow(drawn, values, read?.time ?? null, marks, window, { showHead, inRow })
+          ? this.valueRow(named, headline, read?.time ?? null, marks, window, lead, {
+              showHead,
+              inRow,
+            })
           : nothing
       }
       <div
         class="ch-chart fv-tone--${off ? 'off' : toneOf(config, 'accent')}"
-        style="height:${height}px;width:${width}px"
+        style="height:${specs ? height : height + stripRoom}px;width:${width}px"
         role="img"
         tabindex="0"
-        aria-label=${this.spoken(drawn, values, read?.time ?? null)}
+        aria-label=${this.spoken(named, read?.time ?? null)}
         @keydown=${(event: KeyboardEvent) => this.scrubber.key(event, 1 / count, rest)}
         ${scrub(this.scrubber)}
       >
         ${
           loading
             ? html`<div class="fv-skeleton"></div>`
-            : specs
-              ? html`${ghost ? this.ghosts(specs.main, ghost, isBars(style.preset) || lead.kind === 'columns') : nothing}${this.drawCharts(specs, drawn, read, values, rowReads)}`
-              : html`<div class="ch-empty" data-align="center">
-                  ${ico(config?.icon ?? iconOf(view), 'neutral')}
-                  <p class="fv-empty">${s(this.hass, 'empty')}</p>
-                </div>`
+            : specs && lead
+              ? html`${ghost ? this.ghosts(specs.main, ghost, isBars(style.preset) || lead.kind === 'columns') : nothing}${this.drawCharts(specs, lead, values[0] ?? null, read, rowReads, several)}`
+              : tracks
+                ? this.tracks(strips, window, read, {
+                    width,
+                    headroom,
+                    rowReads,
+                    several,
+                    style,
+                    least,
+                  })
+                : html`<div class="ch-empty" data-align="center">
+                    ${ico(config?.icon ?? iconOf(view), 'neutral')}
+                    <p class="fv-empty">${s(this.hass, 'empty')}</p>
+                  </div>`
         }
       </div>
+      ${specs && strips.length ? this.stripsUnder(strips, window, specs, read) : nothing}
       <div
         class="ch-axis ${when ? 'is-reading' : ''}"
         style=${left > 0 ? `margin-inline-start:${left}px` : nothing}
@@ -1671,11 +1916,229 @@ export class FluvyChartCard extends Card<ChartCardConfig> {
       ${
         under
           ? html`<div class="ch-legend" style="--ch-cols:${cols}">
-              ${this.legendOf(drawn, showHead ? values : null)}
+              ${this.legendOf(named, showHead)}
             </div>`
           : nothing
       }
     </article>`;
+  }
+
+  /**
+   * Every series as the legend, the value row and the spoken label say it, in the card's order: a series of numbers
+   * its figure (`values`: where the chart is read, else now), a series of states its state where the chart is read
+   * (`at`, else now) in Home Assistant's words and the colour its strip shows (`inkOf`).
+   */
+  private named(
+    drawn: readonly Drawn[],
+    strips: readonly Strip[],
+    values: ReadonlyArray<number | null>,
+    at: Moment | null,
+  ): Named[] {
+    return [
+      ...drawn.map((d, i) => ({
+        index: d.index,
+        name: d.name,
+        colour: d.colour,
+        accent: d.accent,
+        ...this.figureOf(d, values[i] ?? null),
+      })),
+      ...strips.map((d) => ({
+        index: d.index,
+        name: d.name,
+        ...this.inkOf(d),
+        value: this.stateThen(d, at),
+        unit: '',
+      })),
+    ].sort((a, b) => a.index - b.index);
+  }
+
+  /**
+   * The state a strip shows at a moment: the last stretch drawn over it — one with a look is drawn `least` long at the
+   * least (its two pixels), so a door open for a minute of a day is read where its mark is — else the stretch it falls
+   * in; none past what is known.
+   */
+  private shownAt(strip: Strip, { t, least }: Moment): string {
+    const spans = strip.spans ?? [];
+    for (let i = spans.length - 1; i >= 0; i--) {
+      const span = spans[i] as StateSpan;
+      if (
+        span.from <= t &&
+        t <= Math.max(span.to, span.from + least) &&
+        this.stretchLook(strip, span.state).cls !== ''
+      )
+        return span.state;
+    }
+    return spanAt(spans, t)?.state ?? '';
+  }
+
+  /**
+   * The colour a series of states shows in its legend: its colour while on — the one its `state_colors` give `on`, else
+   * the first they give a state of its words (a heat pump's heating), else its own.
+   */
+  private inkOf(strip: Strip): {
+    readonly colour: SeriesColour;
+    readonly accent: string | undefined;
+  } {
+    const own = strip.item.state_colors;
+    const states = own && typeof own === 'object' ? Object.keys(own) : [];
+    for (const state of ['on', ...states]) {
+      const look = this.stretchLook(strip, state);
+      if (look.tone) return { colour: look.tone, accent: look.accent };
+    }
+    return { colour: strip.colour, accent: strip.accent };
+  }
+
+  /**
+   * A series of states' state where the chart is read — now, where it is not — in Home Assistant's words ("On", "Open",
+   * "Heat"); "—" where nothing was known (`unavailable`, `unknown`, past now).
+   */
+  private stateThen(strip: Strip, at: Moment | null): string {
+    const { view } = strip;
+    const state = at === null ? (view.status === 'ok' ? view.state : '') : this.shownAt(strip, at);
+    if (stretchTone(view.domain, state) === 'is-away') return '—';
+    // the entity as it was then: a state it held, whatever it is now
+    return stateText(this.hass, {
+      ...view,
+      state,
+      status: 'ok',
+      stateObj: view.stateObj && { ...view.stateObj, state },
+    });
+  }
+
+  /**
+   * How a stretch of a series of states is painted: nothing known striped (a gap, never "off"); a colour the series
+   * names for the state (`state_colors`: a tone, a colour, `none` for the strip's own fill); else the house's
+   * (`stretchTone`) — on in the series' colour, doing something quieter the neutral, resting the strip's own fill.
+   */
+  private stretchLook(strip: Strip, state: string): StretchLook {
+    const cls = stretchTone(strip.view.domain, state);
+    const own = cls === 'is-away' ? undefined : byState(strip.item.state_colors, state);
+    if (own === undefined) return { cls };
+    if (own === 'none') return { cls: '' };
+    const look = stateLook(
+      this.accents,
+      { state_colors: { [state]: own } },
+      state,
+      strip.colour === 'off' ? 'off' : 'accent',
+    );
+    return { cls: 'is-own', tone: look.tone, ...(look.accent ? { accent: look.accent } : {}) };
+  }
+
+  /**
+   * A series of states' strip: its stretches across the window in their looks (`stretchLook`), two side by side of
+   * one look told apart by a hairline of the card's fill; the strip itself in the series' colour, which its stretches
+   * on wear.
+   */
+  private strip(strip: Strip, window: Window): TemplateResult {
+    const length = Math.max(1, window.end - window.start);
+    const at = (t: number): number =>
+      ((Math.min(window.end, Math.max(window.start, t)) - window.start) / length) * 100;
+    const paint = ownInk(strip.colour)
+      ? seriesPaint(strip.colour)
+      : { className: `fv-tone--${strip.accent ? 'accent' : strip.colour}` };
+    let before = '';
+    // a drawing: its stretches lie where their minutes do, off the grid
+    return html`<div
+      class="ch-strip ${paint.className}"
+      data-measure="drawn"
+      data-accent=${strip.accent ?? nothing}
+      style=${paint.style ?? nothing}
+    >
+      ${(strip.spans ?? []).map((span) => {
+        const look = this.stretchLook(strip, span.state);
+        const key = look.cls ? `${look.cls}|${look.tone ?? ''}|${look.accent ?? ''}` : '';
+        const after = key !== '' && key === before;
+        before = key;
+        const from = at(span.from);
+        return key
+          ? html`<i
+              class="fv-stretch ${look.cls} ${after ? 'is-after' : ''} ${look.tone ? `fv-tone--${look.tone}` : ''}"
+              data-accent=${look.accent ?? nothing}
+              style="left:${from.toFixed(3)}%;width:${(at(span.to) - from).toFixed(3)}%"
+            ></i>`
+          : nothing;
+      })}
+    </div>`;
+  }
+
+  /**
+   * The strips under the plot (#228): one a series of states, 12 tall and 4 under what is over it, from the plot's start
+   * to its end on its time; read as the chart is, the cursor down them at the chart's x in its look.
+   */
+  private stripsUnder(
+    strips: readonly Strip[],
+    window: Window,
+    specs: Specs,
+    read: Read | null,
+  ): TemplateResult {
+    const plot = plotOf(specs.main);
+    const spec = specs.over ?? specs.main;
+    const bars = spec.kind ? spec.kind === 'bars' : isBars(spec.style.preset);
+    return html`<div
+      class="ch-strips ${spec.style.animate ? '' : 'is-still'}"
+      style="margin-inline-start:${plot.left}px;width:${plot.width}px"
+      aria-hidden="true"
+      ${scrub(this.scrubber)}
+    >
+      ${strips.map((strip) => this.strip(strip, window))}
+      ${
+        read && spec.style.cursor !== 'none'
+          ? stripsCursor(read.x - plot.left, spec.style.cursor === 'dashed' && !bars)
+          : nothing
+      }
+    </div>`;
+  }
+
+  /**
+   * A chart of states alone (#228): its strips take the plot's room under the bubble's (or the knob's, under a row that
+   * reads the chart), each as tall as it leaves them, 4 apart; read by hand, the cursor down them, and the bubble —
+   * where the row does not read the chart — with the state and when, or when alone over several (their legend says
+   * each).
+   */
+  private tracks(
+    strips: readonly Strip[],
+    window: Window,
+    read: Read | null,
+    o: {
+      readonly width: number;
+      readonly headroom: number;
+      readonly rowReads: boolean;
+      readonly several: boolean;
+      readonly style: ResolvedStyle;
+      readonly least: number;
+    },
+  ): TemplateResult {
+    const lone = strips[0] as Strip;
+    return html`<div
+        class="ch-strips is-tall ${o.style.animate ? '' : 'is-still'}"
+        style="top:${o.headroom}px"
+      >
+        ${strips.map((strip) => this.strip(strip, window))}
+        ${
+          read && o.style.cursor !== 'none'
+            ? stripsCursor(read.x, o.style.cursor === 'dashed')
+            : nothing
+        }
+      </div>
+      ${
+        read && !o.rowReads
+          ? chartBubble({
+              x: read.x,
+              width: o.width,
+              value: o.several ? read.time : this.stateThen(lone, { t: read.t, least: o.least }),
+              ...(o.several ? {} : { time: read.time }),
+              family: getComputedStyle(this).fontFamily,
+              lean: 0,
+              look: o.style.bubble,
+            })
+          : nothing
+      }`;
+  }
+
+  /** Where a chart of states alone is read: the moment at a fraction of its width (the strips are the plot's). */
+  private readTracks(window: Window, width: number, fraction: number): Read {
+    const t = window.start + fraction * (window.end - window.start);
+    return { cursor: fraction, x: fraction * width, t, time: this.when(t, window), values: [] };
   }
 
   /**
@@ -1852,7 +2315,10 @@ export class FluvyChartCard extends Card<ChartCardConfig> {
     </svg>`;
   }
 
-  /** Where the chart is read at a fraction of its plot: the cursor's x, when that was, and each series' value there. */
+  /**
+   * Where the chart is read at a fraction of its plot: the cursor's x, the moment there (what a strip reads) and its
+   * words, and each series' value there.
+   */
   private readAt(
     specs: Specs,
     drawn: readonly Drawn[],
@@ -1887,6 +2353,7 @@ export class FluvyChartCard extends Card<ChartCardConfig> {
     return {
       cursor,
       x: read.x,
+      t: hit ? hit.t : window.start + f * length,
       time: hit
         ? this.when(hit.t, window)
         : slotwise
@@ -1910,16 +2377,16 @@ export class FluvyChartCard extends Card<ChartCardConfig> {
    */
   private drawCharts(
     specs: Specs,
-    drawn: readonly Drawn[],
+    lead: Drawn,
+    value: number | null,
     read: Read | null,
-    values: ReadonlyArray<number | null>,
     rowReads: boolean,
+    several: boolean,
   ): TemplateResult {
     const cursor = read?.cursor ?? null;
     const main = { ...specs.main, cursor };
     const over = specs.over ? { ...specs.over, cursor } : null;
-    const several = drawn.length > 1;
-    const figure = this.figureOf(drawn[0] as Drawn, values[0] ?? null);
+    const figure = this.figureOf(lead, value);
     const now: Said = { value: figure.value, ...(figure.unit ? { unit: figure.unit } : {}) };
     const at: Said | null =
       !read || rowReads ? null : several ? { value: read.time } : { ...now, time: read.time };
@@ -1934,32 +2401,31 @@ export class FluvyChartCard extends Card<ChartCardConfig> {
   }
 
   /**
-   * The value row: the first series' reading now (or where the chart is read) at the largest readout size that holds
-   * with what goes beside it — its change on the period before, the marked windows' pills at the row's end, each in
-   * the longest of its forms the room holds, gone where none does — or, for two or three series, the legend's lines,
-   * each reading at its end.
+   * The value row: the lead series' reading now (or where the chart is read; a series of states its state) at the
+   * largest readout size that holds with what goes beside it — its change on the period before, the marked windows'
+   * pills at the row's end, each in the longest of its forms the room holds, gone where none does — or, for two or
+   * three series, the legend's lines, each reading at its end.
    */
   private valueRow(
-    drawn: readonly Drawn[],
-    values: ReadonlyArray<number | null>,
+    named: readonly Named[],
+    parts: Named,
     time: string | null,
     marks: readonly Marked[],
     window: Window,
+    lead: Drawn | undefined,
     shown: { readonly showHead: boolean; readonly inRow: boolean },
   ): TemplateResult {
     if (shown.inRow)
       return html`<div
         class="ch-top"
-        style=${drawn.length > 3 ? `height:${Math.max(TOP, linesTall(drawn.length))}px` : nothing}
+        style=${named.length > 3 ? `height:${Math.max(TOP, linesTall(named.length))}px` : nothing}
       >
-        <div class="ch-lines">${this.legendOf(drawn, shown.showHead ? values : null)}</div>
+        <div class="ch-lines">${this.legendOf(named, shown.showHead)}</div>
       </div>`;
     const width = this.contentWidth;
     const ruler = this.headFit.ruler;
-    const lead = drawn[0] as Drawn;
     const label = time ?? this.t('common.now');
-    const parts = this.figureOf(lead, values[0] ?? null);
-    const change = shown.showHead && time === null ? this.change(lead, window) : null;
+    const change = shown.showHead && time === null && lead ? this.change(lead, window) : null;
     const delta =
       change === null
         ? ''
@@ -2051,58 +2517,48 @@ export class FluvyChartCard extends Card<ChartCardConfig> {
     >`;
   }
 
-  /** The legend: each series' swatch in its colour, its name, its reading where one is given. */
-  private legendOf(
-    drawn: readonly Drawn[],
-    values: ReadonlyArray<number | null> | null,
-  ): TemplateResult {
+  /** The legend: each series' swatch in its colour, its name, its reading where it says it (`values`). */
+  private legendOf(named: readonly Named[], values: boolean): TemplateResult {
     return legend(
-      drawn.map((d, i) => {
-        const parts = values ? this.figureOf(d, values[i] ?? null) : null;
-        const colour = d.colour;
-        return {
-          name: d.name,
-          ...(d.accent ? { accent: d.accent } : {}),
-          ...(ownInk(colour)
-            ? { paint: seriesPaint(colour) }
-            : d.accent
-              ? {}
-              : { tone: colour as Tone }),
-          ...(parts ? { value: parts.unit ? `${parts.value} ${parts.unit}` : parts.value } : {}),
-        };
-      }),
+      named.map((d) => ({
+        name: d.name,
+        ...(d.accent ? { accent: d.accent } : {}),
+        ...(ownInk(d.colour)
+          ? { paint: seriesPaint(d.colour) }
+          : d.accent
+            ? {}
+            : { tone: d.colour as Tone }),
+        ...(values ? { value: d.unit ? `${d.value} ${d.unit}` : d.value } : {}),
+      })),
     );
   }
 
   /** What the chart says to a reader who cannot see it: when, and each series' name and its reading then. */
-  private spoken(
-    drawn: readonly Drawn[],
-    values: ReadonlyArray<number | null>,
-    time: string | null,
-  ): string {
+  private spoken(named: readonly Named[], time: string | null): string {
     return [
       time ?? this.t('common.now'),
-      ...drawn.map((d, i) => {
-        const { value, unit } = this.figureOf(d, values[i] ?? null);
-        return `${d.name}: ${value}${unit ? ` ${unit}` : ''}`;
-      }),
+      ...named.map((d) => `${d.name}: ${d.value}${d.unit ? ` ${d.unit}` : ''}`),
     ].join(' · ');
   }
 
   /**
-   * The tile: the first series' reading (with its change's arrow) over a spark of every series across the window —
-   * classic, or minimal where the card's style is — the sensor tile's anatomy; out of reach in the off skin.
+   * The tile: the lead series' reading (with its change's arrow) over a spark of every series of numbers across the
+   * window — classic, or minimal where the card's style is — the sensor tile's anatomy; out of reach in the off skin.
+   * A tile of states alone says its first one's state now over its strip (#228).
    */
-  private renderTile(drawn: readonly Drawn[], window: Window): TemplateResult {
-    const lead = drawn[0] as Drawn;
-    const view = lead.view;
+  private renderTile(
+    drawn: readonly Drawn[],
+    strips: readonly Strip[],
+    window: Window,
+  ): TemplateResult {
+    const lead = drawn[0];
+    const first = strips[0] as Strip;
+    const { view, colour, accent } = lead ?? first;
     const usable = isUsable(view);
-    const tone: Tone = !usable
-      ? 'off'
-      : lead.accent || ownInk(lead.colour)
-        ? 'accent'
-        : (lead.colour as Tone);
-    const parts = this.figureOf(lead, lead.now);
+    const tone: Tone = !usable ? 'off' : accent || ownInk(colour) ? 'accent' : (colour as Tone);
+    const parts = lead
+      ? this.figureOf(lead, lead.now)
+      : { value: this.stateThen(first, null), unit: '' };
     // the reading at m, else as large as the tile holds it whole (a price and its unit in half a section)
     const size =
       (['m', 's', 'xs'] as const).find(
@@ -2115,8 +2571,8 @@ export class FluvyChartCard extends Card<ChartCardConfig> {
           ) <=
           this.width - 32,
       ) ?? 'xs';
-    const change = this.change(lead, window);
-    const loading = drawn.some((d) => d.readings === undefined);
+    const change = lead ? this.change(lead, window) : null;
+    const loading = lead ? drawn.some((d) => d.readings === undefined) : first.spans === undefined;
     const fine = chartKeysOf(this.config);
     const minimal = resolveStyle(this.config?.chart, fine, {}).preset === 'minimal';
     const series = drawn.flatMap((d): ChartSeries[] =>
@@ -2166,12 +2622,12 @@ export class FluvyChartCard extends Card<ChartCardConfig> {
             : nothing
         }
       </div>
-      ${readout({ label: this.config?.title ?? lead.name, value: parts.value, unit: parts.unit, size })}
+      ${readout({ label: this.config?.title ?? (lead ?? first).name, value: parts.value, unit: parts.unit, size })}
       <div class="ch-spark fv-tone--${tone}">
         ${
           loading
             ? html`<div class="fv-skeleton"></div>`
-            : series.length
+            : lead && series.length
               ? drawChart({
                   frame: { width: down4(this.width - 32 - 8), height: SPARK, headroom: 4, pad: 4 },
                   series,
@@ -2181,7 +2637,9 @@ export class FluvyChartCard extends Card<ChartCardConfig> {
                   thresholds: this.thresholds(this.config, lead.scale.unit)?.bands() ?? [],
                   id: 'ch-spark',
                 })
-              : nothing
+              : !lead && first.spans?.length
+                ? this.strip(first, window)
+                : nothing
         }
       </div>
     </article>`;

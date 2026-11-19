@@ -3250,6 +3250,7 @@
     "editor.highlight_hours": "Hervorgehobene Stunden",
     "editor.show_legend": "Legende anzeigen",
     "editor.show_head": "Aktuellen Wert anzeigen",
+    "editor.kind_states": "Zustände",
     "editor.stat_last": "Letzter Messwert"
   },
   "slider": {

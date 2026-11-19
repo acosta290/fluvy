@@ -3250,6 +3250,7 @@
     "editor.highlight_hours": "Ore da evidenziare",
     "editor.show_legend": "Mostra la legenda",
     "editor.show_head": "Mostra il valore attuale",
+    "editor.kind_states": "Stati",
     "editor.stat_last": "L’ultima lettura"
   },
   "slider": {

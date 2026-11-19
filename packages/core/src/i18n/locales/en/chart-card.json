@@ -36,6 +36,7 @@
     "editor.highlight_hours": "Hours to highlight",
     "editor.show_legend": "Show legend",
     "editor.show_head": "Show the value now",
+    "editor.kind_states": "States",
     "editor.stat_last": "The last reading"
   }
 }

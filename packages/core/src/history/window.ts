@@ -1,6 +1,7 @@
 import { resolveEntity } from '../entity.js';
 import type { HomeAssistant } from '../ha/types.js';
-import type { Band, Group, HistoryWindow, Line, Point, RawHistory, Span, Track } from './types.js';
+import { spansOf } from './spans.js';
+import type { Band, Group, HistoryWindow, Line, Point, RawHistory, Track } from './types.js';
 
 /** A statistic period as the recorder sends it (`recorder/statistics_during_period`). Times are milliseconds. */
 export interface StatisticPeriodRow {
@@ -74,20 +75,6 @@ function pointsOf(rows: RawHistory[string], start: number, end: number): Point[]
     points.push({ t, v: value });
   }
   return points;
-}
-
-/** The stretches an entity spent in each state; a run of the same state is one stretch. */
-function spansOf(rows: RawHistory[string], start: number, end: number): Span[] {
-  const spans: Span[] = [];
-  for (const row of rows) {
-    const from = Math.max(start, row.lu * 1000);
-    if (from > end) break;
-    const previous = spans[spans.length - 1];
-    if (previous && previous.state === row.s) continue;
-    if (previous) spans[spans.length - 1] = { ...previous, to: from };
-    spans.push({ from, to: end, state: row.s });
-  }
-  return spans;
 }
 
 export interface WindowOptions {

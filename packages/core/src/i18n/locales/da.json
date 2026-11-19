@@ -1594,6 +1594,7 @@
     "editor.highlight_hours": "Timer, der fremhæves",
     "editor.show_legend": "Vis forklaring",
     "editor.show_head": "Vis værdien nu",
+    "editor.kind_states": "Tilstande",
     "editor.stat_last": "Den seneste måling"
   },
   "chart": {

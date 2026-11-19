@@ -951,6 +951,7 @@
     "editor.highlight_hours": "Godziny do wyróżnienia",
     "editor.show_legend": "Pokaż legendę",
     "editor.show_head": "Pokaż bieżącą wartość",
+    "editor.kind_states": "Stany",
     "editor.stat_last": "Ostatni odczyt"
   },
   "chips": {
