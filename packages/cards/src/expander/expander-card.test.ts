@@ -955,10 +955,54 @@ describe('cards for a head', () => {
         chevron_position: 'bottom',
       }),
     ).toBe(340 + 8 + 44);
-    // a card of another maker, or one that names no type, counts as the head it stands for
+    // a card of another maker, or one that names no type, counts as the head it stands for, the round's line at least
     expect(tall({ head_cards: [{ type: 'entities' }] })).toBe(84);
-    expect(tall({ head_cards: [null], style: 'plain' })).toBe(44);
+    expect(tall({ head_cards: [null], style: 'plain' })).toBe(64);
+    expect(tall({ head_cards: [null], style: 'plain', show_chevron: false })).toBe(44);
     expect(tall({ head_cards: [] })).toBe(84);
+  });
+
+  it('declares what stands on the page, and a row, with the surface’s padding round them past their own', () => {
+    const tall = (head: LovelaceCardConfig, config: Record<string, unknown> = {}): number =>
+      expanderHeight({ type: TYPE, head_cards: [head], ...config });
+    const tile = { type: 'custom:fluvy-tile-card', entity: 'light.terrace', size: 'compact' };
+    const scene = { type: 'custom:fluvy-scene-card', entity: 'scene.evening' };
+    // a tile keeps its place: the surface's 20 above it and 20 under it, as it draws
+    expect(tall(tile)).toBe(20 + 76 + 20);
+    expect(tall({ ...tile, size: 'mini' })).toBe(20 + 108 + 20);
+    expect(tall(scene)).toBe(20 + 76 + 20);
+    expect(tall({ type: 'custom:fluvy-alerts-card', variant: 'banner' })).toBe(20 + 76 + 20);
+    // on the page it is what it declares
+    expect(tall(tile, { style: 'plain' })).toBe(76);
+    // two tiles side by side, then one under them: a row each, a hairline's room between them
+    expect(tall(tile, { head_cards: [tile, tile, tile], columns: 2 })).toBe(20 + 76 + 40 + 76 + 20);
+    // a row turns out its 16, the surface's 20 stands 4 past it; a card its 20, the surface's own
+    const player = { type: 'custom:fluvy-media-card', entity: 'media_player.den', variant: 'mini' };
+    expect(tall(player, { show_chevron: false })).toBe(4 + 76 + 4);
+    expect(tall({ ...player, variant: 'compact' }, { show_chevron: false })).toBe(
+      tall({ ...player, variant: 'compact' }, { style: 'plain', show_chevron: false }),
+    );
+    // the alerts' rows are a card's
+    expect(tall({ type: 'custom:fluvy-alerts-card', variant: 'rows' })).toBe(
+      tall({ type: 'custom:fluvy-alerts-card', variant: 'rows' }, { style: 'plain' }),
+    );
+  });
+
+  it('declares its first row of a head’s cards as tall as the round beside it, at least', () => {
+    const tall = (config: Record<string, unknown>): number =>
+      expanderHeight({
+        type: TYPE,
+        head_cards: [{ type: 'custom:fluvy-heading-card' }],
+        ...config,
+      });
+    // a heading's 24: the round's 44 in the surface's 20 and 20; on the page, the round 20 under the card's edge
+    expect(tall({})).toBe(84);
+    expect(tall({ chevron_size: 'large' })).toBe(84);
+    expect(tall({ style: 'plain' })).toBe(64);
+    expect(tall({ style: 'plain', chevron_size: 'large' })).toBe(64);
+    // the round at the foot, or none: the heading as it stands
+    expect(tall({ show_chevron: false })).toBe(20 + 24 + 20);
+    expect(tall({ style: 'plain', chevron_position: 'bottom' })).toBe(24 + 8 + 44);
   });
 });
 

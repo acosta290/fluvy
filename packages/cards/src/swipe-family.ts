@@ -1,6 +1,6 @@
 import { layoutHeightOf, type LovelaceCardConfig } from '@fluvy/core';
 import type { FamilyEntry } from './energy-family.js';
-import { expanderColumns } from './expander-family.js';
+import { expanderColumns, onSurface } from './expander-family.js';
 
 /**
  * The Swipe card (#206), announced at start and defined when its chunk lands (`swipe-cards.ts`), as the Expander is:
@@ -66,9 +66,10 @@ const EMPTY = 20;
 
 /**
  * Its height at a 360 column, from its config alone: its tallest card as that card declares itself — held on the
- * surface, a card of Fluvy's keeps its height, its padding the surface's — and the marks under them where its row has
- * more than one stop. With no card, its quiet line. `heightOf` is what counts a card: its declaration, or the
- * automatic dashboard's reading of it with the house (`house-heights.ts`).
+ * surface, a card of Fluvy's keeps its height, its padding the surface's, and what stands on the page or a row has the
+ * surface's padding round it past its own (`onSurface`) — and the marks under them where its row has more than one
+ * stop. With no card, its quiet line. `heightOf` is what counts a card: its declaration, or the automatic dashboard's
+ * reading of it with the house (`house-heights.ts`).
  */
 export function swipeHeight(
   config: LovelaceCardConfig,
@@ -76,8 +77,9 @@ export function swipeHeight(
 ): number {
   const cards = swipeCards(config);
   if (!cards.length) return plain(config) ? EMPTY : EMPTY + 40;
+  const held = plain(config) ? () => 0 : onSurface;
   return (
-    Math.max(...cards.map((card) => heightOf(card, OTHER))) +
+    Math.max(...cards.map((card) => heightOf(card, OTHER) + held(card))) +
     swipeMarks(config, swipeStops(config, cards.length, swipeColumns(config, 360)))
   );
 }

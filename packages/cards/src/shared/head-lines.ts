@@ -22,14 +22,24 @@ const NO_HEAD_LINES =
   /^(tiles?|template|lights|room|scenes?|chips|clock|energy-period|heading|hello|media|now-playing|readouts):|^alerts:(|tiles|mini|chips|banner)$|^weather:(|full)$|^web:(frame|bare)$|^(slider|sensor|calendar|chart):tile$|^(printer|remote|appliance):row$|^vehicle:mini$|^appliances:cards$/;
 
 /**
+ * A card of Fluvy's as `<card>:<layout>`: its short name and the layout its config asks for (left out: the card's
+ * default); undefined for a card of another maker. What a rule by card and layout is read against (`NO_HEAD_LINES`,
+ * the padding a card held by a surface turns out: `heldPadding`).
+ */
+export function cardLayout(config: LovelaceCardConfig | undefined): string | undefined {
+  const card = /^custom:fluvy-(.+)-card$/.exec(String(config?.type))?.[1];
+  if (!config || card === undefined) return undefined;
+  // an appliance's layout is its kind's where it asks for none (a kettle's row)
+  return `${card}:${card === 'appliance' ? applianceVariant(config) : String(config['variant'] ?? '')}`;
+}
+
+/**
  * What a card's head adds to its height for its name's lines: `HEAD_LINE` where its config asks for two and its
  * layout draws a head that names it (not one turned off, `show_head: false`, nor a weather without its name), else 0.
  */
 export function headLines(config: LovelaceCardConfig | undefined): number {
-  const card = /^custom:fluvy-(.+)-card$/.exec(String(config?.type))?.[1];
-  if (!config || card === undefined || !twoLines(config)) return 0;
+  const layout = cardLayout(config);
+  if (!config || layout === undefined || !twoLines(config)) return 0;
   if (config['show_head'] === false || config['show_name'] === false) return 0;
-  // an appliance's layout is its kind's where it asks for none (a kettle's row)
-  const layout = card === 'appliance' ? applianceVariant(config) : String(config['variant'] ?? '');
-  return NO_HEAD_LINES.test(`${card}:${layout}`) ? 0 : HEAD_LINE;
+  return NO_HEAD_LINES.test(layout) ? 0 : HEAD_LINE;
 }

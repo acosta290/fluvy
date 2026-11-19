@@ -220,7 +220,7 @@ const media = (extra: Record<string, unknown> = {}) => ({
  * condition that opens it, a card it cannot build, and no cards yet. Since #186: cards for a head (a clock, folded
  * and open, the chevron beside it, at the foot, larger, on the page), the foot under a head of words, a card that
  * opens another by its name, Home Assistant's cards that pad their own way, and see-through over a view's
- * background.
+ * background; a tile and a row for a head on its surface.
  */
 export const sheet: SheetSpec = {
   states: [...STATES, ...EVENING],
@@ -655,6 +655,40 @@ export const sheet: SheetSpec = {
             },
           ],
           cards: [SPRINKLERS],
+        },
+      ],
+    },
+    // a tile and a player's row for a head on its surface: each keeps a surface of its own, the card's 20 round it,
+    // as the card declares
+    {
+      title: 'A tile and a row for a head',
+      cards: [
+        {
+          type: EXPANDER,
+          title: 'Garage',
+          remember: 'off',
+          head_cards: [
+            { type: 'custom:fluvy-tile-card', entity: 'light.ex_garage', size: 'compact' },
+          ],
+          cards: [
+            {
+              type: 'custom:fluvy-tiles-card',
+              size: 'compact',
+              tiles: [
+                { entity: 'switch.ex_charger' },
+                { entity: 'binary_sensor.ex_garage_door', name: 'Door' },
+              ],
+            },
+          ],
+        },
+        {
+          type: EXPANDER,
+          title: 'Music',
+          remember: 'off',
+          head_cards: [
+            { type: 'custom:fluvy-media-card', entity: 'media_player.ex_living', variant: 'mini' },
+          ],
+          cards: [{ type: 'entities', title: 'Speakers', entities: SPEAKERS }],
         },
       ],
     },

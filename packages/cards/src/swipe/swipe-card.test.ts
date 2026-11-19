@@ -112,13 +112,20 @@ describe('its height (config only)', () => {
 
   it('is its tallest card as each declares itself, and its marks: 24 on the surface, 44 on the page', () => {
     const cards = [tile('compact'), tile('mini')];
-    expect(swipeHeight({ type: TYPE, cards })).toBe(108 + 24);
+    // a tile stands on the page by itself: on the surface, the surface's 20 above and below it
+    expect(swipeHeight({ type: TYPE, cards })).toBe(20 + 108 + 20 + 24);
     expect(swipeHeight({ type: TYPE, cards, style: 'plain' })).toBe(108 + 44);
-    expect(swipeHeight({ type: TYPE, cards, show_indicators: false })).toBe(108);
+    expect(swipeHeight({ type: TYPE, cards, show_indicators: false })).toBe(20 + 108 + 20);
+    // a card turns its padding out into the surface's; a row its 16, the surface's 4 past it above and below
+    const lamp = { type: 'custom:fluvy-light-card', entity: 'light.sofa', variant: 'compact' };
+    const player = { type: 'custom:fluvy-media-card', entity: 'media_player.den', variant: 'mini' };
+    expect(swipeHeight({ type: TYPE, cards: [lamp], show_indicators: false })).toBe(188);
+    expect(swipeHeight({ type: TYPE, cards: [player] })).toBe(4 + 76 + 4);
+    expect(swipeHeight({ type: TYPE, cards: [player], style: 'plain' })).toBe(76);
   });
 
   it('draws no marks for one stop: one card, or as many as it shows at once', () => {
-    expect(swipeHeight({ type: TYPE, cards: [tile('compact')] })).toBe(76);
+    expect(swipeHeight({ type: TYPE, cards: [tile('compact')], style: 'plain' })).toBe(76);
     // two side by side at 360, two cards: the row has one stop
     expect(swipeHeight({ type: TYPE, cards: PAGES.slice(0, 2), columns: 2 })).toBe(
       swipeHeight({ type: TYPE, cards: PAGES.slice(0, 1) }),

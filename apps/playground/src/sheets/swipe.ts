@@ -149,7 +149,7 @@ const DUSK = 'linear-gradient(160deg, #1f2f4f 0%, #6f5a86 52%, #e39a72 100%)';
  * none of their own, or each on its own with the marks on the page; the flat's rooms, its cameras going round, the
  * #19 house's energy; side by side on a desktop; opening on another page; the counter where the marks would not fit;
  * no marks; a ruler and a row of chips that keep their drags; a page that is no page while its card hides; no cards
- * yet; see-through over a view's background; in a section's halves.
+ * yet; see-through over a view's background; in a section's halves; tiles on its surface.
  */
 export const sheet: SheetSpec = {
   states: [...STATES, ...rooms.states, ...cameras.states, ...balance.states, ...storage.states],
@@ -240,5 +240,7 @@ export const sheet: SheetSpec = {
     },
     // as the person left it, in this tab: what the other frames switch off
     { title: 'Remembers', cards: [swipe(TILES, { style: 'plain', remember: 'session' })] },
+    // tiles on its surface: they keep a surface of their own, the card's 20 round them, as it declares
+    { title: 'Tiles · on its surface', cards: [swipe(TILES)] },
   ],
 };
