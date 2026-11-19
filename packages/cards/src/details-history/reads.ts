@@ -52,11 +52,13 @@ export const PERIOD = { '5minute': 5 * MINUTE, hour: HOUR } as const;
 export const slotOf = (hours: number): number => (hours > 24 ? DAY : HOUR);
 
 /**
- * A reading of the recorder's, held from `t` (a bucket's start, a state's moment); its bucket's ends where it has them.
+ * A reading of the recorder's, held from `t` (a bucket's start, a state's moment) until the next, or its `end` where the
+ * sensor said no number after it (`historyReadings`: a gap); its bucket's ends where it has them.
  */
 export interface Read {
   readonly t: number;
   readonly v: number;
+  readonly end?: number;
   readonly low?: number;
   readonly high?: number;
 }
@@ -218,14 +220,15 @@ export interface Reach {
 }
 
 export function reachOf(readings: readonly Read[], start: number, end: number): Reach | null {
-  const held = readings.filter(
-    (reading, i) => (readings[i + 1]?.t ?? end) > start && reading.t <= end,
-  );
+  // each held until the next, or its own end: an unavailable stretch weighs nothing
+  const until = (list: readonly Read[], i: number): number =>
+    Math.min(list[i + 1]?.t ?? end, list[i]?.end ?? Infinity);
+  const held = readings.filter((reading, i) => until(readings, i) > start && reading.t <= end);
   if (!held.length) return null;
   let weighted = 0;
   let time = 0;
   held.forEach((reading, i) => {
-    const span = Math.min(held[i + 1]?.t ?? end, end) - Math.max(reading.t, start);
+    const span = Math.min(until(held, i), end) - Math.max(reading.t, start);
     weighted += reading.v * Math.max(0, span);
     time += Math.max(0, span);
   });

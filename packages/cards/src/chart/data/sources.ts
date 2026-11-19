@@ -66,8 +66,9 @@ interface RawState {
 }
 
 /**
- * A sensor's history over a window as readings: each state where it is a number (a word or an empty state is a gap,
- * never a zero), kept five minutes for every card that reads the same sensor and window.
+ * A sensor's history over a window as readings: each state where it is a number, held until the next — a word, an
+ * empty state, `unavailable` or `unknown` ends the one before it (its `end`): a gap, never a zero, and never the last
+ * number carried across it. Kept five minutes for every card that reads the same sensor and window.
  */
 export function historyReadings(
   hass: HomeAssistant,
@@ -88,12 +89,19 @@ export function historyReadings(
         no_attributes: true,
         significant_changes_only: false,
       })
-      .then((result) =>
-        (result?.[id] ?? []).flatMap((row): Reading[] => {
+      .then((result) => {
+        const readings: Reading[] = [];
+        for (const row of result?.[id] ?? []) {
+          if (!Number.isFinite(row.lu)) continue;
+          const t = row.lu * 1000;
           const v = numberOf(row.s);
-          return v === null || !Number.isFinite(row.lu) ? [] : [{ t: row.lu * 1000, v }];
-        }),
-      ),
+          const last = readings[readings.length - 1];
+          if (v !== null) readings.push({ t, v });
+          else if (last && last.end === undefined)
+            readings[readings.length - 1] = { ...last, end: t };
+        }
+        return readings;
+      }),
   );
 }
 

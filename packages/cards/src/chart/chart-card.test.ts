@@ -9,7 +9,7 @@ import { visibleFields } from '../shared/form.js';
 import { FluvyChartCard, legendColumns, type ChartCardConfig } from './chart-card.js';
 import { capsIn, defaultWindows, isPrice, SERIES_LIST, seriesOf, windowAt } from './config.js';
 import type { Reading } from './data/attribute.js';
-import { sourceOf } from './data/sources.js';
+import { historyReadings, sourceOf } from './data/sources.js';
 import { evenEdges, gains, slotted, spanOf, stepOf, windowOf } from './data/span.js';
 
 // the chart family lands with the index: the card's tag is defined before a page needs it
@@ -65,7 +65,21 @@ const STATES = [
   state('sensor.cellar', '14.2', { unit_of_measurement: '°C', state_class: 'measurement' }),
   state('weather.home', 'sunny', { temperature: 16.8, temperature_unit: '°C' }),
   state('sensor.gone', 'unavailable', { unit_of_measurement: 'EUR/kWh' }),
+  // #228: a room sensor that went away
+  state('sensor.flaky', '21', { unit_of_measurement: '°C', state_class: 'measurement' }),
 ];
+
+/** What the recorder kept of these at their own moments (from MIDNIGHT, in hours): each state until the next. */
+const RECORDED: Readonly<Record<string, ReadonlyArray<readonly [number, string]>>> = {
+  // 20 °C, unavailable 03:00–06:00, 21 °C, unknown 12:00–13:00, 21 °C
+  'sensor.flaky': [
+    [-30, '20'],
+    [3, 'unavailable'],
+    [6, '21'],
+    [12, 'unknown'],
+    [13, '21'],
+  ],
+};
 
 interface Asked {
   readonly messages: Array<Record<string, unknown>>;
@@ -100,6 +114,20 @@ function house(asked: Asked = { messages: [], subscriptions: [] }): HomeAssistan
       const start = Date.parse(String(message['start_time']));
       const end = Date.parse(String(message['end_time']));
       const id = (message['entity_ids'] as string[])[0] as string;
+      const recorded = RECORDED[id];
+      // the state at the window's start, then each change in it
+      if (recorded) {
+        const at = (h: number): number => MIDNIGHT + h * HOUR;
+        const before = recorded.filter(([h]) => at(h) <= start).at(-1);
+        return Promise.resolve({
+          [id]: [
+            ...(before ? [{ s: before[1], lu: start / 1000 }] : []),
+            ...recorded
+              .filter(([h]) => at(h) > start && at(h) <= end)
+              .map(([h, s]) => ({ s, lu: at(h) / 1000 })),
+          ],
+        });
+      }
       const values = history[id] ?? [];
       return Promise.resolve({
         [id]: values.map((v, i) => ({
@@ -1263,5 +1291,45 @@ describe('following a date picker (#181)', () => {
     expect(() =>
       card.setConfig({ type: 'custom:fluvy-chart-card', collection_key: 'week' }),
     ).toThrow(/energy_/);
+  });
+});
+
+/* ---------- #228: an unavailable stretch a gap ---------- */
+
+type Scrubbed = Inner & { scrubber: { set(value: number | null): void } };
+
+/** The 24 hours to the sheets' evening as fractions: where an hour of Thursday's (from its midnight) lies. */
+const DAY_START = Date.parse(NOW) - 24 * HOUR;
+const along = (hours: number): number => (MIDNIGHT + hours * HOUR - DAY_START) / (24 * HOUR);
+
+/** A card read where `fraction` of its plot is, as a pointer reads it. */
+async function readAt(card: Inner, fraction: number | null): Promise<void> {
+  (card as Scrubbed).scrubber.set(fraction);
+  await card.updateComplete;
+}
+
+describe('a sensor that went away (#228)', () => {
+  it('ends a reading where the sensor said no number: a gap, never its last number carried across', async () => {
+    const readings = await historyReadings(house(), 'sensor.flaky', DAY_START, Date.parse(NOW));
+    expect(readings).toEqual([
+      { t: DAY_START, v: 20, end: MIDNIGHT + 3 * HOUR },
+      { t: MIDNIGHT + 6 * HOUR, v: 21, end: MIDNIGHT + 12 * HOUR },
+      { t: MIDNIGHT + 13 * HOUR, v: 21 },
+    ]);
+  });
+
+  it('is drawn as a gap in its line, its area and its columns, and read there as nothing', async () => {
+    for (const kind of ['line', 'area', 'columns'] as const) {
+      const card = await draw({ series: [{ entity: 'sensor.flaky', kind }], span: '24h' });
+      if (kind !== 'columns') {
+        // three runs: before 03:00, 06:00 to 12:00, from 13:00
+        const d = root(card).querySelector('.curve-line')?.getAttribute('d') ?? '';
+        expect(d.match(/M/g), kind).toHaveLength(3);
+      }
+      await readAt(card, along(4.5));
+      expect(texts(card, '.ch-now .fv-readout__value'), kind).toEqual(['—']);
+      await readAt(card, along(9));
+      expect(texts(card, '.ch-now .fv-readout__value')[0]?.replace(/\s+/g, ''), kind).toBe('21°C');
+    }
   });
 });

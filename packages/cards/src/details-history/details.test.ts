@@ -286,6 +286,19 @@ describe('what the details dialog reads of an entity', () => {
     expect(reach).toMatchObject({ min: 19.5, max: 30, first: 20, last: 30 });
     expect(reach?.average).toBeCloseTo((20 * 60 + 30) / 61);
   });
+
+  it('weighs a stretch the sensor was unavailable at nothing, never its last reading carried across (#228)', () => {
+    // 20 for ten, unavailable for forty, 30 for ten
+    const reach = reachOf(
+      [
+        { t: 0, v: 20, end: 10 },
+        { t: 50, v: 30 },
+      ],
+      0,
+      60,
+    );
+    expect(reach?.average).toBe(25);
+  });
 });
 
 describe('the details dialog’s history drawn', () => {

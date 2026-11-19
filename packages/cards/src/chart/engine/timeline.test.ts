@@ -203,6 +203,38 @@ describe('a gap in the recorder', () => {
   });
 });
 
+describe('a sensor that was unavailable (#228)', () => {
+  // 20 from 10:00, unavailable from 11:00 (its reading's end), 22 from 12:00, unavailable again from 13:00 on
+  const readings: Timed[] = [
+    { t: at(10), v: 20, end: at(11) },
+    { t: at(12), v: 22, end: at(13) },
+  ];
+  const window = { start: at(10), end: at(14) };
+  const value = (laid: { values: (number | null)[]; at: number[] }, hours: number) =>
+    laid.values[laid.at.findIndex((f) => Math.abs(f * 4 * HOUR - hours * HOUR) < 1)];
+
+  it('breaks its line where it said no number, never carrying the last one across', () => {
+    for (const mean of [true, false]) {
+      const laid = layLine(readings, window, 30 * MINUTE, MIDNIGHT, mean);
+      expect(value(laid, 0.5), String(mean)).toBe(20); // 10:30
+      expect(value(laid, 1.5), String(mean)).toBeNull(); // 11:30, unavailable
+      expect(value(laid, 2.5), String(mean)).toBe(22); // 12:30
+      expect(value(laid, 3.5), String(mean)).toBeNull(); // 13:30, unavailable to now
+    }
+    expect(readLine(readings, window, 1.5 / 4, MINUTE, MIDNIGHT)).toBeNull();
+    expect(readLine(readings, window, 2.5 / 4, MINUTE, MIDNIGHT)?.v).toBe(22);
+  });
+
+  it('averages a point on the edge of the gap over what it held alone', () => {
+    // 10:45 → 11:15 by the hour's half: a quarter of 20 and a quarter of nothing reads 20, never 10
+    const laid = layLine(readings, window, HOUR, MIDNIGHT, true);
+    expect(value(laid, 1)).toBeNull(); // 11:00 itself is in the gap
+    const edge = layLine(readings, { start: at(10), end: at(11, 15) }, HOUR, MIDNIGHT, true);
+    expect(edge.values.at(-1)).toBeNull();
+    expect(edge.values[0]).toBe(20);
+  });
+});
+
 describe('a line read where it is pointed at', () => {
   it('reads Home Assistant’s reading at the round time nearest the pointer: the five-minute bucket, never a mean', () => {
     const day = { start: at(0), end: at(24) };

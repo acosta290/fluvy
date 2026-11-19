@@ -14,10 +14,15 @@ import type { ResolvedStyle } from './presets.js';
  * then — 12:00 is Home Assistant's 12:00, whatever the line draws there; the card's dot stands on the line.
  */
 
-/** A reading of the recorder's: its value from `t` until the next (a state; a statistic's mean, at its bucket's start). */
+/**
+ * A reading of the recorder's: its value from `t` until the next (a state; a statistic's mean, at its bucket's start),
+ * or until its `end` where it has one — a sensor's own history ends a reading where the sensor said no number after it
+ * (`unavailable`, `unknown`): a gap.
+ */
 export interface Timed {
   readonly t: number;
   readonly v: number;
+  readonly end?: number;
 }
 
 const MINUTE = 60_000;
@@ -130,31 +135,53 @@ export const valueAt = (readings: readonly Timed[], t: number): number | null =>
   readings[indexAt(readings, t)]?.v ?? null;
 
 /**
- * Whether the recorder has nothing at `t`: a statistic's reading is its bucket (`finest`) and no longer, so past it, with
- * a later one still to come, the line breaks as Home Assistant's does. The stretch after the last reading is no gap: its
- * buckets are not compiled yet.
+ * Until when the reading at `i` holds: the next one, or its own end where it has one (a sensor's history, where the
+ * sensor said no number after it). A statistic's reading is its bucket (`finest`) and no longer, so past it, with a
+ * later one still to come, the line breaks as Home Assistant's does; its last holds on, its buckets after it not
+ * compiled yet.
  */
-function inGap(readings: readonly Timed[], t: number, finest: number): boolean {
-  const i = indexAt(readings, t);
-  return finest > 0 && i >= 0 && i < readings.length - 1 && t - (readings[i] as Timed).t >= finest;
+function heldUntil(readings: readonly Timed[], i: number, finest: number): number {
+  const reading = readings[i] as Timed;
+  const next = readings[i + 1]?.t ?? Infinity;
+  if (finest > 0) return i < readings.length - 1 ? Math.min(next, reading.t + finest) : Infinity;
+  return Math.min(next, reading.end ?? Infinity);
 }
 
-/** The mean of the readings across a stretch, each held until the next: two lookups of their running area. */
-function meanOf(readings: readonly Timed[]): (from: number, to: number) => number | null {
+/** Whether the recorder has nothing at `t`: past the reading in force, before the next one (`heldUntil`). */
+function inGap(readings: readonly Timed[], t: number, finest: number): boolean {
+  const i = indexAt(readings, t);
+  return i >= 0 && t >= heldUntil(readings, i, finest);
+}
+
+/**
+ * The mean of the readings across a stretch, each weighted by how long it held there — a gap holds nothing: two
+ * lookups of their running area and of the running time they held.
+ */
+function meanOf(
+  readings: readonly Timed[],
+  finest: number,
+): (from: number, to: number) => number | null {
   const area = [0];
+  const time = [0];
   for (let i = 1; i < readings.length; i++) {
     const a = readings[i - 1] as Timed;
-    area.push((area[i - 1] as number) + a.v * ((readings[i] as Timed).t - a.t));
+    const held = Math.max(0, heldUntil(readings, i - 1, finest) - a.t);
+    area.push((area[i - 1] as number) + a.v * held);
+    time.push((time[i - 1] as number) + held);
   }
-  const areaAt = (t: number): number => {
+  const sumsAt = (t: number): readonly [number, number] => {
     const i = indexAt(readings, t);
     const r = readings[i] as Timed;
-    return (area[i] as number) + r.v * (t - r.t);
+    const held = Math.max(0, Math.min(t, heldUntil(readings, i, finest)) - r.t);
+    return [(area[i] as number) + r.v * held, (time[i] as number) + held];
   };
   return (from, to) => {
     // the stretch from the first reading on: nothing is known before it
     const a = Math.max(from, readings[0]?.t ?? Infinity);
-    return to > a ? (areaAt(to) - areaAt(a)) / (to - a) : to === a ? valueAt(readings, a) : null;
+    if (!(to > a)) return to === a && !inGap(readings, a, finest) ? valueAt(readings, a) : null;
+    const [startArea, startTime] = sumsAt(a);
+    const [endArea, endTime] = sumsAt(to);
+    return endTime > startTime ? (endArea - startArea) / (endTime - startTime) : null;
   };
 }
 
@@ -167,8 +194,8 @@ export interface Laid {
 /**
  * The line of `readings` over a window: a point on each round time `step` apart from `origin` (the house's midnight)
  * and one on each of the window's ends — the mean of the readings within half a step of it (`mean`), else the reading
- * in force at its time. Before the first reading there is none: the line starts where its readings do; in a gap of the
- * recorder's (`inGap`) it breaks.
+ * in force at its time. Before the first reading there is none: the line starts where its readings do; in a gap (`inGap`:
+ * of the recorder's, or where the sensor said no number) it breaks.
  */
 export function layLine(
   readings: readonly Timed[],
@@ -183,22 +210,13 @@ export function layLine(
   for (let t = origin + Math.ceil((start - origin) / step) * step; t < end; t += step)
     if (t > start) times.push(t);
   times.push(end);
-  const around = mean ? meanOf(readings) : null;
-  // a stretch that reaches into a gap stops at its edge: what the gap would hold is no reading
-  const reading = (t: number, forward: boolean): number => {
-    if (!inGap(readings, t, finest)) return t;
-    const i = indexAt(readings, t);
-    return forward ? (readings[i + 1] as Timed).t : (readings[i] as Timed).t + finest;
-  };
+  const around = mean ? meanOf(readings, finest) : null;
   return {
     values: times.map((t) =>
       inGap(readings, t, finest)
         ? null
         : around
-          ? around(
-              reading(Math.max(start, t - step / 2), true),
-              reading(Math.min(end, t + step / 2), false),
-            )
+          ? around(Math.max(start, t - step / 2), Math.min(end, t + step / 2))
           : valueAt(readings, t),
     ),
     at: times.map((t) => (t - start) / Math.max(1, end - start)),
