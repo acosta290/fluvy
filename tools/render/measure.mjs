@@ -118,6 +118,20 @@ function audit(opts) {
     namespaces,
   } = opts;
 
+  // What moves is read where it comes to rest: every finite animation ends here, in the task that reads, so none can
+  // start between this and the reads. A card drawn after the page settled (its chunk landing late) has an entrance
+  // with `both` fill that holds its first keyframe until a frame runs, and the reads would take every box at 0.985
+  // of its size. Each shadow root keeps its own animations.
+  const roots = [document];
+  for (let i = 0; i < roots.length; i += 1)
+    for (const el of roots[i].querySelectorAll('*')) if (el.shadowRoot) roots.push(el.shadowRoot);
+  for (const animation of roots.flatMap((root) => root.getAnimations()))
+    if (
+      animation.playState !== 'finished' &&
+      Number.isFinite(animation.effect?.getComputedTiming().endTime)
+    )
+      animation.finish();
+
   /* Shadow DOM aware walking: the production cards render into shadow roots, the design sheets do not. */
   const up = (node) => node.parentElement || (node.getRootNode && node.getRootNode().host) || null;
   const kids = (el) =>
@@ -1500,6 +1514,77 @@ if (slower > 1) {
   const devtools = await context.newCDPSession(page);
   await devtools.send('Emulation.setCPUThrottlingRate', { rate: slower });
 }
+// a chunk that lands late on demand (`MEASURE_LATE=shared/thresholds.ts:4000`: every request whose URL holds
+// `shared/thresholds.ts` answered 4 s late), to reproduce a card drawn after the page looked settled
+const late = /^(.+):(\d+)$/.exec(process.env.MEASURE_LATE ?? '');
+if (late)
+  await page.route(
+    (url) => url.href.includes(late[1]),
+    async (route) => {
+      await new Promise((resolve) => setTimeout(resolve, Number(late[2])));
+      await route.continue();
+    },
+  );
+// the requests in flight, and when one last started or ended: what `settle` waits on
+const inFlight = new Set();
+let networkMoved = Date.now();
+const track = (request, open) => {
+  if (open) inFlight.add(request);
+  else inFlight.delete(request);
+  networkMoved = Date.now();
+};
+page.on('request', (request) => track(request, true));
+page.on('requestfinished', (request) => track(request, false));
+page.on('requestfailed', (request) => track(request, false));
+
+/**
+ * One round of `settle`, in the page: every finite animation ended (its end heard as it would be: a sheet that leaves,
+ * a menu that closes), every update Lit has pending done (a card's first frame waits for what it wears or reads, its
+ * thresholds), two frames drawn. Says whether it found anything to end or wait for. Each shadow root keeps its own
+ * animations.
+ */
+async function settleRound(left) {
+  const elements = [];
+  const roots = [document];
+  for (let i = 0; i < roots.length; i += 1)
+    for (const el of roots[i].querySelectorAll('*')) {
+      elements.push(el);
+      if (el.shadowRoot) roots.push(el.shadowRoot);
+    }
+  const moving = roots
+    .flatMap((root) => root.getAnimations())
+    .filter(
+      (animation) =>
+        animation.playState !== 'finished' &&
+        Number.isFinite(animation.effect?.getComputedTiming().endTime),
+    );
+  for (const animation of moving) animation.finish();
+  const updating = elements.filter((el) => el.isUpdatePending === true);
+  await Promise.race([
+    Promise.all(updating.map((el) => el.updateComplete.catch(() => undefined))),
+    new Promise((resolve) => setTimeout(resolve, left)),
+  ]);
+  await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+  return moving.length + updating.length > 0;
+}
+
+/**
+ * The page settled: no request in flight for half a second (a chunk a card asked for lazily draws it again as it
+ * lands: the Chart card's thresholds, a see-through card's glass), then a round in the page (`settleRound`); asked
+ * again until a round finds nothing and no request has started meanwhile, within twenty seconds in all.
+ */
+async function settle() {
+  const until = Date.now() + 20_000;
+  for (;;) {
+    while (Date.now() < until && (inFlight.size || Date.now() - networkMoved < 500))
+      await page.waitForTimeout(50);
+    const before = networkMoved;
+    const busy = await page
+      .evaluate(settleRound, Math.max(0, until - Date.now()))
+      .catch(() => false);
+    if ((!busy && networkMoved === before) || Date.now() >= until) return;
+  }
+}
 
 const url = isHttp ? new URL(pagePath) : new URL(pathToFileURL(pagePath));
 if (args.palette) url.searchParams.set('palette', args.palette);
@@ -1516,36 +1601,16 @@ await page
   .catch(() => {});
 await page.evaluate(() => document.fonts.ready);
 if (isHttp) await page.waitForTimeout(1500); // cards fit their pills after the font arrives, and once more at 1.2 s (the safety re-fit)
-// A card's entrance (`fv-enter`, 1 ms under reduced motion) holds its first keyframe until the page paints it: a heavy
-// sheet on a runner without a GPU (the see-through cards' blur) can still be at its start here, every box scaled to
-// 0.985. Measure once every finite animation has ended (the infinite ones, a liquid gauge's waves, never do), asked
-// again after each round has ended: a card drawn anew meanwhile (a chunk landing late on the gallery's 159 examples)
-// starts an entrance of its own after the first round was read. Within twenty seconds in all.
-if (isHttp)
-  await page
-    .evaluate(async () => {
-      /** The finite animations still running, the cards' among them (each shadow root keeps its own list). */
-      const running = () => {
-        const animations = [];
-        const walk = (root) => {
-          animations.push(...root.getAnimations());
-          for (const el of root.querySelectorAll('*')) if (el.shadowRoot) walk(el.shadowRoot);
-        };
-        walk(document);
-        return animations.filter(
-          (animation) =>
-            animation.playState !== 'finished' &&
-            Number.isFinite(animation.effect?.getComputedTiming().endTime),
-        );
-      };
-      const until = performance.now() + 20_000;
-      for (let left = running(); left.length && performance.now() < until; left = running())
-        await Promise.race([
-          Promise.all(left.map((animation) => animation.finished.catch(() => undefined))),
-          new Promise((resolve) => setTimeout(resolve, until - performance.now())),
-        ]);
-    })
-    .catch(() => {});
+// A card drawn late is read whole and at rest. On CI the gallery's examples had a scenes and a chart card read at the
+// first keyframe of their entrance (`fv-enter`, 1 ms under reduced motion but `both` filled), every box at 0.985 of its
+// size, in languages that wandered from run to run: the Chart card's first frame waits for its thresholds' chunk,
+// asked for after load, and a chunk landing after the measurer's last look drew its card in the moment before the
+// audit, whose first reads created the entrance. A wait for the animations there are, however often asked again,
+// cannot see one that starts after it looked; and one that ends before a late chunk lands reads its card not drawn.
+// So the page settles first (`settle`: no request in flight, every update done, two frames) and the audit ends every
+// finite animation in its own task before it reads. `MEASURE_LATE` holds a chunk back and `MEASURE_CPU` slows the
+// runner, to reproduce what CI does.
+if (isHttp) await settle();
 
 const frames = await page.evaluate(audit, {
   frameSel: args.frame,
