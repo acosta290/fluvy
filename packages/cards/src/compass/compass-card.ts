@@ -37,7 +37,14 @@ import { bandTint, type TintConfig } from '../shared/state-tint.js';
 import type { Band, ThresholdsConfig } from '../shared/thresholds.js';
 import { askedParts, decimalsOf, type NumberKeys } from '../shared/units.js';
 import { COMPASS, type CompassKey } from '../shared/weather.js';
-import { compassHeight } from '../weather-family.js';
+import {
+  compassBeside,
+  compassHeight,
+  COMPASS_INSIDE,
+  compassRadius,
+  COMPASS_RIM,
+  COMPASS_SMALL_RING,
+} from '../weather-family.js';
 
 const s = words('compass');
 const weatherWords = words('weather');
@@ -180,15 +187,11 @@ export const degreesOf = (bearing: number): number => Math.round(wrap(bearing)) 
 export const degreesText = (hass: HomeAssistant | undefined, bearing: number): string =>
   `${formatNumber(hass, degreesOf(bearing), { digits: 0 })}°`;
 
-/** The ring's ticks: as long as the gauge's, a long one every 45°; the ring as large as the gauge's. */
+/** The ring's ticks: as long as the gauge's, a long one every 45°. */
 const TICK = 12;
-const RADIUS = 96;
 
-/** Under this radius the reading is written under the ring: its open centre would not hold it (half a section). */
-const INSIDE = 56;
-
-/** The compact card's small ring, beside its figure: R 28 and its ticks in a 104 box. */
-const COMPACT_RADIUS = 28;
+/** The compact card's small ring, beside its figure: R 28 in its 104 box. */
+const COMPACT_RADIUS = COMPASS_SMALL_RING / 2 - COMPASS_RIM;
 
 /** Where north is drawn, in degrees clockwise from the top: the config's, held to −180…180. */
 const offsetOf = (config: CompassCardConfig): number =>
@@ -325,7 +328,8 @@ export class FluvyCompassCard extends Card<CompassCardConfig> {
         white-space: nowrap;
         text-overflow: ellipsis;
       }
-      .cp-reading .fv-dial__sub {
+      .cp-reading .fv-dial__sub,
+      .cp-under .fv-dial__sub {
         white-space: nowrap;
       }
       .so-cols .fv-readout__label {
@@ -585,24 +589,21 @@ export class FluvyCompassCard extends Card<CompassCardConfig> {
         degrees,
       });
 
-    // the ring from the column, as the gauge's: R 96 in a 240 box from a 240 column, down to half a section's; the
-    // compact card's small one beside its figure
+    // the ring from the column (`compassRadius`); the compact card's small one beside its figure
     const compact = this.variant === 'compact';
-    const r = compact
-      ? COMPACT_RADIUS
-      : Math.min(RADIUS, Math.max(32, Math.floor((width / 2 - TICK - 12) / 4) * 4));
+    const r = compact ? COMPACT_RADIUS : compassRadius(width);
     // the box's half: the ring, its ticks and the knob's 12 past them, on the 4 grid as the radius is
-    const half = r + TICK + 12;
+    const half = r + COMPASS_RIM;
     const inset = Math.max(0, Math.floor(width / 2 - half));
     const large = r >= 72;
     // the figure in the ring's open centre (the full card's, from R 56), beside the compact card's small ring where
-    // the column holds it at the small readout's size, else under the ring
+    // the column holds it there, else under the ring: by the column alone, never by the figure it writes now
     const besideRoom = width - 2 * half - 16;
     const where: 'inside' | 'beside' | 'under' = compact
-      ? this.figureWidth(reading, 's') <= besideRoom
+      ? compassBeside(width)
         ? 'beside'
         : 'under'
-      : r >= INSIDE
+      : r >= COMPASS_INSIDE
         ? 'inside'
         : 'under';
     // the word over the figure: the person's (a name: it ends in an ellipsis), else what the figure is, which leaves
@@ -612,18 +613,19 @@ export class FluvyCompassCard extends Card<CompassCardConfig> {
     const label = gaugeLabel(c.label, reading.word, room, (text) =>
       this.head.ruler.width(where === 'inside' ? 'fv-dial__label-in' : 'fv-readout__label', text),
     );
-    // the readout over the point and the degrees, where the figure is not in the ring: large beside the compact
-    // card's ring where it holds there
+    // the readout over the point and the degrees, where the figure is not in the ring: beside the compact card's ring
+    // at the largest size it holds there, never cut. Under the ring a word that leaves keeps its line, as the gauge's
+    // bar does: the card is as tall in every language; beside it the reading is centred on the ring and closes up
     const outside = (size: 'l' | 's' | 'xs'): TemplateResult =>
       html`${readout({
         label: label?.text ?? '',
         name: label ? !label.fits : false,
-        ...(label ? {} : { glyph: null }),
+        ...(label || where === 'under' ? {} : { glyph: null }),
         value: reading.value,
         unit: reading.unit,
         size,
         ink: band?.ink,
-      })}${this.renderPoint(reading, pointWords, degrees)}`;
+      })}${this.renderPoint(reading, pointWords, degrees, room)}`;
 
     const own = this.ownText(c.badge, false)?.text ?? band?.label;
     const badgeText = !this.showBadge ? undefined : unusable ? stateWord(this.hass, main) : own;
@@ -701,7 +703,7 @@ export class FluvyCompassCard extends Card<CompassCardConfig> {
         ${
           where === 'beside'
             ? html`<div class="cp-reading">
-                ${outside(this.figureWidth(reading, 'l') <= besideRoom ? 'l' : 's')}
+                ${outside((['l', 's'] as const).find((size) => this.figureWidth(reading, size) <= besideRoom) ?? 'xs')}
               </div>`
             : nothing
         }
@@ -836,12 +838,25 @@ export class FluvyCompassCard extends Card<CompassCardConfig> {
     </svg>`;
   }
 
-  /** The line under the figure: the point, and the degrees where the figure is not already them. */
-  private renderPoint(reading: Reading, point: string, degrees: string): TemplateResult {
+  /**
+   * The line under the figure: the point, and the degrees where the figure is not already them. Outside the ring it
+   * is one line in its `room`, whatever the bearing says: the degrees leave where they would not hold beside the point
+   * (Polish "Zach-Pd-Zach" in half a section), as the row's do.
+   */
+  private renderPoint(
+    reading: Reading,
+    point: string,
+    degrees: string,
+    room = Infinity,
+  ): TemplateResult {
+    const tail = ` · ${degrees}`;
+    const said =
+      !reading.bearing &&
+      degrees !== '' &&
+      (room === Infinity ||
+        this.head.ruler.width('fv-dial__sub cp-point-word', point, 'fv-dial__sub', tail) <= room);
     return html`<p class="fv-dial__sub">
-      <span class="cp-point-word">${point}</span>${
-        reading.bearing || !degrees ? nothing : html` · ${degrees}`
-      }
+      <span class="cp-point-word">${point}</span>${said ? tail : nothing}
     </p>`;
   }
 

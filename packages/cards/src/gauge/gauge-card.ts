@@ -39,6 +39,7 @@ import { Card, type CardEditor } from '../shared/base.js';
 
 import { classWord, iconOf, stateWord } from '../shared/domain.js';
 import type { TextRuler } from '../shared/fit.js';
+import { SECTION_COLUMN } from '../shared/heights.js';
 import { statsRow, statsSize, type StatsRow, type StatText } from '../shared/readouts.js';
 import { Refresher } from '../shared/refresh.js';
 
@@ -168,7 +169,7 @@ export const windowRow = (
   widest: Reading,
 ): StatsRow => {
   const stats: StatText[] = labels.map((label) => ({ label, ...widest }));
-  return width < 171
+  return width < SECTION_COLUMN
     ? { columns: 1, size: statsSize(ruler, width, stats, 1), odd: false }
     : statsRow(ruler, width, stats);
 };

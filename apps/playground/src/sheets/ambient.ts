@@ -1560,9 +1560,27 @@ export const sheet: SheetSpec = {
     { title: 'Compass · compact', cards: [{ ...COMPASS_STATION, variant: 'compact' }] },
     {
       title: 'Compass · compact · half a section',
+      heights: [152, 172],
       cards: [
-        { ...COMPASS_WIND, variant: 'compact', cols: 6 },
-        { ...COMPASS_CAR, variant: 'compact', cols: 6 },
+        { ...COMPASS_WIND, variant: 'compact', cols: 6, grid_options: { columns: 6 } },
+        { ...COMPASS_CAR, variant: 'compact', cols: 6, grid_options: { columns: 6 } },
+      ],
+    },
+    /* the compact card out of reach beside the live one: the reading under the ring in both, as tall */
+    {
+      title: 'Compass · compact · half a section, one out of reach',
+      heights: [152, 172],
+      cards: [
+        { ...COMPASS_WIND, variant: 'compact', cols: 6, grid_options: { columns: 6 } },
+        {
+          ...COMPASS_WIND,
+          variant: 'compact',
+          entity: 'sensor.am_wind_speed_gone',
+          direction_entity: 'sensor.am_wind_bearing_gone',
+          secondary_direction_entity: 'sensor.am_wind_bearing_gone',
+          cols: 6,
+          grid_options: { columns: 6 },
+        },
       ],
     },
     {

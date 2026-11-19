@@ -1,7 +1,8 @@
 // @vitest-environment happy-dom
 import { ensureLanguage, resolveEntity, type HomeAssistant } from '@fluvy/core';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { familiesDefined } from '../index.js';
+import { TextRuler } from '../shared/fit.js';
 import { visibleFields } from '../shared/form.js';
 import { compassHeight } from '../weather-family.js';
 import {
@@ -286,6 +287,105 @@ describe('the Compass card', () => {
     expect(root.querySelector('.fv-dial__disc')).toBeNull();
     expect(root.querySelector('.so-cols .fv-readout--xs')).not.toBeNull();
     expect(card.getGridOptions()).toMatchObject({ columns: 12, min_columns: 6 });
+  });
+
+  it('compact: writes its reading beside the ring or under it by its column alone, live or out of reach alike', async () => {
+    // a figure as wide as a page measures it, 8 a letter: "14.2 km/h" holds beside the ring at 266, not at 211
+    const ruler = vi
+      .spyOn(TextRuler.prototype, 'width')
+      .mockImplementation(
+        (_cls: string, text: string, _unitCls?: string, unit = '') =>
+          (text.length + unit.length) * 8,
+      );
+    /** Where a compact card `width` wide writes its reading. */
+    const where = async (config: Partial<CompassCardConfig>, width: number): Promise<string> => {
+      const card = await mount({ variant: 'compact', ...config });
+      card.width = width;
+      await card.updateComplete;
+      const root = card.shadowRoot!;
+      card.remove();
+      return root.querySelector('.cp-beside')
+        ? 'beside'
+        : root.querySelector('.cp-under')
+          ? 'under'
+          : '';
+    };
+    try {
+      const twins = [
+        { entity: 'sensor.wind_speed', direction_entity: 'sensor.wind_bearing' },
+        { entity: 'sensor.wind_gone', direction_entity: 'sensor.bearing_gone' },
+        { entity: 'sensor.wind_never', direction_entity: 'sensor.bearing_never' },
+      ];
+      for (const [width, at] of [
+        [152, 'under'],
+        [172, 'under'],
+        [211, 'under'],
+        [266, 'beside'],
+        [360, 'beside'],
+      ] as const)
+        for (const config of twins)
+          expect(await where(config, width), `${config.entity} at ${width}`).toBe(at);
+    } finally {
+      ruler.mockRestore();
+    }
+  });
+
+  it('under its ring the reading is as tall whatever it says: a word that leaves keeps its line, the degrees leave theirs', async () => {
+    // no word holds its line; the point is 12 a letter, the rest 8
+    const ruler = vi
+      .spyOn(TextRuler.prototype, 'width')
+      .mockImplementation((cls: string, text: string, _unitCls?: string, unit = '') =>
+        cls === 'fv-readout__label'
+          ? 999
+          : (text.length + unit.length) * (cls.includes('cp-point-word') ? 12 : 8),
+      );
+    const drawn = async (width: number): Promise<ShadowRoot> => {
+      const card = await mount({
+        variant: 'compact',
+        entity: 'sensor.wind_speed',
+        direction_entity: 'sensor.wind_bearing',
+      });
+      card.width = width;
+      await card.updateComplete;
+      card.remove();
+      return card.shadowRoot!;
+    };
+    try {
+      // "WSW · 248°" is 120: past 152's 112, within 172's 132
+      const narrow = await drawn(152);
+      expect(narrow.querySelector('.cp-under .fv-readout__label')?.textContent?.trim()).toBe('');
+      expect(narrow.querySelector('.cp-under .fv-dial__sub')?.textContent?.trim()).toBe('WSW');
+      const half = await drawn(172);
+      expect(
+        half.querySelector('.cp-under .fv-dial__sub')?.textContent?.replace(/\s+/g, ' ').trim(),
+      ).toBe('WSW · 248°');
+      // beside its ring the reading is centred on it: the word's line closes up
+      expect((await drawn(360)).querySelector('.cp-reading .fv-readout__label')).toBeNull();
+    } finally {
+      ruler.mockRestore();
+    }
+  });
+
+  it('declares the part of a section `grid_options` asks: in half of one the reading is under the ring', () => {
+    const config = {
+      type: 'custom:fluvy-compass-card',
+      entity: 'sensor.wind_speed',
+      direction_entity: 'sensor.wind_bearing',
+      grid_options: { columns: 6 },
+    };
+    const stats = ['sensor.wind_gust', 'sensor.wind_average', 'sensor.wind_speed'];
+    // compact: the head, its 104 box, the reading under it (76); its readouts one a row (16 and 40 each)
+    expect(compassHeight({ ...config, variant: 'compact' })).toBe(280);
+    expect(compassHeight({ ...config, variant: 'compact', stats })).toBe(448);
+    expect(compassHeight({ ...config, variant: 'compact', grid_options: { columns: 12 } })).toBe(
+      204,
+    );
+    // the ring: R 40 in a 128 box, the reading under it; at nine columns R 88 holds it in its centre
+    expect(compassHeight(config)).toBe(304);
+    expect(compassHeight({ ...config, stats: stats.slice(0, 1) })).toBe(364);
+    expect(compassHeight({ ...config, grid_options: { columns: 9 } })).toBe(324);
+    // the row is the row
+    expect(compassHeight({ ...config, variant: 'row' })).toBe(76);
   });
 
   it('a row: the circle ringed by the bearing, its name over its figure, its point and its degrees', async () => {

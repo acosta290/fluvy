@@ -34,5 +34,6 @@ indicator: ticks
 - `north_offset` turns the ring for a window that does not face north: `-90` puts east at the top. The letters stay
   upright.
 - In half a section the figure, the point and the degrees stand under the ring.
-- `variant: compact` puts a small ring beside the figure under the head, its readouts smaller; `variant: row` is one
-  row for half a section, its circle ringed by the bearing, its name over the figure and the point.
+- `variant: compact` puts a small ring beside the figure under the head (the figure under it in a phone's narrowest
+  column and in half a section), its readouts smaller; `variant: row` is one row for half a section, its circle ringed
+  by the bearing, its name over the figure and the point.

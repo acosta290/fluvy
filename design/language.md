@@ -943,15 +943,20 @@ azimuth. No shape of its own: each part is a control the house already has, read
   holds with its unit (48, 32 on a small ring, then 24, 20, 16), and under it the point and the degrees ("WSW · 248°",
   13/500, the point 600 in the text's ink). The figure is the card's sensor, else a weather entity's wind, else the
   bearing itself ("291°" over "WNW"). Under R 56 (half a section) the ring holds the pointers alone, and the figure,
-  the point and the degrees stand under it as a readout.
+  the point and the degrees stand under it as a readout, as tall in every language and whatever it reads: a word that
+  leaves keeps its line (the gauge's bar's rule), and the point's line stays one line, the degrees leaving it where
+  they would not hold beside the point (Polish "Zach-Pd-Zach" in half a section).
 - **Words**: a bearing is read in degrees or in English's sixteen letters, never another language's (German's O is
   East, Spanish's West); it is said in the page's language, a point between two as the language joins them
   (`compass.point16`: "NNE", 北北東, "Pn-Pn-Wsch"); 359.6° is 0°.
 - **Layouts** (`variant`): `full` (the default, above); `compact`, the head, then a small ring at the column's start (R 28
   in a 104 box, a tile's 20 knob, its points in its ticks' band) with the readout 16 beside it — the word, the figure
-  at the large readout's size where it holds, else the small one, the point and the degrees under it, the stack centred
-  on the ring — the figure under the ring where the column cannot hold it beside (half a section), and the readouts at
-  the extra-small size (204, 260 with them); `row`, the house's row (76, 16 in, half a section; the printer's, a car's
+  at the large readout's size where it holds, else the small one (the extra-small one before it would be cut), the
+  point and the degrees under it on one line, the stack centred on the ring — the readout under the ring where the
+  column does not leave it a room as wide as the ring beside it (under 224 of content: a phone's narrowest section,
+  half a section), by the column alone and never by the figure, so a card out of reach is drawn as the live one; the
+  readouts at the extra-small size (204, 260 with them; 76 more with the readout under the ring, and in half a section
+  each readout a row of its own); `row`, the house's row (76, 16 in, half a section; the printer's, a car's
   mini): the card's circle ringed by the compass 3 clear of it (R 26.5: its track in the hairline, north's notch in the
   text's ink where `north_offset` turns it, the bearing a knob in small, the arc across its sixteenth for lit ticks, or
   a dot, the second in the secondary ink), its name over its figure, its point and its degrees. The row's line keeps

@@ -1,6 +1,6 @@
 import type { LovelaceCardConfig } from '@fluvy/core';
 import type { FamilyEntry } from './energy-family.js';
-import { HEAD } from './shared/heights.js';
+import { columnOf, HEAD, SECTION_COLUMN } from './shared/heights.js';
 
 /**
  * The weather and compass cards, announced at start and defined when their chunk lands (`weather-cards.ts`), as the
@@ -49,18 +49,49 @@ export function weatherHeight(config: LovelaceCardConfig, features?: number): nu
   );
 }
 
+/** A Compass ring's ticks (12, the gauge's) and its knob's 12 past them: its box is twice its radius and these. */
+export const COMPASS_RIM = 24;
+
+/** The full Compass card's ring from its column, as the gauge's: R 96 in a 240 box from a 240 column, down to R 32. */
+export const compassRadius = (width: number): number =>
+  Math.min(96, Math.max(32, Math.floor((width / 2 - COMPASS_RIM) / 4) * 4));
+
+/** Under this radius the full card's reading is written under its ring: its open centre would not hold it. */
+export const COMPASS_INSIDE = 56;
+
+/** The compact Compass card's small ring: R 28 in a 104 box. */
+export const COMPASS_SMALL_RING = 104;
+
 /**
- * The Compass card at a 360 column: the head, its ring (R 96 and its ticks in a 240 box, as the gauge's), and the row
- * of its readouts (16 and a line of 44) while it lists one; compact, the head, its small ring (a 104 box) beside its
- * figure and its readouts at the extra-small size (16 and 40); one row, 76.
+ * Whether a column holds the compact Compass card's reading beside its small ring, 16 from it: where what is left is
+ * as wide as the ring's box. The column alone decides, never the figure, so the card keeps one anatomy and one height
+ * whatever it reads, out of reach too; in a narrower one (a phone's narrowest section, half a section) the reading is
+ * under the ring.
+ */
+export const compassBeside = (width: number): boolean =>
+  width - COMPASS_SMALL_RING - 16 >= COMPASS_SMALL_RING;
+
+/** The reading under a ring: 12 above it, its word's line (16 and 4), its figure (24), its point's line (20). */
+const COMPASS_UNDER = 76;
+
+/**
+ * The Compass card at a 360 column, or the part of one `grid_options.columns` asks: the head, its ring (R 96 and its
+ * ticks in a 240 box at 360, smaller in a narrower column) with its reading in it, or under it from a ring too small
+ * to hold it, and the row of its readouts (16 and a line of 44) while it lists one; compact, the head, its small ring
+ * with its reading beside it, or under it where the column does not hold it there (`compassBeside`), and its readouts
+ * at the extra-small size (16 and 40); the readouts one a row in half a section; one row, 76.
  */
 export function compassHeight(config: LovelaceCardConfig): number {
   if (config['variant'] === 'row') return 76;
   const stats = config['stats'];
-  const row = config['show_stats'] !== false && Array.isArray(stats) && stats.length > 0;
-  return config['variant'] === 'compact'
-    ? HEAD + 104 + (row ? 56 : 0)
-    : HEAD + 240 + (row ? 60 : 0);
+  const count =
+    config['show_stats'] !== false && Array.isArray(stats) ? Math.min(3, stats.length) : 0;
+  const width = columnOf(config);
+  const rows = width < SECTION_COLUMN ? count : Math.min(1, count);
+  if (config['variant'] === 'compact')
+    return HEAD + COMPASS_SMALL_RING + (compassBeside(width) ? 0 : COMPASS_UNDER) + 56 * rows;
+  const r = compassRadius(width);
+  return HEAD + 2 * (r + COMPASS_RIM) + (r < COMPASS_INSIDE ? COMPASS_UNDER : 0) + 60 * rows;
 }
 
 export const WEATHER_FAMILY: readonly FamilyEntry[] = [

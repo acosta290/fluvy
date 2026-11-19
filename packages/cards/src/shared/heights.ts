@@ -24,6 +24,16 @@ export const COMPACT = 144;
 export const EMPTY = 120;
 /** A card's content column at a 360 column. */
 export const COLUMN = 320;
+/** The least content column of a card across a section (211 less its 40): a narrower one is half a section's. */
+export const SECTION_COLUMN = 171;
+
+/** A card's content column: a 360 section's, or the part of it `grid_options.columns` asks (12 a section, 16 apart). */
+export function columnOf(config: LovelaceCardConfig): number {
+  const columns = (config['grid_options'] as { columns?: unknown } | undefined)?.columns;
+  return typeof columns === 'number' && columns > 0 && columns < 12
+    ? Math.floor((columns * (COLUMN + 40 + 16)) / 12) - 16 - 40
+    : COLUMN;
+}
 
 /** The lines a name may take (`name_lines`): YAML's figure, or the editor's word for it. */
 export type NameLines = 1 | 2 | '1' | '2';

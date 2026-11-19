@@ -1,6 +1,6 @@
 import type { LovelaceCardConfig } from '@fluvy/core';
 import type { FamilyEntry } from './energy-family.js';
-import { CHIP_GLYPH, chipRows, COLUMN, rowsOf, textWidth } from './shared/heights.js';
+import { CHIP_GLYPH, chipRows, COLUMN, columnOf, rowsOf, textWidth } from './shared/heights.js';
 
 /**
  * The TV remote card (#143), announced at start and defined when its chunk lands (`remote-cards.ts`), as the Slider
@@ -122,14 +122,6 @@ function padHeight(config: LovelaceCardConfig, width: number): number {
   const { sides, size } = ringFit(width, config['side_keys']);
   const keys = Array.isArray(config['nav']) ? Math.min(4, (config['nav'] as unknown[]).length) : 4;
   return sides || !keys ? size : size + 16 + keyRows(actionRows(keys, width));
-}
-
-/** A card's content column: a 360 section's, or the part of it `grid_options.columns` asks (12 a section, 16 apart). */
-function columnOf(config: LovelaceCardConfig): number {
-  const columns = (config['grid_options'] as { columns?: unknown } | undefined)?.columns;
-  return typeof columns === 'number' && columns > 0 && columns < 12
-    ? Math.floor((columns * (COLUMN + 40 + 16)) / 12) - 16 - 40
-    : COLUMN;
 }
 
 /** What the house says of the device, where it is there to say: its sources, and the apps the row shows, by name. */
