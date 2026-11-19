@@ -2,7 +2,7 @@
 
 # The cards
 
-Seventy-two cards, each in the card picker as **Fluvy · …** with a live preview and an editor. Every card has a page of its own: its picture, an example in YAML, a picture of each of its layouts, a YAML with every option, and what each option does. [The live demo](https://acosta290.github.io/fluvy/) has each one to try.
+Every card is in the card picker as **Fluvy · …**, with a live preview and an editor, and has a page of its own: its picture, an example in YAML, a picture of each of its layouts, a YAML with every option, and what each option does. [The live demo](https://acosta290.github.io/fluvy/) has each one to try.
 
 In YAML a card is `type: custom:fluvy-<name>-card` plus the entity or entities it draws and any of its options; an option left at its default is left out.
 

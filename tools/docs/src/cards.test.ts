@@ -331,8 +331,9 @@ describe('the index', () => {
   const cards = [lamp(), { ...lamp(), short: 'kettle', name: 'Kettle', section: 'Kitchen' }];
   const index = indexPage(cards, ['Everyday', 'Kitchen']);
 
-  it('counts the cards in words and leads to what they share and to each section', () => {
-    expect(index).toContain('# The cards\n\nTwo cards, each in the card picker');
+  it('says the cards without counting them (#221) and leads to what they share and to each section', () => {
+    expect(index).toContain('# The cards\n\nEvery card is in the card picker as');
+    expect(index).not.toMatch(/\bTwo cards\b/);
     expect(index).toContain('(customising.md#options-every-card-takes)');
     expect(index).toContain('[Everyday](#everyday) · [Kitchen](#kitchen)');
   });

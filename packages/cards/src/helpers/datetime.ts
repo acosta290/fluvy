@@ -197,7 +197,7 @@ export function relativeAgo(
 
 /**
  * The sheets' short form for a row sub or a tile line — "4 min ago", "2 h ago", "yesterday", "3 days ago",
- * "just now" — in the two languages fluvy ships; elsewhere the platform's short form. (`Intl`'s narrow
+ * "just now" — in every language Fluvy speaks; elsewhere the platform's short form. (`Intl`'s narrow
  * English is "4m ago", which reads as metres.)
  */
 /** Kept for the cards that already call it: the wording lives in `@fluvy/core` so every card says it the same way. */

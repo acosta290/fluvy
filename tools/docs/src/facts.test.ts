@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { checkBudgets, checkCounts, parseBudgets, parseEveryPageKb, type Facts } from './facts.js';
+import {
+  checkBudgets,
+  checkCounts,
+  checkUncounted,
+  parseBudgets,
+  parseEveryPageKb,
+  type Facts,
+} from './facts.js';
 import { numberOf, wordsOf } from './words.js';
 
 describe('numbers as the docs spell them', () => {
@@ -38,69 +45,113 @@ describe('numbers as the docs spell them', () => {
 });
 
 const FACTS: Facts = {
-  cards: 55,
   palettes: 15,
-  dashboards: 5,
-  languages: 8,
   tabs: 5,
   everyPageKb: 232,
   budgets: { 'fluvy.js': 2048, core: 237_568, energy: 77_824, lang: 24_576, 'loader.js': 4096 },
 };
 
-describe('the spelled counts', () => {
+describe('the library, never counted (#221)', () => {
+  it('passes prose that says it without a count', () => {
+    const text = [
+      'Fluvy brings one design: a theme, a card for every part of the house, the automatic dashboards.',
+      '## The cards',
+      'in every language Fluvy speaks; two cards of one entity type side by side.',
+    ].join('\n');
+    expect(checkUncounted('README.md', text)).toEqual([]);
+  });
+
+  it('names every count of the cards, the languages or the dashboards, with the file, the line and what to say', () => {
+    const text =
+      'A calm theme: sixty-eight cards, seven automatic dashboards.\nIn twenty languages.';
+    expect(checkUncounted('package.json', text)).toEqual([
+      {
+        file: 'package.json',
+        line: 1,
+        text: '"sixty-eight cards" — say it without a count ("every card")',
+      },
+      {
+        file: 'package.json',
+        line: 1,
+        text: '"seven automatic dashboards" — say it without a count ("the automatic dashboards")',
+      },
+      {
+        file: 'package.json',
+        line: 2,
+        text: '"twenty languages" — say it without a count ("every language Fluvy speaks")',
+      },
+    ]);
+  });
+
+  it('reads one written in digits, in capitals or as the templates', () => {
+    expect(
+      checkUncounted(
+        'docs/x.md',
+        '## Sixty-Eight Cards\n68 cards, 20 languages, Seven templates as rows; seven dashboards Fluvy builds',
+      ).map((f) => f.text.split(' — ')[0]),
+    ).toEqual([
+      '"Sixty-Eight Cards"',
+      '"68 cards"',
+      '"20 languages"',
+      '"Seven templates"',
+      '"seven dashboards Fluvy builds"',
+    ]);
+  });
+
+  it('never takes a handful on a page or under test for the library', () => {
+    expect(
+      checkUncounted(
+        'tools/render/x.mjs',
+        'two cards side by side; ten cards on the fixture; in five languages; four more templates build a dashboard each',
+      ),
+    ).toEqual([]);
+  });
+
+  it('reads a source comment as the prose', () => {
+    const comment =
+      '// sixty-eight cards share one parsed copy; a fixture of two tabs in fifteen palettes';
+    expect(checkUncounted('packages/ui/src/x.ts', comment).map((f) => f.text)).toEqual([
+      '"sixty-eight cards" — say it without a count ("every card")',
+    ]);
+  });
+});
+
+describe('the counts the code holds', () => {
   it('pass when they say what the code says, whatever the case', () => {
     const text = [
-      'Fluvy brings one design: a theme, fifty-five cards, five automatic dashboards.',
-      '## Fifty-five cards',
       'Fifteen presets in two lines; fifteen palettes in the gallery.',
-      'Five templates as rows; the five tabs — Appearance, Scope, Dashboards, Wall, Preferences.',
-      'in eight languages; 55 cards as the code says; two cards of one entity type side by side.',
+      'The five tabs — Appearance, Scope, Dashboards, Wall, Preferences; 15 palettes.',
     ].join('\n');
     expect(checkCounts('README.md', text, FACTS)).toEqual([]);
   });
 
   it('fail on a stale count, naming the file, the line and the fact', () => {
-    const text =
-      'A calm theme: a generated light and dark theme, forty-one cards, five automatic dashboards.\nSix tabs.';
-    const found = checkCounts('package.json', text, FACTS);
-    expect(found).toEqual([
+    const text = 'A calm theme in fourteen palettes.\nSix tabs.';
+    expect(checkCounts('docs/settings-panel.md', text, FACTS)).toEqual([
       {
-        file: 'package.json',
+        file: 'docs/settings-panel.md',
         line: 1,
-        text: '"forty-one cards" — the code says fifty-five (55) cards',
+        text: '"fourteen palettes" — the code says fifteen (15) palettes',
       },
-      { file: 'package.json', line: 2, text: '"Six tabs" — the code says five (5) tabs' },
+      {
+        file: 'docs/settings-panel.md',
+        line: 2,
+        text: '"Six tabs" — the code says five (5) tabs',
+      },
     ]);
   });
 
   it('fail on a stale count written in digits or in capitals', () => {
     expect(
-      checkCounts('docs/x.md', '52 cards, Fourteen palettes, nine languages', FACTS).map(
-        (f) => f.text,
-      ),
+      checkCounts('docs/x.md', '14 presets, Four equal tabs', FACTS).map((f) => f.text),
     ).toEqual([
-      '"52 cards" — the code says fifty-five (55) cards',
-      '"Fourteen palettes" — the code says fifteen (15) palettes',
-      '"nine languages" — the code says eight (8) languages',
+      '"14 presets" — the code says fifteen (15) palettes',
+      '"Four equal tabs" — the code says five (5) tabs',
     ]);
   });
 
-  it('never take a handful of cards on a page for the library, nor two presets tried for the gallery', () => {
-    expect(
-      checkCounts(
-        'docs/x.md',
-        'two cards side by side; four more templates build a dashboard each; two presets tried',
-        FACTS,
-      ),
-    ).toEqual([]);
-  });
-
-  it('hold a source comment to the cards’ count alone', () => {
-    const comment = '// forty cards share one parsed copy; a fixture of two tabs in five languages';
-    expect(
-      checkCounts('packages/ui/src/x.ts', comment, FACTS, ['cards']).map((f) => f.text),
-    ).toEqual(['"forty cards" — the code says fifty-five (55) cards']);
-    expect(checkCounts('docs/x.md', comment, FACTS).length).toBe(3);
+  it('never take two presets tried for the gallery', () => {
+    expect(checkCounts('docs/x.md', 'two presets tried; eight palettes saved', FACTS)).toEqual([]);
   });
 });
 

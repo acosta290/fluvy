@@ -1,12 +1,16 @@
 /**
- * The facts guard: what the prose says in numbers is what the code says. A count spelled in the README, the docs, a
- * card's guide, the package description, the contributing guide or the design language — "seventy cards",
- * "fifteen palettes", "five automatic dashboards", "eight languages", "six tabs" — is read back and held to the
- * catalogue, the palette registry, the strategy's templates, the language registry and the panel's tabs; the
- * every-page budget the development guide names is held to `finish.mjs`, and its table of scripts to `check.mjs`'s
- * `BUDGETS`, name for name and kilobyte for kilobyte. The CHANGELOG is history and is never read.
+ * The facts guard: what the prose says in numbers is what the code says, and what every release changes is never
+ * said in numbers (#221). A count of the cards, the languages or the automatic dashboards ("N cards", "N languages",
+ * "N automatic dashboards", in words or in digits) goes stale with the release that adds one, and sets apart two
+ * branches that each add one: the README, the docs, a card's guide, the package description, the contributing guide,
+ * the design language and the sources say them without one ("every card", "every language Fluvy speaks", "the
+ * automatic dashboards"). The palettes and the panel's tabs, which a release seldom changes, may be counted, and are
+ * held to the palette registry and the panel's tabs; the every-page budget the development guide names is held to
+ * `finish.mjs`, and its table of scripts to `check.mjs`'s `BUDGETS`, name for name and kilobyte for kilobyte. The
+ * CHANGELOG is history and is never read.
  *
- *   tsx src/facts.ts --check    what `pnpm --filter @fluvy/docs check` runs: exit 1 with every stale figure named
+ *   tsx src/facts.ts --check    what `pnpm --filter @fluvy/docs check` runs: exit 1 with every count and stale figure
+ *                               named
  */
 import { readdir, readFile, realpath } from 'node:fs/promises';
 import { dirname, join, relative } from 'node:path';
@@ -18,10 +22,7 @@ export const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..', '.
 
 /** What the code says: the counts the prose may spell, and the budgets it may quote. */
 export interface Facts {
-  readonly cards: number;
   readonly palettes: number;
-  readonly dashboards: number;
-  readonly languages: number;
   readonly tabs: number;
   /** The every-page gzip budget in KB (`finish.mjs`). */
   readonly everyPageKb: number;
@@ -39,36 +40,20 @@ export interface Finding {
 const NUMBER = `(?:(?:${NUMBER_WORDS.join('|')})(?:[- ](?:one|two|three|four|five|six|seven|eight|nine))?|\\d{1,3})`;
 
 /**
- * A fact's phrases: the noun a count is spelled before, and the least a count must be to be that fact's (a count of
- * the library is never "two cards side by side").
+ * A count the prose may spell: the noun it is spelled before, and the least it must be to count the house's choice
+ * rather than a handful ("two presets tried").
  */
 const COUNTS: ReadonlyArray<{
-  readonly fact: keyof Facts;
+  readonly fact: 'palettes' | 'tabs';
   readonly phrase: RegExp;
   readonly least: number;
   readonly noun: string;
 }> = [
-  { fact: 'cards', phrase: new RegExp(`\\b(${NUMBER}) cards\\b`, 'gi'), least: 20, noun: 'cards' },
   {
     fact: 'palettes',
     phrase: new RegExp(`\\b(${NUMBER}) (?:palettes|presets)\\b`, 'gi'),
     least: 10,
     noun: 'palettes',
-  },
-  {
-    fact: 'dashboards',
-    phrase: new RegExp(
-      `\\b(${NUMBER}) (?:automatic dashboards|templates|dashboards Fluvy builds)\\b`,
-      'gi',
-    ),
-    least: 2,
-    noun: 'automatic dashboards',
-  },
-  {
-    fact: 'languages',
-    phrase: new RegExp(`\\b(${NUMBER}) languages\\b`, 'gi'),
-    least: 2,
-    noun: 'languages',
   },
   {
     fact: 'tabs',
@@ -78,22 +63,59 @@ const COUNTS: ReadonlyArray<{
   },
 ];
 
-/** The spelled counts of one text, each held to its fact (`only`: the facts a source comment may count). */
-export function checkCounts(
-  file: string,
-  text: string,
-  facts: Facts,
-  only?: ReadonlyArray<keyof Facts>,
-): Finding[] {
+/**
+ * A count of the library, never spelled: the noun it is spelled before, the least it must be to count the library
+ * rather than a handful on a page or under test ("two cards side by side", "in five languages"), and how to say it.
+ */
+const UNCOUNTED: ReadonlyArray<{
+  readonly phrase: RegExp;
+  readonly least: number;
+  readonly say: string;
+}> = [
+  { phrase: new RegExp(`\\b(${NUMBER}) cards\\b`, 'gi'), least: 20, say: 'every card' },
+  {
+    phrase: new RegExp(`\\b(${NUMBER}) languages\\b`, 'gi'),
+    least: 10,
+    say: 'every language Fluvy speaks',
+  },
+  {
+    phrase: new RegExp(
+      `\\b(${NUMBER}) (?:automatic dashboards|templates|dashboards Fluvy builds)\\b`,
+      'gi',
+    ),
+    least: 5,
+    say: 'the automatic dashboards',
+  },
+];
+
+/** The counts one text spells of the library: each a finding, to be said without one. */
+export function checkUncounted(file: string, text: string): Finding[] {
+  const findings: Finding[] = [];
+  text.split('\n').forEach((line, index) => {
+    for (const { phrase, least, say } of UNCOUNTED)
+      for (const match of line.matchAll(phrase)) {
+        const said = numberOf(match[1] as string);
+        if (said !== undefined && said >= least)
+          findings.push({
+            file,
+            line: index + 1,
+            text: `"${match[0]}" — say it without a count ("${say}")`,
+          });
+      }
+  });
+  return findings;
+}
+
+/** The spelled counts of one text the code holds (the palettes, the tabs), each held to its fact. */
+export function checkCounts(file: string, text: string, facts: Facts): Finding[] {
   const findings: Finding[] = [];
   const lines = text.split('\n');
   lines.forEach((line, index) => {
     for (const { fact, phrase, least, noun } of COUNTS) {
-      if (only && !only.includes(fact)) continue;
       for (const match of line.matchAll(phrase)) {
         const said = numberOf(match[1] as string);
         if (said === undefined || said < least) continue;
-        const expected = facts[fact] as number;
+        const expected = facts[fact];
         if (said !== expected)
           findings.push({
             file,
@@ -211,25 +233,16 @@ export function parseEveryPageKb(source: string): number {
 
 /** What the code says, read from it. */
 export async function readFacts(): Promise<Facts> {
-  const { GlobalRegistrator } = await import('@happy-dom/global-registrator');
-  if (!GlobalRegistrator.isRegistered) GlobalRegistrator.register();
-  const [{ catalogue }, { PALETTE_NAMES }, { TEMPLATES }, { LANGUAGE_CODES }, { TABS }] =
-    await Promise.all([
-      import('@fluvy/cards'),
-      import('@fluvy/tokens/config'),
-      import('../../../packages/cards/src/strategy/templates.js'),
-      import('../../../packages/core/src/i18n/languages.js'),
-      import('../../../packages/cards/src/panel/model.js'),
-    ]);
+  const [{ PALETTE_NAMES }, { TABS }] = await Promise.all([
+    import('@fluvy/tokens/config'),
+    import('../../../packages/cards/src/panel/model.js'),
+  ]);
   const [check, finish] = await Promise.all([
     readFile(join(ROOT, 'tools', 'release', 'check.mjs'), 'utf8'),
     readFile(join(ROOT, 'packages', 'bundle', 'scripts', 'finish.mjs'), 'utf8'),
   ]);
   return {
-    cards: (await catalogue()).length,
     palettes: PALETTE_NAMES.length,
-    dashboards: TEMPLATES.length,
-    languages: LANGUAGE_CODES.length,
     tabs: TABS.length,
     everyPageKb: parseEveryPageKb(finish),
     budgets: parseBudgets(check),
@@ -243,7 +256,7 @@ const markdownIn = async (folder: string): Promise<string[]> =>
     .map((f) => join(folder, f));
 
 /**
- * The prose that may spell a count: the repository's guides, the cards' guides written by hand (the pages they are
+ * The prose a count may stand in: the repository's guides, the cards' guides written by hand (the pages they are
  * spliced into are generated, and say what these say), the package description and the design language.
  */
 export async function proseFiles(): Promise<string[]> {
@@ -259,8 +272,8 @@ export async function proseFiles(): Promise<string[]> {
 }
 
 /**
- * The hand-written sources, whose comments may count the library ("seventy cards share one parsed copy") and are
- * held to that count alone: a comment's "two tabs" or "five languages" is a fixture, not a fact.
+ * The hand-written sources, read for the library's counts alone (a comment's "N cards share one parsed copy" goes
+ * stale as the prose's would): a comment's "two tabs" or "fifteen palettes" is a fixture, not a fact.
  */
 export async function sourceFiles(): Promise<string[]> {
   const files: string[] = [];
@@ -291,11 +304,11 @@ export async function findings(facts: Facts): Promise<Finding[]> {
   const out: Finding[] = [];
   for (const file of await proseFiles()) {
     const text = await readFile(join(ROOT, file), 'utf8');
-    out.push(...checkCounts(file, text, facts));
+    out.push(...checkUncounted(file, text), ...checkCounts(file, text, facts));
     if (file === join('docs', 'development.md')) out.push(...checkBudgets(file, text, facts));
   }
   for (const file of await sourceFiles())
-    out.push(...checkCounts(file, await readFile(join(ROOT, file), 'utf8'), facts, ['cards']));
+    out.push(...checkUncounted(file, await readFile(join(ROOT, file), 'utf8')));
   return out;
 }
 
@@ -311,6 +324,6 @@ if (await isMain()) {
     process.exit(1);
   }
   console.log(
-    `✓ facts: ${wordsOf(facts.cards)} cards, ${wordsOf(facts.palettes)} palettes, ${wordsOf(facts.dashboards)} automatic dashboards, ${wordsOf(facts.languages)} languages, ${wordsOf(facts.tabs)} tabs, every page ${facts.everyPageKb} KB, ${Object.keys(facts.budgets).length} budgets — as the code says`,
+    `✓ facts: no count of the cards, the languages or the automatic dashboards; ${wordsOf(facts.palettes)} palettes, ${wordsOf(facts.tabs)} tabs, every page ${facts.everyPageKb} KB, ${Object.keys(facts.budgets).length} budgets — as the code says`,
   );
 }

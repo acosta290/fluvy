@@ -1,6 +1,6 @@
 # The automatic dashboards
 
-Seven dashboards Fluvy builds by itself, each from one line of configuration:
+The dashboards Fluvy builds by itself, each from one line of configuration:
 
 ```yaml
 strategy:

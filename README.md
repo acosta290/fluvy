@@ -23,10 +23,11 @@
   <a href="https://acosta290.github.io/fluvy/?palette=linen"><img src="https://raw.githubusercontent.com/acosta290/fluvy/main/docs/images/readme/hero.webp" width="822" alt="Fluvy on the Linen palette: light and plug tiles, a thermostat, the day's energy in the soft style and a media player"></a>
 </p>
 
-Fluvy brings one design to the whole of Home Assistant: a theme, seventy cards, seven automatic dashboards, a
-settings panel, the Activity and History pages, and Home Assistant's own pages restyled to match — all from one
-set of design tokens, installed as one integration through HACS. Every card is drawn on a 4 px grid, checked
-by an alignment measurer, and holds from a phone to a wall tablet, in light and dark, in twenty languages.
+Fluvy brings one design to the whole of Home Assistant: a theme, a card for every part of the house, automatic
+dashboards built from your home, a settings panel, the Activity and History pages, and Home Assistant's own pages
+restyled to match — all from one set of design tokens, installed as one integration through HACS. Every card is drawn
+on a 4 px grid, checked by an alignment measurer, and holds from a phone to a wall tablet, in light and dark, in every
+language it speaks.
 
 ## The whole app, one design
 
@@ -82,7 +83,7 @@ frame where less motion is asked for.
   <a href="https://acosta290.github.io/fluvy/?sheet=animated&amp;palette=linen"><img src="https://raw.githubusercontent.com/acosta290/fluvy/main/docs/media/gauge-battery.gif" width="274" alt="A battery gauge charging at 62 %: bubbles rising through the charge, the bolt glowing"></a><a href="https://acosta290.github.io/fluvy/?sheet=animated&amp;palette=linen"><img src="https://raw.githubusercontent.com/acosta290/fluvy/main/docs/media/gauge-pulse.gif" width="274" alt="A power gauge as a pulse: rings beating out from the bolt at 1.8 kW"></a><a href="https://acosta290.github.io/fluvy/?sheet=animated&amp;palette=linen"><img src="https://raw.githubusercontent.com/acosta290/fluvy/main/docs/media/gauge-sun.gif" width="274" alt="A solar gauge as the sun: long rays turning at 5.4 kW of production"></a>
 </p>
 
-## Seventy cards
+## The cards
 
 Every card has an editor form and a live preview in the card picker. [The cards' gallery](docs/cards.md#everyday)
 shows each one with its picture, and its page the YAML that draws it and every option with what it does; each one can
@@ -204,7 +205,7 @@ a dashboard each — **Rooms** (a tab a floor, or a tab a room), **Energy**, **S
 
 - **One theme, light and dark**, generated from the same tokens the cards are drawn with, and as **Fluvy Light** and
   **Fluvy Dark** for an automation to switch at sunset.
-- **Seventy cards** with editor forms, picker previews, and `unavailable`, `unknown` and missing states
+- **A card for every part of the house**, with editor forms, picker previews, and `unavailable`, `unknown` and missing states
   drawn on purpose, at the size and in the anatomy the card has live — among them a Template card for tiles of your
   own (Home Assistant templates, a Mushroom template card pasted in), a Cameras card for every camera at a glance and
   a Chart card for any time series, from a sensor's history to tomorrow's prices.
@@ -213,7 +214,7 @@ a dashboard each — **Rooms** (a tab a floor, or a tab a room), **Energy**, **S
 - **Energy as your meters read it**: a house that imports and exports at once shows both, per phase; with nothing
   configured the cards read the Energy dashboard, and a day, a week or a month add up to its own figures — or
   follow its date picker, beside Home Assistant's own cards.
-- **Seven automatic dashboards** built from your registries: the home, the rooms, the energy, the security, a wall,
+- **Automatic dashboards** built from your registries: the home, the rooms, the energy, the security, a wall,
   the lights and the climate.
 - **Wall mode** for a tablet: no sidebar, no header, a screensaver with the clock, dark at night, the screen kept
   awake — `?kiosk` on the dashboard's address and the tablet remembers, a × in the corner is the way out.
@@ -221,7 +222,7 @@ a dashboard each — **Rooms** (a tab a floor, or a tab a room), **Energy**, **S
 - **Activity and History pages** in the same idiom.
 - **Everywhere**: Home Assistant's own pages in the same design while it wears the Fluvy theme — and left as Home
   Assistant draws them while it wears another.
-- **Twenty languages** — English, Spanish, German, Dutch, Danish, Swedish, French, Italian, Brazilian and European
+- **Your language** — English, Spanish, German, Dutch, Danish, Swedish, French, Italian, Brazilian and European
   Portuguese, Turkish, Hungarian, Japanese, Slovak, Czech, Polish, Simplified Chinese, Russian, Ukrainian and Bulgarian — in every
   card, page and dialog, each fetched only when spoken.
 - **No telemetry, no network calls of its own**, no dependency but Lit, pinned to Home Assistant's version.
@@ -267,7 +268,7 @@ Open **Fluvy** in the sidebar.
 - **Charts** — the style every chart is drawn in, the gauge, the series' colours and motion, for the house.
 - **Scope** — where the look applies: your dashboards only, or everywhere in Home Assistant; whether the frame,
   the icons and the pages are Fluvy's.
-- **Dashboards** — create any of the seven automatic dashboards with one tap and set its options, or add a
+- **Dashboards** — create any of the automatic dashboards with one tap and set its options, or add a
   dashboard of your own with `strategy: { type: custom:fluvy-home }` (or `fluvy-rooms`, `fluvy-energy`,
   `fluvy-security`, `fluvy-wall`, `fluvy-lights`, `fluvy-climate`) in its raw configuration.
 - **Wall** — what this tablet is, which dashboards are walls, the screensaver, day and night, the background.
@@ -286,7 +287,7 @@ each with a page of its options.
 | [The theme](docs/theme.md) | palettes, custom accents, shapes, the tokens |
 | [The cards](docs/cards.md) | every card with its picture, and a page a card: its YAML and what every option does |
 | [Customising the cards](docs/customising.md) | the options every card takes, details sheets, templates, conditions, thresholds |
-| [The automatic dashboards](docs/automatic-dashboard.md) | what the seven templates build from your home, and how to steer them |
+| [The automatic dashboards](docs/automatic-dashboard.md) | what the templates build from your home, and how to steer them |
 | [Wall mode](docs/wall.md) | a tablet on the wall: the kiosk, the screensaver, day and night |
 | [Activity and History](docs/pages.md) | the two pages |
 | [Everywhere](docs/shell.md) | what the shell restyles, and what to expect after a Home Assistant release |

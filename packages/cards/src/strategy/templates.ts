@@ -15,7 +15,7 @@ import { SECURITY_VIEWS } from './views/security.js';
 import { WALL_VIEWS, wallRooms } from './views/wall.js';
 
 /*
- * The dashboards Fluvy builds by itself: seven templates, each a strategy (`custom:fluvy-<id>`) with its views, its
+ * The dashboards Fluvy builds by itself: a template each, a strategy (`custom:fluvy-<id>`) with its views, its
  * frame (the greeting and the tabs, or none), its columns, the rooms it opens as subviews and the options its raw
  * configuration honours (the panel's Dashboards tab edits them, and the settings file carries them).
  */

@@ -461,13 +461,15 @@ cp -a usr/lib/x86_64-linux-gnu/. ~/.cache/ms-playwright/webkit-*/minibrowser-wpe
 
 ### The facts guard
 
-`tools/docs/src/facts.ts` (part of `pnpm check`) reads every count the prose spells — "seventy cards", "fifteen
-palettes", "seven automatic dashboards", "twenty languages", "six tabs", in any case, in words or in digits — in the
-README, `CONTRIBUTING.md`, the package description, `docs/*.md`, `packages/cards/README.md` and the design language,
-and holds it to the catalogue, `PALETTE_NAMES`, the strategy's templates, `LANGUAGE_CODES` and the panel's `TABS`;
-a source comment's count of cards too. It holds the every-page budget above to `finish.mjs` and the table of scripts
-to `check.mjs`'s `BUDGETS`, name for name. The CHANGELOG is history and is never read. A count that changes with a
-release (a new card) fails `pnpm check` until every page that spells it says the new one.
+`tools/docs/src/facts.ts` (part of `pnpm check`) reads the counts the prose spells, in any case, in words or in
+digits, in the README, `CONTRIBUTING.md`, the package description, `docs/*.md`, the cards' guides,
+`packages/cards/README.md` and the design language. A count of the cards, the languages or the automatic dashboards
+("N cards", "N languages", "N automatic dashboards") is never written, there or in a source's comment (#221): each
+release that adds one would leave it stale, and two branches that each add one would part over it. Say "every card",
+"every language Fluvy speaks", "the automatic dashboards". The palettes and the panel's tabs, which a release seldom
+changes, may be counted, and are held to `PALETTE_NAMES` and the panel's `TABS`. It holds the every-page budget above
+to `finish.mjs` and the table of scripts to `check.mjs`'s `BUDGETS`, name for name. The CHANGELOG is history and is
+never read.
 
 ### A fresh worktree
 

@@ -17,7 +17,6 @@ import {
   type Manifest,
   type Mode,
 } from './pictures.js';
-import { wordsOf } from './words.js';
 import { toYaml } from './yaml.js';
 
 /** Where the repository is read from by an assistant: a page as plain text. */
@@ -371,9 +370,6 @@ export function cardPage(card: CardDoc, pictures: Manifest, guides: Guides = {})
   return `${parts.join('\n\n')}\n`;
 }
 
-/** A word with its first letter in upper case: a sentence's first. */
-const capital = (word: string): string => `${word.charAt(0).toUpperCase()}${word.slice(1)}`;
-
 /**
  * The index: what the cards are and where what they share is written, then every card by section in a grid, its
  * thumbnail in the reader's theme, its name and what it is, each a way to its page. `from` is the way from the index
@@ -390,7 +386,7 @@ export function indexPage(
   return `${[
     generated('the catalogue and the gallery (tools/docs/src/pages.ts)'),
     '# The cards',
-    `${capital(wordsOf(cards.length))} cards, each in the card picker as **Fluvy · …** with a live preview and an editor. Every card has a page of its own: its picture, an example in YAML, a picture of each of its layouts, a YAML with every option, and what each option does. [The live demo](${DEMO}) has each one to try.`,
+    `Every card is in the card picker as **Fluvy · …**, with a live preview and an editor, and has a page of its own: its picture, an example in YAML, a picture of each of its layouts, a YAML with every option, and what each option does. [The live demo](${DEMO}) has each one to try.`,
     'In YAML a card is `type: custom:fluvy-<name>-card` plus the entity or entities it draws and any of its options; an option left at its default is left out.',
     [
       `- [Options every card takes](${from}${CUSTOMISING}#options-every-card-takes): names, icons, colours, actions, how an unavailable entity looks`,

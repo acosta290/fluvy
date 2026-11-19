@@ -193,7 +193,7 @@ export const panelStyles = css`
   }
   .pn-tabs.is-wide .pn-tabs__row {
     display: grid;
-    /* six equal tabs on the 8 gap — a tab whose words need more ("Tableaux de bord") keeps them and the others share
+    /* the equal tabs on the 8 gap — a tab whose words need more ("Tableaux de bord") keeps them and the others share
        what is left: a word is never cut for the sake of equal cells */
     grid-template-columns: repeat(6, minmax(max-content, 1fr));
     column-gap: 8px;
