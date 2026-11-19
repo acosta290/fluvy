@@ -858,7 +858,10 @@ longer than the ends' 56 ends in an ellipsis.
 - **Rows**: one a person — the 44 avatar with its presence dot, the name, where they are as the value ("Home",
   the zone's name, "Away · 26 km" only when distance is asked for and the fix is good, "Unknown").
 - The **map** variant is Home Assistant's own map card on a plate (16 radius, 1.6:1 or square); it falls back to the
-  columns in silence where the card helpers are missing.
+  columns in silence where the card helpers are missing. The map fills the plate (it lays out as in a section's
+  grid: in its own square under a 1.6:1 plate, what it fitted to the people sat under the plate's middle, 1.23,
+  #220), is made once the plate has a box (in an Expander, a Swipe's page or a sheet), and is fitted to the people
+  again each time the plate's size settles otherwise, by one observer of the plate, never a timer.
 
 ## Several sensors (1.6)
 
