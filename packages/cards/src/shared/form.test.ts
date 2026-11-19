@@ -1,5 +1,5 @@
 // @vitest-environment happy-dom
-import type { HaFormSchemaItem, HomeAssistant } from '@fluvy/core';
+import { setCardDefaults, type HaFormSchemaItem, type HomeAssistant } from '@fluvy/core';
 import { describe, expect, it, vi } from 'vitest';
 import {
   accentField,
@@ -98,12 +98,38 @@ describe('a colour field', () => {
     });
     document.documentElement.lang = 'en';
     expect(label(formLabels(), 'card_border')).toBe('Card border');
-    // the opacity and the border always together, wherever a card offers its surface
-    expect(cardSurfaceFields().map((field) => field.name)).toEqual(['card_opacity', 'card_border']);
+    // the opacity, the border and the blur always together, wherever a card offers its surface
+    expect(cardSurfaceFields().map((field) => field.name)).toEqual([
+      'card_opacity',
+      'card_border',
+      'card_blur',
+    ]);
+  });
+
+  it('offers the blur of what shows through under its border, a switch, only while the card is see-through (#213)', () => {
+    const [, , , , blur] = colourFields();
+    expect(blur).toMatchObject({
+      name: 'card_blur',
+      selector: { boolean: {} },
+      helper: 'editor.card_blur_helper',
+    });
+    document.documentElement.lang = 'en';
+    expect(label(formLabels(), 'card_blur')).toBe('Blur what shows through');
+    // by its own opacity, else the house's (what the editor's defaults show it)
+    const shown = (data: Record<string, unknown>): boolean =>
+      visibleFields([blur!], data).length === 1;
+    expect(shown({ card_opacity: 100 })).toBe(false);
+    expect(shown({ card_opacity: 95 })).toBe(true);
+    expect(shown({ card_opacity: 0 })).toBe(true);
+    expect(shown({})).toBe(false);
+    setCardDefaults({ opacity: 70, blur: true, unavailable: 'dashed', border: true });
+    expect(shown({})).toBe(true);
+    expect(shown({ card_opacity: 100 })).toBe(false);
+    setCardDefaults({ opacity: 100, blur: true, unavailable: 'dashed', border: true });
   });
 
   it('offers how the card looks out of reach after its opacity, dashed or as when off, the house’s until chosen (#126)', () => {
-    const [, , , , look] = colourFields();
+    const [, , , , , look] = colourFields();
     expect(look).toMatchObject({
       name: 'unavailable',
       helper: 'editor.unavailable_helper',
@@ -190,6 +216,18 @@ describe('a form that shows only what can act', () => {
     const data = { variant: 'full' };
     visibleFields([onlyWhen(when, textField('title'))], data, hass);
     expect(when).toHaveBeenCalledWith(data, hass);
+  });
+
+  it('keeps a field’s own condition beside the one it is shown under', () => {
+    const blur = onlyWhen(
+      full,
+      onlyWhen(({ card_opacity }) => card_opacity !== 100, boolField('blur')),
+    );
+    const shown = (data: Readonly<Record<string, unknown>>): boolean =>
+      visibleFields([blur], data).length === 1;
+    expect(shown({ variant: 'full', card_opacity: 50 })).toBe(true);
+    expect(shown({ variant: 'compact', card_opacity: 50 })).toBe(false);
+    expect(shown({ variant: 'full', card_opacity: 100 })).toBe(false);
   });
 
   it('picks by any test of the item, a row and a field alike; by name, every row is opened', () => {

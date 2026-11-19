@@ -25,6 +25,7 @@ entity: light.living_room_lamp
 | `card_color` | The card's surface in a quiet wash of a colour ([theme](theme.md#a-colour-per-card-and-per-item)). | `card_color: '#2a9d8f'` |
 | `card_opacity` | 0 to 100; under 100 the view's background shows through. | `card_opacity: 80` |
 | `card_border` | `false` leaves out the hairline. | `card_border: false` |
+| `card_blur` | Under 100, whether what shows through is blurred. | `card_blur: false` |
 | `unavailable` | Out of reach: `dashed` (the default) or `quiet` (as when off). The card keeps its size either way. | `unavailable: quiet` |
 | `show_icon` | The head's circle: `auto`, `always` or `never`. | `show_icon: never` |
 | `name_lines` | `2`: the name may take two lines; the head is a line taller whatever the name. | `name_lines: 2` |
@@ -33,8 +34,20 @@ entity: light.living_room_lamp
 | `slider_style`, `slider_words` | `ruler`, `bar`, `liquid`, `fill` (a tile) or `house`; the figures under the slider: `ends` or `none`. | `slider_style: bar` |
 | `empty_text`, `hide_empty` | What an empty list says; `hide_empty: true` hides the card until something is listed. | `empty_text: All closed` |
 
-- Left out, `card_opacity`, `card_border`, `unavailable` and `slider_style` are the house's
+- Left out, `card_opacity`, `card_border`, `card_blur`, `unavailable` and `slider_style` are the house's
   ([settings panel](settings-panel.md#cards)).
+- **A card at 0 %** is clear: nothing of it is frosted, whatever the house's blur, so only its words, its circles and
+  its hairline stand on the view (`card_border: false` takes the hairline too). A lit tile and a light card lit in its
+  light's colour stay solid, and the cards an [Expander](cards/expander.md), a [Swipe](cards/swipe.md) card or a
+  [sidebar](sidebar.md) holds wear its surface, not their own. `card_blur: true` frosts a card at any opacity, 0
+  included; a device in Lite blurs nothing.
+
+```yaml
+type: custom:fluvy-room-card
+area: living_room
+card_opacity: 0     # clear: no fill, no frost
+# card_blur: true   # a frosted pane with no fill of its own
+```
 - `show_badge`: the lock, alarm, cover, vacuum, thermostat, appliance, 3D printer, vehicle, humidity, timer, updates,
   gauge, distribution, bars, energy balance, grid, car charger, batteries, energy devices, energy usage and production
   cards (the thermostat's older `show_state` still works).

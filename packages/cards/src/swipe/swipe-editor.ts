@@ -32,7 +32,13 @@ import { STYLES, type SwipeCardConfig, type SwipeStyle } from './swipe-card.js';
 const s = strings('swipe');
 
 /** A swipe card has no entity and no head: its colour (the lit mark's) and its surface. */
-export const base: readonly BaseKey[] = ['color', 'card_color', 'card_opacity', 'card_border'];
+export const base: readonly BaseKey[] = [
+  'color',
+  'card_color',
+  'card_opacity',
+  'card_border',
+  'card_blur',
+];
 
 export const keys = configKeys<SwipeCardConfig>()([
   'cards',
@@ -104,7 +110,7 @@ export function getConfigForm(): LovelaceConfigForm {
         accentField('color'),
         onlyWhen(onSurface, accentField('card_color', { none: true })),
       ),
-      // an opacity and a border are a surface's: without one there is nothing to wear them
+      // an opacity, a border and a blur are a surface's: without one there is nothing to wear them
       ...cardSurfaceFields().map((field) => onlyWhen(onSurface, field)),
       // the code view of its cards: what edits them where Home Assistant's stack editor is not to be had
       { name: 'cards', selector: { object: {} } },

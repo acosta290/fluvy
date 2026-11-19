@@ -63,13 +63,14 @@ export function createMemoryLook(doc: Document, dark: boolean): MemoryLook {
   // use, turned down where this device draws Lite
   const apply = (): void => {
     const shown = previewed ? { ...store.effective, ...previewed } : store.effective;
-    const now = isLite() ? wornLite(shown) : shown;
+    const lite = isLite();
+    const now = lite ? wornLite(shown) : shown;
     engine.apply(now, wallDark ?? mode);
     setLanguageOverride(now.language === 'auto' ? undefined : now.language);
     setMotionPreference(now.motion);
     setHoldToSlide(now.holdToSlide);
     setChartDefaults({ settings: now.charts, sets: now.chartSets });
-    setCardDefaults(now.cards);
+    setCardDefaults(now.cards, lite);
     setSliderDefaults(now.sliders);
     refreshCards();
   };

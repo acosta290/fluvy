@@ -258,7 +258,7 @@ export function startLook(): LookHandle | undefined {
     setLightDefaults({ tint: now.lightTint, colors: now.lightColors });
     setTintDefaults({ tint: now.stateTint, style: now.stateTintStyle });
     setChartDefaults({ settings: now.charts, sets: now.chartSets });
-    setCardDefaults(now.cards);
+    setCardDefaults(now.cards, lite);
     setSliderDefaults(now.sliders);
     setRoomDefaults(now.rooms);
     // the corner of every page: the sidebar's head (the shell's sheets fill on these), the dashboards' headers marked

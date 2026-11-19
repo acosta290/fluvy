@@ -116,6 +116,7 @@ stats:
 | `card_color` |  | Paints the card’s surface in a colour of your own. |
 | `card_opacity` | `100` | How solid the card’s surface is, in percent: under 100 the view’s background shows through. Left out, the house’s. 0 % to 100 %, in steps of 5. |
 | `card_border` | `true` | Whether the card draws its hairline border. Left out, the house’s. |
+| `card_blur` | `true` | Whether what shows through a see-through card is blurred. Left out, the house’s, and none at 0 %. |
 | `unavailable` | `dashed` | How the card looks while its entity is unavailable: dashed, or quiet as when it is off. Left out, the house’s. `dashed` · `quiet` (As when off). |
 | **Interactions** |  |  |
 | `tap_action` | `more-info` | What a tap on the card does. |

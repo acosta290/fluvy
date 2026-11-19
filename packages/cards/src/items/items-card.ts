@@ -322,6 +322,7 @@ export class FluvyItemsCard extends Card<ItemsCardConfig> {
     'card_color',
     'card_opacity',
     'card_border',
+    'card_blur',
     'unavailable',
     ...ACTIONS_BASE,
     'show_icon',

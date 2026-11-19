@@ -35,6 +35,7 @@ describe('a dashboard’s sidebar as its configuration writes it', () => {
       users: undefined,
       hideTabs: false,
       opacity: undefined,
+      blur: undefined,
     });
   });
 
@@ -52,6 +53,7 @@ describe('a dashboard’s sidebar as its configuration writes it', () => {
       users: ['a1', '', 3],
       hide_tabs: true,
       card_opacity: 72.4,
+      card_blur: false,
     });
     expect(spec).toMatchObject({
       // the older words for a side
@@ -68,6 +70,7 @@ describe('a dashboard’s sidebar as its configuration writes it', () => {
       users: ['a1'],
       hideTabs: true,
       opacity: 72,
+      blur: false,
     });
     expect(parseSidebar({ position: 'left' })?.position).toBe('start');
     expect(parseSidebar({ position: 'middle' })?.position).toBe('start');

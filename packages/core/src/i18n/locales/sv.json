@@ -2097,7 +2097,9 @@
     "threshold_helper": "Ett tal, en entitet eller en mall",
     "below": "Under värdet",
     "below_helper": "Av: från värdet och uppåt",
-    "past_threshold": "Passerat tröskelvärde"
+    "past_threshold": "Passerat tröskelvärde",
+    "card_blur": "Gör det som syns igenom oskarpt",
+    "card_blur_helper": "Orört: som alla kort, från Fluvys inställningar; ingen oskärpa vid 0 %"
   },
   "energy-period-card": {
     "name": "Energiperiod",

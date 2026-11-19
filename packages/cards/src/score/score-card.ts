@@ -178,6 +178,7 @@ export class FluvyEnergyScoreCard extends Card<EnergyScoreCardConfig> {
     'card_color',
     'card_opacity',
     'card_border',
+    'card_blur',
     'unavailable',
     ...ACTIONS_BASE,
     'show_icon',

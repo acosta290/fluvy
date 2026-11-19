@@ -81,6 +81,8 @@ export interface SidebarSpec {
   readonly hideTabs: boolean;
   /** How opaque its surface is, in percent; undefined: the house's cards'. */
   readonly opacity: number | undefined;
+  /** Whether what shows through it see-through is blurred (#213); undefined: the house's cards'. */
+  readonly blur: boolean | undefined;
 }
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
@@ -190,6 +192,7 @@ export function parseSidebar(raw: unknown): SidebarSpec | undefined {
   if (!isRecord(raw)) return undefined;
   const position = raw['position'];
   const opacity = raw['card_opacity'];
+  const blur = raw['card_blur'];
   return {
     position: oneOf(
       POSITIONS,
@@ -212,6 +215,7 @@ export function parseSidebar(raw: unknown): SidebarSpec | undefined {
       typeof opacity === 'number' && Number.isFinite(opacity)
         ? Math.min(100, Math.max(0, Math.round(opacity)))
         : undefined,
+    blur: typeof blur === 'boolean' ? blur : undefined,
   };
 }
 

@@ -1,11 +1,13 @@
 import {
   addEnglish,
   areaEntities,
+  cardOpacity,
   domainOf,
   idsOf,
   localize,
   resolveEntity,
   type ActionConfig,
+  type FluvyCardConfig,
   type HaFormSchemaItem,
   type HomeAssistant,
   type KeyOf,
@@ -477,11 +479,17 @@ export const holdsActing =
   (data: Readonly<Record<string, unknown>>): boolean =>
     idsOf(listed(data, key, alias)).some(acts);
 
-/** A field (or a row) shown only while `when` says it can act: one that acts only in a style is shown in that style. */
+/**
+ * A field (or a row) shown only while `when` says it can act, and its own `when` with it where it has one: one that
+ * acts only in a style is shown in that style.
+ */
 export const onlyWhen = (
   when: NonNullable<HaFormSchemaItem['when']>,
   item: HaFormSchemaItem,
-): HaFormSchemaItem => ({ ...item, when });
+): HaFormSchemaItem => {
+  const own = item.when;
+  return { ...item, when: own ? (data, hass) => when(data, hass) && own(data, hass) : when };
+};
 
 /** A card's tone, from the palette's tones. */
 export const toneField = (): HaFormSchemaItem => ({ name: 'tone', selector: toneSelector() });
@@ -530,11 +538,15 @@ export const accentField = (
   };
 };
 
+/** Whether a card's surface is see-through, by its own opacity or the house's: what a blur acts on. */
+const seeThrough = (data: Readonly<Record<string, unknown>>): boolean =>
+  cardOpacity(data as FluvyCardConfig) < 100;
+
 /**
  * The card's surface beside its colour: how opaque it is (`card_opacity`, 1.15), a percentage on Home Assistant's
  * slider in 5 % steps, its figure in the box beside it, and under it whether it draws its border (`card_border`, 1.19,
- * #171) — each the house's, shown and never written, until one is chosen (`editorDefaults`), the word under it saying
- * so.
+ * #171) and, while it is see-through, whether what shows through is blurred (`card_blur`, 1.23, #213) — each the
+ * house's, shown and never written, until one is chosen (`editorDefaults`), the word under it saying so.
  */
 export const cardSurfaceFields = (): HaFormSchemaItem[] => [
   {
@@ -543,6 +555,7 @@ export const cardSurfaceFields = (): HaFormSchemaItem[] => [
     helper: 'editor.card_opacity_helper',
   },
   { ...boolField('card_border'), helper: 'editor.card_border_helper' },
+  onlyWhen(seeThrough, { ...boolField('card_blur'), helper: 'editor.card_blur_helper' }),
 ];
 
 /**

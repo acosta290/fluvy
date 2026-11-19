@@ -39,7 +39,7 @@ Home Assistant meanwhile is lost. Two kinds are different:
   write beside, and is not listed until it has one.
 
 What the panel does not edit stays as written: a width as a share, pages written by hand, `views`, `users`,
-`subviews` and `card_opacity`.
+`subviews`, `card_opacity` and `card_blur`.
 
 ## Where the key goes
 
@@ -99,6 +99,7 @@ fluvy_sidebar:
   users: []                   # only for these people (user ids); everyone without the key
   hide_tabs: false            # true: the header's tabs give way to the menu
   card_opacity: 100           # its surface alone; the house's cards' without the key
+  card_blur: true             # what shows through it see-through, blurred; the house's cards' without the key
 ```
 
 | Key | What it does |
@@ -114,6 +115,7 @@ fluvy_sidebar:
 | `users` | The people it is drawn for, by their user id (Settings › People › Users). |
 | `hide_tabs` | With `menu.items: views`, Home Assistant's tabs leave the header while the sidebar is in sight (never while it is a drawer: the menu is then a tap away). |
 | `card_opacity` | How opaque its surface is, 0 to 100. Without it the sidebar follows the house's cards (*Appearance › Cards*): see-through where they are, with what shows through blurred. |
+| `card_blur` | Whether what shows through its surface is blurred while it is see-through; without it the house's cards', none at 0 %. |
 
 ### A menu of your own
 

@@ -66,6 +66,8 @@ export interface FluvyCardConfig extends LovelaceCardConfig {
   card_opacity?: number;
   /** Whether its surface draws its border, the hairline round it (1.19, #171); unset, the house's (`cardBorder`). */
   card_border?: boolean;
+  /** Whether what shows through it see-through is blurred (1.23, #213); unset, the house's (`cardBlur`). */
+  card_blur?: boolean;
   /** How it looks while what it shows is out of reach (1.16, #126); unset, the house's (`unavailableLook`). */
   unavailable?: UnavailableLook;
   /** The style its sliders are drawn in (1.18, #144); unset or `house`, the house's (`sliderStyleOf`). */
@@ -193,20 +195,26 @@ export function setChartDefaults(next: HouseCharts): void {
 
 /** What the house says of every card's surface where a card says nothing (fluvy's settings → Appearance, 1.15). */
 let houseCards: CardSurface = { opacity: 100, blur: true, unavailable: 'dashed', border: true };
+/** Whether this device draws Lite (#165): nothing is blurred behind a see-through card, whatever the card asks. */
+let liteCards = false;
 
 /**
- * The house's cards' surface, as the settings last said (a card's own `card_opacity`, `unavailable` and `card_border`
- * win).
+ * The house's cards' surface, as the settings last said (a card's own `card_opacity`, `unavailable`, `card_border`
+ * and `card_blur` win).
  */
 export const cardDefaults = (): CardSurface => houseCards;
 
-/** The house's cards' surface changed (saved, or previewed in the panel): every card wears it at once. */
-export function setCardDefaults(next: CardSurface): void {
+/**
+ * The house's cards' surface changed (saved, or previewed in the panel), or this device draws Lite or Full again
+ * (`lite`, its surface then turned down by `wornLite`): every card wears it at once.
+ */
+export function setCardDefaults(next: CardSurface, lite = false): void {
   if (
     next.opacity === houseCards.opacity &&
     next.blur === houseCards.blur &&
     next.unavailable === houseCards.unavailable &&
-    next.border === houseCards.border
+    next.border === houseCards.border &&
+    lite === liteCards
   )
     return;
   houseCards = {
@@ -215,6 +223,7 @@ export function setCardDefaults(next: CardSurface): void {
     unavailable: next.unavailable,
     border: next.border,
   };
+  liteCards = lite;
   // a house of see-through or quiet cards fetches what they wear before they draw (a card's first frame waits for it)
   if (next.opacity < 100) void fetchGlass();
   if (next.unavailable === 'quiet') void fetchQuiet();
@@ -360,6 +369,18 @@ export function cardOpacity(config: FluvyCardConfig | undefined): number {
 export function cardBorder(config: FluvyCardConfig | undefined): boolean {
   const own = config?.card_border;
   return typeof own === 'boolean' ? own : houseCards.border;
+}
+
+/**
+ * Whether what shows through a see-through card is blurred (1.23, #213): its own `card_blur` where it is a switch,
+ * else the house's, which leaves a card at 0 % clear (none of it is there to frost); never on a device that draws
+ * Lite (#165).
+ */
+export function cardBlur(config: FluvyCardConfig | undefined): boolean {
+  const own = config?.card_blur;
+  return (
+    !liteCards && (typeof own === 'boolean' ? own : houseCards.blur && cardOpacity(config) > 0)
+  );
 }
 
 /** Every card on the page looks again for the theme: the look arrived, moved or left. */
@@ -770,7 +791,7 @@ export abstract class FluvyCard<C extends FluvyCardConfig = FluvyCardConfig>
 
   /**
    * Its surface as its config and the house say (1.15): under 100 the host is marked `glass` (`blur` while what shows
-   * through is blurred) with its opacity in `--fv-glass`, and its sheet is written see-through (`look/glass.ts`, fetched
+   * through is blurred, `cardBlur`) with its opacity in `--fv-glass`, and its sheet is written see-through (`look/glass.ts`, fetched
    * by the first card that is one); solid, or without a surface, the host carries neither. Its sheet is written in
    * either case. Without its border (1.19, #171), a card with a surface is marked `borderless` (fluvy/surfaces.css).
    * Quiet out of reach (1.16), what it draws at its root is marked `data-unavailable="quiet"` (a group whose items each
@@ -787,7 +808,7 @@ export abstract class FluvyCard<C extends FluvyCardConfig = FluvyCardConfig>
     const level = this.surface ? cardOpacity(this.config) : 100;
     const see = level < 100;
     if (see) {
-      const blur = houseCards.blur ? 'blur' : '';
+      const blur = cardBlur(this.config) ? 'blur' : '';
       if (this.getAttribute('glass') !== blur) this.setAttribute('glass', blur);
       this.style.setProperty('--fv-glass', `${level}%`);
       if (!glass) void fetchGlass();

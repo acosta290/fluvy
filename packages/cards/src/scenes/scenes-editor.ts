@@ -43,6 +43,7 @@ export const base: readonly BaseKey[] = [
   'card_color',
   'card_opacity',
   'card_border',
+  'card_blur',
   'unavailable',
   'hold_action',
   'double_tap_action',

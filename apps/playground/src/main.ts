@@ -258,7 +258,7 @@ if (params.get('lite') === '1') {
     charts: chartDefaults().settings,
   });
   setMotionPreference(worn.motion);
-  setCardDefaults(worn.cards);
+  setCardDefaults(worn.cards, true);
   setChartDefaults({ ...chartDefaults(), settings: worn.charts });
 }
 

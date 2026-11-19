@@ -163,6 +163,12 @@ through, blurred by default.
   the card's entrance holds an opacity that cuts it off from the page (a Backdrop Root). What opens from a card lives
   in the top layer (menus, sheets, the keypad), so a blurred card still leaves it the page. A wall tablet that scrolls
   slowly is better without it; the cards stay see-through.
+- **At 0 %** a card is clear (1.23, #213): the house's blur leaves it, for a frosted pane is a fill of its own, and a
+  card a person set to none must show none. What stays is what draws on it: its words and circles, its hairline (a
+  card without its border, nothing round it), and the solid parts above (a lit tile stays the light's colour). A card
+  may ask its own blur over the house's (`card_blur`): off at any opacity, or on at 0 % for a pane of frost with no
+  tint of its own. A card held by another's surface (an Expander's, a Swipe's, the sidebar's) never blurs itself: the
+  holder does, at its own opacity. A device in Lite blurs nothing, whatever a card asks.
 - **Never see-through**: Fluvy's own pages (Activity, History, the panel), the screensaver's clock and the dashboard's
   own on the page — the greeting, a heading, the chips card's tabs (1.16: controls on the page, with no surface or
   card colour of their own; a pill under the finger stays solid, as on a see-through card). Home Assistant's cards

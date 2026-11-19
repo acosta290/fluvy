@@ -266,6 +266,15 @@ describe('the editors’ contract', () => {
   );
 
   it.each(cards)(
+    '$tag: offers the blur of what shows through wherever it offers its opacity, and honours both (#213)',
+    ({ editor }) => {
+      const shown = names(editor.getConfigForm().schema);
+      expect(shown.includes('card_blur')).toBe(shown.includes('card_opacity'));
+      expect(editor.base.includes('card_blur')).toBe(editor.base.includes('card_opacity'));
+    },
+  );
+
+  it.each(cards)(
     '$tag: names its entity, and each item its own, in Home Assistant’s parts where one is beside the name (#125)',
     ({ tag, editor, lists }) => {
       for (const { where, schema } of [

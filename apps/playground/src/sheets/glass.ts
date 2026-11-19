@@ -18,7 +18,8 @@ import { sheet as slider } from './slider.js';
  * See-through cards (1.15, #121): a dozen cards as a dashboard holds them, on what a view's background may be — the
  * reporter's blue, and a busy picture — at 100, 80, 50 and 0 % (`card_opacity`); what shows through blurred by default,
  * unblurred with `&blur=0` (the house's), in either mode. A menu and a sheet open from a see-through card over it,
- * solid. The house's opacity for every card is `&opacity=` (main.ts).
+ * solid. A card at 0 % is clear whatever the house's blur, and a card may ask its own (`card_blur`, #213). The house's
+ * opacity for every card is `&opacity=` (main.ts).
  */
 
 /** The reporter's favourite: a deep blue to a sky one. */
@@ -34,6 +35,9 @@ export const PICTURE = [
   'repeating-linear-gradient(45deg, rgb(255 255 255 / 0.14) 0 10px, transparent 10px 22px)',
   'linear-gradient(180deg, #2b2d42 0%, #6d597a 50%, #355070 100%)',
 ].join(', ');
+
+/** The reporter's room (#213): its name, its humidity and its temperature, no controls. */
+const ROOM = { ...cardsOf(rooms, 'Room · tile · no arrow')[0]!, controls: 'none' };
 
 /** The appliances' frames speak the page's language: the washer's state words. */
 const washer = appliances.frames.find((frame) => frame.title === 'LG · washer spinning');
@@ -120,6 +124,31 @@ export const sheet: SheetSpec = {
     dozen('Picture · 80', PICTURE, 80),
     dozen('Picture · 50', PICTURE, 50),
     dozen('Picture · 0', PICTURE, 0),
+    // a card at 0 % is clear, the house's blur on (#213): the reporter's room, a light card, tiles with two lit (solid,
+    // the light's colour), each with its words, its circles and its hairline alone on the picture
+    {
+      title: 'A card at 0 %',
+      backdrop: PICTURE,
+      cards: [
+        { ...ROOM, card_opacity: 0 },
+        { type: 'custom:fluvy-light-card', entity: 'light.ceiling', card_opacity: 0 },
+        {
+          type: 'custom:fluvy-tiles-card',
+          tiles: ['light.ceiling', 'light.reading', 'switch.desk_plug', 'cover.blinds'],
+          card_opacity: 0,
+        },
+      ],
+    },
+    // its own blur over the house's: a pane of frost with no tint at 0 %, and a 60 % card left clear
+    {
+      title: 'Its own blur',
+      backdrop: PICTURE,
+      cards: [
+        { ...ROOM, card_opacity: 0, card_blur: true },
+        { ...ROOM, card_opacity: 60, card_blur: false },
+        { ...ROOM, card_opacity: 60 },
+      ],
+    },
     // what opens from a see-through card is solid over it: a select's menu, the alarm's keypad
     {
       title: 'A menu and a sheet from a see-through card',

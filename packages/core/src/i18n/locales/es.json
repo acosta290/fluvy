@@ -664,7 +664,9 @@
     "threshold_helper": "Una cifra, una entidad o una plantilla",
     "below": "Por debajo del valor",
     "below_helper": "Apagado, desde el valor hacia arriba",
-    "past_threshold": "Al pasar un umbral"
+    "past_threshold": "Al pasar un umbral",
+    "card_blur": "Desenfocar lo que se ve a través",
+    "card_blur_helper": "Sin tocar, el de todas las tarjetas en los ajustes de Fluvy; sin desenfoque al 0 %"
   },
   "strategy": {
     "home": "Inicio",

@@ -664,7 +664,9 @@
     "threshold_helper": "Eine Zahl, eine Entität oder ein Template",
     "below": "Unter dem Wert",
     "below_helper": "Aus: ab dem Wert aufwärts",
-    "past_threshold": "Jenseits eines Schwellenwerts"
+    "past_threshold": "Jenseits eines Schwellenwerts",
+    "card_blur": "Durchscheinendes weichzeichnen",
+    "card_blur_helper": "Unverändert: wie in den Fluvy-Einstellungen für alle Karten; bei 0 % keine Unschärfe"
   },
   "strategy": {
     "home": "Zuhause",

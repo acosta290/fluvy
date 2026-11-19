@@ -2,7 +2,13 @@
 import { baseStyles } from '@fluvy/ui';
 import { html, type CSSResultGroup, type TemplateResult } from 'lit';
 import { afterEach, describe, expect, it } from 'vitest';
-import { cardOpacity, FluvyCard, setCardDefaults, type FluvyCardConfig } from '../card.js';
+import {
+  cardBlur,
+  cardOpacity,
+  FluvyCard,
+  setCardDefaults,
+  type FluvyCardConfig,
+} from '../card.js';
 import type { HomeAssistant } from '../ha/types.js';
 import { seeThrough } from '../look/glass.js';
 
@@ -64,6 +70,24 @@ describe('a card’s opacity', () => {
   });
 });
 
+describe('a card’s blur', () => {
+  it('is its own where it is a switch, else the house’s above 0 %, and none in Lite', () => {
+    expect(cardBlur({ type: 'x' })).toBe(true);
+    expect(cardBlur({ type: 'x', card_opacity: 0 })).toBe(false);
+    expect(cardBlur({ type: 'x', card_opacity: 0, card_blur: true })).toBe(true);
+    expect(cardBlur({ type: 'x', card_opacity: 40, card_blur: false })).toBe(false);
+    // anything but a switch is unsaid
+    expect(cardBlur({ type: 'x', card_blur: 'yes' } as unknown as FluvyCardConfig)).toBe(true);
+    setCardDefaults({ opacity: 0, blur: true, unavailable: 'dashed', border: true });
+    expect(cardBlur({ type: 'x' })).toBe(false);
+    expect(cardBlur({ type: 'x', card_opacity: 30 })).toBe(true);
+    setCardDefaults({ opacity: 30, blur: false, unavailable: 'dashed', border: true });
+    expect(cardBlur({ type: 'x' })).toBe(false);
+    setCardDefaults({ opacity: 30, blur: true, unavailable: 'dashed', border: true }, true);
+    expect(cardBlur({ type: 'x', card_blur: true })).toBe(false);
+  });
+});
+
 describe('a see-through card', () => {
   it('carries nothing of it at 100: no mark, no variable, its sheet as before', async () => {
     const card = await mounted();
@@ -87,6 +111,34 @@ describe('a see-through card', () => {
     // the house's blur off: the mark stays, unblurred
     setCardDefaults({ opacity: 100, blur: false, unavailable: 'dashed', border: true });
     expect(card.getAttribute('glass')).toBe('');
+  });
+
+  it('is clear at 0 %, however the house blurs: no fill of it is there to frost (#213)', async () => {
+    const card = await mounted({ card_opacity: 0 });
+    expect(card.getAttribute('glass')).toBe('');
+    expect(card.style.getPropertyValue('--fv-glass')).toBe('0%');
+    // the house's opacity at 0, the same
+    const house = await mounted();
+    setCardDefaults({ opacity: 0, blur: true, unavailable: 'dashed', border: true });
+    expect(house.getAttribute('glass')).toBe('');
+    // 5 % is a fill: it is blurred
+    setCardDefaults({ opacity: 5, blur: true, unavailable: 'dashed', border: true });
+    expect(house.getAttribute('glass')).toBe('blur');
+  });
+
+  it('blurs as its own card_blur says over the house’s, at 0 % too, and never on a device in Lite (#213)', async () => {
+    const frosted = await mounted({ card_opacity: 0, card_blur: true });
+    const clear = await mounted({ card_opacity: 60, card_blur: false });
+    expect(frosted.getAttribute('glass')).toBe('blur');
+    expect(clear.getAttribute('glass')).toBe('');
+    // the house's blur off: its own still wins
+    setCardDefaults({ opacity: 100, blur: false, unavailable: 'dashed', border: true });
+    expect(frosted.getAttribute('glass')).toBe('blur');
+    // a device in Lite blurs nothing, whatever a card asks; Full again, as it asks
+    setCardDefaults({ opacity: 100, blur: false, unavailable: 'dashed', border: true }, true);
+    expect(frosted.getAttribute('glass')).toBe('');
+    setCardDefaults({ opacity: 100, blur: false, unavailable: 'dashed', border: true });
+    expect(frosted.getAttribute('glass')).toBe('blur');
   });
 
   it('follows the house at once, and is solid again when the house is', async () => {

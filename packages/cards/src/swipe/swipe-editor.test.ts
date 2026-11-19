@@ -137,6 +137,12 @@ describe('the swipe card’s editor', () => {
     expect(shown({ cards: CARDS, style: 'plain' })).toContain('color');
   });
 
+  it('shows the blur of what shows through on a see-through surface alone (#213)', () => {
+    expect(shown({ cards: CARDS, card_opacity: 60 })).toContain('card_blur');
+    expect(shown({ cards: CARDS, card_opacity: 100 })).not.toContain('card_blur');
+    expect(shown({ cards: CARDS, card_opacity: 60, style: 'plain' })).not.toContain('card_blur');
+  });
+
   it('shows what the card does where the config says nothing', () => {
     expect(defaults({ type: TYPE }, HOUSE)).toEqual({
       style: 'card',

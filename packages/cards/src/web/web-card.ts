@@ -313,6 +313,7 @@ export class FluvyWebCard extends Card<WebCardConfig> {
     'card_color',
     'card_opacity',
     'card_border',
+    'card_blur',
     ...ACTIONS_BASE,
   ];
   static override keys = configKeys<WebCardConfig>()([

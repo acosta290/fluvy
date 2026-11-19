@@ -614,7 +614,9 @@
     "threshold_helper": "Szám, entitás vagy sablon",
     "below": "Az érték alatt",
     "below_helper": "Kikapcsolva: az értéktől felfelé",
-    "past_threshold": "Küszöbérték átlépésekor"
+    "past_threshold": "Küszöbérték átlépésekor",
+    "card_blur": "Az átlátszó háttér elmosása",
+    "card_blur_helper": "Érintetlenül: az összes kártyáé, a Fluvy beállításaiból; 0 %-nál nincs elmosás"
   },
   "strategy": {
     "home": "Otthon",

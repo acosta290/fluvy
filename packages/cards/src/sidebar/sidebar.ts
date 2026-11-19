@@ -253,10 +253,11 @@ export class FluvySidebar extends FluvyCard {
     const spec = this.spec;
     if (changed.has('spec') && spec) {
       for (const region of REGIONS) this.build(region, spec[region]);
-      const { opacity } = spec;
+      const { opacity, blur } = spec;
       this.config = {
         type: TAG,
         ...(opacity === undefined ? {} : { card_opacity: opacity }),
+        ...(blur === undefined ? {} : { card_blur: blur }),
       } as FluvyCardConfig;
     }
     // how it was left on this device, read once a dashboard

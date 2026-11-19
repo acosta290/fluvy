@@ -1346,7 +1346,9 @@
     "threshold_helper": "Liczba, encja lub szablon",
     "below": "Poniżej wartości",
     "below_helper": "Wyłączone: od wartości w górę",
-    "past_threshold": "Po przekroczeniu progu"
+    "past_threshold": "Po przekroczeniu progu",
+    "card_blur": "Rozmyj to, co prześwituje",
+    "card_blur_helper": "Nieustawione: wspólne dla wszystkich kart, z ustawień Fluvy; przy 0 % bez rozmycia"
   },
   "energy": {
     "solar": "PV",

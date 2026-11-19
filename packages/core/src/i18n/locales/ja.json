@@ -614,7 +614,9 @@
     "threshold_helper": "数値、エンティティ、またはテンプレート",
     "below": "値より下",
     "below_helper": "オフのときは値から上",
-    "past_threshold": "しきい値を超えたとき"
+    "past_threshold": "しきい値を超えたとき",
+    "card_blur": "透けて見える背景をぼかす",
+    "card_blur_helper": "変更しないときは Fluvy の設定のすべてのカードの値（0% ではぼかさない）"
   },
   "strategy": {
     "home": "ホーム",

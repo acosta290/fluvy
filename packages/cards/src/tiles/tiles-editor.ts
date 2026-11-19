@@ -58,6 +58,7 @@ export const base: readonly BaseKey[] = [
   'card_color',
   'card_opacity',
   'card_border',
+  'card_blur',
   'unavailable',
   'slider_style',
   'slider_words',

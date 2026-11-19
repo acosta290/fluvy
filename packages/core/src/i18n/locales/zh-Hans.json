@@ -1993,7 +1993,9 @@
     "threshold_helper": "数字、实体或模板",
     "below": "低于该值",
     "below_helper": "关闭：从该值起向上",
-    "past_threshold": "越过阈值时"
+    "past_threshold": "越过阈值时",
+    "card_blur": "模糊透出的背景",
+    "card_blur_helper": "未设置：沿用 Fluvy 设置中所有卡片的值；0% 时不模糊"
   },
   "energy-period-card": {
     "name": "能源周期",

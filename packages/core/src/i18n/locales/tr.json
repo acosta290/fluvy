@@ -664,7 +664,9 @@
     "threshold_helper": "Bir sayı, bir varlık veya bir şablon",
     "below": "Değerin altında",
     "below_helper": "Kapalıysa, değerden yukarısı",
-    "past_threshold": "Bir eşik geçildiğinde"
+    "past_threshold": "Bir eşik geçildiğinde",
+    "card_blur": "Arkada görüneni bulanıklaştır",
+    "card_blur_helper": "Dokunulmazsa, Fluvy ayarlarındaki tüm kartlarınki; %0’da bulanıklık yok"
   },
   "strategy": {
     "home": "Ana sayfa",

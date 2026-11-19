@@ -664,7 +664,9 @@
     "threshold_helper": "Un numero, un’entità o un template",
     "below": "Sotto il valore",
     "below_helper": "Spento, dal valore in su",
-    "past_threshold": "Oltre una soglia"
+    "past_threshold": "Oltre una soglia",
+    "card_blur": "Sfoca ciò che si vede attraverso",
+    "card_blur_helper": "Invariato, quello di tutte le schede nelle impostazioni di Fluvy; niente sfocatura allo 0 %"
   },
   "strategy": {
     "home": "Casa",

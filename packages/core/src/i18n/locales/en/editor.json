@@ -256,6 +256,8 @@
     "threshold_helper": "A figure, an entity or a template",
     "below": "Under the value",
     "below_helper": "Off: from the value up",
-    "past_threshold": "Past a threshold"
+    "past_threshold": "Past a threshold",
+    "card_blur": "Blur what shows through",
+    "card_blur_helper": "Untouched: every card’s, from Fluvy’s settings; none at 0 %"
   }
 }

@@ -1407,7 +1407,9 @@
     "threshold_helper": "Číslo, entita alebo šablóna",
     "below": "Pod hodnotou",
     "below_helper": "Vypnuté: od hodnoty nahor",
-    "past_threshold": "Po prekročení prahu"
+    "past_threshold": "Po prekročení prahu",
+    "card_blur": "Rozmazať to, čo presvitá",
+    "card_blur_helper": "Bez zmeny: ako pri všetkých kartách v nastaveniach Fluvy; pri 0 % bez rozmazania"
   },
   "page": {
     "menu": "Otvoriť ponuku",

@@ -1,4 +1,5 @@
 import {
+  cardBlur,
   cardDefaults,
   fireEvent,
   guard,
@@ -1323,10 +1324,10 @@ export function withoutLists(
  * them does — on a card with a head (`show_icon`), the circle that shows by itself (`auto`), its own badge shown
  * (`show_badge`), and a name on one line (`name_lines`, a small tile's too); on a card of a list
  * (`hide_empty`), a list that stays in sight while it is empty, its items by Home Assistant's names where it may name
- * them otherwise (`names`); on a card with a surface (`card_opacity`), the house's
- * opacity and border for every card; on a card of entities (`unavailable`), how the house draws every card out of
- * reach; on a card with a slider (`slider_style`), the house's style and the words under it; on a device card
- * (`tint_style`), when the house's devices show their state's colour, and as what.
+ * them otherwise (`names`); on a card with a surface (`card_opacity`), the house's opacity, border and blur for every
+ * card (the blur as it falls at the card's opacity: none at 0 %); on a card of entities (`unavailable`), how the
+ * house draws every card out of reach; on a card with a slider (`slider_style`), the house's style and the words
+ * under it; on a device card (`tint_style`), when the house's devices show their state's colour, and as what.
  */
 export function editorDefaults(
   form: LovelaceConfigForm,
@@ -1351,7 +1352,11 @@ export function editorDefaults(
     ? (config, hass) => ({
         ...shared,
         ...(surface
-          ? { card_opacity: cardDefaults().opacity, card_border: cardDefaults().border }
+          ? {
+              card_opacity: cardDefaults().opacity,
+              card_border: cardDefaults().border,
+              card_blur: cardBlur(config),
+            }
           : {}),
         ...(away ? { unavailable: cardDefaults().unavailable } : {}),
         ...(sliders ? { slider_style: 'house', slider_words: sliderDefaults().words } : {}),
@@ -1375,6 +1380,7 @@ export function editorDefaults(
 export const HOUSE_KEYS: ReadonlySet<string> = new Set([
   'card_opacity',
   'card_border',
+  'card_blur',
   'unavailable',
   'slider_words',
   'tint',

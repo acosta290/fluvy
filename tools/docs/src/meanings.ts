@@ -28,6 +28,8 @@ export const MEANINGS: Readonly<Record<string, string>> = {
   badge_warn: 'The head’s badge while rows are outside their range; {count} is how many.',
   battery_entity: 'The battery sensor the card reads its charge from.',
   camera_view: 'Shows still pictures that refresh by themselves, or Home Assistant’s live stream.',
+  card_blur:
+    'Whether what shows through a see-through card is blurred. Left out, the house’s, and none at 0 %.',
   card_border: 'Whether the card draws its hairline border. Left out, the house’s.',
   card_color: 'Paints the card’s surface in a colour of your own.',
   card_opacity:

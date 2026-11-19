@@ -664,7 +664,9 @@
     "threshold_helper": "Een getal, een entiteit of een sjabloon",
     "below": "Onder de waarde",
     "below_helper": "Uit: vanaf de waarde omhoog",
-    "past_threshold": "Voorbij een drempel"
+    "past_threshold": "Voorbij een drempel",
+    "card_blur": "Wat doorschijnt vervagen",
+    "card_blur_helper": "Onaangeroerd: die van alle kaarten, uit de instellingen van Fluvy; geen vervaging bij 0 %"
   },
   "strategy": {
     "home": "Thuis",
