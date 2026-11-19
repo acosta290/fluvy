@@ -1653,6 +1653,8 @@
     "dashboard.name_lines": "Nomes longos",
     "dashboard.one_line": "Uma linha",
     "dashboard.two_lines": "Duas linhas",
+    "wall.subview_none": "Nenhum",
+    "wall.subview_none_sub": "Apenas a vista secundária: as vistas secundárias do Fluvy voltam pelo título e a saída continua no canto",
     "cards.levels": "Os ícones mostram o nível",
     "cards.levels_sub": "A carga de uma bateria, as barras de um sinal, uma válvula aberta ou fechada"
   },

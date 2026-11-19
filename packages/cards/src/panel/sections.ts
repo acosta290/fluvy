@@ -2270,9 +2270,16 @@ export function wall(ctx: PanelContext): TemplateResult {
         [
           chip(ctx.t('wall.subview_button'), 'button', settings.subview === 'button'),
           chip(ctx.t('wall.subview_header'), 'header', settings.subview === 'header'),
+          chip(ctx.t('wall.subview_none'), 'none', settings.subview === 'none'),
         ],
         admin ? (key) => edit({ subview: key as WallSettings['subview'] }) : null,
       )}
+      ${
+        // no way back (#222): how a subview is left then
+        settings.subview === 'none'
+          ? html`<p class="pn-hint pn-hint--after">${ctx.t('wall.subview_none_sub')}</p>`
+          : nothing
+      }
     </section>
     <section class="fv-card pn-card">
       ${head({ icon: 'sun', title: ctx.t('wall.day_night'), ...(admin ? {} : { sub: ctx.t('scope.admin_only') }) })}

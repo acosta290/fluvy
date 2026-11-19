@@ -87,8 +87,12 @@ export const MAX_SAVED_PALETTES = 12;
 export type WallTheme = 'dark' | 'follow' | 'sun' | 'hours';
 /** The way out of a wall: a small button in the corner (a tap leaves), or a hidden hold of the corner (it pauses). */
 export type WallExit = 'button' | 'hold';
-/** The way back from a subview on a wall: a floating button with the view's title, or Home Assistant's header. */
-export type WallSubview = 'button' | 'header';
+/**
+ * The way back from a subview on a wall: a floating button with the view's title, Home Assistant's header, or none
+ * (#222: the subview alone, left by what it holds — a heading's link back — or by the exit corner).
+ */
+export const WALL_SUBVIEWS = ['button', 'header', 'none'] as const;
+export type WallSubview = (typeof WALL_SUBVIEWS)[number];
 /**
  * What lies behind a wall's cards: the page's colour alone, the wall mesh, or the dashboard's own background (1.19,
  * #155: the house's, or the wall dashboard's) — the wall's choice wins on a wall, so a wall stays plain until asked.
@@ -391,7 +395,7 @@ export function parseWall(raw: unknown): WallSettings {
     nightDim: oneOfNumbers(value['nightDim'], WALL_NIGHT_DIM) ? value['nightDim'] : d.nightDim,
     background: oneOf(value['background'], WALL_BACKGROUNDS) ? value['background'] : d.background,
     exit: oneOf(value['exit'], ['button', 'hold'] as const) ? value['exit'] : d.exit,
-    subview: oneOf(value['subview'], ['button', 'header'] as const) ? value['subview'] : d.subview,
+    subview: oneOf(value['subview'], WALL_SUBVIEWS) ? value['subview'] : d.subview,
   };
 }
 

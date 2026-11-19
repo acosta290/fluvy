@@ -530,6 +530,9 @@ describe('parsing stored settings', () => {
     ).toEqual(WALL_DEFAULTS);
     // a wall saved before the way out could be chosen has the button
     expect(parseWall({ after: 5 }).exit).toBe('button');
+    // no way back from a subview (#222); a wall that never chose keeps the button
+    expect(parseWall({ subview: 'none' }).subview).toBe('none');
+    expect(parseWall({ after: 5 }).subview).toBe('button');
     // the dashboard's background let through (1.19, #155); plain until asked, as before
     expect(parseWall({ background: 'dashboard' }).background).toBe('dashboard');
     expect(parseWall({ after: 5 }).background).toBe('plain');

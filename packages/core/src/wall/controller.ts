@@ -264,8 +264,9 @@ export function createWall(deps: WallDeps): WallHandle {
   };
 
   /**
-   * The way back from a subview, as the house chose it: the floating button with the view's title, or Home Assistant's
-   * header (the shell's wall sheets fill on the attributes) with the corner moved under it.
+   * The way back from a subview, as the house chose it: the floating button with the view's title, Home Assistant's
+   * header (the shell's wall sheets fill on the attributes) with the corner moved under it, or none (#222): the
+   * subview alone, its view's top its own.
    */
   const syncWay = (): void => {
     const on = phase === 'awake' || phase === 'asleep';

@@ -1653,6 +1653,8 @@
     "dashboard.name_lines": "Lange namen",
     "dashboard.one_line": "Eén regel",
     "dashboard.two_lines": "Twee regels",
+    "wall.subview_none": "Geen",
+    "wall.subview_none_sub": "Alleen de subweergave: de subweergaven van Fluvy leiden terug via hun kop, en de uitweg blijft in de hoek",
     "cards.levels": "Pictogrammen tonen het niveau",
     "cards.levels_sub": "De lading van een batterij, de streepjes van een signaal, een klep open of dicht"
   },

@@ -3151,6 +3151,8 @@
     "dashboard.name_lines": "Lange navne",
     "dashboard.one_line": "Én linje",
     "dashboard.two_lines": "To linjer",
+    "wall.subview_none": "Ingen",
+    "wall.subview_none_sub": "Kun under-visningen: Fluvys under-visninger fører tilbage fra deres overskrift, og vejen ud bliver i hjørnet",
     "cards.levels": "Ikoner viser niveauet",
     "cards.levels_sub": "Et batteris opladning, et signals streger, en ventil åben eller lukket"
   },

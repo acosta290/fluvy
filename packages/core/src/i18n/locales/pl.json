@@ -2746,6 +2746,8 @@
     "dashboard.name_lines": "Długie nazwy",
     "dashboard.one_line": "Jeden wiersz",
     "dashboard.two_lines": "Dwa wiersze",
+    "wall.subview_none": "Brak",
+    "wall.subview_none_sub": "Sam podwidok: podwidoki Fluvy prowadzą z powrotem z nagłówka, a wyjście zostaje w rogu",
     "cards.levels": "Ikony pokazują poziom",
     "cards.levels_sub": "Naładowanie baterii, kreski sygnału, zawór otwarty lub zamknięty"
   },

@@ -1275,13 +1275,16 @@ azimuth. No shape of its own: each part is a control the house already has, read
   The corner's, the toast's and the way back's words are the core's (`wall`): a wall that never opened the settings
   panel speaks them in every language.
 - **The way back from a subview** (1.6): the wall has no header, so Home Assistant's back arrow goes with it. The house
-  chooses between two ways back:
+  chooses between two ways back, or none:
   - **The button** (the default): the corner's disc grown into a pill at the top left, on the corner's line. It is 32
     tall in a 44 target, 6 from the edges, on the card's fill at 88 % with the hairline and the knob's drop. It holds
     a 20 chevron in the secondary ink, 4, then the view's title at 14/600, which ends in an ellipsis at half the
-    screen. It is there for as long as the subview is: navigation is never hidden. The view keeps the pill's 44 above
-    its cards, and a tap is Home Assistant's own way back (`back_path`, else its history).
+    screen. It is there for as long as the subview is. The view keeps the pill's 44 above its cards, and a tap is
+    Home Assistant's own way back (`back_path`, else its history).
   - **Home Assistant's header**, in subviews only, with the corner moved under it.
+  - **None** (1.23, #222): the subview alone, its cards from the top, as a wall's own views stand. The house asked for
+    it, and the panel says how a subview is left then: by its own links (the automatic dashboards' subviews lead back
+    from their heading) or by the exit corner, which stays.
 - The **screensaver** is a modal in the top layer: the wall mesh (or black), the digital clock in its hero size with
   the date under it in a 480 column, centred; dimmed, the clock is white at 60 %. It fades in over 320 ms and out over
   200; the touch that wakes it reaches nothing under it. At night the wall may lay a black veil at 20, 40 or 60 % over

@@ -30,6 +30,9 @@ Settings are never walls, so a tablet can always be administered from itself.
     `back_path`, or back where you came from.
   - **Header**: Home Assistant's header, with its arrow and the view's name, in subviews only. The exit corner moves
     under it.
+  - **None** (1.23): the subview alone, from the top of the screen, with nothing over it. It is left by what it holds:
+    the subviews of Fluvy's automatic dashboards lead back from their heading, and a subview of your own needs a
+    heading or a button that navigates back. The exit corner stays.
 - **Screensaver**: after 2, 5, 10 or 30 minutes without a touch (or never), the screen shows the clock and the weather
   over the wall background, or dims to black. Any touch wakes it — that touch does nothing else. A motion or
   occupancy sensor chosen as *Wake on motion* (a dropdown of every one the house has, with its room) wakes it too.

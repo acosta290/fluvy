@@ -7,7 +7,8 @@ const s = strings('wall');
 /*
  * The way back from a subview on a wall, at the top left: a pill on the card's fill — the corner's disc, grown to hold
  * a chevron and the view's title — on the corner's line (centred 22 down, in a 44 target). It is there for as long as
- * the subview is (navigation is never hidden); a tap goes back as Home Assistant's own arrow does.
+ * the subview is, unless the house chose no way back (#222: the subview's own links and the exit corner remain); a
+ * tap goes back as Home Assistant's own arrow does.
  */
 export class FluvyWallBack extends LitElement {
   static override properties = { hass: { attribute: false }, title: {} };

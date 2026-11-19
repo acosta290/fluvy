@@ -14,6 +14,7 @@ import {
   TABS_DEFAULTS,
   CHROME_DEFAULTS,
   CHART_DEFAULTS,
+  WALL_DEFAULTS,
 } from '@fluvy/core';
 import { exportSettings, importPalette, importSettings } from './actions.js';
 import { COMMUNITY_PALETTES } from '@fluvy/tokens/community';
@@ -809,6 +810,25 @@ describe('the settings panel', () => {
     await barGone(root);
     await settle();
     expect(handle.settings().wall.exit).toBe('hold');
+    panel.remove();
+  });
+
+  it('lets the house leave a wall’s subview with no way back (#222), saying how it is left then', async () => {
+    const { panel, root, chip, button, handle, settle } = await mount();
+    panel.tab = 'wall';
+    await settle();
+    const hint = 'Fluvy’s subviews lead back from their heading';
+    expect(chip('Back button')?.classList.contains('is-active')).toBe(true);
+    expect(root.textContent).not.toContain(hint);
+    chip('None')!.click();
+    await settle();
+    expect(chip('None')?.classList.contains('is-active')).toBe(true);
+    expect(root.textContent).toContain(hint);
+    expect(root.querySelector('.pn-bar')?.textContent).toContain('Wall · Back from a subview');
+    button('Save')!.click();
+    await barGone(root);
+    await settle();
+    expect(handle.settings().wall.subview).toBe('none');
     panel.remove();
   });
 
@@ -3026,7 +3046,7 @@ describe('the settings panel', () => {
     panel.remove();
   });
 
-  it('exports every setting and the automatic dashboard’s options, and imports them back — the charts and their sets too (1.11), the cards’ surface (1.15), their look out of reach (1.16), their border, a person’s hold to slide and the page’s background, the house’s and a dashboard’s own (1.19), whether the details dialog’s history is ours (1.20), the order of the house’s rooms (1.21), the devices’ state colour (1.22), the icons’ levels (1.23)', async () => {
+  it('exports every setting and the automatic dashboard’s options, and imports them back — the charts and their sets too (1.11), the cards’ surface (1.15), their look out of reach (1.16), their border, a person’s hold to slide and the page’s background, the house’s and a dashboard’s own (1.19), whether the details dialog’s history is ours (1.20), the order of the house’s rooms (1.21), the devices’ state colour (1.22), the icons’ levels and a wall with no way back from a subview (1.23)', async () => {
     const saved: { type: string; url_path?: string; config?: unknown }[] = [];
     // the long lists' caps travel too, list by list (#78)
     const caps = { lights: 12, humidity: 'none' };
@@ -3120,6 +3140,8 @@ describe('the settings panel', () => {
       stateTintStyle: 'edge',
       // whether Fluvy's icons show their level (1.23, #226)
       levelIcons: true,
+      // a wall's subviews with no way back (1.23, #222)
+      wall: { ...WALL_DEFAULTS, subview: 'none' },
     });
     // and the person's own: their sliders wait for a hold on a touch screen (1.19, #166)
     await handle.store.savePersonal({ language: 'es', haptics: false, holdToSlide: true });
@@ -3166,6 +3188,7 @@ describe('the settings panel', () => {
       stateTint: 'always',
       stateTintStyle: 'edge',
       levelIcons: true,
+      wall: { subview: 'none' },
     });
     expect(exported['personal']).toMatchObject({
       version: SETTINGS_VERSION,
@@ -3200,6 +3223,7 @@ describe('the settings panel', () => {
       stateTint: 'off',
       stateTintStyle: 'wash',
       levelIcons: false,
+      wall: WALL_DEFAULTS,
     });
     await handle.store.savePersonal({ language: 'auto', haptics: true, holdToSlide: false });
     importSettings(
@@ -3239,6 +3263,7 @@ describe('the settings panel', () => {
       'edge',
     ]);
     expect(handle.settings().levelIcons).toBe(true);
+    expect(handle.settings().wall.subview).toBe('none');
     expect(saved.at(-1)?.config).toEqual({
       strategy: {
         type: 'custom:fluvy-home',

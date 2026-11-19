@@ -2978,6 +2978,8 @@
     "dashboard.name_lines": "長い名前",
     "dashboard.one_line": "1行",
     "dashboard.two_lines": "2行",
+    "wall.subview_none": "なし",
+    "wall.subview_none_sub": "サブビューだけを表示します。Fluvyのサブビューは見出しから戻れ、終了方法は隅に残ります",
     "cards.levels": "アイコンでレベルを表示",
     "cards.levels_sub": "バッテリーの残量、信号の強さ、バルブの開閉"
   },

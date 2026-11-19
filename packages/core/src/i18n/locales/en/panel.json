@@ -492,6 +492,8 @@
     "dashboard.name_lines": "Long names",
     "dashboard.one_line": "One line",
     "dashboard.two_lines": "Two lines",
+    "wall.subview_none": "None",
+    "wall.subview_none_sub": "The subview alone: Fluvy’s subviews lead back from their heading, and the way out stays in the corner",
     "cards.levels": "Icons show their level",
     "cards.levels_sub": "A battery’s charge, a signal’s bars, a valve open or shut"
   }

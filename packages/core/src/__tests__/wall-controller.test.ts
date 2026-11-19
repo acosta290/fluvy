@@ -237,6 +237,34 @@ describe('the wall controller', () => {
     expect(html.hasAttribute(WALL_HEADER_ATTRIBUTE)).toBe(false);
   });
 
+  it('a house that chooses no way back (#222): the subview alone, no button, no header, the corner kept', async () => {
+    const { wall, shown, change } = setup({ subview: 'none' });
+    await vi.advanceTimersByTimeAsync(1);
+    const html = document.documentElement;
+    const root = showView({ subview: true, title: 'Kitchen' });
+    await vi.advanceTimersByTimeAsync(1);
+    expect(html.hasAttribute(WALL_HEADER_ATTRIBUTE)).toBe(false);
+    expect(html.hasAttribute(WALL_BACK_ATTRIBUTE)).toBe(false);
+    expect(html.style.getPropertyValue(WALL_TOP_VAR)).toBe('');
+    expect(shown.back).toBe(0);
+    expect(shown.corner).toBe(1);
+    // the button chosen again: it comes on the subview shown
+    change({ subview: 'button' });
+    await vi.advanceTimersByTimeAsync(1);
+    expect(html.hasAttribute(WALL_BACK_ATTRIBUTE)).toBe(true);
+    root.dispatchEvent(
+      new CustomEvent(VIEW_EVENT, {
+        bubbles: true,
+        composed: true,
+        detail: { subview: true, title: 'Kitchen' },
+      }),
+    );
+    await vi.advanceTimersByTimeAsync(1);
+    expect(shown.back).toBe(1);
+    root.remove();
+    wall.stop();
+  });
+
   it('sleeps after the minutes, wakes on the screensaver’s touch, and forces the night’s mode', async () => {
     const { wall, states, shown, wake } = setup({ after: 2, theme: 'dark' });
     expect(states.at(-1)).toEqual({ on: true, dark: true });

@@ -3014,6 +3014,8 @@
     "dashboard.name_lines": "长名称",
     "dashboard.one_line": "一行",
     "dashboard.two_lines": "两行",
+    "wall.subview_none": "无",
+    "wall.subview_none_sub": "只显示子视图：Fluvy 的子视图可从标题返回，退出方式仍在角落",
     "cards.levels": "图标显示级别",
     "cards.levels_sub": "电池电量、信号格数、阀门开关"
   },
