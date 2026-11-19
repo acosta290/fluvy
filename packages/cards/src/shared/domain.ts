@@ -3,8 +3,10 @@ import {
   isUsable,
   localize,
   stateText,
+  strings,
   type EntityView,
   type HomeAssistant,
+  type MessageKey,
 } from '@fluvy/core';
 import { stateIcon, type GlyphName, type IconRef, type Tone } from '@fluvy/ui';
 
@@ -167,6 +169,49 @@ export function iconOf(view: EntityView, own?: string): IconRef | string {
  */
 export function stateWord(hass: HomeAssistant | undefined, view: EntityView): string {
   return view.status === 'missing' ? localize(hass, 'state.not_found') : stateText(hass, view);
+}
+
+/** A device class whose word is another family's own (a gauge's "power" reads Energy's, "humidity" Climate's). */
+const SHARED_CLASS_LABEL: Readonly<Record<string, MessageKey>> = {
+  power: 'energy.power',
+  humidity: 'climate.humidity',
+  battery: 'energy.battery',
+};
+
+/** A device class the gauge's own words cover, where none of Home Assistant's or a shared family's name it. */
+const CLASS_LABEL: Readonly<Record<string, string>> = {
+  energy: 'energy',
+  temperature: 'temperature',
+  pressure: 'pressure',
+  atmospheric_pressure: 'pressure',
+  speed: 'speed',
+  wind_speed: 'speed',
+  illuminance: 'illuminance',
+  current: 'current',
+  voltage: 'voltage',
+};
+
+const gaugeWords = strings('gauge');
+
+/**
+ * What a numeric reading of this device class is called, for a card with no name of its own to borrow: Home
+ * Assistant's own word for the class, else a shared family's, else the gauge's, else the class itself, title-cased;
+ * "Value" for a reading with no class at all.
+ */
+export function classWord(
+  hass: HomeAssistant | undefined,
+  deviceClass: string | undefined,
+): string {
+  if (!deviceClass) return gaugeWords(hass, 'value');
+  const key = `component.sensor.entity_component.${deviceClass}.name`;
+  const native = hass?.localize(key);
+  if (native && native !== key) return native;
+  const shared = SHARED_CLASS_LABEL[deviceClass];
+  if (shared) return localize(hass, shared);
+  const local = CLASS_LABEL[deviceClass];
+  if (local) return gaugeWords(hass, local as Parameters<typeof gaugeWords>[1]);
+  const words = deviceClass.replace(/_/g, ' ');
+  return words.charAt(0).toUpperCase() + words.slice(1);
 }
 
 /** Covers that are a way in, not a window's shade: a garage door, a gate, a door (their classes). */

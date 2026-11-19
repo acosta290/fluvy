@@ -1181,7 +1181,8 @@
     "vehicle": "車両",
     "items": "項目",
     "chart": "グラフ",
-    "swipe": "スワイプ"
+    "swipe": "スワイプ",
+    "compass": "コンパス"
   },
   "activity": {
     "title": "アクティビティ",
@@ -1889,7 +1890,8 @@
     "vehicle": "電気自動車、ガソリン車、ディーゼル車、プラグインハイブリッド車：バッテリーまたは燃料タンク、航続距離と充電上限、満充電の時刻、現在地、そしてロック、空調、充電、トランク、窓を1行に。Tesla、BMW、Renault、Volvo、Kia、Hyundai、Volkswagen、Škoda、Polestar、MG、Toyota、Ford、Mercedes-Benz、Peugeotなど。",
     "items": "センサーのリスト属性の項目を1行ずつ（上空のフライト、出発便、配達）。FlightRadar24用のフライトプリセット付き。",
     "chart": "あらゆる時系列を1つのグラフに（履歴、統計、Nordpoolの価格や太陽光予報のような属性内のリスト、天気の予報）。過去から未来まで現在を示し、しきい値をその色で、最も安い時間帯を見つけます。",
-    "swipe": "どんなカードも1ページに1枚、スワイプか下のページマークでめくれます。広い画面では横に並べ、最後のページから最初へ戻ることもできます。"
+    "swipe": "どんなカードも1ページに1枚、スワイプか下のページマークでめくれます。広い画面では横に並べ、最後のページから最初へ戻ることもできます。",
+    "compass": "風速と風向、車両の進行方位、またはあらゆる方位を30°のコンパスリングに表示し、第2の方位マーカーと下部に最大3つの数値を備えます。"
   },
   "alarm": {
     "arm_home": "在宅警戒",
@@ -3575,5 +3577,27 @@
     "copy": "YAMLをコピー",
     "copied": "YAMLをコピーしました",
     "copy_failed": "コピーできませんでした：テキストを選択してコピーしてください"
+  },
+  "compass": {
+    "direction": "方位",
+    "direction_entity": "方位エンティティ",
+    "secondary_direction_entity": "第2方位エンティティ",
+    "indicator": "メインポインター",
+    "indicator_opacity": "メインの不透明度",
+    "secondary_indicator": "サブポインター",
+    "secondary_opacity": "サブの不透明度",
+    "warn_above": "警告しきい値",
+    "danger_above": "危険しきい値",
+    "north_offset": "北のオフセット (°)",
+    "label": "ラベル",
+    "badge": "バッジ",
+    "show_ticks": "目盛りを表示",
+    "show_cardinals": "方位記号を表示",
+    "show_stats": "表示値を表示",
+    "indicator_pointer": "ポインター",
+    "indicator_knob": "ノブ",
+    "indicator_arrow_in": "内向き矢印",
+    "indicator_arrow_out": "外向き矢印",
+    "indicator_circle": "サークル"
   }
 }

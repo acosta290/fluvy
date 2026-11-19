@@ -2,7 +2,7 @@
 
 # The cards
 
-Sixty-seven cards, each in the card picker as **Fluvy · …** with a live preview and an editor. Every card has a page of its own: its picture, an example in YAML, a picture of each of its layouts, a YAML with every option, and what each option does. [The live demo](https://acosta290.github.io/fluvy/) has each one to try.
+Sixty-eight cards, each in the card picker as **Fluvy · …** with a live preview and an editor. Every card has a page of its own: its picture, an example in YAML, a picture of each of its layouts, a YAML with every option, and what each option does. [The live demo](https://acosta290.github.io/fluvy/) has each one to try.
 
 In YAML a card is `type: custom:fluvy-<name>-card` plus the entity or entities it draws and any of its options; an option left at its default is left out.
 
@@ -56,14 +56,14 @@ In YAML a card is `type: custom:fluvy-<name>-card` plus the entity or entities i
 <td align="center" valign="top" width="33%"><a href="cards/weather.md"><picture><source media="(prefers-color-scheme: dark)" srcset="images/cards/thumbs/weather-dark.webp"><img src="images/cards/thumbs/weather-light.webp" width="280" alt=""></picture><br><b>Weather</b></a><br>Condition, temperature, feels-like, wind and the daily or hourly forecast.</td>
 </tr></tbody>
 <tbody><tr>
+<td align="center" valign="top" width="33%"><a href="cards/compass.md"><picture><source media="(prefers-color-scheme: dark)" srcset="images/cards/thumbs/compass-dark.webp"><img src="images/cards/thumbs/compass-light.webp" width="280" alt=""></picture><br><b>Compass</b></a><br>Wind speed and direction, a vehicle’s heading or any bearing on a 360° compass ring, with a secondary marker and up to three readouts underneath.</td>
 <td align="center" valign="top" width="33%"><a href="cards/sensor.md"><picture><source media="(prefers-color-scheme: dark)" srcset="images/cards/thumbs/sensor-dark.webp"><img src="images/cards/thumbs/sensor-light.webp" width="280" alt=""></picture><br><b>Sensor</b></a><br>A sensor with its curve, trend, min, max and average, or up to three sensors on one chart.</td>
 <td align="center" valign="top" width="33%"><a href="cards/readouts.md"><picture><source media="(prefers-color-scheme: dark)" srcset="images/cards/thumbs/readouts-dark.webp"><img src="images/cards/thumbs/readouts-light.webp" width="280" alt=""></picture><br><b>Readouts</b></a><br>Up to four values side by side with their trends.</td>
-<td align="center" valign="top" width="33%"><a href="cards/people.md"><picture><source media="(prefers-color-scheme: dark)" srcset="images/cards/thumbs/people-dark.webp"><img src="images/cards/thumbs/people-light.webp" width="280" alt=""></picture><br><b>People</b></a><br>Who is home: avatars, zones, times and phone batteries, each person with a tap of their own.</td>
 </tr></tbody>
 <tbody><tr>
+<td align="center" valign="top" width="33%"><a href="cards/people.md"><picture><source media="(prefers-color-scheme: dark)" srcset="images/cards/thumbs/people-dark.webp"><img src="images/cards/thumbs/people-light.webp" width="280" alt=""></picture><br><b>People</b></a><br>Who is home: avatars, zones, times and phone batteries, each person with a tap of their own.</td>
 <td align="center" valign="top" width="33%"><a href="cards/openings.md"><picture><source media="(prefers-color-scheme: dark)" srcset="images/cards/thumbs/openings-dark.webp"><img src="images/cards/thumbs/openings-light.webp" width="280" alt=""></picture><br><b>Openings</b></a><br>Doors, windows and motion at a glance, with what is open counted.</td>
 <td align="center" valign="top" width="33%"><a href="cards/alerts.md"><picture><source media="(prefers-color-scheme: dark)" srcset="images/cards/thumbs/alerts-dark.webp"><img src="images/cards/thumbs/alerts-light.webp" width="280" alt=""></picture><br><b>Alerts</b></a><br>What needs a look — low batteries, devices gone, doors left open, leaks, updates, repairs — each from one line, as tiles, chips, rows or a banner, hidden while all is clear.</td>
-<td align="center" valign="top" width="33%"></td>
 </tr></tbody>
 </table>
 

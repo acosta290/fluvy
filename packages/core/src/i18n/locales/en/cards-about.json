@@ -66,6 +66,7 @@
     "vehicle": "A car, electric, petrol, diesel or plug-in hybrid: its battery or tank, range and charge limit, when it is full, where it is, and its lock, climate, charging, boot and windows in one row. Tesla, BMW, Renault, Volvo, Kia, Hyundai, Volkswagen, Škoda, Polestar, MG, Toyota, Ford, Mercedes-Benz, Peugeot and more.",
     "items": "The items of a sensor’s list attribute, a row each — flights overhead, departures, deliveries — with a flights preset for FlightRadar24.",
     "chart": "Any time series on one chart — history, statistics, a list in an attribute (Nordpool’s prices, a solar forecast) or a weather’s forecast — past to future with now marked, thresholds in their colours and the cheapest hours found.",
-    "swipe": "Any cards, one a page, turned by a swipe or the page marks under them: side by side on a wide screen, round from the last to the first."
+    "swipe": "Any cards, one a page, turned by a swipe or the page marks under them: side by side on a wide screen, round from the last to the first.",
+    "compass": "Wind speed and direction, a vehicle’s heading or any bearing on a 360° compass ring, with a secondary marker and up to three readouts underneath."
   }
 }

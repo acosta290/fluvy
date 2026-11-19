@@ -2076,7 +2076,8 @@
     "vehicle": "Ein Elektroauto, Verbrenner oder Plug-in-Hybrid: Akku oder Tank, Reichweite und Ladelimit, wann es voll ist, wo es ist, und Schloss, Klima, Laden, Kofferraum und Fenster in einer Zeile. Tesla, BMW, Renault, Volvo, Kia, Hyundai, Volkswagen, Škoda, Polestar, MG, Toyota, Ford, Mercedes-Benz, Peugeot und mehr.",
     "items": "Die Einträge des Listenattributs eines Sensors, eine Zeile je Eintrag (Flüge über dir, Abfahrten, Lieferungen), mit einer Flug-Voreinstellung für FlightRadar24.",
     "chart": "Jede Zeitreihe in einem Diagramm (Verlauf, Statistik, eine Liste in einem Attribut wie die Preise von Nordpool oder eine Solarprognose, oder die Vorhersage eines Wetters), von der Vergangenheit bis in die Zukunft mit markiertem Jetzt, Schwellenwerte in ihren Farben und die günstigsten Stunden gefunden.",
-    "swipe": "Beliebige Karten, eine pro Seite, zum Wischen oder über die Seitenmarken darunter: auf breiten Bildschirmen nebeneinander, von der letzten wieder zur ersten."
+    "swipe": "Beliebige Karten, eine pro Seite, zum Wischen oder über die Seitenmarken darunter: auf breiten Bildschirmen nebeneinander, von der letzten wieder zur ersten.",
+    "compass": "Windgeschwindigkeit und -richtung, der Kurs eines Fahrzeugs oder jede beliebige Richtung auf einem 360°-Kompassring, mit zweiter Richtungsmarkierung und bis zu drei Messwerten darunter."
   },
   "time": {
     "minutes_ago": "vor {n} min",
@@ -2544,7 +2545,8 @@
     "vehicle": "Fahrzeug",
     "items": "Einträge",
     "chart": "Diagramm",
-    "swipe": "Wischen"
+    "swipe": "Wischen",
+    "compass": "Kompass"
   },
   "appliance": {
     "kind_washer": "Waschmaschine",
@@ -3575,5 +3577,27 @@
     "copy": "YAML kopieren",
     "copied": "YAML kopiert",
     "copy_failed": "Kopieren nicht möglich: Text markieren und kopieren"
+  },
+  "compass": {
+    "direction": "Richtung",
+    "direction_entity": "Richtungs-Entität",
+    "secondary_direction_entity": "Zweite Richtungs-Entität",
+    "indicator": "Primärer Zeiger",
+    "indicator_opacity": "Deckkraft primärer Zeiger",
+    "secondary_indicator": "Zweiter Zeiger",
+    "secondary_opacity": "Deckkraft zweiter Zeiger",
+    "warn_above": "Warnung ab",
+    "danger_above": "Gefahr ab",
+    "north_offset": "Nord-Versatz (°)",
+    "label": "Beschriftung",
+    "badge": "Abzeichen",
+    "show_ticks": "Skalenstriche anzeigen",
+    "show_cardinals": "Himmelsrichtungen anzeigen",
+    "show_stats": "Messwerte anzeigen",
+    "indicator_pointer": "Zeiger",
+    "indicator_knob": "Punkt",
+    "indicator_arrow_in": "Pfeil nach innen",
+    "indicator_arrow_out": "Pfeil nach außen",
+    "indicator_circle": "Kreis"
   }
 }

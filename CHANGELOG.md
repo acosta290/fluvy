@@ -5,6 +5,14 @@ and the versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- The Compass card (`custom:fluvy-compass-card`) draws a bearing — wind, a vehicle’s heading, a dish’s or the sun’s —
+  on a 360° ring with degree ticks and localised cardinal points, a primary pointer and an optional second one to
+  compare against (`direction_entity`, `secondary_direction_entity`), a reading in its centre that turns to a warning
+  or a danger past a threshold, and up to three more readouts underneath, after tomvanswam’s compass-card (#209, by
+  @twodrops).
+
 ### Changed
 
 - Czech says what Home Assistant says where Home Assistant names the same thing, read from a Czech instance: a tap is

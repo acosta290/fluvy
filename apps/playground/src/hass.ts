@@ -36,6 +36,7 @@ const MEASURE_WORDS: Record<string, Record<string, string>> = {
     humidity: 'Humidity',
     power: 'Power',
     atmospheric_pressure: 'Atmospheric pressure',
+    wind_speed: 'Wind speed',
   },
   es: {
     temperature: 'Temperatura',

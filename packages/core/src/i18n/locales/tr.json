@@ -2076,7 +2076,8 @@
     "vehicle": "Elektrikli, benzinli, dizel ya da plug-in hibrit bir araç: bataryası ya da deposu, menzili ve şarj sınırı, ne zaman dolacağı, nerede olduğu ve tek satırda kilit, klima, şarj, bagaj ve camlar. Tesla, BMW, Renault, Volvo, Kia, Hyundai, Volkswagen, Škoda, Polestar, MG, Toyota, Ford, Mercedes-Benz, Peugeot ve daha fazlası.",
     "items": "Bir sensörün liste özniteliğindeki öğeler, her biri bir satır (üstten geçen uçuşlar, kalkışlar, teslimatlar), FlightRadar24 için bir uçuş ön ayarıyla.",
     "chart": "Tek grafikte herhangi bir zaman serisi (geçmiş, istatistikler, Nordpool fiyatları veya güneş tahmini gibi bir öznitelikteki liste ya da bir hava durumunun tahmini), şimdi işaretli olarak geçmişten geleceğe, eşikler kendi renklerinde ve en ucuz saatler bulunmuş.",
-    "swipe": "Herhangi kartlar, sayfa başına bir tane, kaydırarak ya da altlarındaki sayfa işaretleriyle çevrilir: geniş ekranda yan yana, sondan yeniden başa."
+    "swipe": "Herhangi kartlar, sayfa başına bir tane, kaydırarak ya da altlarındaki sayfa işaretleriyle çevrilir: geniş ekranda yan yana, sondan yeniden başa.",
+    "compass": "360° pusula halkasında rüzgâr hızı ve yönü, bir aracın yönü veya herhangi bir yön, ikincil yön işaretçisi ve altında en fazla üç okuma ile."
   },
   "time": {
     "minutes_ago": "{n} dk önce",
@@ -2544,7 +2545,8 @@
     "vehicle": "Araç",
     "items": "Öğeler",
     "chart": "Grafik",
-    "swipe": "Kaydırma"
+    "swipe": "Kaydırma",
+    "compass": "Pusula"
   },
   "appliance": {
     "kind_washer": "Çamaşır makinesi",
@@ -3575,5 +3577,27 @@
     "copy": "YAML’i kopyala",
     "copied": "YAML kopyalandı",
     "copy_failed": "Kopyalanamadı: metni seçip kopyalayın"
+  },
+  "compass": {
+    "direction": "Yön",
+    "direction_entity": "Yön varlığı",
+    "secondary_direction_entity": "İkincil yön varlığı",
+    "indicator": "Birincil gösterge",
+    "indicator_opacity": "Birincil opaklık",
+    "secondary_indicator": "İkincil gösterge",
+    "secondary_opacity": "İkincil opaklık",
+    "warn_above": "Şunun üzerinde uyar",
+    "danger_above": "Şunun üzerinde tehlike",
+    "north_offset": "Kuzey sapması (°)",
+    "label": "Etiket",
+    "badge": "Rozet",
+    "show_ticks": "Çizgileri göster",
+    "show_cardinals": "Ana yönleri göster",
+    "show_stats": "Okumaları göster",
+    "indicator_pointer": "İşaretçi",
+    "indicator_knob": "Düğme",
+    "indicator_arrow_in": "İçe doğru ok",
+    "indicator_arrow_out": "Dışa doğru ok",
+    "indicator_circle": "Daire"
   }
 }

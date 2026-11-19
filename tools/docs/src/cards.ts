@@ -174,6 +174,7 @@ export const SECTIONS: ReadonlyArray<readonly [title: string, tags: readonly str
       'fluvy-appliances-card',
       'fluvy-vehicle-card',
       'fluvy-weather-card',
+      'fluvy-compass-card',
       'fluvy-sensor-card',
       'fluvy-readouts-card',
       'fluvy-people-card',

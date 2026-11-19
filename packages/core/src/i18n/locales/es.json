@@ -2076,7 +2076,8 @@
     "vehicle": "Un coche eléctrico, de gasolina, diésel o híbrido enchufable: su batería o depósito, autonomía y límite de carga, cuándo estará lleno, dónde está, y su cierre, clima, carga, maletero y ventanillas en una fila. Tesla, BMW, Renault, Volvo, Kia, Hyundai, Volkswagen, Škoda, Polestar, MG, Toyota, Ford, Mercedes-Benz, Peugeot y más.",
     "items": "Los elementos del atributo de lista de un sensor, una fila cada uno (vuelos sobre tu casa, salidas, entregas), con un preajuste de vuelos para FlightRadar24.",
     "chart": "Cualquier serie temporal en un gráfico (historial, estadísticas, una lista en un atributo como los precios de Nordpool o una previsión solar, o la previsión de un tiempo), del pasado al futuro con el ahora marcado, los umbrales en sus colores y las horas más baratas encontradas.",
-    "swipe": "Cualquier tarjeta, una por página, que se pasa deslizando o con las marcas de página debajo: lado a lado en una pantalla ancha, de la última de vuelta a la primera."
+    "swipe": "Cualquier tarjeta, una por página, que se pasa deslizando o con las marcas de página debajo: lado a lado en una pantalla ancha, de la última de vuelta a la primera.",
+    "compass": "Velocidad y dirección del viento, el rumbo de un vehículo o cualquier dirección en un anillo de brújula de 360°, con un segundo marcador de rumbo y hasta tres lecturas debajo."
   },
   "time": {
     "minutes_ago": "hace {n} min",
@@ -2544,7 +2545,8 @@
     "vehicle": "Vehículo",
     "items": "Elementos",
     "chart": "Gráfico",
-    "swipe": "Deslizar"
+    "swipe": "Deslizar",
+    "compass": "Brújula"
   },
   "appliance": {
     "kind_washer": "Lavadora",
@@ -3575,5 +3577,27 @@
     "copy": "Copiar el YAML",
     "copied": "YAML copiado",
     "copy_failed": "No se pudo copiar: selecciona el texto y cópialo"
+  },
+  "compass": {
+    "direction": "Dirección",
+    "direction_entity": "Entidad de dirección",
+    "secondary_direction_entity": "Entidad de dirección secundaria",
+    "indicator": "Indicador principal",
+    "indicator_opacity": "Opacidad principal",
+    "secondary_indicator": "Indicador secundario",
+    "secondary_opacity": "Opacidad secundaria",
+    "warn_above": "Aviso por encima de",
+    "danger_above": "Peligro por encima de",
+    "north_offset": "Desplazamiento norte (°)",
+    "label": "Etiqueta",
+    "badge": "Insignia",
+    "show_ticks": "Mostrar marcas",
+    "show_cardinals": "Mostrar puntos cardinales",
+    "show_stats": "Mostrar lecturas",
+    "indicator_pointer": "Puntero",
+    "indicator_knob": "Botón",
+    "indicator_arrow_in": "Flecha hacia dentro",
+    "indicator_arrow_out": "Flecha hacia fuera",
+    "indicator_circle": "Círculo"
   }
 }

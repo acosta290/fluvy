@@ -841,7 +841,8 @@
     "vehicle": "Fordon",
     "items": "Objekt",
     "chart": "Diagram",
-    "swipe": "Svep"
+    "swipe": "Svep",
+    "compass": "Kompass"
   },
   "activity": {
     "title": "Aktivitet",
@@ -1549,7 +1550,8 @@
     "vehicle": "En bil, el, bensin, diesel eller laddhybrid: batteri eller tank, räckvidd och laddningsgräns, när den är full, var den är, och dess lås, klimat, laddning, baklucka och fönster på en rad. Tesla, BMW, Renault, Volvo, Kia, Hyundai, Volkswagen, Škoda, Polestar, MG, Toyota, Ford, Mercedes-Benz, Peugeot med flera.",
     "items": "Objekten i en sensors listattribut, en rad vart (flygplan ovanför, avgångar, leveranser), med en flygförinställning för FlightRadar24.",
     "chart": "Valfri tidsserie i ett diagram (historik, statistik, en lista i ett attribut som Nordpools priser eller en solprognos, eller ett väders prognos) från dåtid till framtid med nu markerat, tröskelvärden i sina färger och de billigaste timmarna utpekade.",
-    "swipe": "Valfria kort, ett per sida, som bläddras med ett svep eller med sidmarkeringarna under dem: sida vid sida på en bred skärm, runt från den sista till den första."
+    "swipe": "Valfria kort, ett per sida, som bläddras med ett svep eller med sidmarkeringarna under dem: sida vid sida på en bred skärm, runt från den sista till den första.",
+    "compass": "Vindhastighet och -riktning, ett fordons kurs eller vilken riktning som helst på en 360°-kompassring med en sekundär riktningsmarkör och upp till tre värden undertill."
   },
   "chart-card": {
     "title": "Diagram",
@@ -3575,5 +3577,27 @@
     "editor.show_open": "Visa knappen Öppna",
     "editor.show_fullscreen": "Visa helskärmsknappen",
     "editor.show_reload": "Visa knappen Ladda om"
+  },
+  "compass": {
+    "direction": "Riktning",
+    "direction_entity": "Riktningsentitet",
+    "secondary_direction_entity": "Sekundär riktningsentitet",
+    "indicator": "Primär visare",
+    "indicator_opacity": "Primär opacitet",
+    "secondary_indicator": "Sekundär visare",
+    "secondary_opacity": "Sekundär opacitet",
+    "warn_above": "Varna över",
+    "danger_above": "Fara över",
+    "north_offset": "Nordförskjutning (°)",
+    "label": "Etikett",
+    "badge": "Märke",
+    "show_ticks": "Visa skalstreck",
+    "show_cardinals": "Visa väderstreck",
+    "show_stats": "Visa mätvärden",
+    "indicator_pointer": "Visare",
+    "indicator_knob": "Knopp",
+    "indicator_arrow_in": "Pil inåt",
+    "indicator_arrow_out": "Pil utåt",
+    "indicator_circle": "Cirkel"
   }
 }

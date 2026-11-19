@@ -1,13 +1,17 @@
 import { registerCard } from '@fluvy/core';
 import { WEATHER_FAMILY } from './weather-family.js';
+import { FluvyCompassCard } from './weather/compass-card.js';
 import { FluvyWeatherCard } from './weather/weather-card.js';
 
 /**
- * The weather card's element: this module is its own chunk, fetched at start (`index.ts`) and defined as it lands.
- * Its height lives in `weather-family.ts`, which every page carries.
+ * The weather and compass cards' elements: this module is their chunk, fetched at start (`index.ts`) and defined as
+ * it lands. Their heights live in `weather-family.ts`, which every page carries.
  */
-export const CARDS = WEATHER_FAMILY.map(
-  ([tag]) => [tag, FluvyWeatherCard as CustomElementConstructor] as const,
-);
+const ELEMENTS: Readonly<Record<string, CustomElementConstructor>> = {
+  'fluvy-weather-card': FluvyWeatherCard as CustomElementConstructor,
+  'fluvy-compass-card': FluvyCompassCard as CustomElementConstructor,
+};
+
+export const CARDS = WEATHER_FAMILY.map(([tag]) => [tag, ELEMENTS[tag]!] as const);
 
 for (const [tag, element] of CARDS) registerCard(tag, element);

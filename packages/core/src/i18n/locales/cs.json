@@ -723,7 +723,8 @@
     "vehicle": "Auto elektrické, benzinové, naftové nebo plug-in hybridní: baterie nebo nádrž, dojezd a limit nabití, kdy bude nabité, kde je, a zámek, klimatizace, nabíjení, kufr a okna v jednom řádku. Tesla, BMW, Renault, Volvo, Kia, Hyundai, Volkswagen, Škoda, Polestar, MG, Toyota, Ford, Mercedes-Benz, Peugeot a další.",
     "items": "Položky atributu seznamu senzoru, řádek pro každou (lety nad hlavou, odjezdy, zásilky), s předvolbou letů pro FlightRadar24.",
     "chart": "Jakákoli časová řada v jednom grafu (historie, statistiky, seznam v atributu jako ceny Nordpool nebo solární předpověď, nebo předpověď počasí), od minulosti po budoucnost s vyznačeným teď, prahy v jejich barvách a nalezenými nejlevnějšími hodinami.",
-    "swipe": "Libovolné karty, jedna na stránku, listované přejetím prstem nebo značkami stránek pod nimi: na širokém displeji vedle sebe, od poslední zase k první."
+    "swipe": "Libovolné karty, jedna na stránku, listované přejetím prstem nebo značkami stránek pod nimi: na širokém displeji vedle sebe, od poslední zase k první.",
+    "compass": "Rychlost a směr větru, směr jízdy vozidla nebo jakýkoli směr na 360° růžici kompasu, s druhým ukazatelem směru a až třemi hodnotami pod ní."
   },
   "chart-card": {
     "title": "Graf",
@@ -1910,7 +1911,8 @@
     "vehicle": "Vozidlo",
     "items": "Položky",
     "chart": "Graf",
-    "swipe": "Listování"
+    "swipe": "Listování",
+    "compass": "Kompas"
   },
   "alarm": {
     "arm_home": "Zastřežit doma",
@@ -3634,5 +3636,27 @@
     "copy": "Zkopírovat YAML",
     "copied": "YAML zkopírován",
     "copy_failed": "Kopírování se nezdařilo: označte text a zkopírujte jej"
+  },
+  "compass": {
+    "direction": "Směr",
+    "direction_entity": "Entita směru",
+    "secondary_direction_entity": "Druhá entita směru",
+    "indicator": "Hlavní ukazatel",
+    "indicator_opacity": "Krytí hlavního ukazatele",
+    "secondary_indicator": "Druhý ukazatel",
+    "secondary_opacity": "Krytí druhého ukazatele",
+    "warn_above": "Varování nad",
+    "danger_above": "Nebezpečí nad",
+    "north_offset": "Posun severu (°)",
+    "label": "Štítek",
+    "badge": "Odznak",
+    "show_ticks": "Zobrazit rysky",
+    "show_cardinals": "Zobrazit světové strany",
+    "show_stats": "Zobrazit hodnoty",
+    "indicator_pointer": "Ukazatel",
+    "indicator_knob": "Knoflík",
+    "indicator_arrow_in": "Šipka dovnitř",
+    "indicator_arrow_out": "Šipka ven",
+    "indicator_circle": "Kruh"
   }
 }

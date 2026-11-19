@@ -2076,7 +2076,8 @@
     "vehicle": "Een elektrische auto, benzine- of dieselauto of plug-in hybride: zijn accu of tank, bereik en laadlimiet, wanneer hij vol is, waar hij is, en zijn slot, klimaat, laden, kofferbak en ramen op één rij. Tesla, BMW, Renault, Volvo, Kia, Hyundai, Volkswagen, Škoda, Polestar, MG, Toyota, Ford, Mercedes-Benz, Peugeot en meer.",
     "items": "De items van het lijstattribuut van een sensor, een rij per item (vluchten boven je, vertrektijden, bezorgingen), met een vluchtenpreset voor FlightRadar24.",
     "chart": "Elke tijdreeks in één grafiek (historie, statistieken, een lijst in een attribuut zoals de prijzen van Nordpool of een zonneverwachting, of de verwachting van het weer), van verleden naar toekomst met nu gemarkeerd, drempels in hun kleuren en de goedkoopste uren gevonden.",
-    "swipe": "Willekeurige kaarten, één per pagina, om te vegen of via de paginamarkeringen eronder: naast elkaar op een breed scherm, van de laatste weer naar de eerste."
+    "swipe": "Willekeurige kaarten, één per pagina, om te vegen of via de paginamarkeringen eronder: naast elkaar op een breed scherm, van de laatste weer naar de eerste.",
+    "compass": "Windsnelheid en -richting, de koers van een voertuig of elke richting op een 360°-kompasring, met een tweede richtingswijzer en tot drie waarden eronder."
   },
   "time": {
     "minutes_ago": "{n} min geleden",
@@ -2544,7 +2545,8 @@
     "vehicle": "Voertuig",
     "items": "Items",
     "chart": "Grafiek",
-    "swipe": "Vegen"
+    "swipe": "Vegen",
+    "compass": "Kompas"
   },
   "appliance": {
     "kind_washer": "Wasmachine",
@@ -3575,5 +3577,27 @@
     "copy": "YAML kopiëren",
     "copied": "YAML gekopieerd",
     "copy_failed": "Kopiëren mislukt: selecteer de tekst en kopieer die"
+  },
+  "compass": {
+    "direction": "Richting",
+    "direction_entity": "Richtingsentiteit",
+    "secondary_direction_entity": "Tweede richtingsentiteit",
+    "indicator": "Primaire wijzer",
+    "indicator_opacity": "Dekking primaire wijzer",
+    "secondary_indicator": "Tweede wijzer",
+    "secondary_opacity": "Dekking tweede wijzer",
+    "warn_above": "Waarschuw boven",
+    "danger_above": "Gevaar boven",
+    "north_offset": "Noord-verschuiving (°)",
+    "label": "Label",
+    "badge": "Badge",
+    "show_ticks": "Maatstreepjes tonen",
+    "show_cardinals": "Windstreken tonen",
+    "show_stats": "Meetwaarden tonen",
+    "indicator_pointer": "Wijzer",
+    "indicator_knob": "Knop",
+    "indicator_arrow_in": "Pijl naar binnen",
+    "indicator_arrow_out": "Pijl naar buiten",
+    "indicator_circle": "Cirkel"
   }
 }

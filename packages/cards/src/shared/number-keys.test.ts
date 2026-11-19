@@ -26,6 +26,7 @@ describe('the cards whose figures take a unit and decimals', () => {
   it('are the energy family, the gauge, the sensor, the stat tiles and the readouts', () => {
     expect(cards.map((c) => c.tag).sort()).toEqual([
       'fluvy-batteries-card',
+      'fluvy-compass-card',
       'fluvy-energy-balance-card',
       'fluvy-energy-card',
       'fluvy-energy-devices-card',

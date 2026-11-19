@@ -776,7 +776,8 @@
     "vehicle": "Samochód elektryczny, spalinowy lub hybrydowy plug-in: bateria lub zbiornik, zasięg i limit ładowania, kiedy będzie pełny, gdzie jest, a jego zamek, klimatyzacja, ładowanie, bagażnik i szyby w jednym wierszu. Tesla, BMW, Renault, Volvo, Kia, Hyundai, Volkswagen, Škoda, Polestar, MG, Toyota, Ford, Mercedes-Benz, Peugeot i inne.",
     "items": "Pozycje atrybutu listy czujnika, wiersz na każdą (loty nad głową, odjazdy, przesyłki), z ustawieniem lotów dla FlightRadar24.",
     "chart": "Dowolny szereg czasowy na jednym wykresie (historia, statystyki, lista w atrybucie jak ceny Nordpool lub prognoza słoneczna albo prognoza pogody), od przeszłości do przyszłości z zaznaczonym teraz, progami w ich kolorach i znalezionymi najtańszymi godzinami.",
-    "swipe": "Dowolne karty, po jednej na stronę, przewijane przesunięciem palca lub znacznikami stron pod nimi: obok siebie na szerokim ekranie, od ostatniej z powrotem do pierwszej."
+    "swipe": "Dowolne karty, po jednej na stronę, przewijane przesunięciem palca lub znacznikami stron pod nimi: obok siebie na szerokim ekranie, od ostatniej z powrotem do pierwszej.",
+    "compass": "Prędkość i kierunek wiatru, kurs pojazdu lub dowolny kierunek na tarczy kompasu 360°, z drugim wskaźnikiem kierunku i maksymalnie trzema odczytami poniżej."
   },
   "bars": {
     "levels": "Poziomy",
@@ -3400,7 +3401,8 @@
     "vehicle": "Pojazd",
     "items": "Pozycje",
     "chart": "Wykres",
-    "swipe": "Przesuwanie"
+    "swipe": "Przesuwanie",
+    "compass": "Kompas"
   },
   "weather": {
     "feels_like": "Odczuwalna",
@@ -3698,5 +3700,27 @@
     "copy": "Kopiuj YAML",
     "copied": "YAML skopiowany",
     "copy_failed": "Nie udało się skopiować: zaznacz tekst i skopiuj go"
+  },
+  "compass": {
+    "direction": "Kierunek",
+    "direction_entity": "Encja kierunku",
+    "secondary_direction_entity": "Druga encja kierunku",
+    "indicator": "Główny wskaźnik",
+    "indicator_opacity": "Krycie głównego wskaźnika",
+    "secondary_indicator": "Drugi wskaźnik",
+    "secondary_opacity": "Krycie drugiego wskaźnika",
+    "warn_above": "Ostrzeżenie powyżej",
+    "danger_above": "Zagrożenie powyżej",
+    "north_offset": "Przesunięcie północy (°)",
+    "label": "Etykieta",
+    "badge": "Plakietka",
+    "show_ticks": "Pokaż podziałkę",
+    "show_cardinals": "Pokaż kierunki świata",
+    "show_stats": "Pokaż odczyty",
+    "indicator_pointer": "Wskaźnik",
+    "indicator_knob": "Pokrętło",
+    "indicator_arrow_in": "Strzałka do środka",
+    "indicator_arrow_out": "Strzałka na zewnątrz",
+    "indicator_circle": "Kropka"
   }
 }
