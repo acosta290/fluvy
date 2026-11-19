@@ -12,15 +12,17 @@ Wind speed and direction, a vehicle’s heading or any bearing on a 360° compas
 
 ```yaml
 type: custom:fluvy-compass-card
+name: Garden station
 entity: sensor.am_wind_speed
 direction_entity: sensor.am_wind_bearing
+secondary_direction_entity: sensor.am_wind_bearing_avg
 stats:
   - entity: sensor.am_wind_gust
     name: Gusts
   - entity: sensor.am_wind_max_today
     name: Max today
   - entity: sensor.am_wind_bearing_avg
-    name: '10m avg'
+    name: '10-min avg'
 ```
 
 The picture above, on the demo house: put your own entities in place of its.
@@ -30,7 +32,7 @@ The picture above, on the demo house: put your own entities in place of its.
 ```yaml
 type: custom:fluvy-compass-card
 entity: sensor.am_wind_speed
-# name:
+name: Garden station
 # subtitle:
 # icon:
 show_icon: auto
@@ -42,27 +44,26 @@ name_lines: 1
 # card_opacity: 100
 # card_border: true
 # unavailable: dashed
-# warn_above:
-# danger_above:
 direction_entity: sensor.am_wind_bearing
-indicator: pointer
-indicator_opacity: 1
-# secondary_direction_entity:
-secondary_indicator: knob
-secondary_opacity: 0.55
+# direction_attribute:
+indicator: knob
+secondary_direction_entity: sensor.am_wind_bearing_avg
+# secondary_direction_attribute:
+secondary_indicator: dot
 north_offset: 0
-# label:
-# badge:
-show_stats: true
 show_ticks: true
 show_cardinals: true
+# label:
+# badge:
 stats:
   - entity: sensor.am_wind_gust
     name: Gusts
   - entity: sensor.am_wind_max_today
     name: Max today
   - entity: sensor.am_wind_bearing_avg
-    name: '10m avg'
+    name: '10-min avg'
+show_stats: true
+# thresholds:
 # unit: auto
 # decimals: auto
 # tap_action:
@@ -83,27 +84,28 @@ stats:
 
 | Option | Default | What it does |
 | --- | --- | --- |
-| `entity` |  | The numeric sensor shown in the centre of the compass ring, such as wind speed. A `sensor`, `number` or `input_number`. |
+| `entity` |  | The figure in the ring beside `direction_entity`, such as the wind’s speed; alone, it is read as the bearing. A `sensor`, `number` or `input_number`. |
 | `name` |  | The name the card shows, in place of the entity’s own. |
 | `subtitle` |  | The line under the title: your own words, an entity’s state or a template. |
 | `icon` |  | The card’s icon, in place of the entity’s own. |
-| `warn_above` |  | Above this value the card turns to a warning. 0 to 500. |
-| `danger_above` |  | Above this value the card turns to danger. 0 to 500. |
-| `direction_entity` |  | The bearing sensor (0–360° or a cardinal point) that drives the primary pointer on the ring. A `sensor`, `number`, `input_number` or `sun`. |
-| `indicator` | `pointer` | The shape of the primary pointer on the compass ring. `pointer` · `knob` · `arrow_inward` · `arrow_outward` · `circle`. |
-| `indicator_opacity` | `1` | The opacity of the primary pointer on the ring. 0.1 to 1, in steps of 0.05. |
-| `secondary_direction_entity` |  | A second bearing sensor drawn on the same ring, such as a 10-minute average wind direction or the sun’s azimuth. A `sensor`, `number`, `input_number` or `sun`. |
-| `secondary_indicator` | `knob` | The shape of the secondary pointer on the compass ring. `pointer` · `knob` · `arrow_inward` · `arrow_outward` · `circle`. |
-| `secondary_opacity` | `0.55` | The opacity of the secondary pointer on the ring. 0.1 to 1, in steps of 0.05. |
-| `north_offset` | `0` | Rotates the compass dial by this many degrees when the view is not aligned with true north. -180 to 360. |
-| `label` |  | The word in the open centre of the ring, above the figure. |
-| `badge` |  | The words in the head’s pill, in place of the cardinal direction. |
-| `show_stats` | `true` | Shows the row of readouts under the compass. |
-| `show_ticks` | `true` | Draws the 48 degree ticks around the compass ring. |
-| `show_cardinals` | `true` | Shows N, E, S and W on the compass ring. |
+| `direction_entity` |  | The bearing: a state in degrees or in English letters (N, NNE … NNW), the sun’s azimuth, a weather entity’s wind. |
+| `direction_attribute` |  | The attribute the bearing is read from, on any entity (a car tracker’s `heading`). |
+| `indicator` | `knob` | How the bearing is marked: the knob on the ring, the ticks lit across it, or a dot outside them. `knob` · `ticks` (Lit ticks) · `dot`. |
+| `secondary_direction_entity` |  | A second bearing on the same ring, in the secondary ink: a 10-minute average, the sun. |
+| `secondary_direction_attribute` |  | The attribute the second bearing is read from. |
+| `secondary_indicator` | `dot` | How the second bearing is marked. `knob` · `ticks` (Lit ticks) · `dot`. |
+| `north_offset` | `0` | Where north is drawn, in degrees clockwise from the top, for a window that does not face north. -180 ° to 180 °. |
+| `show_ticks` | `true` | Draws the ring’s ticks. |
+| `show_cardinals` | `true` | Writes N, E, S and W in the ring, in the page’s language. |
+| `label` |  | The words inside the ring, over the figure. |
+| `badge` |  | The words in the head’s badge: your own, an entity’s state or a template; none by default. |
+| `show_stats` | `true` | Shows the row of readouts under the ring. |
+| `tint` | `off` | Whether the card itself takes the colour of the threshold its figure is past: never, or while it is past one. `off` (Never) · `on` (Past a threshold). |
+| `tint_style` | `wash` | How that colour is shown: a wash over the card, or the card’s edge. `wash` · `edge`. |
 | `unit` | `auto` | The unit the figures are written in; automatic keeps the sensor’s. `auto` · `W` · `kW` · `MW` · `Wh` · `kWh` · `MWh` · `L` · `m³` · `gal` · `ft³`, or your own. |
 | `decimals` | `auto` | How many decimals the figures have; automatic decides by their size. `auto` · `0` · `1` · `2` · `3`. |
 | [`stats`](#stats) |  | Up to three sensors read out under the compass, in this order. A list: [its items](#stats). |
+| [`thresholds`](#thresholds) |  | Values past which the reading takes a colour, each with its tone, and a label and an icon of its own. A list: [its items](#thresholds). |
 
 <details>
 <summary>Its look and its actions, as on every card</summary>
@@ -144,6 +146,58 @@ An item is an entity id, or a map with `entity` and any of these fields.
 | `name` | The item’s own name, in place of the one the card would give it. |
 | `unit` | The unit the figure is written in. `auto` · `W` · `kW` · `MW` · `Wh` · `kWh` · `MWh` · `L` · `m³` · `gal` · `ft³`, or your own. |
 | `decimals` | How many decimals the figure has. `auto` · `0` · `1` · `2` · `3`. |
+
+### `thresholds`
+
+An item is a map with `tone` and any of these fields.
+
+| Field | What it does |
+| --- | --- |
+| `tone` | The item’s colour from the palette’s tones. `none` · `accent` · `light` · `heat` · `cool` · `dry` · `fan` · `water` · `solar` · `grid` · `media` · `presence` · `armed` · `battery` · `house` · `gas` · `vehicle` (Car) · `neutral` · `ok` (Good) · `warning` · `danger`. |
+| `value` | Where the threshold starts: a figure, an entity’s reading or a template’s answer, in the reading’s unit. |
+| `below` | The threshold claims what is under its value. `true` or `false`. |
+| `color` | The item’s colour, in place of the one the card gives it. |
+| `label` | What the band is called, said beside the reading so that colour is never all that says it. |
+| `icon` | The item’s own icon, in place of the one the card would give it. |
+
+## Guide
+
+The Compass card draws a bearing on a 360° ring: the wind from a weather station, a car's heading, a dish's or the
+sun's azimuth. A figure stands in the ring (the wind's speed), the point and the degrees under it.
+
+```yaml
+# a weather station: the wind, its 10-minute average beside it, three readouts under the ring
+type: custom:fluvy-compass-card
+name: Garden station
+entity: sensor.wind_speed
+direction_entity: sensor.wind_direction
+secondary_direction_entity: sensor.wind_direction_10_min
+stats:
+  - entity: sensor.wind_gust
+    name: Gusts
+  - entity: sensor.wind_max_today
+    name: Max today
+```
+
+```yaml
+# a car's heading from its tracker, the ticks lit across it
+type: custom:fluvy-compass-card
+entity: sensor.model_y_speed
+direction_entity: device_tracker.model_y
+direction_attribute: heading
+indicator: ticks
+```
+
+- `direction_entity` is read in degrees, or in English's letters for the sixteen points (`N`, `NNE` … `NNW`, in any
+  case): an integration's `O` or `NO` is East in German and West in Spanish, so other letters are not guessed at. The
+  sun's azimuth and a weather entity's `wind_bearing` are read on their own, and so is a weather entity's wind speed
+  where the card has no `entity`; any other attribute is named with `direction_attribute`.
+- Without `entity` or a weather entity, the ring reads the bearing itself ("291°" over "WNW").
+- `indicator`: `knob` (the default), `ticks` (the ticks lit across the bearing's sixteenth) or `dot`; the second
+  bearing's `secondary_indicator` is a `dot` by default, in the secondary ink.
+- `north_offset` turns the ring for a window that does not face north: `-90` puts east at the top. The letters stay
+  upright.
+- In half a section the figure, the point and the degrees stand under the ring.
 
 <details>
 <summary>Older names the card still reads</summary>

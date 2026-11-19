@@ -75,8 +75,12 @@ const HOUSE_HEIGHTS = /\/packages\/cards\/src\/house-heights\.ts/;
 /** Wall mode (the controller in core — its switch stays in core's chunk — and the screensaver, corner and toast in cards; their words are core's `wall`): fetched only on a device that is a wall. */
 const WALL = /\/packages\/(core\/src\/wall\/(?!start\.ts)|cards\/src\/wall\/)/;
 
-/** The weather card (its forecast strips and rows): fetched as the bundle starts and defined as it lands. */
-const WEATHER = /\/packages\/cards\/src\/(weather-cards\.ts|weather\/)/;
+/**
+ * The weather card (its forecast strips and rows) and the Compass card (#209, its English; its editor goes with the
+ * forms): fetched as the bundle starts and defined as they land.
+ */
+const WEATHER =
+  /\/packages\/(cards\/src\/(weather-cards\.ts|weather\/|compass\/)|core\/src\/i18n\/locales\/en\/compass\.json)/;
 
 /**
  * The calendar card (its views, what reads its events and its sheet; its editor goes with the forms): fetched as the

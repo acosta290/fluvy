@@ -284,12 +284,14 @@ export const GALLERY: Readonly<Record<string, Example>> = {
   'fluvy-compass-card': {
     config: {
       type: 'custom:fluvy-compass-card',
+      name: 'Garden station',
       entity: 'sensor.am_wind_speed',
       direction_entity: 'sensor.am_wind_bearing',
+      secondary_direction_entity: 'sensor.am_wind_bearing_avg',
       stats: [
         { entity: 'sensor.am_wind_gust', name: 'Gusts' },
         { entity: 'sensor.am_wind_max_today', name: 'Max today' },
-        { entity: 'sensor.am_wind_bearing_avg', name: '10m avg' },
+        { entity: 'sensor.am_wind_bearing_avg', name: '10-min avg' },
       ],
     },
   },

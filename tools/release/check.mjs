@@ -188,7 +188,7 @@ const BUDGETS = {
   'lights-colour': 8192,
   // a room's quick actions (1.13, #113): their sets, levels, taps and holds, fetched as the bundle starts
   'quick-actions': 4096,
-  // the weather card
+  // the weather card, and the Compass card since 1.23 (#209: the card and its English; its editor goes with the forms)
   weather: 12_288,
   // the calendar card: its views, what reads its events, its sheet (1.18: it left core, 9.7 KB of what every page
   // loads, for the release's new card and styles); measured at 11.5 KB

@@ -1,0 +1,16 @@
+{
+  "compass": {
+    "direction": "Direction",
+    "direction_helper": "In degrees, or in English letters from N to NNW; the sun’s azimuth and a weather entity’s wind are read on their own",
+    "attribute": "Attribute",
+    "secondary_direction": "Second direction",
+    "indicator": "Pointer",
+    "secondary_indicator": "Second pointer",
+    "pointer_knob": "Knob",
+    "pointer_ticks": "Lit ticks",
+    "pointer_dot": "Dot",
+    "north_offset": "North offset",
+    "show_cardinals": "Cardinal points",
+    "point16": "{cardinal}{intercardinal}"
+  }
+}

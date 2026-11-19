@@ -1,6 +1,6 @@
 import { registerCard } from '@fluvy/core';
+import { FluvyCompassCard } from './compass/compass-card.js';
 import { WEATHER_FAMILY } from './weather-family.js';
-import { FluvyCompassCard } from './weather/compass-card.js';
 import { FluvyWeatherCard } from './weather/weather-card.js';
 
 /**

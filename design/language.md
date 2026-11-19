@@ -921,6 +921,37 @@ longer than the ends' 56 ends in an ellipsis.
   #220), is made once the plate has a box (in an Expander, a Swipe's page or a sheet), and is fitted to the people
   again each time the plate's size settles otherwise, by one observer of the plate, never a timer.
 
+## Compass (1.23, #209, by @twodrops)
+
+A bearing on a 360° ring, drawn as Fluvy's dials are: the wind from a weather station, a car's heading, the sun's
+azimuth. No shape of its own: each part is a control the house already has, read.
+
+- **The ring** is the gauge's: R 96 from a 240 column, in a 240 box, down to the column's on the 4 grid (as the gauge,
+  `(width / 2 − 24)`), its ticks the dial's (2 px, round caps, the strong hairline; 12 long every 45°, 7.2 between,
+  every 5°, every 10° under R 64). The four cardinal points stand in their ticks' place, in the ticks' band, 11/600
+  tracked as a dial's label, the weather's words in the page's language, north in the text's ink and the others in
+  the secondary's; `north_offset` turns the ring (east at the top for a window facing east) and the letters stay
+  upright. Without ticks, a 2 px ring in the hairline is the knob's track.
+- **The bearing** is marked by a control read: the thermostat's **knob** riding the ring (36, 28 on a small ring; its
+  dot, its lift, its halo cutting the ticks), the ring's **ticks lit** across the bearing's sixteenth (11.25° either
+  side, the gauge's lit ticks, glowing in dark), or the dial's **dot** outside the ticks (3, as the thermostat's
+  current reading). A second bearing to compare against (a 10-minute average, the sun) is drawn under the first in the
+  secondary ink: a dot by default. Nothing is marked where the bearing cannot be read.
+- **The open centre** is the gauge's dial's: the word over the figure (11/600 uppercase: the person's `label`, else what
+  the figure is, which leaves where its line cannot hold it), the figure at the largest of the dial's sizes its disc
+  holds with its unit (48, 32 on a small ring, then 24, 20, 16), and under it the point and the degrees ("WSW · 248°",
+  13/500, the point 600 in the text's ink). The figure is the card's sensor, else a weather entity's wind, else the
+  bearing itself ("291°" over "WNW"). Under R 56 (half a section) the ring holds the pointers alone, and the figure,
+  the point and the degrees stand under it as a readout.
+- **Words**: a bearing is read in degrees or in English's sixteen letters, never another language's (German's O is
+  East, Spanish's West); it is said in the page's language, a point between two as the language joins them
+  (`compass.point16`: "NNE", 北北東, "Pn-Pn-Wsch"); 359.6° is 0°.
+- **The rest** is the gauge's: a figure past a threshold takes its band's colour (the knob, the lit ticks, the figure's
+  ink, the badge's words, the card's wash or edge by `tint`); the readouts under the ring are laid out by the widest
+  figure they write, never a dash; out of reach the ring keeps its ticks and points, the figure and the point read
+  "—" and no pointer is drawn. The direction is said once, in the ring: the badge says the band's words or the
+  person's own.
+
 ## Several sensors (1.6)
 
 - **The card**: up to three sensors on one card (a room's temperature and humidity). The head is the set's: the

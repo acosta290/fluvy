@@ -582,25 +582,29 @@ export const MEANINGS: Readonly<Record<string, string>> = {
     'The tank’s size, so that a car which says only how much is in it shows its level.',
   'weather.days': 'How many days the forecast shows.',
   'weather.entity': 'The weather entity the card shows.',
-  'compass.badge': 'The words in the head’s pill, in place of the cardinal direction.',
-  'compass.danger_above': 'Above this value the card turns to danger.',
+  'compass.badge':
+    'The words in the head’s badge: your own, an entity’s state or a template; none by default.',
+  'compass.direction_attribute':
+    'The attribute the bearing is read from, on any entity (a car tracker’s `heading`).',
   'compass.direction_entity':
-    'The bearing sensor (0–360° or a cardinal point) that drives the primary pointer on the ring.',
+    'The bearing: a state in degrees or in English letters (N, NNE … NNW), the sun’s azimuth, a weather entity’s wind.',
   'compass.entity':
-    'The numeric sensor shown in the centre of the compass ring, such as wind speed.',
-  'compass.indicator': 'The shape of the primary pointer on the compass ring.',
-  'compass.indicator_opacity': 'The opacity of the primary pointer on the ring.',
-  'compass.label': 'The word in the open centre of the ring, above the figure.',
+    'The figure in the ring beside `direction_entity`, such as the wind’s speed; alone, it is read as the bearing.',
+  'compass.indicator':
+    'How the bearing is marked: the knob on the ring, the ticks lit across it, or a dot outside them.',
+  'compass.label': 'The words inside the ring, over the figure.',
   'compass.north_offset':
-    'Rotates the compass dial by this many degrees when the view is not aligned with true north.',
+    'Where north is drawn, in degrees clockwise from the top, for a window that does not face north.',
+  'compass.secondary_direction_attribute': 'The attribute the second bearing is read from.',
   'compass.secondary_direction_entity':
-    'A second bearing sensor drawn on the same ring, such as a 10-minute average wind direction or the sun’s azimuth.',
-  'compass.secondary_indicator': 'The shape of the secondary pointer on the compass ring.',
-  'compass.secondary_opacity': 'The opacity of the secondary pointer on the ring.',
-  'compass.show_cardinals': 'Shows N, E, S and W on the compass ring.',
-  'compass.show_stats': 'Shows the row of readouts under the compass.',
-  'compass.show_ticks': 'Draws the 48 degree ticks around the compass ring.',
-  'compass.warn_above': 'Above this value the card turns to a warning.',
+    'A second bearing on the same ring, in the secondary ink: a 10-minute average, the sun.',
+  'compass.secondary_indicator': 'How the second bearing is marked.',
+  'compass.show_cardinals': 'Writes N, E, S and W in the ring, in the page’s language.',
+  'compass.show_stats': 'Shows the row of readouts under the ring.',
+  'compass.show_ticks': 'Draws the ring’s ticks.',
+  'compass.tint':
+    'Whether the card itself takes the colour of the threshold its figure is past: never, or while it is past one.',
+  'compass.tint_style': 'How that colour is shown: a wash over the card, or the card’s edge.',
   'web.aspect_ratio': 'The page’s shape inside the card.',
   'web.refresh': 'Loads the page again every this many minutes; 0 never does.',
   'web.title': 'The title over the page.',

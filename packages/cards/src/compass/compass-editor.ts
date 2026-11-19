@@ -1,0 +1,185 @@
+import { strings as words, type HaFormSchemaItem, type LovelaceConfigForm } from '@fluvy/core';
+import { BADGE_BASE } from '../shared/base.js';
+import { configKeys } from '../shared/config.js';
+import {
+  actionFields,
+  BAND_TINT,
+  bandTintFields,
+  boolField,
+  choiceField,
+  colourFields,
+  editorLabels,
+  entitiesField,
+  entityField,
+  fieldRow,
+  hasLadder,
+  headFields,
+  iconField,
+  nameField,
+  NUMBER_DEFAULTS,
+  numberFields,
+  onlyWhen,
+  ownTextField,
+  textField,
+  thresholdsList,
+  unitChoicesOf,
+} from '../shared/form.js';
+import type { EditorChoices, EditorDefaults, RowsListSpec } from '../shared/rows-editor.js';
+import { COMPASS_POINTERS, type CompassCardConfig } from './compass-card.js';
+
+/** The Compass card's editor: fetched by its `editor()` the first time the card is edited, never by a dashboard. */
+
+const s = words('compass');
+
+/** The figures the ring's centre and its readouts read: a number's. */
+const READINGS: readonly string[] = ['sensor', 'number', 'input_number'];
+
+export const base = BADGE_BASE;
+
+export const keys = configKeys<CompassCardConfig>()([
+  'subtitle',
+  'direction_entity',
+  'direction_attribute',
+  'secondary_direction_entity',
+  'secondary_direction_attribute',
+  'indicator',
+  'secondary_indicator',
+  'north_offset',
+  'label',
+  'badge',
+  'show_ticks',
+  'show_cardinals',
+  'show_stats',
+  'stats',
+  'unit',
+  'decimals',
+  'thresholds',
+  'tint',
+  'tint_style',
+]);
+
+/** Its readouts, each a sensor with its name, unit and decimals; its thresholds, item by item (1.22, #204). */
+export const lists: readonly RowsListSpec[] = [
+  {
+    key: 'stats',
+    title: 'editor.readouts',
+    domains: READINGS,
+    keys: ['entity', 'name', 'unit', 'decimals'],
+    schema: [entityField(READINGS), nameField(), numberFields()],
+  },
+  thresholdsList({ tint: true }),
+];
+
+type Data = Readonly<Record<string, unknown>>;
+
+/**
+ * Whether the centre reads a figure a unit, decimals and thresholds act on: a sensor's beside a bearing of its own (a
+ * sensor alone is the bearing), or a weather entity's wind.
+ */
+const reads = (data: Data): boolean => {
+  const bearing = data['direction_entity'] || data['entity'];
+  return (
+    Boolean(data['entity'] && data['direction_entity']) ||
+    (typeof bearing === 'string' && bearing.startsWith('weather.'))
+  );
+};
+
+/** Whether a field names an entity: what its attribute and its pointer act on. */
+const names =
+  (key: string) =>
+  (data: Data): boolean =>
+    Boolean(data[key]);
+
+/** What the editor shows where the config says nothing: what the card does then. */
+export const defaults: EditorDefaults = () => ({
+  indicator: 'knob',
+  secondary_indicator: 'dot',
+  north_offset: 0,
+  show_ticks: true,
+  show_cardinals: true,
+  show_stats: true,
+  ...NUMBER_DEFAULTS,
+  ...BAND_TINT,
+});
+
+/** The units it offers are its sensor's class's. */
+export const choices: EditorChoices = (config, hass) => unitChoicesOf(config, hass);
+
+/** A pointer's style, in the card's words. */
+const pointerField = (name: string): HaFormSchemaItem =>
+  choiceField(
+    name,
+    COMPASS_POINTERS.map((pointer) => [pointer, `compass.pointer_${pointer}`] as const),
+  );
+
+/** An attribute of the entity `key` names, picked from those it has (Home Assistant's attribute picker). */
+const attributeField = (name: string, key: string): HaFormSchemaItem =>
+  onlyWhen(names(key), { name, selector: { attribute: {} }, context: { filter_entity: key } });
+
+export function getConfigForm(): LovelaceConfigForm {
+  return {
+    schema: [
+      entityField(READINGS, 'entity', false),
+      fieldRow(nameField(), ownTextField('subtitle')),
+      iconField(),
+      headFields({ badge: true }),
+      ...colourFields(),
+      // the bearing and how it is marked; a second one to compare against, in the secondary ink
+      { ...entityField(undefined, 'direction_entity', false), helper: 'compass.direction_helper' },
+      attributeField('direction_attribute', 'direction_entity'),
+      pointerField('indicator'),
+      entityField(undefined, 'secondary_direction_entity', false),
+      attributeField('secondary_direction_attribute', 'secondary_direction_entity'),
+      onlyWhen(names('secondary_direction_entity'), pointerField('secondary_indicator')),
+      {
+        name: 'north_offset',
+        selector: {
+          number: { min: -180, max: 180, step: 1, mode: 'box', unit_of_measurement: '°' },
+        },
+      },
+      fieldRow(boolField('show_ticks'), boolField('show_cardinals')),
+      fieldRow(
+        textField('label'),
+        onlyWhen((data) => data['show_badge'] !== false, ownTextField('badge')),
+      ),
+      // the readouts under the ring (the rows editor draws the list), shown while it lists one
+      entitiesField('stats', READINGS),
+      onlyWhen(
+        (data) => Array.isArray(data['stats']) && data['stats'].length > 0,
+        boolField('show_stats'),
+      ),
+      // the colours its figure takes past a threshold, and the card's own in them (the rows editor draws the list)
+      onlyWhen(reads, { name: 'thresholds', selector: { object: {} } }),
+      bandTintFields(),
+      // a weather entity's wind is in its own unit; a sensor's in another of its class, where it has one
+      onlyWhen(
+        reads,
+        numberFields({
+          when: (data, hass) =>
+            Boolean(data['entity'] && data['direction_entity']) && hasLadder(data, hass),
+        }),
+      ),
+      actionFields({ icon: true }),
+    ],
+    ...editorLabels(
+      s,
+      {
+        direction_entity: 'direction',
+        direction_attribute: 'attribute',
+        secondary_direction_entity: 'secondary_direction',
+        secondary_direction_attribute: 'attribute',
+        indicator: 'indicator',
+        secondary_indicator: 'secondary_indicator',
+        north_offset: 'north_offset',
+        show_cardinals: 'show_cardinals',
+      },
+      {
+        label: 'gauge.label',
+        badge: 'gauge.badge',
+        show_ticks: 'option.ticks',
+        show_stats: 'sensor.editor.show_stats',
+        stats: 'editor.readouts',
+      },
+    ),
+  };
+}

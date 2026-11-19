@@ -343,6 +343,7 @@ describe('the editors (#204)', () => {
     }
     expect(taken.sort()).toEqual([
       'fluvy-chart-card',
+      'fluvy-compass-card',
       GAUGE,
       'fluvy-sensor-card',
       'fluvy-tile-card',

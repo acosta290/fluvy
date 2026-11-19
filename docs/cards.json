@@ -11482,12 +11482,14 @@
         "light": "images/cards/compass-light.webp",
         "dark": "images/cards/compass-dark.webp",
         "width": 784,
-        "height": 848
+        "height": 864
       },
       "example": {
         "type": "custom:fluvy-compass-card",
+        "name": "Garden station",
         "entity": "sensor.am_wind_speed",
         "direction_entity": "sensor.am_wind_bearing",
+        "secondary_direction_entity": "sensor.am_wind_bearing_avg",
         "stats": [
           {
             "entity": "sensor.am_wind_gust",
@@ -11499,7 +11501,7 @@
           },
           {
             "entity": "sensor.am_wind_bearing_avg",
-            "name": "10m avg"
+            "name": "10-min avg"
           }
         ]
       },
@@ -11507,7 +11509,7 @@
         {
           "key": "entity",
           "label": "Entity",
-          "does": "The numeric sensor shown in the centre of the compass ring, such as wind speed.",
+          "does": "The figure in the ring beside `direction_entity`, such as the wind’s speed; alone, it is read as the bearing.",
           "type": "entity (sensor, number, input_number)"
         },
         {
@@ -11638,116 +11640,117 @@
           }
         },
         {
-          "key": "warn_above",
-          "label": "Warn above",
-          "does": "Above this value the card turns to a warning.",
-          "type": "number",
-          "range": "0 to 500"
-        },
-        {
-          "key": "danger_above",
-          "label": "Danger above",
-          "does": "Above this value the card turns to danger.",
-          "type": "number",
-          "range": "0 to 500"
-        },
-        {
           "key": "direction_entity",
-          "label": "Direction entity",
-          "does": "The bearing sensor (0–360° or a cardinal point) that drives the primary pointer on the ring.",
-          "type": "entity (sensor, number, input_number, sun)"
+          "label": "Direction",
+          "does": "The bearing: a state in degrees or in English letters (N, NNE … NNW), the sun’s azimuth, a weather entity’s wind.",
+          "helper": "In degrees, or in English letters from N to NNW; the sun’s azimuth and a weather entity’s wind are read on their own",
+          "type": "entity"
+        },
+        {
+          "key": "direction_attribute",
+          "label": "Attribute",
+          "does": "The attribute the bearing is read from, on any entity (a car tracker’s `heading`).",
+          "type": "attribute"
         },
         {
           "key": "indicator",
-          "label": "Primary indicator",
-          "does": "The shape of the primary pointer on the compass ring.",
-          "type": "choice",
-          "default": "pointer",
-          "values": {
-            "pointer": "Pointer",
-            "knob": "Knob",
-            "arrow_inward": "Arrow inward",
-            "arrow_outward": "Arrow outward",
-            "circle": "Circle"
-          }
-        },
-        {
-          "key": "indicator_opacity",
-          "label": "Primary opacity",
-          "does": "The opacity of the primary pointer on the ring.",
-          "type": "number",
-          "default": 1,
-          "range": "0.1 to 1, in steps of 0.05"
-        },
-        {
-          "key": "secondary_direction_entity",
-          "label": "Secondary direction entity",
-          "does": "A second bearing sensor drawn on the same ring, such as a 10-minute average wind direction or the sun’s azimuth.",
-          "type": "entity (sensor, number, input_number, sun)"
-        },
-        {
-          "key": "secondary_indicator",
-          "label": "Secondary indicator",
-          "does": "The shape of the secondary pointer on the compass ring.",
+          "label": "Pointer",
+          "does": "How the bearing is marked: the knob on the ring, the ticks lit across it, or a dot outside them.",
           "type": "choice",
           "default": "knob",
           "values": {
-            "pointer": "Pointer",
             "knob": "Knob",
-            "arrow_inward": "Arrow inward",
-            "arrow_outward": "Arrow outward",
-            "circle": "Circle"
+            "ticks": "Lit ticks",
+            "dot": "Dot"
           }
         },
         {
-          "key": "secondary_opacity",
-          "label": "Secondary opacity",
-          "does": "The opacity of the secondary pointer on the ring.",
-          "type": "number",
-          "default": 0.55,
-          "range": "0.1 to 1, in steps of 0.05"
+          "key": "secondary_direction_entity",
+          "label": "Second direction",
+          "does": "A second bearing on the same ring, in the secondary ink: a 10-minute average, the sun.",
+          "type": "entity"
+        },
+        {
+          "key": "secondary_direction_attribute",
+          "label": "Attribute",
+          "does": "The attribute the second bearing is read from.",
+          "type": "attribute"
+        },
+        {
+          "key": "secondary_indicator",
+          "label": "Second pointer",
+          "does": "How the second bearing is marked.",
+          "type": "choice",
+          "default": "dot",
+          "values": {
+            "knob": "Knob",
+            "ticks": "Lit ticks",
+            "dot": "Dot"
+          }
         },
         {
           "key": "north_offset",
-          "label": "North offset (°)",
-          "does": "Rotates the compass dial by this many degrees when the view is not aligned with true north.",
+          "label": "North offset",
+          "does": "Where north is drawn, in degrees clockwise from the top, for a window that does not face north.",
           "type": "number",
           "default": 0,
-          "range": "-180 to 360"
-        },
-        {
-          "key": "label",
-          "label": "Label",
-          "does": "The word in the open centre of the ring, above the figure.",
-          "type": "text"
-        },
-        {
-          "key": "badge",
-          "label": "Badge",
-          "does": "The words in the head’s pill, in place of the cardinal direction.",
-          "helper": "Your own words, an entity (its state), or a template such as {{ states('sensor.x') }}",
-          "type": "text"
-        },
-        {
-          "key": "show_stats",
-          "label": "Show the readouts",
-          "does": "Shows the row of readouts under the compass.",
-          "type": "boolean",
-          "default": true
+          "range": "-180 ° to 180 °"
         },
         {
           "key": "show_ticks",
-          "label": "Show ticks",
-          "does": "Draws the 48 degree ticks around the compass ring.",
+          "label": "Ticks",
+          "does": "Draws the ring’s ticks.",
           "type": "boolean",
           "default": true
         },
         {
           "key": "show_cardinals",
-          "label": "Show cardinal points",
-          "does": "Shows N, E, S and W on the compass ring.",
+          "label": "Cardinal points",
+          "does": "Writes N, E, S and W in the ring, in the page’s language.",
           "type": "boolean",
           "default": true
+        },
+        {
+          "key": "label",
+          "label": "Label inside the ring",
+          "does": "The words inside the ring, over the figure.",
+          "type": "text"
+        },
+        {
+          "key": "badge",
+          "label": "Badge text",
+          "does": "The words in the head’s badge: your own, an entity’s state or a template; none by default.",
+          "helper": "Your own words, an entity (its state), or a template such as {{ states('sensor.x') }}",
+          "type": "text"
+        },
+        {
+          "key": "show_stats",
+          "label": "Show min / max / average",
+          "does": "Shows the row of readouts under the ring.",
+          "type": "boolean",
+          "default": true
+        },
+        {
+          "key": "tint",
+          "label": "Show its colour",
+          "does": "Whether the card itself takes the colour of the threshold its figure is past: never, or while it is past one.",
+          "type": "choice",
+          "default": "off",
+          "values": {
+            "off": "Never",
+            "on": "Past a threshold"
+          }
+        },
+        {
+          "key": "tint_style",
+          "label": "Shown as",
+          "does": "How that colour is shown: a wash over the card, or the card’s edge.",
+          "type": "choice",
+          "default": "wash",
+          "values": {
+            "wash": "Wash",
+            "edge": "Edge"
+          }
         },
         {
           "key": "unit",
@@ -11879,6 +11882,79 @@
                 "3": "3",
                 "auto": "Automatic"
               }
+            }
+          ]
+        },
+        {
+          "key": "thresholds",
+          "label": "Thresholds",
+          "does": "Values past which the reading takes a colour, each with its tone, and a label and an icon of its own.",
+          "helper": "A reading takes the colour of the nearest threshold it is past",
+          "id": "tone",
+          "item": [
+            {
+              "key": "tone",
+              "label": "Tone",
+              "does": "The item’s colour from the palette’s tones.",
+              "type": "choice",
+              "default_in_words": "the card’s own",
+              "values": {
+                "none": "None",
+                "accent": "Accent",
+                "light": "Light",
+                "heat": "Heat",
+                "cool": "Cool",
+                "dry": "Dry",
+                "fan": "Fan",
+                "water": "Water",
+                "solar": "Solar",
+                "grid": "Grid",
+                "media": "Media",
+                "presence": "Presence",
+                "armed": "Armed",
+                "battery": "Battery",
+                "house": "House",
+                "gas": "Gas",
+                "vehicle": "Car",
+                "neutral": "Neutral",
+                "ok": "Good",
+                "warning": "Warning",
+                "danger": "Danger"
+              }
+            },
+            {
+              "key": "value",
+              "label": "Value",
+              "does": "Where the threshold starts: a figure, an entity’s reading or a template’s answer, in the reading’s unit.",
+              "helper": "A figure, an entity or a template",
+              "type": "text",
+              "required": true
+            },
+            {
+              "key": "below",
+              "label": "Under the value",
+              "does": "The threshold claims what is under its value.",
+              "helper": "Off: from the value up",
+              "type": "boolean"
+            },
+            {
+              "key": "color",
+              "label": "Colour",
+              "does": "The item’s colour, in place of the one the card gives it.",
+              "helper": "Empty: the colour the card gives it",
+              "type": "colour"
+            },
+            {
+              "key": "label",
+              "label": "Label",
+              "does": "What the band is called, said beside the reading so that colour is never all that says it.",
+              "type": "text"
+            },
+            {
+              "key": "icon",
+              "label": "Icon",
+              "does": "The item’s own icon, in place of the one the card would give it.",
+              "type": "icon"
             }
           ]
         }

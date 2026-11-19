@@ -1,0 +1,36 @@
+The Compass card draws a bearing on a 360° ring: the wind from a weather station, a car's heading, a dish's or the
+sun's azimuth. A figure stands in the ring (the wind's speed), the point and the degrees under it.
+
+```yaml
+# a weather station: the wind, its 10-minute average beside it, three readouts under the ring
+type: custom:fluvy-compass-card
+name: Garden station
+entity: sensor.wind_speed
+direction_entity: sensor.wind_direction
+secondary_direction_entity: sensor.wind_direction_10_min
+stats:
+  - entity: sensor.wind_gust
+    name: Gusts
+  - entity: sensor.wind_max_today
+    name: Max today
+```
+
+```yaml
+# a car's heading from its tracker, the ticks lit across it
+type: custom:fluvy-compass-card
+entity: sensor.model_y_speed
+direction_entity: device_tracker.model_y
+direction_attribute: heading
+indicator: ticks
+```
+
+- `direction_entity` is read in degrees, or in English's letters for the sixteen points (`N`, `NNE` … `NNW`, in any
+  case): an integration's `O` or `NO` is East in German and West in Spanish, so other letters are not guessed at. The
+  sun's azimuth and a weather entity's `wind_bearing` are read on their own, and so is a weather entity's wind speed
+  where the card has no `entity`; any other attribute is named with `direction_attribute`.
+- Without `entity` or a weather entity, the ring reads the bearing itself ("291°" over "WNW").
+- `indicator`: `knob` (the default), `ticks` (the ticks lit across the bearing's sixteenth) or `dot`; the second
+  bearing's `secondary_indicator` is a `dot` by default, in the secondary ink.
+- `north_offset` turns the ring for a window that does not face north: `-90` puts east at the top. The letters stay
+  upright.
+- In half a section the figure, the point and the degrees stand under the ring.

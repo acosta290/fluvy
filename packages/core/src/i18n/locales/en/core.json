@@ -847,27 +847,5 @@
     "chart": "Chart",
     "swipe": "Swipe",
     "compass": "Compass"
-  },
-  "compass": {
-    "direction": "Direction",
-    "direction_entity": "Direction entity",
-    "secondary_direction_entity": "Secondary direction entity",
-    "indicator": "Primary indicator",
-    "indicator_opacity": "Primary opacity",
-    "secondary_indicator": "Secondary indicator",
-    "secondary_opacity": "Secondary opacity",
-    "warn_above": "Warn above",
-    "danger_above": "Danger above",
-    "north_offset": "North offset (°)",
-    "label": "Label",
-    "badge": "Badge",
-    "show_ticks": "Show ticks",
-    "show_cardinals": "Show cardinal points",
-    "show_stats": "Show the readouts",
-    "indicator_pointer": "Pointer",
-    "indicator_knob": "Knob",
-    "indicator_arrow_in": "Arrow inward",
-    "indicator_arrow_out": "Arrow outward",
-    "indicator_circle": "Circle"
   }
 }

@@ -9,7 +9,6 @@ import {
   type GaugePreset,
   type HomeAssistant,
   type LovelaceGridOptions,
-  type MessageKey,
   type Series,
 } from '@fluvy/core';
 
@@ -38,7 +37,7 @@ import { ChartLoader } from '../shared/chart-load.js';
 
 import { Card, type CardEditor } from '../shared/base.js';
 
-import { iconOf, stateWord } from '../shared/domain.js';
+import { classWord, iconOf, stateWord } from '../shared/domain.js';
 import type { TextRuler } from '../shared/fit.js';
 import { statsRow, statsSize, type StatsRow, type StatText } from '../shared/readouts.js';
 import { Refresher } from '../shared/refresh.js';
@@ -157,12 +156,12 @@ export function widestFigure(
 }
 
 /**
- * The window's row (min, max, average), laid out by its labels and the widest figure the card can write (`widest`),
- * never by the figures it writes now — they come and go with the sensor and the recorder (out of reach and
- * unrecorded, "—"), and the card keeps one height through them (the owner's rule): one a row in a half card (under
- * 171 of content), else as many columns as hold the labels and that figure (`statsRow`).
+ * The window's row (min, max, average; the compass's readouts), laid out by its labels and the widest figure the card
+ * can write (`widest`), never by the figures it writes now — they come and go with the sensor and the recorder (out of
+ * reach and unrecorded, "—"), and the card keeps one height through them (the owner's rule): one a row in a half card
+ * (under 171 of content), else as many columns as hold the labels and that figure (`statsRow`).
  */
-const windowRow = (
+export const windowRow = (
   ruler: TextRuler,
   width: number,
   labels: readonly string[],
@@ -205,34 +204,13 @@ const REACH: Readonly<Record<string, number>> = {
 const STATS_ROW = 60;
 
 /** The widest of the readings a card can write, as a readout of the row draws it. */
-const widestOf = (ruler: TextRuler, readings: readonly Reading[]): Reading =>
+export const widestOf = (ruler: TextRuler, readings: readonly Reading[]): Reading =>
   readings.reduce((wide, one) =>
     ruler.width(XS, one.value, 'fv-unit', one.unit ?? '') >
     ruler.width(XS, wide.value, 'fv-unit', wide.unit ?? '')
       ? one
       : wide,
   );
-
-type LabelKey =
-  'energy' | 'temperature' | 'pressure' | 'speed' | 'illuminance' | 'current' | 'voltage';
-
-const CLASS_LABEL: Record<string, LabelKey> = {
-  energy: 'energy',
-  temperature: 'temperature',
-  pressure: 'pressure',
-  atmospheric_pressure: 'pressure',
-  speed: 'speed',
-  wind_speed: 'speed',
-  illuminance: 'illuminance',
-  current: 'current',
-  voltage: 'voltage',
-};
-
-const SHARED_LABEL: Record<string, MessageKey> = {
-  power: 'energy.power',
-  humidity: 'climate.humidity',
-  battery: 'energy.battery',
-};
 
 const PRODUCES = new Set(['power', 'energy', 'current']);
 
@@ -497,24 +475,9 @@ export class FluvyGaugeCard extends Card<GaugeCardConfig> {
     return text ? { text, tone, own: word !== null && own !== undefined } : null;
   }
 
-  /** The device class's word: Home Assistant's own, else ours, else the class itself ("Value" for none). */
-  private classWord(view: EntityView): string {
-    const deviceClass = view.deviceClass;
-    if (!deviceClass) return strings(this.hass, 'value');
-    const key = `component.sensor.entity_component.${deviceClass}.name`;
-    const native = this.hass?.localize(key);
-    if (native && native !== key) return native;
-    const shared = SHARED_LABEL[deviceClass];
-    if (shared) return this.t(shared);
-    const local = CLASS_LABEL[deviceClass];
-    if (local) return strings(this.hass, local);
-    const words = deviceClass.replace(/_/g, ' ');
-    return words.charAt(0).toUpperCase() + words.slice(1);
-  }
-
   /** The word over the figure in `room` (`gaugeLabel`), as every drawing of the gauge sets it. */
   private labelIn(view: EntityView, room: number): ReturnType<typeof gaugeLabel> {
-    return gaugeLabel(this.config?.label, this.classWord(view), room, (text) =>
+    return gaugeLabel(this.config?.label, classWord(this.hass, view.deviceClass), room, (text) =>
       this.head.ruler.width(LABEL, text),
     );
   }

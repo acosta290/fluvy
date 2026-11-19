@@ -1,5 +1,6 @@
 import type { LovelaceCardConfig } from '@fluvy/core';
 import type { FamilyEntry } from './energy-family.js';
+import { HEAD } from './shared/heights.js';
 
 /**
  * The weather and compass cards, announced at start and defined when their chunk lands (`weather-cards.ts`), as the
@@ -48,11 +49,14 @@ export function weatherHeight(config: LovelaceCardConfig, features?: number): nu
   );
 }
 
-/** The compass card at a 360 column: head (44) + dial (248) + padding (40) + gaps, plus 60 when the stats row shows. */
+/**
+ * The Compass card at a 360 column: the head, its ring (R 96 and its ticks in a 240 box, as the gauge's), and the row
+ * of its readouts (16 and a line of 44) while it lists one.
+ */
 export function compassHeight(config: LovelaceCardConfig): number {
   const stats = config['stats'];
-  const hasStats = config['show_stats'] !== false && Array.isArray(stats) && stats.length > 0;
-  return hasStats ? 384 : 324;
+  const row = config['show_stats'] !== false && Array.isArray(stats) && stats.length > 0;
+  return HEAD + 240 + (row ? 60 : 0);
 }
 
 export const WEATHER_FAMILY: readonly FamilyEntry[] = [

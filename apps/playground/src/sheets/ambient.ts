@@ -3,7 +3,7 @@ import { FluvyPeopleCard } from '../../../../packages/cards/src/people/people-ca
 import { FluvyMapCard } from '../../../../packages/cards/src/map/map-card.js';
 import { FluvyScenesCard } from '../../../../packages/cards/src/scenes/scenes-card.js';
 import { FluvySensorCard } from '../../../../packages/cards/src/sensor/sensor-card.js';
-import { FluvyCompassCard } from '../../../../packages/cards/src/weather/compass-card.js';
+import { FluvyCompassCard } from '../../../../packages/cards/src/compass/compass-card.js';
 import { FluvyWeatherCard } from '../../../../packages/cards/src/weather/weather-card.js';
 import type { FrameSpec, SheetSpec } from '../scenes.js';
 import type { StateSeed } from '../hass.js';
@@ -156,6 +156,36 @@ const TILE_HUMIDITY = {
   cols: 6,
 };
 
+/** A weather station's wind on the Compass card (#209): its speed in the ring, its 10-minute average beside it. */
+const COMPASS_WIND = {
+  type: 'custom:fluvy-compass-card',
+  name: 'Wind',
+  entity: 'sensor.am_wind_speed',
+  direction_entity: 'sensor.am_wind_bearing',
+  secondary_direction_entity: 'sensor.am_wind_bearing_avg',
+};
+
+/** The station with its readouts under the ring. */
+const COMPASS_STATION = {
+  ...COMPASS_WIND,
+  name: 'Garden station',
+  stats: [
+    { entity: 'sensor.am_wind_gust', name: 'Gusts' },
+    { entity: 'sensor.am_wind_max_today', name: 'Max today' },
+    { entity: 'sensor.am_wind_bearing_avg', name: '10-min avg' },
+  ],
+};
+
+/** A car's heading, read from its tracker's attribute, its speed in the ring. */
+const COMPASS_CAR = {
+  type: 'custom:fluvy-compass-card',
+  entity: 'sensor.am_model_y_speed',
+  name: 'Model Y',
+  direction_entity: 'device_tracker.am_model_y',
+  direction_attribute: 'heading',
+  indicator: 'ticks',
+};
+
 export const sheet: SheetSpec = {
   states: [
     // the sheet draws a sun at 21:47: the mock's sun sets at 22:30, so the hours after it show the night rule
@@ -164,6 +194,8 @@ export const sheet: SheetSpec = {
       'above_horizon',
       {
         friendly_name: 'Sun',
+        azimuth: 291.4,
+        elevation: -5.8,
         next_setting: at(43 * 60_000),
         next_rising: at(9 * HOUR + 44 * 60_000),
       },
@@ -275,11 +307,13 @@ export const sheet: SheetSpec = {
         state_class: 'measurement',
       },
     ],
+    // the Compass card's houses (#209): a weather station's wind, its 10-minute average, its gusts and the day's
+    // highest; a pier's anemometer that says its direction in letters; a car and its heading; a station out of reach
     [
       'sensor.am_wind_speed',
-      '14',
+      '14.2',
       {
-        friendly_name: 'Wind',
+        friendly_name: 'Wind speed',
         unit_of_measurement: 'km/h',
         device_class: 'wind_speed',
         state_class: 'measurement',
@@ -291,23 +325,25 @@ export const sheet: SheetSpec = {
       {
         friendly_name: 'Wind direction',
         unit_of_measurement: '°',
+        device_class: 'wind_direction',
         state_class: 'measurement',
       },
     ],
     [
       'sensor.am_wind_bearing_avg',
-      '232',
+      '236',
       {
-        friendly_name: '10m avg',
+        friendly_name: 'Wind direction, 10-minute average',
         unit_of_measurement: '°',
+        device_class: 'wind_direction',
         state_class: 'measurement',
       },
     ],
     [
       'sensor.am_wind_gust',
-      '22',
+      '23.8',
       {
-        friendly_name: 'Gusts',
+        friendly_name: 'Wind gust',
         unit_of_measurement: 'km/h',
         device_class: 'wind_speed',
         state_class: 'measurement',
@@ -315,11 +351,47 @@ export const sheet: SheetSpec = {
     ],
     [
       'sensor.am_wind_max_today',
-      '34',
+      '41.0',
       {
-        friendly_name: 'Max today',
+        friendly_name: 'Highest gust today',
         unit_of_measurement: 'km/h',
         device_class: 'wind_speed',
+        state_class: 'measurement',
+      },
+    ],
+    [
+      'sensor.am_pier_wind_speed',
+      '52.6',
+      {
+        friendly_name: 'Pier wind speed',
+        unit_of_measurement: 'km/h',
+        device_class: 'wind_speed',
+        state_class: 'measurement',
+      },
+    ],
+    ['sensor.am_pier_wind_direction', 'wsw', { friendly_name: 'Pier wind direction' }],
+    [
+      'sensor.am_wind_speed_gone',
+      'unavailable',
+      { friendly_name: 'Wind speed', unit_of_measurement: 'km/h', device_class: 'wind_speed' },
+    ],
+    [
+      'sensor.am_wind_bearing_gone',
+      'unavailable',
+      { friendly_name: 'Wind direction', unit_of_measurement: '°', device_class: 'wind_direction' },
+    ],
+    [
+      'device_tracker.am_model_y',
+      'not_home',
+      { friendly_name: 'Model Y', source_type: 'gps', heading: 47 },
+    ],
+    [
+      'sensor.am_model_y_speed',
+      '64',
+      {
+        friendly_name: 'Model Y Speed',
+        unit_of_measurement: 'km/h',
+        device_class: 'speed',
         state_class: 'measurement',
       },
     ],
@@ -1411,6 +1483,74 @@ export const sheet: SheetSpec = {
           variant: 'tiles',
           _now,
           entities: ['cover.am_study_blind', 'cover.am_garage'],
+        },
+      ],
+    },
+
+    /* the Compass card (#209, by @twodrops): a weather station's wind with its 10-minute average beside it and its
+       readouts, the sun, a car's heading, a weather entity's wind on a balcony facing east, a pier past its warning,
+       half a section, and a station out of reach */
+    { title: 'Compass · a weather station', cards: [COMPASS_STATION] },
+    {
+      title: 'Compass · the sun',
+      cards: [
+        {
+          type: 'custom:fluvy-compass-card',
+          direction_entity: 'sun.sun',
+          label: 'Azimuth',
+        },
+      ],
+    },
+    { title: 'Compass · a car’s heading', cards: [COMPASS_CAR] },
+    {
+      title: 'Compass · a weather entity on a balcony facing east',
+      cards: [
+        {
+          type: 'custom:fluvy-compass-card',
+          name: 'Balcony',
+          direction_entity: 'weather.am_home',
+          north_offset: -90,
+          secondary_direction_entity: 'sun.sun',
+          secondary_indicator: 'knob',
+        },
+      ],
+    },
+    {
+      title: 'Compass · past its warning',
+      cards: [
+        {
+          type: 'custom:fluvy-compass-card',
+          name: 'Pier',
+          entity: 'sensor.am_pier_wind_speed',
+          direction_entity: 'sensor.am_pier_wind_direction',
+          indicator: 'ticks',
+          thresholds: [
+            { value: 40, tone: 'warning', label: 'Strong wind' },
+            { value: 62, tone: 'danger', label: 'Gale' },
+          ],
+          tint: 'on',
+        },
+      ],
+    },
+    {
+      title: 'Compass · half a section',
+      cards: [
+        { ...COMPASS_WIND, cols: 6 },
+        { ...COMPASS_CAR, cols: 6 },
+      ],
+    },
+    {
+      title: 'Compass · out of reach',
+      cards: [
+        {
+          ...COMPASS_STATION,
+          entity: 'sensor.am_wind_speed_gone',
+          direction_entity: 'sensor.am_wind_bearing_gone',
+          secondary_direction_entity: 'sensor.am_wind_bearing_gone',
+          stats: [
+            { entity: 'sensor.am_wind_speed_gone', name: 'Gusts' },
+            { entity: 'sensor.am_wind_max_today', name: 'Max today' },
+          ],
         },
       ],
     },
