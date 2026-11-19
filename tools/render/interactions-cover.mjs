@@ -11,7 +11,8 @@
  * in force lit. A position counted as it comes down says so and sends Home Assistant's own number; a cover that
  * reports its position turned round shows it the right way and keeps both commands. At 211 and 152 the slats stand
  * under the commands, the picture and the ruler whole; under about 200 the steps' stepper stands there too and sets
- * the tilt; out of reach nothing takes a tap.
+ * the tilt; a cover with no position declares its favourites, and one whose words hold no row says its angle's
+ * figure without the tilt's word; out of reach nothing takes a tap.
  */
 import { rulerGeometry, dragTo, mousePointer } from './lib/gestures.mjs';
 import { calls, frame, HOUSE_HEIGHTS, reset, settle, startSuite } from './lib/suite.mjs';
@@ -93,6 +94,8 @@ const pointer = mousePointer(page);
     ['Slats · presets, its badge hidden', 488],
     ['Slats · no position', 336],
     ['Steps · as before', 328],
+    ['No position · favourites', 356],
+    ['Slats · no position, favourites', 412],
   ];
   const heights = [];
   for (const [title] of titles)
@@ -106,7 +109,7 @@ const pointer = mousePointer(page);
       }, HOUSE_HEIGHTS),
     );
   check(
-    'each card measures what it declares: 344 with the slats, 56 a row of presets more (88 for the tilt’s under its name), 280 with no position (and its presets), 328 as before',
+    'each card measures what it declares: 344 with the slats, 56 a row of presets more (88 for the tilt’s under its name), 280 with no position (and its presets), 328 as before, and the favourites a cover with no position draws under their name, in the rows their words take',
     heights.every(
       ({ declared, drawn }, index) => declared === titles[index][1] && near(drawn, declared),
     ),
@@ -279,6 +282,36 @@ for (const width of [211, 152]) {
       stepped[0].startsWith(`cover.set_cover_tilt_position {"tilt_position":${next}}`),
     JSON.stringify({ now, stepped }),
   );
+}
+
+/* ---------- favourites whose words hold no row ---------- */
+{
+  // the frame's 360 squeezed to 211, as the measurer draws a card: a viewport with room for the page's chrome alone
+  const narrow = await suite.page('sheet=cover-tilt&width=211&lang=pt-PT', {
+    viewport: { width: 211 + 96, height: 1000 },
+  });
+  /** Each favourite's chip as it reads, and whether its words stand whole in it. */
+  const chipsOf = (card) =>
+    card
+      .locator('.fv-chip__pill')
+      .evaluateAll((pills) =>
+        pills.map((pill) => [pill.textContent.trim(), pill.scrollWidth <= pill.clientWidth]),
+      );
+  const said = await chipsOf(cardOf(narrow, 'No position · favourites'));
+  const wide = await chipsOf(cardOf(page, 'No position · favourites'));
+  check(
+    'an angle’s favourite whose words hold no row says its figure without the tilt’s word, whole (211, Portuguese); where they hold, all of them (360)',
+    JSON.stringify(said) ===
+      JSON.stringify([
+        ['Shade · 30 %', true],
+        ['Breeze · 70 %', true],
+        ['Open · 100 %', true],
+      ]) &&
+      JSON.stringify(wide.map(([text]) => text)) ===
+        JSON.stringify(['Shade · tilt 30 %', 'Breeze · tilt 70 %', 'Open · tilt 100 %']),
+    JSON.stringify({ said, wide }),
+  );
+  await narrow.close();
 }
 
 /* ---------- out of reach ---------- */

@@ -47,7 +47,7 @@ import {
   StableTemplate,
 } from './common.js';
 import { ITEM_ALIASES, type AliasSpec, type RowStyle } from '../shared/config.js';
-import { chipRow } from '../shared/chips.js';
+import { chipRow, type Choice } from '../shared/chips.js';
 import { HeadFit } from '../energy/head.js';
 import {
   CLOSE,
@@ -455,11 +455,15 @@ export class FluvyCoverCard extends Card<CoverCardConfig> {
     };
   }
 
-  /** "Morning · 60 %", "Night · closed", or just "60 %" when the favourite has no name. */
-  private favoriteLabel(favorite: CoverFavorite): string {
+  /**
+   * "Morning · 60 %", "Night · closed", "Shade · tilt 30 %", or just "60 %" when the favourite has no name; `bare`,
+   * an angle's figure without the tilt's word ("Shade · 30 %"), what its chip says where its words hold no row.
+   */
+  private favoriteLabel(favorite: CoverFavorite, bare = false): string {
     const position = favorite.position;
     const ends = this.ends();
     const opening = typeof position === 'number' ? mirror(this.down, position) : 0;
+    const tilt = this.percent(favorite.tilt ?? 0);
     const value =
       typeof position === 'number'
         ? opening >= 100
@@ -467,7 +471,9 @@ export class FluvyCoverCard extends Card<CoverCardConfig> {
           : opening <= 0
             ? ends.closed
             : this.percent(position)
-        : `${this.t('cover.tilt')} ${this.percent(favorite.tilt ?? 0)}`;
+        : bare
+          ? tilt
+          : `${this.t('cover.tilt')} ${tilt}`;
     return favorite.name ? `${favorite.name} · ${value.toLowerCase()}` : value;
   }
 
@@ -783,9 +789,11 @@ export class FluvyCoverCard extends Card<CoverCardConfig> {
     }
     const cardTilt = this.cardTilt(view);
     const said = position === null ? null : figureOf(position);
-    const chipItems: ChipItem[] = favorites.map((favorite, index) => ({
+    // an angle's chip whose words hold no row says its figure without the tilt's word (pt "inclinação" at 211)
+    const chipItems: Choice[] = favorites.map((favorite, index) => ({
       key: String(index),
       label: this.favoriteLabel(favorite),
+      ...(typeof favorite.position === 'number' ? {} : { own: this.favoriteLabel(favorite, true) }),
       active:
         !unusable &&
         (typeof favorite.position !== 'number' || near(said, Math.round(favorite.position))) &&
