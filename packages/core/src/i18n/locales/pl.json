@@ -779,6 +779,7 @@
     "swipe": "Dowolne karty, po jednej na stronę, przewijane przesunięciem palca lub znacznikami stron pod nimi: obok siebie na szerokim ekranie, od ostatniej z powrotem do pierwszej.",
     "compass": "Prędkość i kierunek wiatru, kurs pojazdu lub dowolny kierunek na tarczy kompasu 360°, z drugim wskaźnikiem kierunku i maksymalnie trzema odczytami poniżej.",
     "rounds": "Dowolne encje jako okrągłe przyciski, każdy podświetlony, gdy jest włączony: dotknięcie przełącza to, co można bezpiecznie przełączyć, przytrzymanie otwiera szczegóły, a opcjonalny nagłówek mówi, ile jest włączonych.",
+    "thermostats": "Wszystkie termostaty domu lub pokoju na jednej karcie: temperatura w każdym pokoju, co robi, jego ustawienie i cel, okrągłe przyciski i opcjonalnie − i +, z przyciskiem Wyłącz wszystkie i ustawieniami dla całego domu.",
     "schedule": "Tydzień ogrzewania pokoju na pomocniku Harmonogram z Home Assistant: linia na każdy dzień w kolorach ustawień, Komfort, Eko i Poza domem z ich temperaturami, edytowane godziny, dzień skopiowany na inne, harmonogram włączony lub wyłączony."
   },
   "bars": {
@@ -3439,6 +3440,7 @@
     "swipe": "Przesuwanie",
     "compass": "Kompas",
     "rounds": "Okrągłe przyciski",
+    "thermostats": "Termostaty",
     "schedule": "Harmonogram ogrzewania"
   },
   "weather": {
@@ -3827,5 +3829,33 @@
   },
   "thermostat": {
     "room": "Pokój"
+  },
+  "thermostats": {
+    "title": "Termostaty",
+    "heating_of": "Grzeje: {on} z {count}",
+    "heating_of_short": "Grzeje {on}/{count}",
+    "cooling_of": "Chłodzi: {on} z {count}",
+    "cooling_of_short": "Chłodzi {on}/{count}",
+    "count_few": "{count} termostaty",
+    "count_many": "{count} termostatów",
+    "count_one": "1 termostat",
+    "count": "{count} termostatów",
+    "average": "średnio {value}",
+    "all_off": "Wyłącz wszystkie",
+    "all_off_ask_few": "Wyłączyć {count} włączone termostaty?",
+    "all_off_ask_many": "Wyłączyć {count} włączonych termostatów?",
+    "all_off_ask_one": "Wyłączyć włączony termostat?",
+    "all_off_ask": "Wyłączyć {count} włączonych termostatów?",
+    "empty": "Brak tu termostatów",
+    "control": "Każdy wiersz kończy się",
+    "room": "Temperatura w pokoju",
+    "stepper": "Cel z − i +",
+    "show_count": "Pokaż, ile grzeje",
+    "show_average": "Pokaż średnią temperaturę",
+    "show_round": "Okrągły przycisk otwierający każdy",
+    "house_actions": "Dla wszystkich termostatów",
+    "presets": "Ich ustawienia",
+    "rounds": "Okrągłe przyciski",
+    "names_area": "Nazwa obszaru"
   }
 }

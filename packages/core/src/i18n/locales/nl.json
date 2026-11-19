@@ -2104,6 +2104,7 @@
     "swipe": "Willekeurige kaarten, één per pagina, om te vegen of via de paginamarkeringen eronder: naast elkaar op een breed scherm, van de laatste weer naar de eerste.",
     "compass": "Windsnelheid en -richting, de koers van een voertuig of elke richting op een 360°-kompasring, met een tweede richtingswijzer en tot drie waarden eronder.",
     "rounds": "Willekeurige entiteiten als ronde knoppen, elk verlicht zolang hij aan is: een tik schakelt wat veilig te schakelen is, ingedrukt houden opent de details, met een optionele kop die zegt hoeveel er aan zijn.",
+    "thermostats": "Alle thermostaten van het huis of een ruimte op één kaart: de temperatuur van elke kamer, wat hij doet, zijn preset en zijn doel, ronde knoppen en naar keuze − en +, met Alles uit en de presets voor het hele huis.",
     "schedule": "De verwarmingsweek van een kamer op de schemahelper van Home Assistant: een lijn per dag in de kleuren van de voorinstellingen, Comfort, Eco en Afwezig met hun temperaturen, tijden bewerkt, een dag naar andere gekopieerd, het schema aan of uit."
   },
   "time": {
@@ -2579,6 +2580,7 @@
     "swipe": "Vegen",
     "compass": "Kompas",
     "rounds": "Ronde knoppen",
+    "thermostats": "Thermostaten",
     "schedule": "Verwarmingsschema"
   },
   "appliance": {
@@ -3702,5 +3704,29 @@
   },
   "thermostat": {
     "room": "Kamer"
+  },
+  "thermostats": {
+    "title": "Thermostaten",
+    "heating_of": "{on} van {count} verwarmen",
+    "heating_of_short": "{on}/{count} verwarmen",
+    "cooling_of": "{on} van {count} koelen",
+    "cooling_of_short": "{on}/{count} koelen",
+    "count_one": "1 thermostaat",
+    "count": "{count} thermostaten",
+    "average": "gemiddeld {value}",
+    "all_off": "Alles uit",
+    "all_off_ask_one": "De thermostaat die aan staat uitzetten?",
+    "all_off_ask": "De {count} thermostaten die aan staan uitzetten?",
+    "empty": "Hier geen thermostaten",
+    "control": "Elke rij eindigt met",
+    "room": "De kamertemperatuur",
+    "stepper": "Het doel, met − en +",
+    "show_count": "Zeggen hoeveel er verwarmen",
+    "show_average": "De gemiddelde temperatuur tonen",
+    "show_round": "Een ronde knop die elk opent",
+    "house_actions": "Voor alle thermostaten",
+    "presets": "Hun presets",
+    "rounds": "Ronde knoppen",
+    "names_area": "Naam van de ruimte"
   }
 }

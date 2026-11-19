@@ -850,6 +850,7 @@
     "swipe": "Karrusel",
     "compass": "Kompas",
     "rounds": "Runde knapper",
+    "thermostats": "Termostater",
     "schedule": "Varmeplan"
   },
   "activity": {
@@ -1561,6 +1562,7 @@
     "swipe": "Alle slags kort, ét pr. side, bladret med et stryg eller med sidemarkeringerne under dem: side om side på en bred skærm, rundt fra den sidste til den første.",
     "compass": "Vindhastighed og -retning, et køretøjs kurs eller enhver retning på en 360°-kompasring med en sekundær retningsmarkør og op til tre aflæsninger nedenunder.",
     "rounds": "Vilkårlige entiteter som runde knapper, hver tændt, mens den er tændt: et tryk skifter det, der er sikkert at skifte, et langt tryk åbner detaljerne, med en valgfri overskrift, der siger, hvor mange der er tændt.",
+    "thermostats": "Alle termostater i huset eller et rum på ét kort: hvert rums temperatur, hvad det gør, dets forudindstilling og dets mål, runde knapper og efter ønske − og +, med Sluk alle og forudindstillingerne for hele huset.",
     "schedule": "Et rums varmeuge på Home Assistants tidsplan-hjælper: en linje pr. dag i forindstillingernes farver, Komfort, Øko og Ude med deres temperaturer, tider redigeret, en dag kopieret til andre, planen til eller fra."
   },
   "chart-card": {
@@ -3702,5 +3704,29 @@
   },
   "thermostat": {
     "room": "Rum"
+  },
+  "thermostats": {
+    "title": "Termostater",
+    "heating_of": "{on} af {count} varmer",
+    "heating_of_short": "{on}/{count} varmer",
+    "cooling_of": "{on} af {count} køler",
+    "cooling_of_short": "{on}/{count} køler",
+    "count_one": "1 termostat",
+    "count": "{count} termostater",
+    "average": "{value} i gennemsnit",
+    "all_off": "Sluk alle",
+    "all_off_ask_one": "Sluk den termostat, der er tændt?",
+    "all_off_ask": "Sluk de {count} termostater, der er tændt?",
+    "empty": "Ingen termostater her",
+    "control": "Hver række slutter med",
+    "room": "Rummets temperatur",
+    "stepper": "Målet med − og +",
+    "show_count": "Sig, hvor mange der varmer",
+    "show_average": "Vis gennemsnitstemperaturen",
+    "show_round": "En rund knap, der åbner hver enkelt",
+    "house_actions": "For alle termostater",
+    "presets": "Deres forudindstillinger",
+    "rounds": "Runde knapper",
+    "names_area": "Områdets navn"
   }
 }

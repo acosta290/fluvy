@@ -12,6 +12,7 @@ import {
   textName,
   valueParts,
   type ActionConfig,
+  type ActionConfirmation,
   type EntityName,
   type EntityView,
   type HomeAssistant,
@@ -361,11 +362,35 @@ export function answered(event: Event): void {
 }
 
 /**
+ * Asks Home Assistant's own dialog before `yes` runs, in the words `confirmation` says, else `text`: one
+ * `fire-dom-event` it hands back once answered yes (`answered`), nothing moving before — what several calls are asked
+ * about as one with (a round's members, a card's All off).
+ */
+export function askFirst(
+  host: Pick<RoundsHost, 'run'>,
+  confirmation: true | ActionConfirmation,
+  text: string,
+  yes: () => void,
+): void {
+  const own = typeof confirmation === 'object' ? confirmation : {};
+  const action: ActionConfig = {
+    action: 'fire-dom-event',
+    confirmation: { ...own, text: own.text ?? text },
+  };
+  asked.set(action, yes);
+  if (!hearing) {
+    window.addEventListener('ll-custom', answered);
+    hearing = true;
+  }
+  host.run(action, undefined);
+}
+
+/**
  * Runs a round's on and off: every call at once; or, asked first (`confirmation`), once Home Assistant's own dialog
  * has its answer, nothing moving before. One call goes to it whole (its words, where the tap says none, name its
- * service); several go as one `fire-dom-event` it hands back once answered yes, so every member is asked about (a
- * blind that only tilts beside blinds that close as well), its words where the tap says none Home Assistant's sentence
- * naming the round ("Are you sure you want to run action "Blinds"?"), else the round's name.
+ * service); several are asked about as one (`askFirst`), so every member is (a blind that only tilts beside blinds that
+ * close as well), its words where the tap says none Home Assistant's sentence naming the round ("Are you sure you want
+ * to run action "Blinds"?"), else the round's name.
  */
 function runFlip(
   host: RoundsHost,
@@ -386,19 +411,9 @@ function runFlip(
       },
       undefined,
     );
-  const own = typeof confirmation === 'object' ? confirmation : {};
   const key = 'ui.panel.lovelace.cards.actions.action_confirmation';
   const said = host.hass?.localize?.(key, { action: name });
-  const action: ActionConfig = {
-    action: 'fire-dom-event',
-    confirmation: { ...own, text: own.text ?? (said && said !== key ? said : name) },
-  };
-  asked.set(action, () => perform(host, flip));
-  if (!hearing) {
-    window.addEventListener('ll-custom', answered);
-    hearing = true;
-  }
-  host.run(action, undefined);
+  askFirst(host, confirmation, said && said !== key ? said : name, () => perform(host, flip));
 }
 
 /** The domains a round turns on and off itself (`flipOf`), all of a set at once; the rest by the house's toggle. */
@@ -624,8 +639,12 @@ export const drawRound = (
     state: text ? { text, width: pillWidth(host, text, under), under } : undefined,
   });
 
+/** How many rounds a line's `room` holds: 44 each, 8 apart, 12 after what is before them. */
+export const roundsHeld = (room: number): number =>
+  Math.max(0, Math.floor((room - 12 + ROUND_GAP) / (ROUND + ROUND_GAP)));
+
 /**
- * Rounds on one line in `room` (44 each, 8 apart, 12 after what is before them): as many as it holds, in their order;
+ * Rounds on one line in `room` (`roundsHeld`): as many as it holds, in their order;
  * then the states asked for in the room they leave (#205), each round that says one grown into the pill that holds
  * it — under its glyph (as wide as its words, 44 the least), or beside it (`beside`: as tall as a round) — in the
  * longest forms that hold (`statesIn`): a state that does not is left out whole, its round a round again. With a
@@ -638,8 +657,7 @@ export function roundsIn(
   room: number,
   under = host.look?.beside !== true,
 ): RoundsBlock {
-  const fits = Math.floor((room - 12 + ROUND_GAP) / (ROUND + ROUND_GAP));
-  const rounds = fits > 0 ? items.slice(0, fits).map((item) => roundOf(host, item)) : [];
+  const rounds = items.slice(0, roundsHeld(room)).map((item) => roundOf(host, item));
   if (!rounds.length) return { taken: 0, template: nothing };
   // their words are measured in the pills' sheet, which the card wears from the first state asked for
   if (rounds.some((round) => round.said)) wear(host.root);

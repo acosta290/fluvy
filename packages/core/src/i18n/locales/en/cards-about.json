@@ -69,6 +69,7 @@
     "swipe": "Any cards, one a page, turned by a swipe or the page marks under them: side by side on a wide screen, round from the last to the first.",
     "compass": "Wind speed and direction, a vehicle’s heading or any bearing on a 360° compass ring, with a secondary marker and up to three readouts underneath.",
     "rounds": "Any entities as round buttons, each lit while it is on: a tap switches what is safe to switch, a hold opens its details, with an optional head saying how many are on.",
+    "thermostats": "Every thermostat of the house or a room in one card: each room’s temperature, what it is doing, its preset and its target, round buttons and optional − and +, with All off and the presets for the whole house.",
     "schedule": "A room’s heating week on Home Assistant’s own schedule helper: a timeline a day in its presets’ colours, Comfort, Eco and Away with their temperatures, its times edited, a day copied to others, the schedule on or off."
   }
 }

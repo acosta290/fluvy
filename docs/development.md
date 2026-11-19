@@ -42,7 +42,7 @@ pnpm build
 ```
 
 The bundle is one ES module, `fluvy.js`, that imports `chunks/core-<hash>.js` (everything a page needs) and fetches
-`chunks/{activity,history,details-history,panel,customise,sidebar-editor,pages,words,strategy,house-heights,wall,weather,calendar,media,chart,chart-card,energy-period,energy,history-bars-readings,devices,cameras-sheet,appliances,appliance-art,automations,automations-sheet,alerts,alerts-sheet,template,web,rounds,about,expander,expander-editor,swipe,sidebar,slider,cover,vacuum,ring,vacuum-drive,climate,remote,app-logos,vehicle,schedule,schedule-sheet,details,items,items-sheet,lights-colour,light-colour,quick-actions,editor,fields,forms,view-icons,glass,quiet,thresholds,number-controls,slider-styles,switch-styles,background,dock,groups,icons,icons-appliances,icons-levels,icons-energy,icons-devices,icons-climate,icons-safety,icons-outdoor,icons-home,icons-rooms,levels,shared,lang-*}-<hash>.js`
+`chunks/{activity,history,details-history,panel,customise,sidebar-editor,pages,words,strategy,house-heights,wall,weather,calendar,media,chart,chart-card,energy-period,energy,history-bars-readings,devices,cameras-sheet,appliances,appliance-art,automations,automations-sheet,alerts,alerts-sheet,template,web,rounds,thermostats,about,expander,expander-editor,swipe,sidebar,slider,cover,vacuum,ring,vacuum-drive,climate,remote,app-logos,vehicle,schedule,schedule-sheet,details,items,items-sheet,lights-colour,light-colour,quick-actions,editor,fields,forms,view-icons,glass,quiet,thresholds,number-controls,slider-styles,switch-styles,background,dock,groups,icons,icons-appliances,icons-levels,icons-energy,icons-devices,icons-climate,icons-safety,icons-outdoor,icons-home,icons-rooms,levels,glyphs-rooms,shared,lang-*}-<hash>.js`
 on demand — the Activity page, the History page, our history in Home Assistant's details dialog (the first time a dialog
 shows it), the settings panel (and Customise, the first time one of its dashboards is customised; a dashboard's
 sidebar, the first time its section is opened), what they
@@ -109,6 +109,7 @@ budget (`BUDGETS`; the facts guard in `tools/docs` holds this table to it):
 | `template` | 8 KB | the template card, the parsers of its templates' answers, its English |
 | `web` | 8 KB | the web page card, its address and rounds rules, its English |
 | `rounds` | 4 KB | the Rounds card (1.23, #224) and its English; the rounds it draws are the quick actions' |
+| `thermostats` | 8 KB | the Thermostats card (1.23, #230, #219), what it reads of the house and its English; its model and what a thermostat is doing are the Thermostat card's, its rows the quick actions' |
 | `about` | 4 KB | what each card is (1.22, #193): the line the card picker's search reads and Customise's list says under each name, in English; fetched as the bundle starts, with the families |
 | `expander` | 8 KB | the Expander card, what holds the cards it folds, what remembers how it was left, its English |
 | `expander-editor` | 4 KB | the Expander card's editor: its form, Home Assistant's stack editor under it; the Swipe card's, built on it |
@@ -156,6 +157,7 @@ budget (`BUDGETS`; the facts guard in `tools/docs` holds this table to it):
 | `icons-outdoor` | 4 KB | the icon set's outdoors (1.23, #226): the garden, the pool, the mailbox and their kin |
 | `icons-home` | 4 KB | the icon set's home (1.23, #226): the lights by their kind, what dresses a window, the freezer and the hood |
 | `icons-rooms` | 4 KB | the icon set's rooms (1.23, #226): the kitchen, the bedroom, the bathroom and the others |
+| `glyphs-rooms` | 4 KB | the rooms' glyphs as strokes (1.23, #226), which the Thermostats card's rows draw (#230) |
 | `levels` | 2 KB | the levels in Fluvy's icons (1.23, #226): what picks a battery's charge, a signal's bars, a valve open or shut, and their glyphs; fetched as the house turns them on |
 | `shared` | 4 KB | what only the chunks fetched later share (1.20: it left core): the local dates and the month grid, the ticker, a sheet's laid width, where a modal sheet stands on a phone (1.21, #190), a name's plain letters, a person's own picture in a head's circle |
 | `pages` | 12 KB | what the pages share: the date picker, the time field, the dropdown, the period, the sources, the layers, the CSV, their chrome's sheet, where their menu button shows |

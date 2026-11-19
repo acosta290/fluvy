@@ -1,0 +1,26 @@
+{
+  "thermostats": {
+    "title": "Thermostats",
+    "heating_of": "{on} of {count} heating",
+    "heating_of_short": "{on}/{count} heating",
+    "cooling_of": "{on} of {count} cooling",
+    "cooling_of_short": "{on}/{count} cooling",
+    "count_one": "1 thermostat",
+    "count": "{count} thermostats",
+    "average": "{value} average",
+    "all_off": "All off",
+    "all_off_ask_one": "Turn off the thermostat that is on?",
+    "all_off_ask": "Turn off the {count} thermostats that are on?",
+    "empty": "No thermostats here",
+    "control": "Each row ends in",
+    "room": "The room’s temperature",
+    "stepper": "The target, with − and +",
+    "show_count": "Say how many are heating",
+    "show_average": "Show the average temperature",
+    "show_round": "A round that opens each one",
+    "house_actions": "For every thermostat",
+    "presets": "Their presets",
+    "rounds": "Rounds",
+    "names_area": "Area name"
+  }
+}

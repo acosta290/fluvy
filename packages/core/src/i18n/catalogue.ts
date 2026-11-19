@@ -33,6 +33,7 @@ import type strategy from './locales/en/strategy.json';
 import type swipe from './locales/en/swipe.json';
 import type template from './locales/en/template.json';
 import type thermostat from './locales/en/thermostat.json';
+import type thermostats from './locales/en/thermostats.json';
 import type vacuum from './locales/en/vacuum.json';
 import type vehicle from './locales/en/vehicle.json';
 import type web from './locales/en/web.json';
@@ -80,6 +81,7 @@ export type Catalogue = typeof core &
   typeof swipe &
   typeof template &
   typeof thermostat &
+  typeof thermostats &
   typeof vacuum &
   typeof vehicle &
   typeof web;

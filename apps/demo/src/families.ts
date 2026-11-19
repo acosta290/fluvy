@@ -119,6 +119,7 @@ export const CARD_GROUPS: readonly CardGroup[] = [
       'vehicle',
       'entities',
       'rounds',
+      'thermostats',
     ],
   },
   {

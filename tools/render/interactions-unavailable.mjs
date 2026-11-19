@@ -153,6 +153,8 @@ const FOUND = {
     'lists the house’s automations unless told which: one gone from the house is not one of them',
   'fluvy-appliances-card':
     'finds the house’s appliances in its registries unless told which (#47): their entities gone from the house keep each its card, its roles the registry’s',
+  'fluvy-thermostats-card':
+    'lists the house’s thermostats unless told which (#230): one gone from the house is not one of them',
 };
 
 /**

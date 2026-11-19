@@ -2104,6 +2104,7 @@
     "swipe": "Qualsiasi scheda, una per pagina, sfogliate con uno scorrimento o con i segni di pagina sotto: affiancate su uno schermo largo, dall’ultima di nuovo alla prima.",
     "compass": "Velocità e direzione del vento, la direzione di marcia di un veicolo o qualsiasi rilevamento su un anello bussola a 360°, con un secondo indicatore di direzione e fino a tre valori sotto.",
     "rounds": "Qualsiasi entità come pulsante tondo, acceso finché è attivo: un tocco commuta ciò che si può commutare senza rischi, una pressione prolungata ne apre i dettagli, con un’intestazione facoltativa che dice quanti sono accesi.",
+    "thermostats": "Tutti i termostati della casa o di una stanza in una scheda: la temperatura di ogni stanza, cosa sta facendo, la sua preimpostazione e il suo obiettivo, pulsanti tondi e, a scelta, − e +, con Spegni tutto e le preimpostazioni per tutta la casa.",
     "schedule": "La settimana di riscaldamento di una stanza sull’aiutante Programmazione di Home Assistant: una linea al giorno nei colori dei suoi preset, Comfort, Eco e Fuori casa con le loro temperature, orari modificati, un giorno copiato su altri, il programma acceso o spento."
   },
   "time": {
@@ -2579,6 +2580,7 @@
     "swipe": "Scorrimento",
     "compass": "Bussola",
     "rounds": "Pulsanti tondi",
+    "thermostats": "Termostati",
     "schedule": "Programma riscaldamento"
   },
   "appliance": {
@@ -3702,5 +3704,29 @@
   },
   "thermostat": {
     "room": "Stanza"
+  },
+  "thermostats": {
+    "title": "Termostati",
+    "heating_of": "{on} su {count} riscaldano",
+    "heating_of_short": "{on}/{count} riscaldano",
+    "cooling_of": "{on} su {count} raffreddano",
+    "cooling_of_short": "{on}/{count} raffreddano",
+    "count_one": "1 termostato",
+    "count": "{count} termostati",
+    "average": "{value} in media",
+    "all_off": "Spegni tutto",
+    "all_off_ask_one": "Spegnere il termostato acceso?",
+    "all_off_ask": "Spegnere i {count} termostati accesi?",
+    "empty": "Nessun termostato qui",
+    "control": "Ogni riga termina con",
+    "room": "La temperatura della stanza",
+    "stepper": "L’obiettivo, con − e +",
+    "show_count": "Dire quanti riscaldano",
+    "show_average": "Mostra la temperatura media",
+    "show_round": "Un pulsante tondo che apre ciascuno",
+    "house_actions": "Per tutti i termostati",
+    "presets": "Le loro preimpostazioni",
+    "rounds": "Pulsanti tondi",
+    "names_area": "Nome dell’area"
   }
 }

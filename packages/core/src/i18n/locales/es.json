@@ -2104,6 +2104,7 @@
     "swipe": "Cualquier tarjeta, una por página, que se pasa deslizando o con las marcas de página debajo: lado a lado en una pantalla ancha, de la última de vuelta a la primera.",
     "compass": "Velocidad y dirección del viento, el rumbo de un vehículo o cualquier dirección en un anillo de brújula de 360°, con un segundo marcador de rumbo y hasta tres lecturas debajo.",
     "rounds": "Cualquier entidad como botón redondo, iluminado mientras está encendido: un toque conmuta lo que es seguro conmutar, mantener pulsado abre sus detalles, con una cabecera opcional que dice cuántos están encendidos.",
+    "thermostats": "Todos los termostatos de la casa o de una habitación en una tarjeta: la temperatura de cada habitación, qué está haciendo, su preajuste y su objetivo, botones redondos y, si quieres, − y +, con Apagar todo y los preajustes para toda la casa.",
     "schedule": "La semana de calefacción de una habitación en el ayudante de horario de Home Assistant: una línea por día en los colores de sus preajustes, Confort, Eco y Ausente con sus temperaturas, sus horas editadas, un día copiado a otros, el horario encendido o apagado."
   },
   "time": {
@@ -2579,6 +2580,7 @@
     "swipe": "Deslizar",
     "compass": "Brújula",
     "rounds": "Botones redondos",
+    "thermostats": "Termostatos",
     "schedule": "Calendario de calefacción"
   },
   "appliance": {
@@ -3702,5 +3704,29 @@
   },
   "thermostat": {
     "room": "Habitación"
+  },
+  "thermostats": {
+    "title": "Termostatos",
+    "heating_of": "{on} de {count} calentando",
+    "heating_of_short": "{on}/{count} calentando",
+    "cooling_of": "{on} de {count} enfriando",
+    "cooling_of_short": "{on}/{count} enfriando",
+    "count_one": "1 termostato",
+    "count": "{count} termostatos",
+    "average": "{value} de media",
+    "all_off": "Apagar todo",
+    "all_off_ask_one": "¿Apagar el termostato encendido?",
+    "all_off_ask": "¿Apagar los {count} termostatos encendidos?",
+    "empty": "No hay termostatos aquí",
+    "control": "Cada fila termina en",
+    "room": "La temperatura de la habitación",
+    "stepper": "El objetivo, con − y +",
+    "show_count": "Decir cuántos calientan",
+    "show_average": "Mostrar la temperatura media",
+    "show_round": "Un botón redondo que abre cada uno",
+    "house_actions": "Para todos los termostatos",
+    "presets": "Sus preajustes",
+    "rounds": "Botones redondos",
+    "names_area": "Nombre del área"
   }
 }

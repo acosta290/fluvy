@@ -708,6 +708,7 @@
     "swipe": "任意卡片，每页一张，滑动或点按下方的页标翻页：宽屏上并排显示，也可从最后一页回到第一页。",
     "compass": "在 360° 罗盘环上显示风速与风向、车辆的航向或任意方位，带第二方向标记，下方最多显示三个读数。",
     "rounds": "将任意实体显示为圆形按钮，开启时点亮：轻点切换可以放心切换的设备，长按打开详情，还可加一个标题，说明有多少个已开启。",
+    "thermostats": "将全屋或某个房间的所有温控器放在一张卡片中：每个房间的温度、运行状态、预设与目标温度、圆形按钮和可选的 − 与 +，以及全屋的“全部关闭”和预设。",
     "schedule": "基于 Home Assistant 计划辅助元素的房间供暖周计划：每天一条按预设着色的时间线，舒适、节能和离开及其温度，编辑时段，将某天复制到其他日子，开启或关闭计划。"
   },
   "chart-card": {
@@ -1622,6 +1623,7 @@
     "swipe": "滑动",
     "compass": "罗盘",
     "rounds": "圆形按钮",
+    "thermostats": "温控器列表",
     "schedule": "供暖计划"
   },
   "alarm": {
@@ -3702,5 +3704,29 @@
   },
   "thermostat": {
     "room": "室内"
+  },
+  "thermostats": {
+    "title": "温控器",
+    "heating_of": "制热中 {on}/{count}",
+    "heating_of_short": "制热 {on}/{count}",
+    "cooling_of": "制冷中 {on}/{count}",
+    "cooling_of_short": "制冷 {on}/{count}",
+    "count_one": "1 个温控器",
+    "count": "{count} 个温控器",
+    "average": "平均 {value}",
+    "all_off": "全部关闭",
+    "all_off_ask_one": "关闭正在运行的温控器？",
+    "all_off_ask": "关闭正在运行的 {count} 个温控器？",
+    "empty": "这里没有温控器",
+    "control": "每行末尾显示",
+    "room": "室内温度",
+    "stepper": "目标温度及 − 和 +",
+    "show_count": "显示制热数量",
+    "show_average": "显示平均温度",
+    "show_round": "打开各温控器的圆形按钮",
+    "house_actions": "针对所有温控器",
+    "presets": "预设",
+    "rounds": "圆形按钮",
+    "names_area": "区域名称"
   }
 }

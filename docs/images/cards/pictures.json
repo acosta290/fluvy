@@ -144,6 +144,21 @@
     "width": 784,
     "height": 632
   },
+  "thermostats": {
+    "example": "46858f89af95",
+    "width": 784,
+    "height": 1024
+  },
+  "thermostats.compact": {
+    "example": "b75abca731d4",
+    "width": 784,
+    "height": 928
+  },
+  "thermostats.tiles": {
+    "example": "024277afdb97",
+    "width": 784,
+    "height": 992
+  },
   "items": {
     "example": "71f2a74dec0f",
     "width": 784,

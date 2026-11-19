@@ -3,6 +3,7 @@ import {
   areaEntities,
   entriesOf,
   idsOf,
+  isUsable,
   layoutHeightOf,
   listedName,
   resolveEntity,
@@ -13,6 +14,9 @@ import {
 import { applianceHouseHeight } from './appliance/appliance-card.js';
 import { appliancesHouseHeight } from './appliance/appliances-card.js';
 import { thermostatHeight } from './climate-family.js';
+import { thermostatsHeight } from './thermostats-family.js';
+import { houseThermostats, presetLabel, presetsOffered } from './thermostats/house.js';
+import type { ThermostatsCardConfig } from './thermostats/thermostats-card.js';
 import { clockHeight, type ClockCardConfig } from './clock/clock-card.js';
 import { offersDaily } from './clock/sky.js';
 import { coverHeight } from './cover-family.js';
@@ -124,6 +128,21 @@ function lights(config: LightsCardConfig, hass: HomeAssistant): number {
         !known(hass, id) ||
         listAttr(hass, id, 'supported_color_modes').some((mode) => COLOURED.has(mode)),
     ),
+  });
+}
+
+/**
+ * The Thermostats card's thermostats where it lists none (its area's, else the house's: `houseThermostats`), and the
+ * presets those of its list that can be read offer, in the chips' words.
+ */
+function thermostats(config: ThermostatsCardConfig, hass: HomeAssistant): number {
+  const ids = idsOf(entriesOf(config.thermostats ?? config.entities));
+  const listed = ids.length ? ids : houseThermostats(hass, config.area);
+  const views = listed.map((id) => resolveEntity(hass, id));
+  const usable = views.filter(isUsable).length;
+  return thermostatsHeight(config, {
+    count: listed.length,
+    presets: presetsOffered(hass, views).map((offered) => presetLabel(offered, usable)),
   });
 }
 
@@ -368,6 +387,7 @@ const HOUSE: ReadonlyMap<string, HouseHeight> = new Map<string, HouseHeight>([
   ['fluvy-light-card', light],
   ['fluvy-lights-card', lights],
   ['fluvy-thermostat-card', thermostat],
+  ['fluvy-thermostats-card', thermostats],
   ['fluvy-fan-card', fan],
   ['fluvy-cover-card', cover],
   ['fluvy-vacuum-card', vacuum],

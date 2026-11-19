@@ -2104,6 +2104,7 @@
     "swipe": "Herhangi kartlar, sayfa başına bir tane, kaydırarak ya da altlarındaki sayfa işaretleriyle çevrilir: geniş ekranda yan yana, sondan yeniden başa.",
     "compass": "360° pusula halkasında rüzgâr hızı ve yönü, bir aracın yönü veya herhangi bir yön, ikincil yön işaretçisi ve altında en fazla üç okuma ile.",
     "rounds": "Herhangi bir varlık yuvarlak düğme olarak, açıkken her biri yanar: dokunmak güvenle değiştirilebileni açıp kapatır, basılı tutmak ayrıntıları açar; isteğe bağlı bir başlık kaç tanesinin açık olduğunu söyler.",
+    "thermostats": "Evin ya da bir odanın tüm termostatları tek kartta: her odanın sıcaklığı, ne yaptığı, ön ayarı ve hedefi, yuvarlak düğmeler ve isteğe bağlı − ve +, tüm ev için Tümünü kapat ve ön ayarlarla.",
     "schedule": "Bir odanın ısıtma haftası, Home Assistant’ın zamanlama yardımcısında: ön ayarların renklerinde günde bir çizgi, sıcaklıklarıyla Konfor, Eko ve Dışarıda, düzenlenen saatler, diğer günlere kopyalanan bir gün, planı açıp kapatma."
   },
   "time": {
@@ -2579,6 +2580,7 @@
     "swipe": "Kaydırma",
     "compass": "Pusula",
     "rounds": "Yuvarlak düğmeler",
+    "thermostats": "Termostatlar",
     "schedule": "Isıtma planı"
   },
   "appliance": {
@@ -3702,5 +3704,29 @@
   },
   "thermostat": {
     "room": "Oda"
+  },
+  "thermostats": {
+    "title": "Termostatlar",
+    "heating_of": "{count} içinden {on} ısıtıyor",
+    "heating_of_short": "{on}/{count} ısıtıyor",
+    "cooling_of": "{count} içinden {on} soğutuyor",
+    "cooling_of_short": "{on}/{count} soğutuyor",
+    "count_one": "1 termostat",
+    "count": "{count} termostat",
+    "average": "ortalama {value}",
+    "all_off": "Tümünü kapat",
+    "all_off_ask_one": "Açık olan termostat kapatılsın mı?",
+    "all_off_ask": "Açık olan {count} termostat kapatılsın mı?",
+    "empty": "Burada termostat yok",
+    "control": "Her satırın sonunda",
+    "room": "Odanın sıcaklığı",
+    "stepper": "− ve + ile hedef",
+    "show_count": "Kaç tanesinin ısıttığını söyle",
+    "show_average": "Ortalama sıcaklığı göster",
+    "show_round": "Her birini açan yuvarlak düğme",
+    "house_actions": "Tüm termostatlar için",
+    "presets": "Ön ayarları",
+    "rounds": "Yuvarlak düğmeler",
+    "names_area": "Alan adı"
   }
 }

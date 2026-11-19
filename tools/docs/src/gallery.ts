@@ -178,6 +178,24 @@ export const GALLERY: Readonly<Record<string, Example>> = {
     },
     variants: { row: {}, labels: { config: { show_names: true } } },
   },
+  'fluvy-thermostats-card': {
+    // the reporter's own (#230): the house's thermostats, how many heat, All off and the presets
+    config: {
+      type: 'custom:fluvy-thermostats-card',
+      title: 'Heating',
+      show_count: true,
+      show_average: true,
+      house_actions: ['all_off', 'presets'],
+      thermostats: [
+        'climate.ts_living_heat_pump',
+        'climate.ts_bedroom',
+        'climate.ts_kids_room',
+        'climate.ts_office',
+        'climate.ts_bathroom',
+      ],
+    },
+    variants: { compact: { config: { control: 'stepper' } }, tiles: {} },
+  },
   'fluvy-items-card': {
     config: { type: 'custom:fluvy-items-card', entity: 'sensor.it_flights' },
     variants: { compact: {}, tiles: {} },

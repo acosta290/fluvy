@@ -52,7 +52,8 @@ card_opacity: 0     # clear: no fill, no frost
   gauge, distribution, bars, energy balance, grid, car charger, batteries, energy devices, energy usage and production
   cards (the thermostat's older `show_state` still works).
 - `names`: Entities, Tiles, Room lights, Openings, Bars, Readouts, Stat tiles, Distribution, Helpers, Actions, Scenes,
-  Cameras, Updates.
+  Cameras, Updates, Thermostats (whose rows are named by their room by default, `names: area`, where a room holds one
+  of them).
 - `slider_style`: the light, slider, tile, tiles, lights, media, fan, cover and helpers cards.
 - `hide_empty` helps a list filled by [auto-entities](troubleshooting.md#a-list-filled-by-auto-entities).
 

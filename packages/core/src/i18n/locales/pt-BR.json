@@ -2104,6 +2104,7 @@
     "swipe": "Quaisquer cartões, um por página, passados deslizando ou pelas marcas de página abaixo: lado a lado numa tela larga, do último de volta ao primeiro.",
     "compass": "Velocidade e direção do vento, a direção de um veículo ou qualquer rumo em um anel de bússola de 360°, com um segundo marcador de direção e até três leituras abaixo.",
     "rounds": "Quaisquer entidades como botões redondos, cada um aceso enquanto está ligado: um toque alterna o que é seguro alternar, segurar abre os detalhes, com um cabeçalho opcional que diz quantos estão ligados.",
+    "thermostats": "Todos os termostatos da casa ou de um cômodo em um cartão: a temperatura de cada cômodo, o que está fazendo, sua predefinição e seu alvo, botões redondos e, se quiser, − e +, com Desligar todos e as predefinições para a casa toda.",
     "schedule": "A semana de aquecimento de um cômodo no auxiliar de agendamento do Home Assistant: uma linha por dia nas cores das suas predefinições, Conforto, Eco e Ausente com suas temperaturas, horários editados, um dia copiado para outros, a agenda ligada ou desligada."
   },
   "time": {
@@ -2579,6 +2580,7 @@
     "swipe": "Deslizar",
     "compass": "Bússola",
     "rounds": "Botões redondos",
+    "thermostats": "Termostatos",
     "schedule": "Agenda de aquecimento"
   },
   "appliance": {
@@ -3702,5 +3704,29 @@
   },
   "thermostat": {
     "room": "Cômodo"
+  },
+  "thermostats": {
+    "title": "Termostatos",
+    "heating_of": "{on} de {count} aquecendo",
+    "heating_of_short": "{on}/{count} aquecendo",
+    "cooling_of": "{on} de {count} resfriando",
+    "cooling_of_short": "{on}/{count} resfriando",
+    "count_one": "1 termostato",
+    "count": "{count} termostatos",
+    "average": "média de {value}",
+    "all_off": "Desligar todos",
+    "all_off_ask_one": "Desligar o termostato ligado?",
+    "all_off_ask": "Desligar os {count} termostatos ligados?",
+    "empty": "Nenhum termostato aqui",
+    "control": "Cada linha termina com",
+    "room": "A temperatura do cômodo",
+    "stepper": "O alvo, com − e +",
+    "show_count": "Dizer quantos estão aquecendo",
+    "show_average": "Mostrar a temperatura média",
+    "show_round": "Um botão redondo que abre cada um",
+    "house_actions": "Para todos os termostatos",
+    "presets": "Suas predefinições",
+    "rounds": "Botões redondos",
+    "names_area": "Nome da área"
   }
 }

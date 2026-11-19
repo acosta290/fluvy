@@ -36,6 +36,7 @@ import { sheet as solar } from './solar.js';
 import { sheet as storage } from './storage.js';
 import { sheet as swipe } from './swipe.js';
 import { sheet as template } from './template.js';
+import { sheet as thermostats } from './thermostats.js';
 import { sheet as usage } from './usage.js';
 import { sheet as vehicle } from './vehicle.js';
 import { sheet as web } from './web.js';
@@ -63,6 +64,7 @@ const VIEWS: Readonly<Record<string, NonNullable<FrameSpec['hass']>>> = {
   'fluvy-energy-usage-card': viewOf(usage, 'A day'),
   'fluvy-appliance-card': viewOf(appliances, 'Miele · washer rinsing, named'),
   'fluvy-appliances-card': viewOf(appliances, 'Appliances · rows'),
+  'fluvy-thermostats-card': viewOf(thermostats, 'The house’s heating'),
 };
 
 export const sheet: SheetSpec = {
@@ -107,6 +109,7 @@ export const sheet: SheetSpec = {
     clocks,
     calendar,
     rounds,
+    thermostats,
     // last: its own answers to the Energy dashboard's questions are the balance sheet's, which must not come first
     swipe,
   ],

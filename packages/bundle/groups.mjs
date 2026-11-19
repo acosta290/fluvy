@@ -208,6 +208,14 @@ const ROUNDS =
   /\/packages\/(cards\/src\/(rounds-cards\.ts|rounds\/)|core\/src\/i18n\/locales\/en\/rounds\.json)/;
 
 /**
+ * The Thermostats card (1.23, #230, #219: its card, what it reads of the house and its English; its editor goes with
+ * the forms, what a thermostat is doing and its model with the Thermostat card): fetched as the bundle starts and
+ * defined as it lands, as the template card is (`thermostats-family.ts` stays in core: the tag, the height).
+ */
+const THERMOSTATS =
+  /\/packages\/(cards\/src\/(thermostats-cards\.ts|thermostats\/)|core\/src\/i18n\/locales\/en\/thermostats\.json)/;
+
+/**
  * The web page card (its card, what it decides of an address and a plate's rounds, and its English): fetched as the
  * bundle starts and defined as it lands, as the template card is (`web-family.ts` stays in core: the tag, the height).
  */
@@ -507,7 +515,7 @@ const FORMS =
  * naming words, the strategy and the heights it counts with the house, the wall, the forms of the cards every page carries, the weather
  * card, the calendar card, the media, the chart engine, the Chart card, the Energy period card, energy (the history
  * bars' readings on their own), devices (the cameras' sheet on its own), appliances (their pictures on their own),
- * automations and alerts families (each sheet on its own), the template card, the web page card, the Rounds card, what each card is, the
+ * automations and alerts families (each sheet on its own), the template card, the web page card, the Rounds card, the Thermostats card, what each card is, the
  * Expander card (its editor on its own, before the forms, with the Swipe card's), the Swipe card, a dashboard's own
  * sidebar, the Slider card, the ring, the Cover card, the drive pad, the Vacuum card, the Thermostat card, the platforms' logos, the
  * remote card, the Vehicle card, the Heating schedule card (its sheet on its own), Fluvy's own details, the items card (its sheet on its own), the light card's colours,
@@ -553,6 +561,7 @@ export const GROUPS = [
   { name: 'template', test: TEMPLATE },
   { name: 'web', test: WEB },
   { name: 'rounds', test: ROUNDS },
+  { name: 'thermostats', test: THERMOSTATS },
   { name: 'about', test: ABOUT },
   { name: 'expander', test: EXPANDER },
   { name: 'swipe', test: SWIPE },

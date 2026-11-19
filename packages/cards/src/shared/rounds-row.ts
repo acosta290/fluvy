@@ -23,13 +23,22 @@ export interface RoundsRowSpec {
   readonly name?: boolean;
   /** Its line ("21.4° · 48 %"): its segments after the first give way from the end; the compact row has none. */
   readonly sub?: string | undefined;
-  /** A figure or a word at its end, before its rounds ("20.5°"). */
-  readonly value?: string | undefined;
+  /**
+   * A figure or a word at its end, before its rounds ("20.5°"); or a control in its place, drawn by the card, as wide
+   * as it says (a thermostat's target between − and +).
+   */
+  readonly value?: string | RowControl | undefined;
   readonly rounds: readonly RoundSpec[];
   readonly onTap?: (() => void) | undefined;
   readonly onHold?: (() => void) | undefined;
   /** What a reader hears for the row where its words leave something out. */
   readonly label?: string | undefined;
+}
+
+/** A control at a row's end in its value's place: what the card draws, and its width. */
+export interface RowControl {
+  readonly drawn: TemplateResult;
+  readonly width: number;
 }
 
 /* a row's circle and the 12 after it, the compact row's smaller one */
@@ -49,9 +58,24 @@ function wordsNeed(host: RoundsHost, row: RoundsRowSpec, compact: boolean): numb
   return Math.max(Math.min(ROW_NAME_MIN, name), first);
 }
 
+/** What a row's value takes of its line: its words, or its control, and the 12 before it. */
+const valueSlot = (host: RoundsHost, value: RoundsRowSpec['value']): number =>
+  !value
+    ? 0
+    : GAP + (typeof value === 'string' ? host.ruler.width('fv-row__value', value) : value.width);
+
+/**
+ * The room before a row's words: its circle and the 12 after it (the compact row's smaller one), which a value of
+ * words is laid out beside whether it stands or not (one given away is the words'); none for a control the list gave
+ * its circles away to.
+ */
+const before = (row: RoundsRowSpec, compact: boolean, icon: boolean): number =>
+  !icon && typeof row.value === 'object' ? 0 : compact ? CIRCLE_COMPACT : CIRCLE;
+
 /**
  * Whether a list of rows keeps its circles (`rowsKeepIcon`'s rule): every row's words keep what they need beside the
- * circle alone; where one's would not, every row of the list gives its circle to its words.
+ * circle alone, and beside a control at its end (a card's own, which goes before the circles do); where one's would
+ * not, every row of the list gives its circle away.
  */
 export const roundsRowsKeepIcon = (
   host: RoundsHost,
@@ -59,7 +83,27 @@ export const roundsRowsKeepIcon = (
   rows: readonly RoundsRowSpec[],
   compact = false,
 ): boolean =>
-  rows.every((row) => width - (compact ? CIRCLE_COMPACT : CIRCLE) >= wordsNeed(host, row, compact));
+  rows.every(
+    (row) =>
+      width -
+        before(row, compact, true) -
+        (typeof row.value === 'object' ? valueSlot(host, row.value) : 0) >=
+      wordsNeed(host, row, compact),
+  );
+
+/**
+ * What a row leaves its rounds: `width` less its circle (none for a control the list gave its circles away to, `icon`),
+ * its value and what its words must keep. Under 0, its value does not hold either, and gives way (a card with a
+ * control there may end its rows in a value of words instead).
+ */
+export const roundsRoom = (
+  host: RoundsHost,
+  width: number,
+  row: RoundsRowSpec,
+  compact = false,
+  icon = true,
+): number =>
+  width - before(row, compact, icon) - valueSlot(host, row.value) - wordsNeed(host, row, compact);
 
 /**
  * A row in `width`, its circle where the list keeps it (`roundsRowsKeepIcon`), what does not hold beside its words
@@ -72,16 +116,13 @@ export function roundsRow(
   row: RoundsRowSpec,
   { compact = false, icon = true }: { readonly compact?: boolean; readonly icon?: boolean } = {},
 ): TemplateResult {
-  // the rounds and the value are laid out beside the circle whether it stands or not: one given away is the words'
-  const circle = compact ? CIRCLE_COMPACT : CIRCLE;
-  const need = wordsNeed(host, row, compact);
-  const valueSlot = (value: string | undefined): number =>
-    value ? GAP + host.ruler.width('fv-row__value', value) : 0;
-  // the rounds in what the words and the value leave; none there, the value goes where the words would not hold
-  const block = roundsIn(host, row.rounds, width - circle - valueSlot(row.value) - need, false);
-  const value =
-    block.taken || width - circle - valueSlot(row.value) >= need ? row.value : undefined;
-  const room = width - (icon ? circle : 0) - valueSlot(value) - block.taken;
+  // the rounds and the value are laid out beside the circle whether it stands or not (`before`); the rounds in what
+  // the words and the value leave (`roundsRoom`), none there, the value going where the words would not hold
+  const left = roundsRoom(host, width, row, compact, icon);
+  const block = roundsIn(host, row.rounds, left, false);
+  const value = block.taken || left >= 0 ? row.value : undefined;
+  const room =
+    width - (icon ? before(row, compact, icon) : 0) - valueSlot(host, value) - block.taken;
   const sub =
     row.sub && !compact
       ? fitLine(
@@ -99,7 +140,11 @@ export function roundsRow(
     ...(sub ? { sub } : {}),
     compact,
     ...(row.label ? { label: row.label } : {}),
-    trailing: html`${value ? html`<span class="fv-row__value">${value}</span>` : nothing}${block.template}`,
+    trailing: html`${
+      typeof value === 'string'
+        ? html`<span class="fv-row__value">${value}</span>`
+        : (value?.drawn ?? nothing)
+    }${block.template}`,
     onTap: row.onTap,
     onHold: row.onHold,
   });

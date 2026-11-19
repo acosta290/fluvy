@@ -582,6 +582,19 @@ export const MEANINGS: Readonly<Record<string, string>> = {
     'Sensors read under the value, up to four on one row, in this order: the room’s humidity, the power, how long it ran.',
   'thermostat.show_battery': 'Warns of a low battery on the head’s line.',
   'thermostat.show_presets': 'Shows the presets.',
+  'thermostats.area':
+    'Lists the climates of this area where the card lists none; left out, every one of the house.',
+  'thermostats.control':
+    'What each row ends in: the room’s temperature, or the target between − and + (the room’s temperature then leads its line).',
+  'thermostats.names':
+    'How a row is named where it has no name of its own: by its area where it is the card’s only one there, else as Home Assistant says it; or by the entity’s full name, its own, or its device’s.',
+  'thermostats.house_actions':
+    'Chips over the list for every thermostat at once, in this order: All off, which asks first, and the presets they offer.',
+  'thermostats.show_average': 'Says on the head’s line the average of what the rooms measure.',
+  'thermostats.show_count':
+    'Says on the head’s line how many heat (or cool, else are on) of those that can be read.',
+  'thermostats.show_round':
+    'Ends each row in a round that opens its details, before the row’s own rounds.',
   'tiles.name_lines':
     'Lets each tile’s name take two lines where one would cut it, every tile a line taller.',
   'tiles.size': 'The tiles’ size.',
@@ -691,6 +704,8 @@ export const MEANINGS: Readonly<Record<string, string>> = {
     'The quick actions in the room’s head, each on a group of its devices or on one entity.',
   'room.tiles[]': 'Tiles of the room’s entities, in this order.',
   'rounds.items[]': 'The entities the card draws as rounds, in this order.',
+  'thermostats.thermostats[]':
+    'The thermostats, in this order; left out, every climate of the area, else of the house.',
   'scenes.scenes[]': 'The scenes, in the order they are drawn.',
   'schedule.presets[]': 'How a preset looks on this card: its name, icon and colour, by its key.',
   'sensor.entities[]': 'Up to two more sensors drawn on the same chart.',
@@ -879,5 +894,7 @@ export const MEANINGS: Readonly<Record<string, string>> = {
     'Shows this round’s state under its icon, or hides it, whatever the layout says.',
   'schedule.presets[].preset':
     'The preset’s key: comfort, eco, away, home, sleep, boost, activity, or the name of one of your own.',
+  'thermostats.thermostats[].rounds':
+    'Rounds of its own after the one that opens it, each an entity with its own icon and actions: a schedule’s view, a window.',
   'vehicle.roles[].role': 'What the entity is to the car.',
 };

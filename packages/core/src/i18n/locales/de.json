@@ -2104,6 +2104,7 @@
     "swipe": "Beliebige Karten, eine pro Seite, zum Wischen oder über die Seitenmarken darunter: auf breiten Bildschirmen nebeneinander, von der letzten wieder zur ersten.",
     "compass": "Windgeschwindigkeit und -richtung, der Kurs eines Fahrzeugs oder jede beliebige Richtung auf einem 360°-Kompassring, mit zweiter Richtungsmarkierung und bis zu drei Messwerten darunter.",
     "rounds": "Beliebige Entitäten als runde Tasten, jede leuchtet, solange sie an ist: Antippen schaltet, was gefahrlos schaltbar ist, Gedrückthalten öffnet die Details, dazu auf Wunsch eine Kopfzeile, die sagt, wie viele an sind.",
+    "thermostats": "Alle Thermostate des Hauses oder eines Raums auf einer Karte: die Temperatur jedes Raums, was jedes gerade tut, seine Voreinstellung und sein Ziel, runde Tasten und auf Wunsch − und +, dazu „Alle aus“ und die Voreinstellungen für das ganze Haus.",
     "schedule": "Die Heizwoche eines Raums auf dem Zeitplan-Helfer von Home Assistant: eine Zeitleiste pro Tag in den Farben der Voreinstellungen, Komfort, Eco und Abwesend mit ihren Temperaturen, Zeiten bearbeiten, einen Tag auf andere kopieren, den Plan ein- oder ausschalten."
   },
   "time": {
@@ -2579,6 +2580,7 @@
     "swipe": "Wischen",
     "compass": "Kompass",
     "rounds": "Runde Tasten",
+    "thermostats": "Thermostate",
     "schedule": "Heizplan"
   },
   "appliance": {
@@ -3702,5 +3704,29 @@
   },
   "thermostat": {
     "room": "Raum"
+  },
+  "thermostats": {
+    "title": "Thermostate",
+    "heating_of": "{on} von {count} heizen",
+    "heating_of_short": "{on}/{count} heizen",
+    "cooling_of": "{on} von {count} kühlen",
+    "cooling_of_short": "{on}/{count} kühlen",
+    "count_one": "1 Thermostat",
+    "count": "{count} Thermostate",
+    "average": "{value} im Schnitt",
+    "all_off": "Alle aus",
+    "all_off_ask_one": "Das eingeschaltete Thermostat ausschalten?",
+    "all_off_ask": "Die {count} eingeschalteten Thermostate ausschalten?",
+    "empty": "Hier keine Thermostate",
+    "control": "Jede Zeile endet mit",
+    "room": "Raumtemperatur",
+    "stepper": "Ziel mit − und +",
+    "show_count": "Anzeigen, wie viele heizen",
+    "show_average": "Durchschnittstemperatur anzeigen",
+    "show_round": "Runde Taste, die jedes öffnet",
+    "house_actions": "Für alle Thermostate",
+    "presets": "Ihre Voreinstellungen",
+    "rounds": "Runde Tasten",
+    "names_area": "Bereichsname"
   }
 }

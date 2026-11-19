@@ -136,6 +136,9 @@ const BUDGETS = {
   web: 8192,
   // the Rounds card (1.23, #224): its card and its English, the rounds it draws the quick actions'; measured at 2.3 KB
   rounds: 4096,
+  // the Thermostats card (1.23, #230, #219): its card, what it reads of the house and its English; what a thermostat
+  // is doing and its model the Thermostat card's, the rows and their rounds the quick actions'
+  thermostats: 8192,
   // what each card is (1.22, #193): the line the card picker's search reads and Customise's list says under each name,
   // in English, which left core; measured at 3.6 KB
   about: 4096,
@@ -264,6 +267,8 @@ const BUDGETS = {
   'icons-outdoor': 4096,
   'icons-home': 4096,
   'icons-rooms': 4096,
+  // the glyph sets a card draws by itself (1.23, #226): the rooms', which the Thermostats card's rows draw (#230)
+  'glyphs-rooms': 4096,
   // the levels in Fluvy's icons (1.23, #226): what picks a battery's charge, a signal's bars, a valve open or shut, and
   // the twelve glyphs that say them
   levels: 2048,

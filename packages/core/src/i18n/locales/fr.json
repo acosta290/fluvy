@@ -2104,6 +2104,7 @@
     "swipe": "N’importe quelles cartes, une par page, qu’on fait défiler d’un balayage ou par les repères de page en dessous : côte à côte sur un grand écran, de la dernière à nouveau à la première.",
     "compass": "Vitesse et direction du vent, le cap d’un véhicule ou toute direction sur une rose de 360°, avec un second repère de cap et jusqu’à trois mesures en dessous.",
     "rounds": "N’importe quelles entités en boutons ronds, chacun allumé tant qu’il est actif : un appui bascule ce qui peut l’être sans risque, un appui long ouvre ses détails, avec un en-tête facultatif qui dit combien sont allumés.",
+    "thermostats": "Tous les thermostats de la maison ou d’une pièce sur une carte : la température de chaque pièce, ce que fait chacun, son préréglage et sa consigne, des boutons ronds et, au choix, − et +, avec Tout éteindre et les préréglages pour toute la maison.",
     "schedule": "La semaine de chauffage d’une pièce sur l’entrée Planification de Home Assistant : une ligne par jour aux couleurs de ses préréglages, Confort, Éco et Absent avec leurs températures, ses horaires modifiés, un jour copié sur d’autres, le programme activé ou non."
   },
   "time": {
@@ -2579,6 +2580,7 @@
     "swipe": "Balayage",
     "compass": "Boussole",
     "rounds": "Boutons ronds",
+    "thermostats": "Thermostats",
     "schedule": "Programme de chauffage"
   },
   "appliance": {
@@ -3702,5 +3704,29 @@
   },
   "thermostat": {
     "room": "Pièce"
+  },
+  "thermostats": {
+    "title": "Thermostats",
+    "heating_of": "{on} sur {count} chauffent",
+    "heating_of_short": "{on}/{count} chauffent",
+    "cooling_of": "{on} sur {count} refroidissent",
+    "cooling_of_short": "{on}/{count} refroidissent",
+    "count_one": "1 thermostat",
+    "count": "{count} thermostats",
+    "average": "{value} en moyenne",
+    "all_off": "Tout éteindre",
+    "all_off_ask_one": "Éteindre le thermostat allumé ?",
+    "all_off_ask": "Éteindre les {count} thermostats allumés ?",
+    "empty": "Aucun thermostat ici",
+    "control": "Chaque ligne se termine par",
+    "room": "La température de la pièce",
+    "stepper": "La consigne, avec − et +",
+    "show_count": "Dire combien chauffent",
+    "show_average": "Afficher la température moyenne",
+    "show_round": "Un bouton rond qui ouvre chacun",
+    "house_actions": "Pour tous les thermostats",
+    "presets": "Leurs préréglages",
+    "rounds": "Boutons ronds",
+    "names_area": "Nom de la zone"
   }
 }

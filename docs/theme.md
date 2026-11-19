@@ -295,3 +295,6 @@ humidifying the water, idle and off none. Home Assistant's own names stay set by
   color: var(--fluvy-state-climate-heat-on-fill);
 }
 ```
+
+A row of your own opens a thermostat's details as Fluvy's do, its sheet where the house asks for them:
+`window.__fluvy?.openDetails(entityId, { from: this })` ([Details sheets](customising.md#details-sheets)).

@@ -147,22 +147,25 @@ export const CHIP_GLYPH = 24;
 /**
  * The rows a row of chips takes at `width`: filled (`full`, the default) as `fittedColumns` lays it out — every
  * chip, else three, else two a row, the widest label deciding — or content-sized (`chips`), wrapping as its pills run;
- * each chip `glyph` wider where the row's chips carry one (`CHIP_GLYPH`).
+ * each chip `glyph` wider where the row's chips carry one (`CHIP_GLYPH`), or the chips that do where some do (a list,
+ * a chip's own: the Thermostats card's All off beside presets of words).
  */
 export function chipRows(
   labels: readonly string[],
   style: 'full' | 'chips' = 'full',
   width = COLUMN,
   candidates?: readonly number[],
-  glyph = 0,
+  glyph: number | readonly number[] = 0,
 ): number {
   const count = labels.length;
   if (!count) return 0;
+  const glyphOf = (index: number): number =>
+    typeof glyph === 'number' ? glyph : (glyph[index] ?? 0);
   if (style === 'chips') {
     let rows = 1;
     let used = 0;
-    for (const label of labels) {
-      const pill = textWidth(label, 'chip') + PILL_SIDES + glyph;
+    for (const [index, label] of labels.entries()) {
+      const pill = textWidth(label, 'chip') + PILL_SIDES + glyphOf(index);
       if (used && used + CHIP_GAP + pill > width) {
         rows += 1;
         used = pill;
@@ -172,7 +175,7 @@ export function chipRows(
   }
   const widest = Math.max(
     0,
-    ...labels.map((label) => textWidth(label, 'chip') + CHIP_SIDES + glyph),
+    ...labels.map((label, index) => textWidth(label, 'chip') + CHIP_SIDES + glyphOf(index)),
   );
   const tried =
     candidates ??

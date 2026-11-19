@@ -19,9 +19,11 @@ export type EntityName = string | EntityNameItem | readonly EntityNameItem[];
 /**
  * How a card of a list names the items that say no name of their own (`names`, 1.22, #200): each by its entity's own
  * name (`entity`), by its device's (`device`), as Home Assistant says it (`full`, the default), or by the parts a
- * `name` is made of.
+ * `name` is made of. `area` is the Thermostats card's alone (1.23, #230: a row by its room where it is the room's
+ * only one); any other list reads it as none asked (`listedName`), one name being never every item's.
  */
-export type ItemNames = 'entity' | 'device' | 'full' | EntityNameItem | readonly EntityNameItem[];
+export type ItemNames =
+  'entity' | 'device' | 'area' | 'full' | EntityNameItem | readonly EntityNameItem[];
 
 /** The registries a name's parts are read from; any may be absent (a page without Home Assistant, a test). */
 type NameRegistries = Partial<Pick<HomeAssistant, 'entities' | 'devices' | 'areas' | 'floors'>>;

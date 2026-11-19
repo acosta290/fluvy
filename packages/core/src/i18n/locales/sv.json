@@ -850,6 +850,7 @@
     "swipe": "Svep",
     "compass": "Kompass",
     "rounds": "Runda knappar",
+    "thermostats": "Termostater",
     "schedule": "Värmeschema"
   },
   "activity": {
@@ -1561,6 +1562,7 @@
     "swipe": "Valfria kort, ett per sida, som bläddras med ett svep eller med sidmarkeringarna under dem: sida vid sida på en bred skärm, runt från den sista till den första.",
     "compass": "Vindhastighet och -riktning, ett fordons kurs eller vilken riktning som helst på en 360°-kompassring med en sekundär riktningsmarkör och upp till tre värden undertill.",
     "rounds": "Valfria entiteter som runda knappar, var och en tänd medan den är på: ett tryck växlar det som är säkert att växla, ett långt tryck öppnar detaljerna, med en valfri rubrik som säger hur många som är på.",
+    "thermostats": "Alla termostater i huset eller ett rum på ett kort: varje rums temperatur, vad den gör, dess förinställning och dess mål, runda knappar och vid behov − och +, med Stäng av alla och förinställningarna för hela huset.",
     "schedule": "Ett rums värmevecka på Home Assistants schemahjälpare: en linje per dag i förinställningarnas färger, Komfort, Eco och Borta med sina temperaturer, tider redigerade, en dag kopierad till andra, schemat på eller av."
   },
   "chart-card": {
@@ -3702,5 +3704,29 @@
   },
   "thermostat": {
     "room": "Rum"
+  },
+  "thermostats": {
+    "title": "Termostater",
+    "heating_of": "{on} av {count} värmer",
+    "heating_of_short": "{on}/{count} värmer",
+    "cooling_of": "{on} av {count} kyler",
+    "cooling_of_short": "{on}/{count} kyler",
+    "count_one": "1 termostat",
+    "count": "{count} termostater",
+    "average": "{value} i snitt",
+    "all_off": "Stäng av alla",
+    "all_off_ask_one": "Stänga av termostaten som är på?",
+    "all_off_ask": "Stänga av de {count} termostaterna som är på?",
+    "empty": "Inga termostater här",
+    "control": "Varje rad slutar med",
+    "room": "Rummets temperatur",
+    "stepper": "Målet med − och +",
+    "show_count": "Säg hur många som värmer",
+    "show_average": "Visa medeltemperaturen",
+    "show_round": "En rund knapp som öppnar var och en",
+    "house_actions": "För alla termostater",
+    "presets": "Deras förinställningar",
+    "rounds": "Runda knappar",
+    "names_area": "Områdets namn"
   }
 }

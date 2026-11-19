@@ -130,8 +130,8 @@ export interface ThermostatReadout extends TileReadout {
 const READINGS = 4;
 
 /** The target between the stepper's halves (`focus: current`): measured in its own class, 4 a side. */
-const TARGET_VALUE = 'fv-stepper fv-stepper--value > fv-stepper__value';
-const TARGET_SIDES = 8;
+export const TARGET_VALUE = 'fv-stepper fv-stepper--value > fv-stepper__value';
+export const TARGET_SIDES = 8;
 /** An icon tile's sides (`modes_style: icons`), 4 each, which its word sits between. */
 const ICON_SIDES = 8;
 

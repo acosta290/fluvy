@@ -160,6 +160,7 @@ export const SECTIONS: ReadonlyArray<readonly [title: string, tags: readonly str
       'fluvy-schedule-card',
       'fluvy-entities-card',
       'fluvy-rounds-card',
+      'fluvy-thermostats-card',
       'fluvy-items-card',
       'fluvy-media-card',
       'fluvy-now-playing-card',
@@ -270,6 +271,7 @@ export const UNDECLARED: Readonly<Record<string, string>> = {
   position_presets: 'none',
   tilt_presets: 'none',
   alert_classes: 'none',
+  house_actions: 'none',
 };
 
 /**

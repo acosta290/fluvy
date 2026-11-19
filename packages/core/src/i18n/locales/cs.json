@@ -726,6 +726,7 @@
     "swipe": "Libovolné karty, jedna na stránku, listované přejetím prstem nebo značkami stránek pod nimi: na širokém displeji vedle sebe, od poslední zase k první.",
     "compass": "Rychlost a směr větru, směr jízdy vozidla nebo jakýkoli směr na 360° růžici kompasu, s druhým ukazatelem směru a až třemi hodnotami pod ní.",
     "rounds": "Libovolné entity jako kulatá tlačítka, každé rozsvícené, dokud je zapnuté: klepnutí přepne, co je bezpečné přepnout, podržení otevře podrobnosti, s volitelnou hlavičkou s počtem zapnutých.",
+    "thermostats": "Všechny termostaty domu nebo místnosti na jedné kartě: teplota každé místnosti, co právě dělá, jeho předvolba a cíl, kulatá tlačítka a volitelně − a +, s tlačítkem Vypnout vše a předvolbami pro celý dům.",
     "schedule": "Týden vytápění místnosti na pomocníkovi Časový plán v Home Assistant: čára pro každý den v barvách předvoleb, Komfort, Eko a Pryč s jejich teplotami, upravené časy, den zkopírovaný na další, plán zapnutý nebo vypnutý."
   },
   "chart-card": {
@@ -1942,6 +1943,7 @@
     "swipe": "Listování",
     "compass": "Kompas",
     "rounds": "Kulatá tlačítka",
+    "thermostats": "Termostaty",
     "schedule": "Plán vytápění"
   },
   "alarm": {
@@ -3762,5 +3764,31 @@
   },
   "thermostat": {
     "room": "Místnost"
+  },
+  "thermostats": {
+    "title": "Termostaty",
+    "heating_of": "{on} z {count} topí",
+    "heating_of_short": "{on}/{count} topí",
+    "cooling_of": "{on} z {count} chladí",
+    "cooling_of_short": "{on}/{count} chladí",
+    "count_few": "{count} termostaty",
+    "count_one": "1 termostat",
+    "count": "{count} termostatů",
+    "average": "průměr {value}",
+    "all_off": "Vypnout vše",
+    "all_off_ask_few": "Vypnout {count} zapnuté termostaty?",
+    "all_off_ask_one": "Vypnout zapnutý termostat?",
+    "all_off_ask": "Vypnout {count} zapnutých termostatů?",
+    "empty": "Zde nejsou žádné termostaty",
+    "control": "Každý řádek končí",
+    "room": "Teplota místnosti",
+    "stepper": "Cíl s − a +",
+    "show_count": "Zobrazit, kolik jich topí",
+    "show_average": "Zobrazit průměrnou teplotu",
+    "show_round": "Kulaté tlačítko, které každý otevře",
+    "house_actions": "Pro všechny termostaty",
+    "presets": "Jejich předvolby",
+    "rounds": "Kulatá tlačítka",
+    "names_area": "Název oblasti"
   }
 }

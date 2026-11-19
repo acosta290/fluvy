@@ -15,6 +15,7 @@ import {
 import { configKeys } from '../shared/config.js';
 import {
   accentField,
+  actionField,
   actionFields,
   acts,
   areaField,
@@ -247,6 +248,45 @@ export const roundsList = (
         when,
       }
     : { key, title, keys: ROUND_KEYS, schema: ROUND_ITEM, computeLabel: roundLabel, when };
+
+/**
+ * A list of rounds inside an item's form (1.23, #230: a thermostat's own, after the one that opens it): Home
+ * Assistant's list of objects, each an entity's round with its own name, icon, colour and actions, added and edited in
+ * its dialog and dragged into order. The rows editor hands it items and writes them back as the card reads them, an
+ * entity alone as its id.
+ */
+export const roundsField = (name = 'rounds'): HaFormSchemaItem => {
+  const { computeLabel } = formLabels();
+  const fields = [
+    entityField(undefined, 'entity'),
+    textField('name'),
+    iconField(),
+    toneField(),
+    accentField('color'),
+    actionField('tap_action'),
+    actionField('hold_action'),
+  ];
+  return {
+    name,
+    selector: {
+      object: {
+        multiple: true,
+        label_field: 'entity',
+        description_field: 'name',
+        fields: Object.fromEntries(
+          fields.map((field) => [
+            field.name,
+            {
+              selector: field.selector,
+              required: field.required ?? false,
+              label: computeLabel(field, (key) => key),
+            },
+          ]),
+        ),
+      },
+    },
+  };
+};
 
 /**
  * A room's tiles are a group's but for their look out of reach, which is the room's (they sit inside it), and a large

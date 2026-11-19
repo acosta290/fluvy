@@ -3094,6 +3094,42 @@ details. An item's own name, icon, tone, colour, actions and `show_state`.
   itself (all of a shorter one) and its line's first segment whole. A row never stacks: 60 tall, 48 compact; a round's
   state beside its glyph, never under it. A press on a round is the round's: the row does not dim under it.
 
+## Thermostats (1.23, #230, #219)
+
+Every thermostat of a house, a room or a list in one card (@xoatrash's picture, @waphbs's house card): a row each
+through the rounds' row (§ Rounds), as the room lights' rounds are drawn, its parts all the house's own.
+
+- **A row**: its room's glyph (the area's icon as Fluvy's rooms draw it, `ROOM_ICONS`: a sofa, a bed, a teddy bear;
+  else the area's own icon; else the thermostat's), filled in what it is doing's tone while it does anything (heating
+  the heat's, cooling the cool's, a window open the warning's), quiet while idle or off, the dashed ring out of
+  reach. Its name is its room's where it is the card's only thermostat there (`names: area`, the default), else Home
+  Assistant's; its line says what it is doing, its preset and its target ("Heating · Eco · 21°", `doing`'s word),
+  giving way from its end; its value what the room measures ("20.5°", "—" out of reach); then its rounds, the first
+  the thermostat itself (its glyph, lit while it is on: a tap opens its details), then the person's own. The whole
+  row opens its details; out of reach it takes no tap, its hold still opens them. 60 a row, 48 compact (the name and
+  the figure).
+- **The stepper** (`control: stepper`): the row ends in the Thermostat card's pill (§ Thermostat: the room first),
+  − and + at 44 with the target between them, each unit's own step and range, sent once the taps settle (650 ms); the
+  room's reading leads the line ("20.5° · Heating · Eco"). One pill for the whole card, as wide as the widest figure
+  any of its thermostats can show (its ends, a range, Off, a dash), so the pills stand in one column and a step never
+  resizes one. It goes before the circles do: where a row could not hold it beside its name's 96, the circles give
+  it their room; where even that would not hold, every row ends in the room's reading again. Off it says Off, out of
+  reach a dash, its halves still.
+- **Tiles** (`tiles`): option tiles (84, 8 apart) two a row where each keeps 120, an odd last one the whole row: the
+  room's glyph, its name, what it is doing after it where both hold whole, the room's reading as its figure; filled in
+  its tone while it does anything, the dashed tile out of reach.
+- **The head**, where asked: "2 of 4 heating" (else cooling, else on, else how many there are, of those that can be
+  read) and the house's average ("19.7° average"); its circle in the heat's tone while any heats.
+- **The house's actions** (`house_actions`, in their order): filled chips over the list, 16 under the head. All off
+  carries the power glyph and asks first in Home Assistant's own dialog ("Turn off the 3 thermostats that are on?"),
+  then turns off each that is on as it takes it (its own off, else its Off mode), held while none is. A preset chip
+  is a preset the thermostats that can be read offer between them, in Home Assistant's word, saying how many offer it
+  where some do not ("Boost 3/4"); chosen where every one that is on and offers it is in it; a tap sets each of those
+  to it, never one that is off (a preset never changes power), held while none is on to take it. No scenes, boosts or
+  timers of the card's own.
+- **Its height is its config's** (and the house's where it lists none): 20 and the head, the chips' rows, the rows or
+  the tiles' rows, 20; a row never stacks, so the stepper and the rounds change nothing.
+
 ## Template (1.10)
 
 The template card (#59) is the tile card's tile — compact (76, the default), mini (108) or large (168), the same

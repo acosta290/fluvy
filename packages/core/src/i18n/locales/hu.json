@@ -1207,6 +1207,7 @@
     "swipe": "Lapozó",
     "compass": "Iránytű",
     "rounds": "Kerek gombok",
+    "thermostats": "Termosztátok",
     "schedule": "Fűtési ütemterv"
   },
   "activity": {
@@ -1918,6 +1919,7 @@
     "swipe": "Bármilyen kártyák, oldalanként egy, húzással vagy az alattuk lévő oldaljelekkel lapozva: széles kijelzőn egymás mellett, az utolsótól újra az elsőig.",
     "compass": "Szélsebesség és szélirány, egy jármű iránya vagy bármely irány egy 360°-os iránytűgyűrűn, másodlagos irányjelzővel és legfeljebb három értékkel alatta.",
     "rounds": "Bármilyen entitás kerek gombként, mindegyik világít, amíg be van kapcsolva: koppintásra átkapcsolja, ami biztonságosan kapcsolható, nyomva tartásra megnyitja a részleteket, és egy választható fejléc megmondja, hány van bekapcsolva.",
+    "thermostats": "A ház vagy egy szoba összes termosztátja egy kártyán: minden szoba hőmérséklete, hogy mit csinál, az előbeállítása és a célja, kerek gombok és igény szerint − és +, a Mind ki gombbal és az egész ház előbeállításaival.",
     "schedule": "Egy szoba fűtési hete a Home Assistant Ütemezés segédjén: naponta egy sáv az előbeállítások színeiben, Komfort, Eco és Távol a hőmérsékletükkel, szerkesztett időpontok, egy nap másolása más napokra, az ütemterv be- vagy kikapcsolása."
   },
   "chart-card": {
@@ -3702,5 +3704,29 @@
   },
   "thermostat": {
     "room": "Szoba"
+  },
+  "thermostats": {
+    "title": "Termosztátok",
+    "heating_of": "{count} közül {on} fűt",
+    "heating_of_short": "{on}/{count} fűt",
+    "cooling_of": "{count} közül {on} hűt",
+    "cooling_of_short": "{on}/{count} hűt",
+    "count_one": "1 termosztát",
+    "count": "{count} termosztát",
+    "average": "átlagosan {value}",
+    "all_off": "Mind ki",
+    "all_off_ask_one": "A bekapcsolt termosztát kikapcsolása?",
+    "all_off_ask": "{count} bekapcsolt termosztát kikapcsolása?",
+    "empty": "Itt nincs termosztát",
+    "control": "Minden sor végén",
+    "room": "A szoba hőmérséklete",
+    "stepper": "A cél − és + gombbal",
+    "show_count": "Mutassa, hány fűt",
+    "show_average": "Az átlaghőmérséklet megjelenítése",
+    "show_round": "Kerek gomb, amely mindegyiket megnyitja",
+    "house_actions": "Minden termosztátra",
+    "presets": "Az előbeállításaik",
+    "rounds": "Kerek gombok",
+    "names_area": "Terület neve"
   }
 }
