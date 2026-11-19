@@ -65,7 +65,7 @@ import {
   type SwitchStyle,
   type TileItem,
 } from '../tile/tile-card.js';
-import type { QuickAction, QuickRounds } from './quick-actions.js';
+import type { RoundsBlock, RoundSpec } from '../shared/rounds.js';
 
 const s = strings('room');
 
@@ -139,7 +139,7 @@ export interface RoomCardConfig extends FluvyCardConfig, LightColours, RoomTunin
    * The quick actions in order, as many as the width holds: the room's `lights`, `covers`, `fans` or `media` (a round
    * for each set), or an entity (default: its lights, then its blinds).
    */
-  quick_actions?: readonly (string | QuickAction)[];
+  quick_actions?: readonly (string | RoundSpec)[];
   /**
    * Every quick action's state in the pill its round grows into (#205): a reading with its unit, a door's Open, the
    * level a ring draws; a quick action may say its own (`show_state`). Default: none.
@@ -167,7 +167,7 @@ export function statesUnder(config: RoomCardConfig | undefined): boolean {
     config.quick_actions === undefined ? [{}] : [config.quick_actions].flat();
   return entries.some(
     (entry) =>
-      (entry as Partial<QuickAction> | null)?.show_state ?? config.show_quick_states ?? false,
+      (entry as Partial<RoundSpec> | null)?.show_state ?? config.show_quick_states ?? false,
   );
 }
 
@@ -181,7 +181,7 @@ let quickPending: Promise<QuickModule> | undefined;
 export const loadQuickActions = (): Promise<QuickModule> =>
   (quickPending ??= import('./quick-actions.js').then((module) => (quick = module)));
 
-const NO_ROUNDS: QuickRounds = { taken: 0, template: nothing };
+const NO_ROUNDS: RoundsBlock = { taken: 0, template: nothing };
 
 const HERO = 160;
 /**
@@ -409,7 +409,7 @@ export class FluvyRoomCard extends FluvyTileCard {
       typeof rounds === 'string' ||
       (typeof rounds === 'object' && rounds !== null && !Array.isArray(rounds))
     )
-      return { ...config, quick_actions: [rounds as string | QuickAction] };
+      return { ...config, quick_actions: [rounds as string | RoundSpec] };
     listOf(config, 'quick_actions');
     return config;
   }
@@ -568,7 +568,7 @@ export class FluvyRoomCard extends FluvyTileCard {
    * that holds (`quick-actions.ts`), none where the card hides them; none either until their chunk has landed (the
    * bundle fetches it as it starts), when the card is drawn again.
    */
-  private rounds(room: number, cls?: string, name = ''): QuickRounds {
+  private rounds(room: number, cls?: string, name = ''): RoundsBlock {
     if (this.room?.show_quick_actions === false) return NO_ROUNDS;
     if (!quick) {
       void loadQuickActions().then(() => this.requestUpdate());

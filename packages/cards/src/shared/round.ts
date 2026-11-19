@@ -28,10 +28,10 @@ export interface LevelRound {
   readonly onHold: (() => void) | undefined;
   /** Where it stands among rounds placed one by one (`left`, `top`). */
   readonly place?: string | undefined;
-  /** What it says of its state (a room's quick action, #205): the round grows into a pill as wide as `width` that
-   * holds its words, in the sheet of the module that asks (`quick-actions.ts`), and has no ring (the words say its
-   * level). */
-  readonly state?: { readonly text: string; readonly width: number } | undefined;
+  /** What it says of its state (#205): the round grows into a pill as wide as `width` that holds its words, beside its
+   * glyph or `under` it, in the rounds' own sheet (`rounds.ts`), and has no ring (the words say its level). */
+  readonly state?:
+    { readonly text: string; readonly width: number; readonly under?: boolean } | undefined;
 }
 
 /**
@@ -43,7 +43,7 @@ export function levelRound(round: LevelRound): TemplateResult {
   const tone: Tone = !round.usable ? 'off' : round.on ? round.tone : 'neutral';
   const said = round.state;
   return html`<button
-    class="lt-bulb fv-ico fv-ico--${tone} ${round.on ? 'is-on' : ''} ${said ? 'lt-bulb--said' : ''}"
+    class="lt-bulb fv-ico fv-ico--${tone} ${round.on ? 'is-on' : ''} ${said ? 'lt-bulb--said' : ''} ${said?.under ? 'lt-bulb--under' : ''}"
     style=${said ? `width:${said.width}px` : (round.place ?? nothing)}
     data-target
     data-accent=${round.on ? (round.accent ?? nothing) : nothing}

@@ -382,6 +382,12 @@
   grid-column: 1 / -1;
 }
 
+/* a list row's rounds at its end (1.23, `rounds-row.ts`), 12 after its words or its value: a round under the finger
+   is the round's, and the row it stands in does not dim */
+.fv-row--tap:has(> .lt-bulbs .lt-bulb:active) {
+  opacity: 1;
+}
+
 /* an empty card's panel keeps the body's rhythm: 16 under its head (the room lights', a room's tile) */
 .lt-card > .fv-empty-state,
 .am-card > .fv-empty-state {

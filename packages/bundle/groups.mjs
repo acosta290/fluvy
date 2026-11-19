@@ -336,10 +336,11 @@ const LIGHT_COLOUR = /\/packages\/cards\/src\/light\/(colour|swatches)\.ts/;
 const LIGHTS_COLOUR = /\/packages\/cards\/src\/lights\/sheet\//;
 
 /**
- * A room's quick actions (their sets, levels, taps and holds, #113): fetched as the bundle starts, with the families,
- * so a room card draws them from its first render (`room-card.ts` asks for them itself where it is drawn first).
+ * The rounds (their sets, levels, taps, holds and states, #113, #205) and the list row that ends in them (1.23): a
+ * room's quick actions, the Rounds card's and a row's. Fetched as the bundle starts, with the families, so a room card
+ * draws them from its first render (`room-card.ts` asks for them itself where it is drawn first).
  */
-const QUICK_ACTIONS = /\/packages\/cards\/src\/room\/quick-actions\.ts/;
+const QUICK_ACTIONS = /\/packages\/cards\/src\/(room\/quick-actions|shared\/rounds(-row)?)\.ts/;
 
 /** The icons a view's name says, for a tab row asked for icons whose views have none: fetched the first time it is. */
 const VIEW_ICONS = /\/packages\/core\/src\/look\/view-icons\.ts/;

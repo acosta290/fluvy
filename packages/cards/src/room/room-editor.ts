@@ -51,7 +51,8 @@ import { ACTIONS_BASE, ICON_ACTIONS_BASE, type BaseKey } from '../shared/base.js
 import type { EditorChoices, EditorDefaults, RowsListSpec } from '../shared/rows-editor.js';
 import { lists as tilesLists } from '../tiles/tiles-editor.js';
 import { roomLights, type RoomCardConfig } from './room-card.js';
-import { defaultGroups, QUICK_GROUPS, quickEntry } from './quick-actions.js';
+import { ROUND_GROUPS, roundEntry } from '../shared/rounds.js';
+import { defaultGroups } from './quick-actions.js';
 import words from '@fluvy/core/locales/en/room-editor.json';
 
 // the editor's own English, in its chunk: its words are said once it is drawn, never by a dashboard
@@ -168,7 +169,7 @@ export const keys = configKeys<RoomCardConfig>()([
 
 /** What a quick action stands for: one of the room's sets, by its word, or an entity. */
 const groupField = choiceField('group', [
-  ...QUICK_GROUPS.map((group) => [group, `room.${group}`] as const),
+  ...ROUND_GROUPS.map((group) => [group, `room.${group}`] as const),
   ['entity', 'editor.entity'],
 ]);
 /** A set's round: its own name, icon, colour, state (empty: the card's) and actions; an entity's, the entity first. */
@@ -238,7 +239,7 @@ export const lists: readonly RowsListSpec[] = [
         : schema.name === 'show_state'
           ? editorWord('room-editor.show_state')
           : undefined,
-    read: (raw) => quickEntry(raw) as Record<string, unknown> | null,
+    read: (raw) => roundEntry(raw) as Record<string, unknown> | null,
     // a set alone is its word, an entity alone its id; an entity's kind is never written beside it
     write: ({ group, entity, ...own }) => {
       const kept = Object.fromEntries(
