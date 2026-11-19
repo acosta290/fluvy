@@ -1649,7 +1649,9 @@
     "dashboard.names_full": "Nom complet",
     "dashboard.name_lines": "Noms longs",
     "dashboard.one_line": "Une ligne",
-    "dashboard.two_lines": "Deux lignes"
+    "dashboard.two_lines": "Deux lignes",
+    "cards.levels": "Les icônes montrent leur niveau",
+    "cards.levels_sub": "La charge d’une batterie, les barres d’un signal, une vanne ouverte ou fermée"
   },
   "customise": {
     "title": "Personnaliser",

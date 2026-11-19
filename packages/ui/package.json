@@ -24,6 +24,7 @@
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
+    "./glyph-sets/*": "./src/glyph-sets/*.ts",
     "./time-rail": "./src/controls/time-rail.ts",
     "./time-field": "./src/controls/time-field.ts",
     "./select": "./src/controls/select.ts",

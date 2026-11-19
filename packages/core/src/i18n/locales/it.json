@@ -1649,7 +1649,9 @@
     "dashboard.names_full": "Nome completo",
     "dashboard.name_lines": "Nomi lunghi",
     "dashboard.one_line": "Una riga",
-    "dashboard.two_lines": "Due righe"
+    "dashboard.two_lines": "Due righe",
+    "cards.levels": "Le icone mostrano il livello",
+    "cards.levels_sub": "La carica di una batteria, le tacche di un segnale, una valvola aperta o chiusa"
   },
   "customise": {
     "title": "Personalizzazione",

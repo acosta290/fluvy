@@ -3128,7 +3128,9 @@
     "dashboard.names_full": "Полное название",
     "dashboard.name_lines": "Длинные названия",
     "dashboard.one_line": "Одна строка",
-    "dashboard.two_lines": "Две строки"
+    "dashboard.two_lines": "Две строки",
+    "cards.levels": "Значки показывают уровень",
+    "cards.levels_sub": "Заряд батареи, деления сигнала, клапан открыт или закрыт"
   },
   "customise": {
     "title": "Настройка",

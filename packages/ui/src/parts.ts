@@ -28,6 +28,12 @@ import type { Tone } from './tones.js';
 export type IconRef = GlyphName | `${string}:${string}`;
 
 const HA_STATE = 'ha-state:';
+/**
+ * Fluvy's icon set as its cards draw it (`fluvy-card:router`): the outline of a glyph no chunk has added as strokes, on
+ * the glyph's own ink (3..21), where the set Home Assistant lists (`fluvy:`) stands beside Material's (2..22). Never
+ * listed; registered beside the set (`core/src/icons/index.ts`).
+ */
+export const CARD_ICONS = 'fluvy-card';
 /** A platform's logo by its id (`app:netflix`), from the chunk that holds them. */
 const APP = 'app:';
 /** A picture of the person's own where a glyph stands: a path of Home Assistant's, a web address or a data image. */
@@ -76,6 +82,11 @@ export function icon(
   if (ref && ref.startsWith('fluvy:')) {
     const name = glyphOf(ref);
     if (isGlyph(name)) return glyph(name);
+    // a glyph no chunk here draws: its outline, as Home Assistant draws the set, on the glyph's own ink
+    return html`<ha-icon
+      class="fv-haicon fv-haicon--fluvy"
+      .icon=${`${CARD_ICONS}:${ref.slice('fluvy:'.length)}`}
+    ></ha-icon>`;
   }
   // a platform's logo (`app:netflix`), once its chunk has landed; the fallback glyph until then
   if (ref && ref.startsWith(APP))

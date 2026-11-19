@@ -3164,7 +3164,9 @@
     "dashboard.names_full": "Пълно име",
     "dashboard.name_lines": "Дълги имена",
     "dashboard.one_line": "Един ред",
-    "dashboard.two_lines": "Два реда"
+    "dashboard.two_lines": "Два реда",
+    "cards.levels": "Иконите показват нивото",
+    "cards.levels_sub": "Зарядът на батерия, чертите на сигнал, клапан отворен или затворен"
   },
   "remote": {
     "key.power": "Захранване",

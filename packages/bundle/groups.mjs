@@ -393,8 +393,29 @@ const DOCK = /\/packages\/core\/src\/look\/dock\.ts/;
  */
 const GROUPS_OF_A_LIST = /\/packages\/cards\/src\/shared\/groups\.ts/;
 
-/** The icon set's other part (`fluvy:washer`, `fluvy:gate-open` …): fetched the first time Home Assistant asks for one. */
-const ICONS = /\/packages\/core\/src\/icons\/generated-on-demand\.ts/;
+/**
+ * The icon set's glyphs beyond core's part (`fluvy:gate-open` …) and the index of its other parts: fetched the first
+ * time Home Assistant asks for one.
+ */
+const ICONS = /\/packages\/core\/src\/icons\/(generated-)?on-demand\.ts/;
+
+/**
+ * The icon set's other parts (1.23, #226: the appliances, the levels, energy, devices, climate, safety, outdoors, home,
+ * rooms), each its own chunk (`icons-energy` …): fetched the first time Home Assistant asks for one of its glyphs.
+ */
+const ICON_PARTS = /\/packages\/core\/src\/icons\/parts\/([\w-]+)\.ts/;
+
+/**
+ * The levels in Fluvy's icons (1.23, #226: a battery's charge, a signal's bars, a valve open or shut), what picks them
+ * and the glyphs that say them: fetched as the house turns them on; a house that never does never pays for them.
+ */
+const LEVELS = /\/packages\/(core\/src\/icons\/levels|ui\/src\/glyph-sets\/levels)\.ts/;
+
+/**
+ * A glyph set of 1.23 a chunk draws by itself (the rooms' a card of rooms draws), each its own chunk
+ * (`glyphs-rooms` …), so no set lands in core by being imported: fetched with the first chunk that draws one.
+ */
+const GLYPH_SETS = /\/packages\/ui\/src\/glyph-sets\/([\w-]+)\.ts/;
 
 /**
  * What only the chunks fetched later share (1.20): the local dates and the month grid (the calendar, the date picker,
@@ -515,6 +536,9 @@ export const GROUPS = [
   { name: 'dock', test: DOCK },
   { name: 'groups', test: GROUPS_OF_A_LIST },
   { name: 'icons', test: ICONS },
+  { name: (id) => `icons-${ICON_PARTS.exec(id)?.[1]}`, test: ICON_PARTS },
+  { name: 'levels', test: LEVELS },
+  { name: (id) => `glyphs-${GLYPH_SETS.exec(id)?.[1]}`, test: GLYPH_SETS },
   { name: 'shared', test: SHARED },
   { name: 'core', test: (id) => !id.includes('/packages/bundle/src/') },
 ];

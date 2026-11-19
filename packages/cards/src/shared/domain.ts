@@ -1,6 +1,7 @@
 import {
   isActive,
   isUsable,
+  levelGlyph,
   localize,
   stateText,
   strings,
@@ -30,11 +31,14 @@ const opening = (view: EntityView): GlyphName | undefined =>
 /**
  * Default glyph for an entity: device class first, then domain. A config `icon` always wins. What opens and shuts
  * (a door, a gate, a garage, a window) is drawn open or shut as it stands; what a sensor says by its fill (motion,
- * moisture, smoke) keeps one glyph. An entity that is not there has no kind to borrow a glyph from: the `ban` glyph
- * every card draws for what cannot be read.
+ * moisture, smoke) keeps one glyph; where the house shows levels (1.23, #226), a battery its charge, a signal its bars
+ * and a valve whether it is open (`levelGlyph`). An entity that is not there has no kind to borrow a glyph from: the
+ * `ban` glyph every card draws for what cannot be read.
  */
 export function glyphFor(view: EntityView): GlyphName {
   if (view.status === 'missing') return 'ban';
+  const level = levelGlyph(view);
+  if (level) return level as GlyphName;
   const dc = view.deviceClass;
   switch (view.domain) {
     case 'light':

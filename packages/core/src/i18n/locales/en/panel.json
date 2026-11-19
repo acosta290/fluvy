@@ -491,6 +491,8 @@
     "dashboard.names_full": "Full name",
     "dashboard.name_lines": "Long names",
     "dashboard.one_line": "One line",
-    "dashboard.two_lines": "Two lines"
+    "dashboard.two_lines": "Two lines",
+    "cards.levels": "Icons show their level",
+    "cards.levels_sub": "A battery’s charge, a signal’s bars, a valve open or shut"
   }
 }

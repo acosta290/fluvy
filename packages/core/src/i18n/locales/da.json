@@ -3143,7 +3143,9 @@
     "dashboard.names_full": "Fuldt navn",
     "dashboard.name_lines": "Lange navne",
     "dashboard.one_line": "Én linje",
-    "dashboard.two_lines": "To linjer"
+    "dashboard.two_lines": "To linjer",
+    "cards.levels": "Ikoner viser niveauet",
+    "cards.levels_sub": "Et batteris opladning, et signals streger, en ventil åben eller lukket"
   },
   "remote": {
     "key.power": "Tænd/sluk",

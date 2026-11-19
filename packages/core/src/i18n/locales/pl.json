@@ -2739,7 +2739,9 @@
     "dashboard.names_full": "Pełna nazwa",
     "dashboard.name_lines": "Długie nazwy",
     "dashboard.one_line": "Jeden wiersz",
-    "dashboard.two_lines": "Dwa wiersze"
+    "dashboard.two_lines": "Dwa wiersze",
+    "cards.levels": "Ikony pokazują poziom",
+    "cards.levels_sub": "Naładowanie baterii, kreski sygnału, zawór otwarty lub zamknięty"
   },
   "customise": {
     "title": "Dostosowanie",

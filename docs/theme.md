@@ -220,6 +220,35 @@ the tools, say. The line belongs to its item, not to a place: it follows the ite
 Assistant's *Edit sidebar*) puts it, and a hidden item takes its line with it. A person who keeps their own look keeps
 their own lines too.
 
+## Fluvy's icons
+
+Fluvy's glyphs are a Home Assistant icon set: `fluvy:<name>` goes wherever Home Assistant takes an icon — a card's
+`icon`, an entity's icon in its settings, a dashboard's view, the icon picker, which lists them all — so a wall tablet
+stays in one icon language. A Fluvy card draws them at its own size, beside the glyphs it draws by itself; Home
+Assistant's own cards draw them at Material's. The set's everyday glyphs (`bulb`, `plug`, `thermo`, `door`,
+`window-open`, `garage`, `lock`, `camera`, `speaker`, `tv`, `wifi`, `battery`, `signal`, `sun`, `cloud-sun` and the
+rest) come with every page; the families below, and the appliances a person picks (`washer`, `dryer`, `dishwasher`,
+`fridge`, `oven`, `coffee`, `hob`, `microwave`, `kettle`, `fryer`, `toaster`), are fetched the first time one of them is
+asked for (1.23, #226):
+
+| Family | Names |
+| --- | --- |
+| Levels | `battery-empty`, `battery-low`, `battery-half`, `battery-full`, `battery-charging`, `signal-none`, `signal-weak`, `signal-fair`, `signal-good`, `signal-strong`, `signal-off`, `valve-open`, `valve-shut` |
+| Energy | `battery-alert`, `solar-panel`, `battery-home`, `ev-plug`, `electric-meter`, `gas-meter`, `water-meter`, `socket` |
+| Devices | `router`, `ethernet`, `bluetooth`, `phone`, `tablet`, `laptop`, `desktop`, `watch`, `speaker-smart`, `remote`, `game-controller`, `server`, `printer` |
+| Climate and air | `radiator`, `boiler`, `aircon`, `dehumidifier`, `purifier`, `ceiling-fan`, `co2`, `air-quality`, `particles`, `voc`, `pressure`, `uv`, `rain-gauge`, `thermo-high`, `thermo-low`, `humid-high`, `humid-low` |
+| Water and safety | `tank`, `leak`, `flood`, `doorbell`, `intercom`, `siren`, `smoke`, `co-alarm`, `alarm-panel`, `keypad`, `fingerprint`, `safe`, `parcel` |
+| Outdoors | `mailbox`, `fence`, `pool`, `sprinkler`, `mower`, `plant`, `tree`, `bbq`, `outdoor-light`, `recycle` |
+| Home | `ceiling-light`, `desk-lamp`, `led-strip`, `curtains`, `shutter`, `awning`, `freezer`, `hood` |
+| Rooms | `kitchen`, `bedroom`, `bathroom`, `kids-room`, `office`, `dining`, `laundry`, `garden`, `living-room`, `hallway`, `stairs`, `toilet` |
+
+Where a card draws Fluvy's own glyph for an entity (no `icon` of its own, none set in Home Assistant), the glyph is its
+kind's one: a battery sensor the battery, a signal's strength the bars, a valve the drop. With **Icons show their
+level** on (*Appearance › Cards*, off by default) it says what the entity reads: a battery's charge (`battery-empty`
+to 10 %, `battery-low` to 35, `battery-half` to 70, `battery-full` above), a low battery (a battery binary sensor on)
+and one charging, a signal's bars (`signal-none` to `signal-strong`, in dBm as a phone counts them or by the quarter in
+%), a valve open or shut. A signal draws the bars it does not reach faint, in Fluvy's cards and in Home Assistant's.
+
 ## Using the theme on its own
 
 The theme works without the cards: choose it in your profile and every Home Assistant page takes Fluvy's colours,

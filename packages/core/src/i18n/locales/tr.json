@@ -1649,7 +1649,9 @@
     "dashboard.names_full": "Tam ad",
     "dashboard.name_lines": "Uzun adlar",
     "dashboard.one_line": "Tek satır",
-    "dashboard.two_lines": "İki satır"
+    "dashboard.two_lines": "İki satır",
+    "cards.levels": "Simgeler seviyeyi gösterir",
+    "cards.levels_sub": "Pilin şarjı, sinyalin çubukları, vananın açık ya da kapalı olması"
   },
   "customise": {
     "title": "Özelleştirme",

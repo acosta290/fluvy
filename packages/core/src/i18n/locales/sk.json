@@ -3063,7 +3063,9 @@
     "dashboard.names_full": "Celý názov",
     "dashboard.name_lines": "Dlhé názvy",
     "dashboard.one_line": "Jeden riadok",
-    "dashboard.two_lines": "Dva riadky"
+    "dashboard.two_lines": "Dva riadky",
+    "cards.levels": "Ikony ukazujú úroveň",
+    "cards.levels_sub": "Nabitie batérie, čiarky signálu, ventil otvorený alebo zatvorený"
   },
   "customise": {
     "title": "Prispôsobenie",

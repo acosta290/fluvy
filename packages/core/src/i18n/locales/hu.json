@@ -3081,7 +3081,9 @@
     "dashboard.names_full": "Teljes név",
     "dashboard.name_lines": "Hosszú nevek",
     "dashboard.one_line": "Egy sor",
-    "dashboard.two_lines": "Két sor"
+    "dashboard.two_lines": "Két sor",
+    "cards.levels": "Az ikonok mutatják a szintet",
+    "cards.levels_sub": "Az akkumulátor töltöttsége, a jel sávjai, a szelep nyitva vagy zárva"
   },
   "customise": {
     "title": "Testreszabás",

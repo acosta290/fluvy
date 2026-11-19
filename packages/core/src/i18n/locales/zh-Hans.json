@@ -3006,7 +3006,9 @@
     "dashboard.names_full": "完整名称",
     "dashboard.name_lines": "长名称",
     "dashboard.one_line": "一行",
-    "dashboard.two_lines": "两行"
+    "dashboard.two_lines": "两行",
+    "cards.levels": "图标显示级别",
+    "cards.levels_sub": "电池电量、信号格数、阀门开关"
   },
   "customise": {
     "title": "自定义",

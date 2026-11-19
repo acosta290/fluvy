@@ -1666,6 +1666,35 @@ describe('the settings panel', () => {
     guest.panel.remove();
   });
 
+  it('lets the house show the levels in Fluvy’s icons, off until chosen (1.23, #226)', async () => {
+    const { panel, root, row, button, handle, previews, settle } = await mount();
+    const name = 'Icons show their level';
+    // off, by default: nothing changes on upgrade
+    const levels = () => row(name)?.querySelector('.fv-switch');
+    expect(row(name)?.textContent).toContain(
+      'A battery’s charge, a signal’s bars, a valve open or shut',
+    );
+    expect(levels()?.getAttribute('aria-checked')).toBe('false');
+    row(name)?.querySelector<HTMLElement>('.fv-hit')?.click();
+    await settle();
+    expect(levels()?.getAttribute('aria-checked')).toBe('true');
+    expect(root.querySelector('.pn-bar__text')?.textContent?.trim()).toBe(
+      'Cards · Icons show their level · On',
+    );
+    // shown on every card at once, saved only from the bar
+    expect(previews.at(-1)).toEqual({ levelIcons: true });
+    button('Save')!.click();
+    await settle();
+    expect(handle.settings().levelIcons).toBe(true);
+    panel.remove();
+    // someone who is not an administrator reads it, and changes nothing
+    const guest = await mount(false);
+    guest.row(name)?.querySelector<HTMLElement>('.fv-hit')?.click();
+    await guest.settle();
+    expect(guest.previews.at(-1)).not.toEqual(expect.objectContaining({ levelIcons: false }));
+    guest.panel.remove();
+  });
+
   it('lets the house give Home Assistant’s history back in its details dialog, ours until then (1.20, #162)', async () => {
     const { panel, root, row, button, handle, settle } = await mount();
     await handle.store.saveHouse({ scope: 'everywhere' });
@@ -2997,7 +3026,7 @@ describe('the settings panel', () => {
     panel.remove();
   });
 
-  it('exports every setting and the automatic dashboard’s options, and imports them back — the charts and their sets too (1.11), the cards’ surface (1.15), their look out of reach (1.16), their border, a person’s hold to slide and the page’s background, the house’s and a dashboard’s own (1.19), whether the details dialog’s history is ours (1.20), the order of the house’s rooms (1.21), the devices’ state colour (1.22)', async () => {
+  it('exports every setting and the automatic dashboard’s options, and imports them back — the charts and their sets too (1.11), the cards’ surface (1.15), their look out of reach (1.16), their border, a person’s hold to slide and the page’s background, the house’s and a dashboard’s own (1.19), whether the details dialog’s history is ours (1.20), the order of the house’s rooms (1.21), the devices’ state colour (1.22), the icons’ levels (1.23)', async () => {
     const saved: { type: string; url_path?: string; config?: unknown }[] = [];
     // the long lists' caps travel too, list by list (#78)
     const caps = { lights: 12, humidity: 'none' };
@@ -3089,6 +3118,8 @@ describe('the settings panel', () => {
       // when the devices show their state's colour, and as what (1.22, #196)
       stateTint: 'always',
       stateTintStyle: 'edge',
+      // whether Fluvy's icons show their level (1.23, #226)
+      levelIcons: true,
     });
     // and the person's own: their sliders wait for a hold on a touch screen (1.19, #166)
     await handle.store.savePersonal({ language: 'es', haptics: false, holdToSlide: true });
@@ -3134,6 +3165,7 @@ describe('the settings panel', () => {
       rooms: { sort: 'home_assistant', order: ['kitchen', 'hall'] },
       stateTint: 'always',
       stateTintStyle: 'edge',
+      levelIcons: true,
     });
     expect(exported['personal']).toMatchObject({
       version: SETTINGS_VERSION,
@@ -3167,6 +3199,7 @@ describe('the settings panel', () => {
       rooms: { sort: 'auto', order: [] },
       stateTint: 'off',
       stateTintStyle: 'wash',
+      levelIcons: false,
     });
     await handle.store.savePersonal({ language: 'auto', haptics: true, holdToSlide: false });
     importSettings(
@@ -3205,6 +3238,7 @@ describe('the settings panel', () => {
       'always',
       'edge',
     ]);
+    expect(handle.settings().levelIcons).toBe(true);
     expect(saved.at(-1)?.config).toEqual({
       strategy: {
         type: 'custom:fluvy-home',

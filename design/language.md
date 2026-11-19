@@ -271,7 +271,10 @@ key hold.
   draw (pm2.5, pressure, vibration: Home Assistant's icon knows the class). One of no class keeps Fluvy's stand-in
   (`trendUp`, `check`) unless Home Assistant knows better: its integration gives it an icon, or names it by a
   translation key (where integrations declare their icons). A lawn mower is the leaf. An entity that is not there:
-  `ban`. One function, `iconOf(view, own)` (`cards/src/shared/domain.ts`); an Activity entry draws the entity as it
+  `ban`. Where the house's icons show their level (1.23, #226, *Appearance › Cards*, off by default), Fluvy's glyph
+  for a battery is its charge (and a battery binary sensor's low or charging), for a signal its bars, for a valve
+  open or shut (`levelGlyph`, fetched with the setting: `core/src/icons/levels.ts`); a reading that says no level
+  keeps the kind's one glyph. One function, `iconOf(view, own)` (`cards/src/shared/domain.ts`); an Activity entry draws the entity as it
   stood (Home Assistant's icon too, for the state it had); a group there looks like what it holds unless it has an
   icon of its own.
 - **What draws a kind keeps its own glyph** (a role, a place, a set — not an entity): a room's and a room's
@@ -292,8 +295,30 @@ key hold.
   sliver), `garage` / `garageOpen` (a garage, its door shut in two panels — one seam, 4.5 from its head and its foot,
   so it never merges into a bar at 16 px; open, the door rolled up into one band at its top). Same grid, stroke and
   ink box as the set; each read at 16, 20, 24 and 32 in a filled and an outlined circle, light and dark.
+- **The glyph sets (1.23, #226):** the set grew toward the icons a house's dashboard names most, in families
+  (`packages/ui/src/glyph-sets/`: levels, energy, devices, climate and air, water and safety, outdoors, home, rooms),
+  so a wall tablet stays in one icon language. Same grid, stroke, ink box and corners as `bulb`, `door` and `thermo`:
+  outlined, friendly, a thing seen from the front (a router's box and antennas, a radiator's panel on its feet, a
+  doorbell's plate with its bell), never MDI's drawing. Their rules:
+  - **Levels** keep their kind's body. A battery is `battery`'s, filled to its charge from the left (a quarter, half,
+    all of it), empty with nothing in it; charging and an alert cross its body with a bolt or an exclamation mark, the
+    body cut clear of them (one never crosses another, as the cloud's sun). A signal is `signal`'s four bars at its
+    2.2 stroke, the bars it does not reach drawn faint (`opacity` .3; Home Assistant draws that part faint too, its
+    `secondaryPath`), off the four faint and crossed in the corner they leave free. A valve is the pipe symbol's bow
+    tie on its pipe, its handle on its stem: open hollow, shut filled.
+  - **Rooms** are drawn by what each is for, the thing people pick for the area: the kitchen's pot on the boil, the
+    bedroom's bed, the bathroom's tub with its shower, a child's teddy bear, the office's desk with its screen, the
+    dining room's fork and knife, the laundry label's wash tub, the garden's tulip, the living room's sofa, the hall's
+    hanger, the stairs, the toilet. `ROOM_ICONS` says which Material icons of an area each room answers (`mdi:bed` →
+    `fluvy:bedroom`), for a card of rooms.
+  - **Words where the thing is its name**: CO₂ and UV are written, as their sensors are; CO under a detector.
+  - A pair that differs by state differs by a whole part, read at 16: a hollow or filled bow tie, a mercury column
+    and an arrow up or down, a drop and an arrow — never a stroke's weight.
+  Each is read at 16, 20 and 24 in a filled and a neutral circle, light and dark (the playground's `glyphs` sheet, the
+  design lab's `icons`).
 - **Home Assistant's icon in a circle** takes the glyph's box: 20 in the 44, 16 in the smaller 40 and a compact
-  row's circle, 32 in the hero.
+  row's circle, 32 in the hero. A glyph of ours it draws for a card (a `fluvy:` name no chunk has added as strokes)
+  comes from the set on the glyph's own ink (`fluvy-card:`), so it sits beside the strokes as one of them.
 
 ## Controls (one idiom per job)
 
@@ -361,7 +386,7 @@ Rectangular tappables share **one radius: 12** (option tiles, buttons, keys, fie
   menu, the root is lent `narrow` for the one call that draws them, before Home Assistant's render, which then draws
   them as on a phone (an own value over the property, taken away when the call returns or throws; a lending that
   throws steps aside and the render runs as written).
-- **Icon set:** the glyphs (149) are a Home Assistant icon set, `fluvy:<name>` (kebab-case of the glyph key: `cloud-sun`), registered through `window.customIcons`; the paths are the strokes outlined to fills at build time (`tools/icons/outline.py`, shapely, 0.06 simplification) on the same 24 grid, in two parts: what Fluvy's chrome names (a Material icon it redraws, a sheet's mask, a view's icon) in core (`icons/generated.ts`), the rest — the six appliances a person may pick, the garage, the gate, the window, the door open and the security camera — in an `icons` chunk that `getIcon` fetches the first time Home Assistant asks for one of them (`icons/generated-on-demand.ts`; `ON_DEMAND` in `tools/icons/extract-glyphs.mjs` says which), written as an absolute start and relative steps in tenths (SVG's shortest numbers: 17 KB gzip for the set instead of 27). Inside our cards a `fluvy:` reference draws the stroke glyph inline; elsewhere `<ha-icon>` draws the fill. Our dashboards use `fluvy:` icons in the sidebar; built-in panels keep MDI.
+- **Icon set:** the glyphs are a Home Assistant icon set, `fluvy:<name>` (kebab-case of the glyph key: `cloud-sun`), registered through `window.customIcons`; the paths are the strokes outlined to fills at build time (`tools/icons/outline.py`, shapely, 0.06 simplification) on the same 24 grid, in parts: what Fluvy's chrome names (a Material icon it redraws, a sheet's mask, a view's icon) in core (`icons/generated.ts`); the garage, the gate, the window, the door open, the security camera and the index of the other parts in an `icons` chunk that `getIcon` fetches the first time Home Assistant asks for one of them (`icons/generated-on-demand.ts`; `ON_DEMAND` in `tools/icons/extract-glyphs.mjs` says which); and the appliances a person may pick and each glyph set of 1.23 in a part of its own (`icons/parts/`, `icons-energy` …), fetched the first time one of its glyphs is asked for — written as an absolute start and relative steps in tenths (SVG's shortest numbers: a third of the bytes of absolute points). What a glyph draws faint (a signal's bars it does not reach) is a second path, which Home Assistant draws faint (`secondaryPath`). Inside our cards a `fluvy:` reference draws the stroke glyph inline where a chunk has added it; any other it draws through `<ha-icon>` from the same set registered again, unlisted, on the glyph's own ink (`fluvy-card:<name>`: the outline's grid with Material's 2..22 undone to ours, 3..21), so it sits beside the strokes as one of them, its box the circle's 20 and its faint part as faint as the stroke's (`fv-haicon--fluvy`); elsewhere `<ha-icon>` draws the fill. Our dashboards use `fluvy:` icons in the sidebar; built-in panels keep MDI.
 - **Heading icon:** an optional icon before the section title — a 20 px glyph in a 24 box in the accent ink, 8 px before
   the 20/24 title, on its cap height; the title ellipsises before the meta gives way, and a meta longer than its 60 % of
   the row gives its words up to the chevron (its words stay in the button's label): never cut. It replaces emoji in

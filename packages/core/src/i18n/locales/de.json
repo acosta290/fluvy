@@ -1649,7 +1649,9 @@
     "dashboard.names_full": "Vollständiger Name",
     "dashboard.name_lines": "Lange Namen",
     "dashboard.one_line": "Eine Zeile",
-    "dashboard.two_lines": "Zwei Zeilen"
+    "dashboard.two_lines": "Zwei Zeilen",
+    "cards.levels": "Symbole zeigen den Stand",
+    "cards.levels_sub": "Ladung einer Batterie, Balken eines Signals, ein Ventil offen oder geschlossen"
   },
   "customise": {
     "title": "Anpassen",

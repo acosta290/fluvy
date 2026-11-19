@@ -1057,6 +1057,15 @@ function cardsCard(ctx: PanelContext): TemplateResult {
         readonly: !admin,
         onToggle: (on) => ctx.editHouse({ sheets: on ? 'fluvy' : 'home-assistant' }),
       })}
+      ${listRow({
+        icon: 'battery',
+        title: ctx.t('cards.levels'),
+        sub: ctx.t('cards.levels_sub'),
+        trailing: 'switch',
+        on: shown.levelIcons,
+        readonly: !admin,
+        onToggle: (on) => ctx.editHouse({ levelIcons: on }),
+      })}
     </div>
     <p class="fv-label pn-label">${ctx.t('cards.unavailable')}</p>
     ${choice(

@@ -228,8 +228,23 @@ const BUDGETS = {
   // a list in groups (1.21, #189): the house's rooms and floors or a list's own sections under their labels, the
   // short names inside a group and the scenes as chips; fetched by the first Tiles or Scenes card asked for groups
   groups: 4096,
-  // the icon set's other part: the appliances, the garage, the gate, the window and the door open (13 outlines)
+  // the icon set's glyphs Fluvy's chrome never names (the garage, the gate, the window, the door open: 10 outlines) and
+  // the index of its other parts (1.23, #226): measured at 2.5 KB
   icons: 4096,
+  // the icon set's other parts (1.23, #226), each fetched the first time Home Assistant asks for one of its glyphs:
+  // measured at 1.4 (appliances) to 3.6 KB (climate, 17 outlines)
+  'icons-appliances': 4096,
+  'icons-levels': 4096,
+  'icons-energy': 4096,
+  'icons-devices': 4096,
+  'icons-climate': 4096,
+  'icons-safety': 4096,
+  'icons-outdoor': 4096,
+  'icons-home': 4096,
+  'icons-rooms': 4096,
+  // the levels in Fluvy's icons (1.23, #226): what picks a battery's charge, a signal's bars, a valve open or shut, and
+  // the twelve glyphs that say them
+  levels: 2048,
   // what only the chunks fetched later share (1.20: it left core, 1.9 KB of what every page loads): the local dates
   // and the month grid, the ticker, a sheet's laid width, a name's plain letters, and since 1.21 a person's own
   // picture in a head's circle (the Thermostat card left core, and nothing every page runs reads one); measured at

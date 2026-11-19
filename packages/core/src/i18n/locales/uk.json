@@ -3128,7 +3128,9 @@
     "dashboard.names_full": "Повна назва",
     "dashboard.name_lines": "Довгі назви",
     "dashboard.one_line": "Один рядок",
-    "dashboard.two_lines": "Два рядки"
+    "dashboard.two_lines": "Два рядки",
+    "cards.levels": "Значки показують рівень",
+    "cards.levels_sub": "Заряд батареї, поділки сигналу, клапан відкритий чи закритий"
   },
   "customise": {
     "title": "Налаштувати",

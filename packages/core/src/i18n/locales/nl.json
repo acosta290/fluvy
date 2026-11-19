@@ -1649,7 +1649,9 @@
     "dashboard.names_full": "Volledige naam",
     "dashboard.name_lines": "Lange namen",
     "dashboard.one_line": "Eén regel",
-    "dashboard.two_lines": "Twee regels"
+    "dashboard.two_lines": "Twee regels",
+    "cards.levels": "Pictogrammen tonen het niveau",
+    "cards.levels_sub": "De lading van een batterij, de streepjes van een signaal, een klep open of dicht"
   },
   "customise": {
     "title": "Aanpassen",

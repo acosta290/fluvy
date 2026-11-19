@@ -42,7 +42,7 @@ pnpm build
 ```
 
 The bundle is one ES module, `fluvy.js`, that imports `chunks/core-<hash>.js` (everything a page needs) and fetches
-`chunks/{activity,history,details-history,panel,customise,sidebar-editor,pages,strategy,house-heights,wall,weather,calendar,media,chart,chart-card,energy-period,energy,history-bars-readings,devices,cameras-sheet,appliances,appliance-art,automations,automations-sheet,alerts,alerts-sheet,template,web,about,expander,expander-editor,swipe,sidebar,slider,cover,vacuum,ring,vacuum-drive,climate,remote,app-logos,vehicle,details,items,items-sheet,lights-colour,light-colour,quick-actions,editor,fields,forms,view-icons,glass,quiet,thresholds,slider-styles,switch-styles,background,dock,groups,icons,shared,lang-*}-<hash>.js`
+`chunks/{activity,history,details-history,panel,customise,sidebar-editor,pages,strategy,house-heights,wall,weather,calendar,media,chart,chart-card,energy-period,energy,history-bars-readings,devices,cameras-sheet,appliances,appliance-art,automations,automations-sheet,alerts,alerts-sheet,template,web,about,expander,expander-editor,swipe,sidebar,slider,cover,vacuum,ring,vacuum-drive,climate,remote,app-logos,vehicle,details,items,items-sheet,lights-colour,light-colour,quick-actions,editor,fields,forms,view-icons,glass,quiet,thresholds,slider-styles,switch-styles,background,dock,groups,icons,icons-appliances,icons-levels,icons-energy,icons-devices,icons-climate,icons-safety,icons-outdoor,icons-home,icons-rooms,levels,shared,lang-*}-<hash>.js`
 on demand — the Activity page, the History page, our history in Home Assistant's details dialog (the first time a dialog
 shows it), the settings panel (and Customise, the first time one of its dashboards is customised; a dashboard's
 sidebar, the first time its section is opened), what they
@@ -65,7 +65,8 @@ light card's colour controls (the first colour bulb), the cards' visual editor, 
 (with the families too) and the forms of the cards every page carries (when a card is edited), what a see-through card wears (the first card under 100 %, or a house whose cards
 are see-through), what reads a card's thresholds (the first card that names one), the slider styles (the first ruler asked for a bar, a liquid or a tile's fill, or a house that chose
 one), the page's background (the first dashboard that wears one), a dashboard's own sidebar (the first dashboard whose
-configuration holds `fluvy_sidebar:`), the icon set's other part (the first time Home Assistant asks for one of its icons),
+configuration holds `fluvy_sidebar:`), the icon set's other parts (the index and each part, the first time Home
+Assistant asks for one of its icons), the levels in Fluvy's icons (a house that turns them on),
 what only the chunks fetched later share (the dates and the month grid, the ticker, a sheet's laid width, where a
 modal sheet stands on a phone, a name's plain letters, a person's own picture in a head's circle: with the first
 chunk that needs them)
@@ -138,7 +139,17 @@ budget (`BUDGETS`; the facts guard in `tools/docs` holds this table to it):
 | `background` | 4 KB | the page's background (1.19, #155): the layer under a dashboard's view, its marks and its sheet; fetched by the first dashboard that wears one, or with the settings panel |
 | `dock` | 1 KB | this device's sidebar beside the page (1.20, #173): what answers the menus' asks; fetched on a device that chose it |
 | `groups` | 4 KB | a list in groups (1.21, #189): the house's rooms and floors or a list's own sections under their labels, the short names inside a group, the scenes as chips; fetched by the first Tiles or Scenes card asked for groups, and with the automatic dashboards |
-| `icons` | 4 KB | the icon set's other part: the appliances, the garage, the gate, the window, the door open, the security camera, the open and reload arrows |
+| `icons` | 4 KB | the icon set's glyphs Fluvy's chrome never names (the garage, the gate, the window, the door open, the security camera, the open and reload arrows) and the index of its other parts |
+| `icons-appliances` | 4 KB | the icon set's appliances a person picks (`fluvy:washer`) |
+| `icons-levels` | 4 KB | the icon set's levels (1.23, #226): a battery's charge, a signal's bars, a valve open or shut |
+| `icons-energy` | 4 KB | the icon set's energy (1.23, #226): the solar panel, the home battery, the car's charger, the meters, the socket |
+| `icons-devices` | 4 KB | the icon set's devices (1.23, #226): the router, the phone, the laptop, the remote, the printer and their kin |
+| `icons-climate` | 4 KB | the icon set's climate and air (1.23, #226): the radiator, the boiler, the air's readings and their kin |
+| `icons-safety` | 4 KB | the icon set's water and safety (1.23, #226): the tank, the leak, the doorbell, the alarms and their kin |
+| `icons-outdoor` | 4 KB | the icon set's outdoors (1.23, #226): the garden, the pool, the mailbox and their kin |
+| `icons-home` | 4 KB | the icon set's home (1.23, #226): the lights by their kind, what dresses a window, the freezer and the hood |
+| `icons-rooms` | 4 KB | the icon set's rooms (1.23, #226): the kitchen, the bedroom, the bathroom and the others |
+| `levels` | 2 KB | the levels in Fluvy's icons (1.23, #226): what picks a battery's charge, a signal's bars, a valve open or shut, and their glyphs; fetched as the house turns them on |
 | `shared` | 4 KB | what only the chunks fetched later share (1.20: it left core): the local dates and the month grid, the ticker, a sheet's laid width, where a modal sheet stands on a phone (1.21, #190), a name's plain letters, a person's own picture in a head's circle |
 | `pages` | 12 KB | what the pages share: the date picker, the time field, the dropdown, the period, the sources, the layers, the CSV, their chrome's sheet, where their menu button shows |
 | `activity` | 32 KB | the Activity page |
@@ -182,7 +193,7 @@ checked against a newer Home Assistant.
 ## Generated files
 
 Regenerated by their generators, never edited: `packages/ui/src/styles/generated/` (`pnpm --filter @fluvy/ui
-build:styles`), `packages/core/src/icons/generated.ts`, `generated-on-demand.ts` and `mdi.ts`
+build:styles`), `packages/core/src/icons/generated.ts`, `generated-on-demand.ts`, `parts/` and `mdi.ts`
 (`tools/icons/README.md`),
 `packages/theme/src/__tests__/ha-vars.json` (`packages/theme/scripts/ha-vars.mjs <clone of home-assistant/frontend>`),
 the brand files (`tools/brand/README.md`), the strategy's golden snapshot (`vitest -u`, with an explanation), the

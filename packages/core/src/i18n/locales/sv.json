@@ -3143,7 +3143,9 @@
     "dashboard.names_full": "Fullständigt namn",
     "dashboard.name_lines": "Långa namn",
     "dashboard.one_line": "En rad",
-    "dashboard.two_lines": "Två rader"
+    "dashboard.two_lines": "Två rader",
+    "cards.levels": "Ikoner visar nivån",
+    "cards.levels_sub": "Ett batteris laddning, en signals staplar, en ventil öppen eller stängd"
   },
   "remote": {
     "key.power": "Ström",

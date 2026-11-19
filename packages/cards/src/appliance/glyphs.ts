@@ -3,8 +3,8 @@
  * a feeder, a fountain and a litter box the pets') and what a card's rows say (a shirt, warm air, a cup, a bean, a
  * filter, chips, a paw), in the set's own hand — 24 grid,
  * 1.75 round stroke, ink 3..21 centred on (12, 12). They travel with the appliances'
- * chunk, which adds them to the set as it lands (`addGlyphs`); the six a person would pick for a card of their own in
- * Home Assistant's icon picker are also outlined in core's icon set (`fluvy:washer`, `tools/icons`). The design lab
+ * chunk, which adds them to the set as it lands (`addGlyphs`); those a person would pick for a card of their own in
+ * Home Assistant's icon picker are also outlined in the icon set (`fluvy:washer`, `PICKABLE`, `tools/icons`). The design lab
  * keeps the same table (`FLUVY.APPLIANCE_GLYPHS` in `apps/design-lab/fluvy.js`); `glyphs.test.ts` holds them together.
  * Nothing here imports: the icon tools read it as it is.
  */
@@ -80,7 +80,10 @@ export const APPLIANCE_GLYPHS = {
 
 export type ApplianceGlyphName = keyof typeof APPLIANCE_GLYPHS;
 
-/** The kinds a person would pick for a card of their own: outlined in core's icon set as well. */
+/**
+ * The kinds a person would pick for a card of their own: outlined in the icon set as well, its part `appliances` (the
+ * hob, the microwave, the kettle, the air fryer and the toaster since 1.23, #226).
+ */
 export const PICKABLE: readonly ApplianceGlyphName[] = [
   'washer',
   'dryer',
@@ -88,4 +91,9 @@ export const PICKABLE: readonly ApplianceGlyphName[] = [
   'fridge',
   'oven',
   'coffee',
+  'hob',
+  'microwave',
+  'kettle',
+  'fryer',
+  'toaster',
 ];

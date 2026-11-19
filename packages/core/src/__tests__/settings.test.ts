@@ -85,6 +85,7 @@ describe('parsing stored settings', () => {
         sheets: 'home-assistant',
         // an area's id once, nothing that is not one
         rooms: { sort: 'name', order: ['kitchen', 'kitchen', 3, '', 'hall'] },
+        levelIcons: true,
         extra: true,
       }),
     ).toEqual({
@@ -121,6 +122,7 @@ describe('parsing stored settings', () => {
       background: BACKGROUND_DEFAULTS,
       sheets: 'home-assistant',
       rooms: { sort: 'name', order: ['kitchen', 'hall'] },
+      levelIcons: true,
     });
   });
 
@@ -229,7 +231,6 @@ describe('parsing stored settings', () => {
     const upgraded = parseHouse({ version: 6, palette: 'volt' });
     expect([upgraded.stateTint, upgraded.stateTintStyle]).toEqual(['off', 'wash']);
     expect(upgraded.version).toBe(SETTINGS_VERSION);
-    expect(SETTINGS_VERSION).toBe(7);
     expect([HOUSE_DEFAULTS.stateTint, HOUSE_DEFAULTS.stateTintStyle]).toEqual(['off', 'wash']);
     // a word it does not know: never, as a wash
     const broken = parseHouse({ stateTint: 'state', stateTintStyle: 'glow' });
@@ -240,6 +241,22 @@ describe('parsing stored settings', () => {
       PERSONAL_DEFAULTS,
     );
     expect([chosen.stateTint, chosen.stateTintStyle]).toEqual(['always', 'control']);
+  });
+
+  it('reads whether Fluvy’s icons show their level: off where a 7 stored none (1.23, #226: nothing changes on upgrade)', () => {
+    // a 1.22 house stored none: every icon its kind's one glyph, as before
+    const upgraded = parseHouse({ version: 7, palette: 'volt' });
+    expect(upgraded.levelIcons).toBe(false);
+    expect(upgraded.version).toBe(SETTINGS_VERSION);
+    expect(SETTINGS_VERSION).toBe(8);
+    expect(HOUSE_DEFAULTS.levelIcons).toBe(false);
+    // only a true turns them on
+    for (const broken of ['true', 1, null, {}])
+      expect(parseHouse({ levelIcons: broken }).levelIcons).toBe(false);
+    // the house's, whoever looks
+    expect(resolveSettings(parseHouse({ levelIcons: true }), PERSONAL_DEFAULTS).levelIcons).toBe(
+      true,
+    );
   });
 
   it('reads the cards’ surface, each broken field as solid and blurred (1.15: nothing changes on upgrade)', () => {

@@ -1,7 +1,10 @@
 import {
   mdiAirplane,
   mdiArchive,
+  mdiBattery,
   mdiBatteryAlert,
+  mdiBatteryCharging,
+  mdiBatteryOutline,
   mdiBed,
   mdiBedKing,
   mdiBriefcase,
@@ -55,13 +58,18 @@ import {
   mdiWaterPump,
   mdiWeatherNight,
 } from '@mdi/js';
+import { ICON_SET, iconOutline } from '@fluvy/core';
+import { CARD_ICONS } from '@fluvy/ui';
 
 /*
  * Home Assistant's <ha-icon> and <ha-state-icon> are not here: a stub draws them as Home Assistant does, from
  * `@mdi/js` (pinned to the version Home Assistant ships) — an icon by its name (`MDI`: the ones the sheets, the houses
  * and the demo name), a state by its own `icon` attribute, else by its class (`BY_CLASS`: Home Assistant's icons for
- * the classes the sheets draw that Fluvy has no glyph for) — and a neutral disc for anything else, so every reference
- * has a visible box. A sheet that names another icon, or draws another such class, adds it here.
+ * the classes the sheets draw that Fluvy has no glyph for) — a glyph of Fluvy's set by its name (`fluvy:router`, and as
+ * a card asks for it, `fluvy-card:router`) as Home Assistant asks the set for it (`iconOutline`: its part fetched, its
+ * grid, what it draws faint at the set's opacity), and
+ * a neutral disc for anything else, so every reference has a visible box. A sheet that names another icon, or draws
+ * another such class, adds it here.
  */
 const MDI: Readonly<Record<string, string>> = {
   'mdi:airplane': mdiAirplane,
@@ -127,6 +135,8 @@ const BY_CLASS: Readonly<Record<string, readonly [off: string, on?: string]>> = 
   'sensor.pm25': [mdiMolecule],
   'sensor.carbon_dioxide': [mdiMoleculeCo2],
   'binary_sensor.vibration': [mdiCropPortrait, mdiVibrate],
+  'binary_sensor.battery': [mdiBattery, mdiBatteryOutline],
+  'binary_sensor.battery_charging': [mdiBattery, mdiBatteryCharging],
 };
 
 const BOX =
@@ -201,9 +211,29 @@ export function defineIconStubs(): void {
 
           private draw(): void {
             if (!this.isConnected) return;
-            const path = this.named ? MDI[this.named] : statePath(this.state, this.value);
+            const named = this.named;
+            const [set = '', name = ''] = named?.split(':') ?? [];
+            if (set === ICON_SET || set === CARD_ICONS) {
+              void iconOutline(name, set === CARD_ICONS).then(
+                ({ path, secondaryPath, viewBox }) => {
+                  if (this.named === named) this.paint(path, secondaryPath, viewBox);
+                },
+              );
+              return;
+            }
+            this.paint(named ? MDI[named] : statePath(this.state, this.value));
+          }
+
+          /** The icon's path, and what it draws faint (Home Assistant's `secondaryPath`) on its grid; the disc for none. */
+          private paint(path: string | undefined, faint?: string, viewBox = '0 0 24 24'): void {
             (this.shadowRoot ?? this.attachShadow({ mode: 'open' })).innerHTML = `${BOX}${
-              path ? `<svg viewBox="0 0 24 24" fill="currentColor"><path d="${path}"/></svg>` : DISC
+              path || faint
+                ? `<svg viewBox="${viewBox}" fill="currentColor">${path ? `<path d="${path}"/>` : ''}${
+                    faint
+                      ? `<path d="${faint}" style="opacity: var(--icon-secondary-opactity, 0.5)"/>`
+                      : ''
+                  }</svg>`
+                : DISC
             }`;
           }
         },

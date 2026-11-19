@@ -16,7 +16,7 @@ entity: light.living_room_lamp
 | Option | What it does | Example |
 | --- | --- | --- |
 | `name` | Your own words, or Home Assistant's parts (below). Left out: the friendly name. | `name: Sofa` |
-| `icon` | An `mdi:` icon or a Fluvy glyph's name. | `icon: mdi:sofa` |
+| `icon` | An `mdi:` icon or a Fluvy glyph's name ([the list](theme.md#fluvys-icons)). | `icon: fluvy:living-room` |
 | `title` | The head of a card that lists items. | `title: Batteries` |
 | `tap_action`, `hold_action`, `double_tap_action` | Home Assistant's actions: `more-info` (the default), `toggle`, `navigate`, `url`, `perform-action`, `assist`, `fire-dom-event`, `none`. | `tap_action: { action: toggle }` |
 | `icon_tap_action`, `icon_hold_action`, `icon_double_tap_action` | Makes the head's circle a button of its own. | `icon_tap_action: { action: toggle }` |
@@ -70,7 +70,8 @@ An item's own `name` always wins; a helper (no device) keeps its name. Two items
 those yourself. On the automatic dashboards, see [names](automatic-dashboard.md#names).
 
 **An icon left out** is the one set for the entity in Home Assistant, else Fluvy's glyph for its kind (a door drawn
-open or shut), else its integration's.
+open or shut; a battery's charge, a signal's bars and a valve open or shut where the house's icons show their level,
+[*Appearance › Cards*](settings-panel.md#cards)), else its integration's.
 
 **Taps.** The head is the card's button: a tap runs `tap_action`, a still press `hold_action`. A switch or a "…" in
 the head, and the body's controls, keep their own taps. With a keyboard: Enter taps, Shift+F10 holds. An action with

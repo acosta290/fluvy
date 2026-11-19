@@ -1,6 +1,8 @@
-import { css, html, LitElement, nothing, unsafeCSS, type PropertyValues } from 'lit';
+import { css, html, LitElement, nothing, svg, unsafeCSS, type PropertyValues } from 'lit';
 import type { HomeAssistant } from '../../../packages/core/src/ha/types.js';
 import { ICON_PATHS } from '../../../packages/core/src/icons/generated.js';
+import { iconOutline } from '../../../packages/core/src/icons/index.js';
+import { CARD_ICONS } from '../../../packages/ui/src/parts.js';
 import { mdiPath } from './ha-icons.js';
 import {
   FLAT_ATTRIBUTE,
@@ -247,12 +249,16 @@ export function dashboardOptions(params: URLSearchParams): DashboardOptions {
 const fluvyPaths: Readonly<Record<string, string | undefined>> = ICON_PATHS;
 
 /**
- * `<ha-icon>` drawing the fluvy set (`fluvy:home`) and the mdi icons the sheets name (`ha-icons.ts`: a room's area
- * icon); any other icon is a neutral disc.
+ * `<ha-icon>` drawing the fluvy set (`fluvy:home`; a glyph of its other parts as Home Assistant fetches it, one a card
+ * asks for on its own ink as `fluvy-card:`) and the
+ * mdi icons the sheets name (`ha-icons.ts`: a room's area icon); any other icon is a neutral disc.
  */
 class MockIcon extends LitElement {
-  static override properties = { icon: {} };
+  static override properties = { icon: {}, drawn: { state: true } };
   declare icon: string | undefined;
+  /** The icon's path, what it draws faint and its grid, as Home Assistant hands them to its `ha-svg-icon`. */
+  declare drawn:
+    { path?: string | undefined; secondaryPath?: string; viewBox?: string } | undefined;
   static override styles = css`
     :host {
       display: inline-flex;
@@ -266,13 +272,32 @@ class MockIcon extends LitElement {
       height: 100%;
       fill: var(--icon-primary-color, currentColor);
     }
+    .faint {
+      opacity: var(--icon-secondary-opactity, 0.5);
+    }
   `;
+
+  override willUpdate(changed: PropertyValues<this>): void {
+    if (!changed.has('icon')) return;
+    const icon = this.icon;
+    const [set = '', name = ''] = icon?.split(':') ?? [];
+    const ours = set === 'fluvy' || set === CARD_ICONS;
+    const path = !ours ? mdiPath(icon) : set === 'fluvy' ? fluvyPaths[name] : undefined;
+    this.drawn = { path };
+    // a glyph of the set's other parts, or one a card asks for on its own ink: as Home Assistant asks the set for it
+    if (ours && !path)
+      void iconOutline(name, set === CARD_ICONS).then((drawn) => {
+        if (this.icon === icon) this.drawn = drawn;
+      });
+  }
+
   override render() {
-    const path = this.icon?.startsWith('fluvy:')
-      ? fluvyPaths[this.icon.slice(6)]
-      : mdiPath(this.icon);
-    return path
-      ? html`<svg viewBox="0 0 24 24"><path d=${path}></path></svg>`
+    const { path, secondaryPath, viewBox = '0 0 24 24' } = this.drawn ?? {};
+    return path || secondaryPath
+      ? html`<svg viewBox=${viewBox}>
+          ${path ? svg`<path d=${path}></path>` : nothing}
+          ${secondaryPath ? svg`<path class="faint" d=${secondaryPath}></path>` : nothing}
+        </svg>`
       : html`<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"></circle></svg>`;
   }
 }

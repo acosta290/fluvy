@@ -15,6 +15,7 @@ import {
   setCardDefaults,
   setChartDefaults,
   setDetailsSheets,
+  setLevelGlyphs,
   setLightDefaults,
   setSliderDefaults,
   wornLite,
@@ -87,6 +88,8 @@ import { loadFixture, SHEETS, type FrameSpec, type SheetSpec } from './scenes.js
  *                        house that keeps Home Assistant's dialog, every more-info is the mock's
  * ?hold=1               a person's hold to slide (fluvy's settings → Preferences, #166): on a touch screen (a phone, or
  *                        the browser's touch emulation) a slider moves only after a still press of 200 ms
+ * ?levels=1             the house's icons show their level (fluvy's settings → Appearance › Cards, #226): a battery's
+ *                        charge, a signal's bars, a valve open or shut, their chunk fetched as the house's would be
  * ?lite=1               this device in Lite (fluvy's settings → Preferences › This device, #165), as the look composes
  *                        it: motion reduced, nothing blurred behind a see-through card, every chart and gauge at rest
  * ?warning=%23dc630b     the house's status colours (fluvy's settings → Appearance), over the page's look (Linen where
@@ -245,6 +248,13 @@ if (params.has('sliders'))
 
 // the person's hold to slide, as fluvy's settings would hand it to every slider
 if (params.get('hold') === '1') setHoldToSlide(true);
+
+// the levels in the house's icons, as fluvy's settings would turn them on: their chunk fetched, every card drawn again
+// (the page is ready once they are)
+const levels =
+  params.get('levels') === '1'
+    ? import('@fluvy/core/levels').then(({ levelOf }) => setLevelGlyphs(levelOf))
+    : undefined;
 
 // the house's details, as fluvy's settings would say them: the playground starts no look, so nobody says, and a card's
 // details are Home Assistant's dialog (what every suite counts) until the page asks for Fluvy's sheets
@@ -514,7 +524,7 @@ Object.assign(window, {
 });
 
 defineIconStubs();
-void document.fonts.ready.then(() =>
+void Promise.all([document.fonts.ready, levels]).then(() =>
   requestAnimationFrame(() =>
     requestAnimationFrame(() => {
       document.documentElement.dataset['ready'] = '1';

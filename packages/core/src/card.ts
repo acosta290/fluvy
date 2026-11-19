@@ -173,6 +173,24 @@ export function setTintDefaults(next: HouseTint): void {
   for (const card of live) card.requestUpdate();
 }
 
+/** The glyph that says what an entity reads (a battery's charge, a signal's bars, a valve), where it says one. */
+export type LevelGlyph = (view: EntityView) => string | undefined;
+/**
+ * What says the levels in Fluvy's icons (fluvy's settings → Appearance › Cards, 1.23, #226): set once the house turns
+ * them on and their chunk has landed (`icons/levels.ts`); none until then, and every icon is its kind's one glyph.
+ */
+let levels: LevelGlyph | undefined;
+
+/** Fluvy's glyph for what the entity reads now, where the house shows levels and it reads one. */
+export const levelGlyph = (view: EntityView): string | undefined => levels?.(view);
+
+/** The levels turned on (their reader) or off (none): every card draws its icons again. */
+export function setLevelGlyphs(next: LevelGlyph | undefined): void {
+  if (next === levels) return;
+  levels = next;
+  for (const card of live) card.requestUpdate();
+}
+
 /**
  * What the house says of charts where a card says nothing (fluvy's settings → Charts, 1.11): the style every chart
  * and gauge is drawn in, its fine settings, and the house's saved sets of series colours. A card's own key wins.

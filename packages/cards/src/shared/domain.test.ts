@@ -1,6 +1,7 @@
-import { resolveEntity, type EntityView, type HomeAssistant } from '@fluvy/core';
-import { stateIcon } from '@fluvy/ui';
-import { describe, expect, it } from 'vitest';
+import { resolveEntity, setLevelGlyphs, type EntityView, type HomeAssistant } from '@fluvy/core';
+import { levelOf } from '@fluvy/core/levels';
+import { isGlyph, stateIcon } from '@fluvy/ui';
+import { afterEach, describe, expect, it } from 'vitest';
 import { glyphFor, glyphForClass, glyphKnown, iconOf } from './domain.js';
 
 /**
@@ -77,6 +78,102 @@ describe('glyphFor', () => {
 
   it('draws a lawn mower as the leaf, as the vacuum card does', () => {
     expect(glyphFor(view('lawn_mower.a', 'mowing'))).toBe('leaf');
+  });
+});
+
+/** A sensor of the class reading `state` in `unit`. */
+const reading = (deviceClass: string, state: string, unit: string): EntityView =>
+  resolveEntity(
+    house({ 'sensor.a': [state, { device_class: deviceClass, unit_of_measurement: unit }] }),
+    'sensor.a',
+  );
+
+describe('glyphFor, where the house shows levels (1.23, #226)', () => {
+  afterEach(() => setLevelGlyphs(undefined));
+
+  it('draws one glyph of each kind until the house turns the levels on: nothing changes on upgrade', () => {
+    expect(glyphFor(reading('battery', '5', '%'))).toBe('battery');
+    expect(glyphFor(reading('signal_strength', '-50', 'dBm'))).toBe('signal');
+    expect(glyphFor(view('valve.a', 'closed'))).toBe('drop');
+    expect(glyphFor(view('binary_sensor.a', 'on', 'battery_charging'))).toBe('check');
+  });
+
+  it('draws a battery by its charge: empty to 10 %, low to 35, half to 70, full above', () => {
+    setLevelGlyphs(levelOf);
+    const ladder = {
+      0: 'batteryEmpty',
+      5: 'batteryEmpty',
+      10: 'batteryEmpty',
+      11: 'batteryLow',
+      25: 'batteryLow',
+    };
+    const rest = {
+      35: 'batteryLow',
+      36: 'batteryHalf',
+      60: 'batteryHalf',
+      70: 'batteryHalf',
+      71: 'batteryFull',
+    };
+    for (const [level, glyph] of Object.entries({
+      ...ladder,
+      ...rest,
+      95: 'batteryFull',
+      100: 'batteryFull',
+    }))
+      expect(glyphFor(reading('battery', level, '%')), `${level} %`).toBe(glyph);
+    // a reading that says no charge keeps the battery
+    for (const state of ['unknown', 'unavailable'])
+      expect(glyphFor(reading('battery', state, '%')), state).toBe('battery');
+    // a binary battery on is low, off is the battery; one charging is charging, and the battery when it is not
+    expect(glyphFor(view('binary_sensor.a', 'on', 'battery'))).toBe('batteryLow');
+    expect(glyphFor(view('binary_sensor.a', 'off', 'battery'))).toBe('battery');
+    expect(glyphFor(view('binary_sensor.a', 'on', 'battery_charging'))).toBe('batteryCharging');
+    expect(glyphFor(view('binary_sensor.a', 'off', 'battery_charging'))).toBe('battery');
+    // what the house draws by itself is drawn by Fluvy, over Home Assistant's level-aware icon
+    expect(glyphKnown(view('binary_sensor.a', 'on', 'battery_charging'))).toBe(true);
+    expect(iconOf(reading('battery', '25', '%'))).toBe('batteryLow');
+    expect(isGlyph('batteryLow')).toBe(true);
+  });
+
+  it('draws a signal by its bars, in dBm as a phone counts them and in percent by the quarter', () => {
+    setLevelGlyphs(levelOf);
+    const dbm = {
+      '-40': 'signalStrong',
+      '-55': 'signalStrong',
+      '-60': 'signalGood',
+      '-70': 'signalFair',
+    };
+    for (const [level, glyph] of Object.entries({
+      ...dbm,
+      '-80': 'signalWeak',
+      '-95': 'signalNone',
+    }))
+      expect(glyphFor(reading('signal_strength', level, 'dBm')), `${level} dBm`).toBe(glyph);
+    const percent = {
+      0: 'signalNone',
+      10: 'signalWeak',
+      30: 'signalFair',
+      60: 'signalGood',
+      90: 'signalStrong',
+    };
+    for (const [level, glyph] of Object.entries(percent))
+      expect(glyphFor(reading('signal_strength', level, '%')), `${level} %`).toBe(glyph);
+    // a unit that says no strength (a ratio in dB) keeps the signal
+    expect(glyphFor(reading('signal_strength', '30', 'dB'))).toBe('signal');
+  });
+
+  it('draws a valve open or shut as it stands, and the drop while it says neither', () => {
+    setLevelGlyphs(levelOf);
+    expect(glyphFor(view('valve.a', 'open'))).toBe('valveOpen');
+    expect(glyphFor(view('valve.a', 'opening'))).toBe('valveOpen');
+    expect(glyphFor(view('valve.a', 'closed'))).toBe('valveShut');
+    expect(glyphFor(view('valve.a', 'closing'))).toBe('valveShut');
+    expect(glyphFor(view('valve.a', 'unavailable'))).toBe('drop');
+    // a chart's head reads no level: its kind's one glyph
+    expect(glyphForClass('sensor', 'battery')).toBe('battery');
+    expect(glyphForClass('valve', '')).toBe('drop');
+    // what is not there is still the ban
+    expect(glyphFor(resolveEntity(house({}), 'sensor.gone'))).toBe('ban');
   });
 });
 

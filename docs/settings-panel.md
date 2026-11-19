@@ -56,9 +56,9 @@ each dashboard's travel in the settings file, and in Home Assistant's backups wi
 ## Cards
 
 How solid every card is, whether it draws its border, how one looks while a device is unavailable, whose details it
-opens and when a device shows its state's colour, where a card says nothing of its own (1.15, 1.19, 1.16, 1.20, 1.22).
-Solid, bordered, dashed and never until chosen, so a dashboard looks as it did; Fluvy's details sheets are on from
-1.20, where Home Assistant's dialog opened before:
+opens, when a device shows its state's colour and whether its icon shows a level, where a card says nothing of its own
+(1.15, 1.19, 1.16, 1.20, 1.22, 1.23). Solid, bordered, dashed, never and off until chosen, so a dashboard looks as it
+did; Fluvy's details sheets are on from 1.20, where Home Assistant's dialog opened before:
 
 | Setting | Values | What a card takes from it |
 | --- | --- | --- |
@@ -69,6 +69,7 @@ Solid, bordered, dashed and never until chosen, so a dashboard looks as it did; 
 | **When unavailable** | Dashed · As when off (Dashed by default) | `unavailable`: `dashed` draws a card or a tile out of reach on the page's fill in a dashed hairline, its words faded and the ⊘ glyph in its circle; `quiet` (As when off) draws it as it is while off — its own surface, its own glyph, its words and controls at full strength — still saying "Unavailable", every value it cannot know a dash, every control still |
 | **Devices show their state's colour** | Never · When active · Always (Never by default) | `tint` on the lock, cover, alarm, vacuum, fan and thermostat cards: their state's colour beyond the circle while the device is active (unlocked, open, armed, cleaning, on, heating), or at rest too where the rest has a colour (a locked lock) — see [a device's state in colour](customising.md#a-devices-state-in-colour) |
 | **Shown as** | Wash · Edge · Control (Wash by default; shown while the colour shows) | `tint_style`: a quiet wash of the colour over the card, its edge alone in the colour, or the control alone (a lock's knob) |
+| **Icons show their level** | on · off (off by default) | where a card draws Fluvy's own glyph for an entity (no `icon` of its own, none set in Home Assistant), what it reads: a battery sensor's charge (empty to 10 %, low to 35, half to 70, full above), a low battery (a battery binary sensor on) and one charging, a signal's bars (in dBm or %), a valve open or shut — see [Fluvy's icons](theme.md#fluvys-icons). Off, each is its kind's one glyph, as before 1.23. Stored as `levelIcons` |
 
 A change shows on every card of the page at once, before it is saved, and the preview stands its cards on a picture
 while they are see-through; a card that sets `card_opacity` or `card_border` keeps its own (its editor shows the

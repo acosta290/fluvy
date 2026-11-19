@@ -50,6 +50,9 @@ export type { CardLanguage };
 
 export const SETTINGS_KEY = 'fluvy';
 /**
+ * 8 since 1.23: the house says whether Fluvy's icons show what an entity reads (`levelIcons`, #226: a battery's charge,
+ * a signal's bars, a valve open or shut): off where a 7 stored none, each icon drawn as it was, so nothing changes on
+ * upgrade (a 1.22 bundle reads an 8's as its own, and keeps the field on a save).
  * 7 since 1.22: the house says when a device card shows its state's colour beyond its circle and as what (`stateTint`,
  * `stateTintStyle`, #196): never, as a wash, where a 6 stored none, each card drawing as it did, so nothing changes on
  * upgrade (a 1.21 bundle reads a 7's as its own, and keeps both fields on a save).
@@ -74,7 +77,7 @@ export const SETTINGS_KEY = 'fluvy';
  * one added inside such a field (1.16's `cards.unavailable`): a 1.15 bundle draws it as its default, and a save of
  * the cards from it writes the default back.
  */
-export const SETTINGS_VERSION = 7;
+export const SETTINGS_VERSION = 8;
 
 /** A palette saved to the house: a palette file as it was shared. */
 export type SavedPalette = PaletteFile;
@@ -219,6 +222,8 @@ export interface HouseSettings {
   readonly sheets: Sheets;
   /** The order every list by room reads the house's rooms in (1.21, #189). */
   readonly rooms: RoomOrder;
+  /** Fluvy's icons show what an entity reads where they can (1.23, #226): a battery's charge, a signal's bars, a valve. */
+  readonly levelIcons: boolean;
 }
 
 /** What each person may choose for themselves. */
@@ -271,6 +276,7 @@ export interface EffectiveSettings {
   readonly background: PageBackground;
   readonly sheets: Sheets;
   readonly rooms: RoomOrder;
+  readonly levelIcons: boolean;
 }
 
 export const HOUSE_DEFAULTS: HouseSettings = {
@@ -324,6 +330,8 @@ export const HOUSE_DEFAULTS: HouseSettings = {
   sheets: 'fluvy',
   // every list by room in its own order, as before 1.21
   rooms: { sort: 'auto', order: [] },
+  // every icon of its kind's one glyph, as before 1.23
+  levelIcons: false,
 };
 export const WALL_DEFAULTS: WallSettings = HOUSE_DEFAULTS.wall;
 
@@ -463,6 +471,7 @@ export function parseHouse(raw: unknown): HouseSettings {
     background: parseBackground(value['background']),
     sheets: value['sheets'] === 'home-assistant' ? 'home-assistant' : d.sheets,
     rooms: parseRooms(value['rooms']),
+    levelIcons: value['levelIcons'] === true,
   };
 }
 
@@ -528,6 +537,7 @@ export function resolveSettings(
     background: house.background,
     sheets: house.sheets,
     rooms: house.rooms,
+    levelIcons: house.levelIcons,
   };
 }
 

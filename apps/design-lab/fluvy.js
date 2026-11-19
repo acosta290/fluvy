@@ -18,8 +18,9 @@
 (() => {
   'use strict';
 
+  // a glyph's own stroke (`stroke-width="2.2"` in `attrs`) in place of the set's, never beside it
   const svg = (body, attrs = '') =>
-    `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" ` +
+    `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" ${attrs.includes('stroke-width') ? '' : 'stroke-width="1.75" '}` +
     `stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" ${attrs}>${body}</svg>`;
 
   const G = {
@@ -317,6 +318,301 @@
     ),
   };
 
+  /* the glyph sets of 1.23 (#226): drawn on demand (packages/ui/src/glyph-sets/), the same bodies, by family */
+  const GS = {
+    levels: {
+      batteryEmpty: svg('<rect x="3" y="8" width="16" height="8" rx="2"/><path d="M21 11v2"/>'),
+      batteryLow: svg(
+        '<rect x="3" y="8" width="16" height="8" rx="2"/><path d="M21 11v2"/><rect x="5" y="10" width="3" height="4" rx="1" fill="currentColor" stroke="none"/>',
+      ),
+      batteryHalf: svg(
+        '<rect x="3" y="8" width="16" height="8" rx="2"/><path d="M21 11v2"/><rect x="5" y="10" width="6" height="4" rx="1" fill="currentColor" stroke="none"/>',
+      ),
+      batteryFull: svg(
+        '<rect x="3" y="8" width="16" height="8" rx="2"/><path d="M21 11v2"/><rect x="5" y="10" width="12" height="4" rx="1" fill="currentColor" stroke="none"/>',
+      ),
+      batteryCharging: svg(
+        '<path d="M9 8H5a2 2 0 0 0-2 2v4a2 2 0 0 0 2 2h4.5"/><path d="M14.5 8H17a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2h-2"/><path d="M21 11v2"/><path d="M12.75 5.5 9.75 12h4.5l-3 6.5"/>',
+      ),
+      signalNone: svg(
+        '<path d="M4.5 18v-3" opacity=".3"/><path d="M9.5 18v-6" opacity=".3"/><path d="M14.5 18V9" opacity=".3"/><path d="M19.5 18V6" opacity=".3"/>',
+        'stroke-width="2.2"',
+      ),
+      signalWeak: svg(
+        '<path d="M4.5 18v-3"/><path d="M9.5 18v-6" opacity=".3"/><path d="M14.5 18V9" opacity=".3"/><path d="M19.5 18V6" opacity=".3"/>',
+        'stroke-width="2.2"',
+      ),
+      signalFair: svg(
+        '<path d="M4.5 18v-3"/><path d="M9.5 18v-6"/><path d="M14.5 18V9" opacity=".3"/><path d="M19.5 18V6" opacity=".3"/>',
+        'stroke-width="2.2"',
+      ),
+      signalGood: svg(
+        '<path d="M4.5 18v-3"/><path d="M9.5 18v-6"/><path d="M14.5 18V9"/><path d="M19.5 18V6" opacity=".3"/>',
+        'stroke-width="2.2"',
+      ),
+      signalStrong: svg(
+        '<path d="M4.5 18v-3"/><path d="M9.5 18v-6"/><path d="M14.5 18V9"/><path d="M19.5 18V6"/>',
+        'stroke-width="2.2"',
+      ),
+      signalOff: svg(
+        '<path d="M4.5 18v-3" opacity=".3"/><path d="M9.5 18v-6" opacity=".3"/><path d="M14.5 18V9" opacity=".3"/><path d="M19.5 18V6" opacity=".3"/><path d="m4 5.5 3.5 3.5"/><path d="M7.5 5.5 4 9"/>',
+        'stroke-width="2.2"',
+      ),
+      valveOpen: svg(
+        '<path d="M3 14h3"/><path d="M18 14h3"/><path d="M6 9.5v9l12-9v9Z"/><path d="M12 14V5.5"/><path d="M8.5 5.5h7"/>',
+      ),
+      valveShut: svg(
+        '<path d="M3 14h3"/><path d="M18 14h3"/><path d="M6 9.5v9l12-9v9Z"/><path d="M12 14V5.5"/><path d="M8.5 5.5h7"/><path d="M6 9.5v9l12-9v9Z" fill="currentColor" stroke="none"/>',
+      ),
+    },
+    energy: {
+      batteryAlert: svg(
+        '<path d="M8.75 8H5a2 2 0 0 0-2 2v4a2 2 0 0 0 2 2h3.75"/><path d="M13.25 8H17a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2h-3.75"/><path d="M21 11v2"/><path d="M11 6.5v5.75"/><circle cx="11" cy="16" r=".95" fill="currentColor" stroke="none"/>',
+      ),
+      solarPanel: svg(
+        '<path d="M6 3.5h12l2.5 10h-17Z"/><path d="M4.75 8.5h14.5"/><path d="M10 3.5 9.2 13.5"/><path d="M14 3.5l.8 10"/><path d="M12 13.5v7"/><path d="M8 20.5h8"/>',
+      ),
+      batteryHome: svg(
+        '<path d="M4 10.5 12 4l8 6.5v8.5a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2Z"/><rect x="9.25" y="11.5" width="5.5" height="7" rx="1.25"/><path d="M11 9.75h2"/><rect x="10.75" y="15" width="2.5" height="2" rx=".5" fill="currentColor" stroke="none"/>',
+      ),
+      evPlug: svg(
+        '<rect x="3" y="3" width="10" height="18" rx="2.5"/><path d="M8.75 6.5 6.5 11h3L7.25 15.5"/><path d="M13 16.5h1.5a2 2 0 0 0 2-2V12a1.75 1.75 0 0 1 3.5 0v-1.5"/><path d="M18.25 10.5V7.5h3.5v3Z"/><path d="M19 7.5V5.5"/><path d="M21 7.5V5.5"/>',
+      ),
+      electricMeter: svg(
+        '<rect x="4" y="3" width="16" height="18" rx="3"/><rect x="7" y="6" width="10" height="3.5" rx="1"/><path d="M12.75 12 10.5 15.75h3l-2.25 3.75"/>',
+      ),
+      gasMeter: svg(
+        '<rect x="4" y="3" width="16" height="18" rx="3"/><rect x="7" y="6" width="10" height="3.5" rx="1"/><path d="M12.2 12c1.4 1 2.55 3.05 2.55 5.2a2.75 2.75 0 0 1-5.5 0c0-.95.25-1.8.65-2.55.25.55.55.85 1 .95.05-1.45.4-2.7 1.3-3.6Z"/>',
+      ),
+      waterMeter: svg(
+        '<rect x="4" y="3" width="16" height="18" rx="3"/><rect x="7" y="6" width="10" height="3.5" rx="1"/><path d="M12 12c1.6 1.95 2.75 3.3 2.75 4.75a2.75 2.75 0 0 1-5.5 0c0-1.45 1.15-2.8 2.75-4.75Z"/>',
+      ),
+      socket: svg(
+        '<rect x="3.5" y="3.5" width="17" height="17" rx="4.5"/><circle cx="12" cy="12" r="5.5"/><circle cx="9.6" cy="12" r="1.05" fill="currentColor" stroke="none"/><circle cx="14.4" cy="12" r="1.05" fill="currentColor" stroke="none"/>',
+      ),
+    },
+    devices: {
+      router: svg(
+        '<rect x="3" y="12.5" width="18" height="7.5" rx="2.5"/><path d="M7 12.5 5.75 4.5"/><path d="M17 12.5l1.25-8"/><path d="M9.5 8.25a3.5 3.5 0 0 1 5 0"/><circle cx="7" cy="16.25" r=".9" fill="currentColor" stroke="none"/><circle cx="10.25" cy="16.25" r=".9" fill="currentColor" stroke="none"/><path d="M13.75 16.25h3.25"/>',
+      ),
+      ethernet: svg(
+        '<path d="M4 4h16v11a2 2 0 0 1-2 2h-3v3H9v-3H6a2 2 0 0 1-2-2Z"/><path d="M8.5 4v3.5"/><path d="M12 4v3.5"/><path d="M15.5 4v3.5"/>',
+      ),
+      bluetooth: svg('<path d="M7.5 8.25l9.5 7.5-5 4.25V4l5 4.25-9.5 7.5"/>'),
+      phone: svg('<rect x="6.5" y="3" width="11" height="18" rx="2.5"/><path d="M10.75 18h2.5"/>'),
+      tablet: svg('<rect x="4" y="3" width="16" height="18" rx="2.5"/><path d="M10.5 18h3"/>'),
+      laptop: svg(
+        '<path d="M5 15V6.5A1.5 1.5 0 0 1 6.5 5h11A1.5 1.5 0 0 1 19 6.5V15"/><path d="M3 15h18v1a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3Z"/>',
+      ),
+      desktop: svg(
+        '<rect x="3" y="3.5" width="18" height="13" rx="2.5"/><path d="M3 13h18"/><path d="M10 16.5 9.5 20.5"/><path d="M14 16.5l.5 4"/><path d="M8 20.5h8"/>',
+      ),
+      watch: svg(
+        '<rect x="6" y="6.5" width="11" height="11" rx="3"/><path d="M8.5 6.5 9 3h5l.5 3.5"/><path d="M8.5 17.5 9 21h5l.5-3.5"/><path d="M19.5 10.5v3"/>',
+      ),
+      speakerSmart: svg(
+        '<path d="M6.5 6.5C6.5 4.6 9 3 12 3s5.5 1.6 5.5 3.5v11c0 1.9-2.5 3.5-5.5 3.5s-5.5-1.6-5.5-3.5Z"/><path d="M6.5 6.5c0 1.9 2.5 3.5 5.5 3.5s5.5-1.6 5.5-3.5"/><circle cx="9.5" cy="14.5" r=".9" fill="currentColor" stroke="none"/><circle cx="12" cy="15" r=".9" fill="currentColor" stroke="none"/><circle cx="14.5" cy="14.5" r=".9" fill="currentColor" stroke="none"/>',
+      ),
+      remote: svg(
+        '<rect x="7.5" y="3" width="9" height="18" rx="3"/><circle cx="12" cy="8.25" r="2"/><circle cx="10.25" cy="13.5" r=".9" fill="currentColor" stroke="none"/><circle cx="13.75" cy="13.5" r=".9" fill="currentColor" stroke="none"/><circle cx="10.25" cy="17" r=".9" fill="currentColor" stroke="none"/><circle cx="13.75" cy="17" r=".9" fill="currentColor" stroke="none"/>',
+      ),
+      gameController: svg(
+        '<path d="M7.5 6.5h9a4 4 0 0 1 3.9 3.2l.85 4.6a2.4 2.4 0 0 1-4.2 2L15 14h-6l-2.05 2.3a2.4 2.4 0 0 1-4.2-2l.85-4.6A4 4 0 0 1 7.5 6.5Z"/><path d="M8 8.75v3.5"/><path d="M6.25 10.5h3.5"/><circle cx="15.5" cy="9.75" r=".9" fill="currentColor" stroke="none"/><circle cx="17.5" cy="11.5" r=".9" fill="currentColor" stroke="none"/>',
+      ),
+      server: svg(
+        '<rect x="4" y="3.5" width="16" height="7.5" rx="2"/><rect x="4" y="13" width="16" height="7.5" rx="2"/><circle cx="7.5" cy="7.25" r=".9" fill="currentColor" stroke="none"/><circle cx="7.5" cy="16.75" r=".9" fill="currentColor" stroke="none"/><path d="M11.5 7.25h5"/><path d="M11.5 16.75h5"/>',
+      ),
+      printer: svg(
+        '<path d="M7 7.5v-4h10v4"/><path d="M7 16.5H5.5a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h13a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2H17"/><path d="M7 13.5h10v7H7Z"/><circle cx="17" cy="10.5" r=".9" fill="currentColor" stroke="none"/>',
+      ),
+    },
+    climate: {
+      radiator: svg(
+        '<rect x="3.5" y="4" width="17" height="13" rx="2"/><path d="M7.75 4v13"/><path d="M12 4v13"/><path d="M16.25 4v13"/><path d="M6 17v3"/><path d="M18 17v3"/>',
+      ),
+      boiler: svg(
+        '<rect x="5" y="3" width="14" height="13.5" rx="2.5"/><path d="M12.1 6c1.3.9 2.4 2.9 2.4 5a2.5 2.5 0 0 1-5 0c0-.9.2-1.7.6-2.4.2.5.5.8.9.9 0-1.4.3-2.6 1.1-3.5Z"/><path d="M8.5 16.5V21"/><path d="M12 16.5V21"/><path d="M15.5 16.5V21"/>',
+      ),
+      aircon: svg(
+        '<rect x="3" y="4" width="18" height="9" rx="2.5"/><path d="M6.5 10h11"/><path d="M8 16l-1 3.5"/><path d="M12 16v4"/><path d="M16 16l1 3.5"/>',
+      ),
+      dehumidifier: svg(
+        '<rect x="5" y="3" width="14" height="18" rx="3"/><path d="M8.5 6.5h7"/><path d="M12 10.5c1.6 2 2.75 3.4 2.75 4.75a2.75 2.75 0 0 1-5.5 0c0-1.35 1.15-2.75 2.75-4.75Z"/>',
+      ),
+      purifier: svg(
+        '<rect x="5" y="3" width="14" height="18" rx="3"/><path d="M8.5 6.5h7"/><path d="M8.5 9h7"/><circle cx="12" cy="15" r="3"/><circle cx="12" cy="15" r="0.9" fill="currentColor" stroke="none"/>',
+      ),
+      ceilingFan: svg(
+        '<path d="M12 5v4"/><circle cx="12" cy="11.5" r="2.5"/><path d="M9.6 10.8 4.4 9.7a.8.8 0 0 0-.4 1.5l5.5 2"/><path d="M14.4 10.8l5.2-1.1a.8.8 0 0 1 .4 1.5l-5.5 2"/><path d="M10.25 16.5a1.75 1.75 0 0 0 3.5 0Z"/>',
+      ),
+      co2: svg(
+        '<path d="M8.1 6.85a3.25 3.25 0 1 0 0 5.3"/><circle cx="13.5" cy="9.5" r="3.25"/><path d="M17.75 15.4a1.6 1.6 0 1 1 2.7 1.2L17.75 19.5h3.25"/>',
+      ),
+      airQuality: svg(
+        '<path d="M12 3v7"/><path d="M12 10 9.75 12"/><path d="M12 10l2.25 2"/><path d="M9.5 7.5C7 6.5 4 9 4 14.5 4 18 5 20.5 7 20.5s2.5-1.5 2.5-4Z"/><path d="M14.5 7.5c2.5-1 5.5 1.5 5.5 7 0 3.5-1 6-3 6s-2.5-1.5-2.5-4Z"/>',
+      ),
+      particles: svg(
+        '<circle cx="7.5" cy="7.5" r="2.25"/><circle cx="16" cy="6" r="1.5"/><circle cx="15.5" cy="15.5" r="2.5"/><circle cx="7" cy="16.5" r="1.5"/><circle cx="11.75" cy="11.25" r="1.1" fill="currentColor" stroke="none"/><circle cx="19.75" cy="10.75" r="0.9" fill="currentColor" stroke="none"/><circle cx="4" cy="12" r="0.9" fill="currentColor" stroke="none"/><circle cx="11.5" cy="19.75" r="0.9" fill="currentColor" stroke="none"/><circle cx="11.25" cy="4" r="0.9" fill="currentColor" stroke="none"/>',
+      ),
+      voc: svg(
+        '<circle cx="12" cy="13" r="2.5"/><circle cx="5.75" cy="7" r="1.75"/><circle cx="18.25" cy="7" r="1.75"/><circle cx="12" cy="19.75" r="1.25"/><path d="M10.2 11.2 7.1 8.25"/><path d="M13.8 11.2l3.1-2.95"/><path d="M12 15.5v3"/>',
+      ),
+      pressure: svg(
+        '<path d="M5.6 17.9a8.5 8.5 0 1 1 12.8 0"/><path d="M12 6v1.5"/><path d="M6 12h1.5"/><path d="M18 12h-1.5"/><path d="M12 13l3-3.5"/><circle cx="12" cy="13" r="1.4" fill="currentColor" stroke="none"/>',
+      ),
+      uv: svg('<path d="M4 7.5V13a3.5 3.5 0 0 0 7 0V7.5"/><path d="M13.25 7.5l3.5 9 3.5-9"/>'),
+      rainGauge: svg(
+        '<path d="M8.5 8v10.5A2.5 2.5 0 0 0 11 21h2a2.5 2.5 0 0 0 2.5-2.5V8"/><path d="M6.5 8h11"/><path d="M8.5 12h2.5"/><path d="M8.5 15h2"/><path d="M8.5 18h2.5"/><path d="M10 3.5l-.75 2"/><path d="M14.5 3.5l-.75 2"/>',
+      ),
+      thermoHigh: svg(
+        '<path d="M7 4.5a2 2 0 1 1 4 0v9.3a4 4 0 1 1-4 0Z"/><path d="M9 6.5v9"/><path d="M17.5 13V4.5"/><path d="m15 7 2.5-2.5L20 7"/>',
+      ),
+      thermoLow: svg(
+        '<path d="M7 4.5a2 2 0 1 1 4 0v9.3a4 4 0 1 1-4 0Z"/><path d="M9 13.5v2"/><path d="M17.5 4.5V13"/><path d="m15 10.5 2.5 2.5 2.5-2.5"/>',
+      ),
+      humidHigh: svg(
+        '<path d="M9 5.5c2.6 3.4 5 6.1 5 8.9a5 5 0 0 1-10 0c0-2.8 2.4-5.5 5-8.9Z"/><path d="M18.5 13V4.5"/><path d="m16 7 2.5-2.5L21 7"/>',
+      ),
+      humidLow: svg(
+        '<path d="M9 5.5c2.6 3.4 5 6.1 5 8.9a5 5 0 0 1-10 0c0-2.8 2.4-5.5 5-8.9Z"/><path d="M18.5 4.5V13"/><path d="m16 10.5 2.5 2.5 2.5-2.5"/>',
+      ),
+    },
+    safety: {
+      tank: svg(
+        '<path d="M5.5 6.5C5.5 5 8.4 3.75 12 3.75S18.5 5 18.5 6.5v11c0 1.5-2.9 2.75-6.5 2.75S5.5 19 5.5 17.5Z"/><path d="M5.5 6.5c0 1.5 2.9 2.75 6.5 2.75s6.5-1.25 6.5-2.75"/><path d="M5.5 13c1.1.75 2.15.75 3.25 0s2.15-.75 3.25 0 2.15.75 3.25 0 2.15-.75 3.25 0"/>',
+      ),
+      leak: svg(
+        '<path d="M3 6h5.5"/><path d="M3 10.5h5.5"/><path d="M15.5 6H21"/><path d="M15.5 10.5H21"/><rect x="8.5" y="4" width="7" height="8.5" rx="1.25"/><path d="M12 15c-1.15 1.45-1.85 2.45-1.85 3.35a1.85 1.85 0 0 0 3.7 0c0-.9-.7-1.9-1.85-3.35Z"/>',
+      ),
+      flood: svg(
+        '<path d="M5.5 10.5 12 4.5l6.5 6"/><path d="M7.5 9v4"/><path d="M16.5 9v4"/><path d="M3 15.5c1.5 1 3 1 4.5 0s3-1 4.5 0 3 1 4.5 0 3-1 4.5 0"/><path d="M3 19.5c1.5 1 3 1 4.5 0s3-1 4.5 0 3 1 4.5 0 3-1 4.5 0"/>',
+      ),
+      doorbell: svg(
+        '<rect x="6.5" y="3" width="11" height="18" rx="3"/><path d="M15 15h-6l.75-1V11.5a2.25 2.25 0 0 1 4.5 0V14Z"/><path d="M11.25 17h1.5"/><path d="M12 6.75v.5"/>',
+      ),
+      intercom: svg(
+        '<path d="M5.5 4h1a1.5 1.5 0 0 1 1.5 1.5V8l-1.5 1v6L8 16v2.5A1.5 1.5 0 0 1 6.5 20h-1A1.5 1.5 0 0 1 4 18.5v-13A1.5 1.5 0 0 1 5.5 4Z"/><rect x="11" y="3" width="9.5" height="18" rx="2.5"/><circle cx="14" cy="7.25" r="0.9" fill="currentColor" stroke="none"/><circle cx="17.5" cy="7.25" r="0.9" fill="currentColor" stroke="none"/><circle cx="14" cy="9.75" r="0.9" fill="currentColor" stroke="none"/><circle cx="17.5" cy="9.75" r="0.9" fill="currentColor" stroke="none"/><path d="M14 15.5h3.5"/>',
+      ),
+      siren: svg(
+        '<path d="M7 16.5V12a5 5 0 0 1 10 0v4.5"/><rect x="5" y="16.5" width="14" height="4" rx="1.5"/><path d="M12 3v2"/><path d="m5.6 5.6 1.4 1.4"/><path d="M18.4 5.6 17 7"/><path d="M3 12h1.5"/><path d="M19.5 12H21"/>',
+      ),
+      smoke: svg(
+        '<path d="M3.5 4h17"/><path d="M5.5 4v1.5a2.5 2.5 0 0 0 2.5 2.5h8a2.5 2.5 0 0 0 2.5-2.5V4"/><path d="M8.5 12c-.9 1.05-.9 2.1 0 3.15s.9 2.1 0 3.15"/><path d="M12 11.5c-.9 1.05-.9 2.1 0 3.15s.9 2.1 0 3.15-.9 2.1 0 3.15"/><path d="M15.5 12c-.9 1.05-.9 2.1 0 3.15s.9 2.1 0 3.15"/>',
+      ),
+      coAlarm: svg(
+        '<path d="M3.5 4h17"/><path d="M5.5 4v1.5a2.5 2.5 0 0 0 2.5 2.5h8a2.5 2.5 0 0 0 2.5-2.5V4"/><path d="M10.6 13.1a3 3 0 1 0 0 4.8"/><circle cx="15.25" cy="15.5" r="3"/>',
+      ),
+      alarmPanel: svg(
+        '<rect x="4" y="3" width="16" height="18" rx="3"/><path d="M12 5.75 9.5 6.75v1.75c0 1.6 1 2.7 2.5 3.25 1.5-.55 2.5-1.65 2.5-3.25V6.75Z"/><circle cx="8.5" cy="14.75" r="0.9" fill="currentColor" stroke="none"/><circle cx="8.5" cy="18" r="0.9" fill="currentColor" stroke="none"/><circle cx="12" cy="14.75" r="0.9" fill="currentColor" stroke="none"/><circle cx="12" cy="18" r="0.9" fill="currentColor" stroke="none"/><circle cx="15.5" cy="14.75" r="0.9" fill="currentColor" stroke="none"/><circle cx="15.5" cy="18" r="0.9" fill="currentColor" stroke="none"/>',
+      ),
+      keypad: svg(
+        '<circle cx="6.5" cy="4.5" r="1.3" fill="currentColor" stroke="none"/><circle cx="6.5" cy="9.5" r="1.3" fill="currentColor" stroke="none"/><circle cx="6.5" cy="14.5" r="1.3" fill="currentColor" stroke="none"/><circle cx="12" cy="4.5" r="1.3" fill="currentColor" stroke="none"/><circle cx="12" cy="9.5" r="1.3" fill="currentColor" stroke="none"/><circle cx="12" cy="14.5" r="1.3" fill="currentColor" stroke="none"/><circle cx="17.5" cy="4.5" r="1.3" fill="currentColor" stroke="none"/><circle cx="17.5" cy="9.5" r="1.3" fill="currentColor" stroke="none"/><circle cx="17.5" cy="14.5" r="1.3" fill="currentColor" stroke="none"/><circle cx="12" cy="19.5" r="1.3" fill="currentColor" stroke="none"/>',
+      ),
+      fingerprint: svg(
+        '<path d="M5 9.5a8 8 0 0 1 14 0"/><path d="M5.5 15.5a8 8 0 0 1-.5-3"/><path d="M8 19.5c-1-2-1.5-4-1.5-6.5a5.5 5.5 0 0 1 11 0c0 1.5-.2 3-.6 4.5"/><path d="M9.5 13a2.5 2.5 0 0 1 5 0c0 3.5-.8 6-2.5 8"/><path d="M12 13c0 2.5-.5 4.5-1.5 6.5"/><path d="M16.5 20.25c.25-.5.45-1 .6-1.5"/>',
+      ),
+      safe: svg(
+        '<rect x="3.5" y="3.5" width="17" height="15.5" rx="2.5"/><circle cx="11" cy="11.25" r="3.5"/><path d="M11 7.75v7"/><path d="M7.5 11.25h7"/><path d="M17 9.5v3.5"/><path d="M7 19v2"/><path d="M17 19v2"/>',
+      ),
+      parcel: svg(
+        '<rect x="3.5" y="8.5" width="17" height="12" rx="2"/><path d="M3.5 8.5 5.5 4h13l2 4.5"/><path d="M10 4v7.5h4V4"/>',
+      ),
+    },
+    outdoor: {
+      mailbox: svg(
+        '<path d="M3.5 15V9.5a4 4 0 0 1 4-4h9a4 4 0 0 1 4 4V15Z"/><path d="M7.5 5.5a4 4 0 0 1 4 4V15"/><path d="M15.5 10V7.5h2.5"/><path d="M12 15v6"/>',
+      ),
+      fence: svg(
+        '<path d="M4.5 20.5V6.75L6 4.5l1.5 2.25V20.5"/><path d="M10.5 20.5V6.75L12 4.5l1.5 2.25V20.5"/><path d="M16.5 20.5V6.75L18 4.5l1.5 2.25V20.5"/><path d="M7.5 9.5h3"/><path d="M13.5 9.5h3"/><path d="M7.5 15.5h3"/><path d="M13.5 15.5h3"/>',
+      ),
+      pool: svg(
+        '<path d="M7 14V6a2 2 0 0 1 4 0"/><path d="M14 14V6a2 2 0 0 1 4 0"/><path d="M7 8.5h7"/><path d="M7 11.75h7"/><path d="M3 16.5c1.5 1 3 1 4.5 0s3-1 4.5 0 3 1 4.5 0 3-1 4.5 0"/><path d="M3 20c1.5 1 3 1 4.5 0s3-1 4.5 0 3 1 4.5 0 3-1 4.5 0"/>',
+      ),
+      sprinkler: svg(
+        '<path d="M3.5 20.5h17"/><path d="M10.5 20.5V16h3v4.5"/><path d="M10 13.5 6.5 10"/><path d="M12 12.5V8"/><path d="M14 13.5 17.5 10"/><circle cx="4.75" cy="8.25" r="1" fill="currentColor" stroke="none"/><circle cx="12" cy="5" r="1" fill="currentColor" stroke="none"/><circle cx="19.25" cy="8.25" r="1" fill="currentColor" stroke="none"/>',
+      ),
+      mower: svg(
+        '<path d="M15 11.5 18.5 3.5"/><path d="M17 3.5h3.5"/><path d="M3 15.5v-1a4 4 0 0 1 4-4h6.5a4 4 0 0 1 4 4v1Z"/><circle cx="6.5" cy="18.75" r="1.75"/><circle cx="14" cy="18.75" r="1.75"/>',
+      ),
+      plant: svg(
+        '<path d="M7 14.5h10l-1.25 6.5h-7.5Z"/><path d="M12 14.5V9.5"/><path d="M12 11.5C9 11.5 7 9.5 6.5 6.5c3 0 5 2 5.5 5Z"/><path d="M12 9.5c0-3 2-5.5 5.5-6-.5 3.5-2.5 5.5-5.5 6Z"/>',
+      ),
+      tree: svg(
+        '<path d="M8.5 15.5A4.5 4.5 0 0 1 6.6 7a5.5 5.5 0 0 1 10.8 0 4.5 4.5 0 0 1-1.9 8.5Z"/><path d="M12 11v10"/><path d="M12 14l2.5-2.5"/><path d="M12 16.5 9.5 14"/>',
+      ),
+      bbq: svg(
+        '<path d="M3.5 10.5h17"/><path d="M4.5 10.5a7.5 7.5 0 0 0 15 0"/><path d="M8 17 6.5 21"/><path d="M16 17l1.5 4"/><path d="M9 3.5c-.8.9-.8 1.6 0 2.5"/><path d="M12 3c-.8.9-.8 1.6 0 2.5"/><path d="M15 3.5c-.8.9-.8 1.6 0 2.5"/>',
+      ),
+      outdoorLight: svg(
+        '<path d="M5.5 4v9"/><path d="M5.5 7h4"/><path d="M9.5 7.5 14 4.5l4.5 3Z"/><path d="M10 7.5h8l-1 8.5h-6Z"/><path d="M14 10.5v2.5"/><path d="M12 19h4"/>',
+      ),
+      recycle: svg(
+        '<path d="M8.5 6.6 10.3 3.75a2 2 0 0 1 3.4 0l2.3 3.85"/><path d="m16.6 5.4-.6 2.2-2.2-.6"/><path d="M18.4 11.1l1.95 3.4a2 2 0 0 1-1.7 3H15"/><path d="m16.6 15.5-1.6 2 1.6 1.6"/><path d="M9 17.5H5.35a2 2 0 0 1-1.7-3l1.9-3.3"/><path d="M3.9 12.6 5.55 11.2l1.55 1.75"/>',
+      ),
+    },
+    home: {
+      ceilingLight: svg(
+        '<path d="M9.5 3h5"/><path d="M12 3v4"/><path d="M5 14a7 7 0 0 1 14 0Z"/><path d="M12 17v3"/><path d="M7.5 16.5 6 19"/><path d="M16.5 16.5 18 19"/>',
+      ),
+      deskLamp: svg(
+        '<path d="M4.5 21h8"/><path d="M8.5 21 6 14.5l5-5"/><path d="M10 8.5 14 4.5l5 5-4 4a3.5 3.5 0 0 1-5-5Z"/><path d="M18.5 15.5l1.25 1.25"/>',
+      ),
+      ledStrip: svg(
+        '<rect x="3" y="10" width="18" height="4" rx="2"/><circle cx="7" cy="12" r=".9" fill="currentColor" stroke="none"/><path d="M7 4.5V7"/><path d="M7 17v2.5"/><circle cx="12" cy="12" r=".9" fill="currentColor" stroke="none"/><path d="M12 4.5V7"/><path d="M12 17v2.5"/><circle cx="17" cy="12" r=".9" fill="currentColor" stroke="none"/><path d="M17 4.5V7"/><path d="M17 17v2.5"/>',
+      ),
+      curtains: svg(
+        '<path d="M3 4h18"/><path d="M5 4v16.5h1.5c1.75 0 3-1.5 3.5-4C9.4 13 9 8.5 9.5 4"/><path d="M19 4v16.5h-1.5c-1.75 0-3-1.5-3.5-4 .6-3.5 1-8 .5-12.5"/>',
+      ),
+      shutter: svg(
+        '<rect x="3" y="3" width="18" height="4.5" rx="1.5"/><path d="M4.5 7.5V21"/><path d="M19.5 7.5V21"/><path d="M4.5 11h15"/><path d="M4.5 14.5h15"/><path d="M4.5 18h15"/>',
+      ),
+      awning: svg(
+        '<path d="M3 4h18"/><path d="M3 4l1.5 7.5h15L21 4"/><path d="M9 4l-.5 7.5"/><path d="M15 4l.5 7.5"/><path d="M4.5 11.5a2 2 0 0 0 4 0 1.75 1.75 0 0 0 3.5 0 1.75 1.75 0 0 0 3.5 0 2 2 0 0 0 4 0"/><path d="M7 16v4.5h10V16"/>',
+      ),
+      freezer: svg(
+        '<rect x="5.5" y="3" width="13" height="18" rx="2.5"/><path d="M15.25 5.75v2.5"/><path d="M12 10v7"/><path d="M9 11.75l6 3.5"/><path d="M9 15.25l6-3.5"/>',
+      ),
+      hood: svg(
+        '<path d="M9.5 3v6.5"/><path d="M14.5 3v6.5"/><path d="M9.5 9.5h5l5.5 6H4Z"/><path d="M4 18.5h16"/>',
+      ),
+    },
+    rooms: {
+      kitchen: svg(
+        '<path d="M4.5 11h15v4.5a5 5 0 0 1-5 5h-5a5 5 0 0 1-5-5Z"/><path d="M4.5 13H3"/><path d="M19.5 13H21"/><path d="M4.5 8.5h15"/><path d="M12 8.5V7"/><path d="M9 3c-.8.9-.8 1.6 0 2.5"/><path d="M15 3c-.8.9-.8 1.6 0 2.5"/>',
+      ),
+      bedroom: svg(
+        '<path d="M3.5 4.5v16"/><path d="M20.5 12v8.5"/><path d="M3.5 12h17"/><path d="M3.5 16.5h17"/><path d="M6 12v-1a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v1"/>',
+      ),
+      bathroom: svg(
+        '<path d="M3 11.5h18"/><path d="M4 11.5V14a5 5 0 0 0 5 5h6a5 5 0 0 0 5-5v-2.5"/><path d="M7 19l-1 2"/><path d="M17 19l1 2"/><path d="M6.5 11.5V6a2.5 2.5 0 0 1 4.75-1.1"/><path d="M10 6.5l3-1.5"/>',
+      ),
+      kidsRoom: svg(
+        '<circle cx="12" cy="13.25" r="6.75"/><path d="M6.48 9.37A2.5 2.5 0 1 1 8.54 7.46"/><path d="M15.46 7.46A2.5 2.5 0 1 1 17.52 9.37"/><ellipse cx="12" cy="16" rx="2.75" ry="2"/><circle cx="9.5" cy="12" r="0.95" fill="currentColor" stroke="none"/><circle cx="14.5" cy="12" r="0.95" fill="currentColor" stroke="none"/><circle cx="12" cy="15.4" r="0.8" fill="currentColor" stroke="none"/>',
+      ),
+      office: svg(
+        '<path d="M3 13.5h18"/><path d="M5 13.5V21"/><path d="M19 13.5V21"/><path d="M14.5 13.5V17h4.5"/><rect x="5.5" y="3" width="10" height="7" rx="1.5"/><path d="M10.5 10v3.5"/>',
+      ),
+      dining: svg(
+        '<path d="M6.5 3v4.5a1.75 1.75 0 0 0 3.5 0V3"/><path d="M8.25 9.25V21"/><path d="M17.5 21V3c-1.9 1.3-3 4-3 8h3"/>',
+      ),
+      laundry: svg(
+        '<path d="M3 5l2.25 13a2 2 0 0 0 2 1.5h9.5a2 2 0 0 0 2-1.5L21 5"/><path d="M4 9.5c1.3.9 2.7.9 4 0s2.7-.9 4 0 2.7.9 4 0 2.7-.9 4 0"/>',
+      ),
+      garden: svg(
+        '<path d="M8.5 4v3.5a3.5 3.5 0 0 0 7 0V4l-1.75 1.5L12 3.75 10.25 5.5Z"/><path d="M12 11v9.5"/><path d="M12 18c-3 0-5-1.75-5.5-4.5 3 0 5 1.75 5.5 4.5Z"/><path d="M12 15.5c3 0 5-1.75 5.5-4.5-3 0-5 1.75-5.5 4.5Z"/><path d="M7 20.5h10"/>',
+      ),
+      livingRoom: svg(
+        '<path d="M5.5 10V7a2.5 2.5 0 0 1 2.5-2.5h8A2.5 2.5 0 0 1 18.5 7v3"/><path d="M3 12.5a2 2 0 0 1 4 0V14h10v-1.5a2 2 0 0 1 4 0V18H3Z"/><path d="M5 18v2"/><path d="M19 18v2"/>',
+      ),
+      hallway: svg(
+        '<path d="M10 7.25a2 2 0 1 1 2 2v1.5"/><path d="M12 10.75 3.6 16.85a1 1 0 0 0 .6 1.9h15.6a1 1 0 0 0 .6-1.9Z"/>',
+      ),
+      stairs: svg('<path d="M3 20h3.5v-4H10v-4h3.5V8H17V4h4"/>'),
+      toilet: svg(
+        '<rect x="4" y="3" width="5.5" height="8" rx="1.5"/><path d="M4 11h16v.5a6.5 6.5 0 0 1-6.5 6.5H11"/><path d="M8 18l-.5 3h5l-.5-3"/><path d="M4 11v1.5a5.5 5.5 0 0 0 4 5.3"/>',
+      ),
+    },
+  };
   /* the appliances' pictures (packages/cards/src/appliance/art/art.ts): their materials, and a drawing a kind on a
      64 grid; a picture is <svg viewBox="0 0 64 64"><defs>ART_DEFS</defs>drawing</svg> */
   const ART_DEFS =
@@ -784,6 +1080,7 @@
     stack,
     G,
     APPLIANCE_GLYPHS: GA,
+    GLYPH_SETS: GS,
     APPLIANCE_ART: GART,
     APPLIANCE_ART_DEFS: ART_DEFS,
     ico,

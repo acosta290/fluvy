@@ -650,6 +650,12 @@
   height: 16px;
 }
 
+/* a glyph of ours Home Assistant draws for a card (`fluvy-card:router`): what it draws faint as faint as the glyph
+   draws it, a signal's bars it does not reach (Home Assistant's own property, as it spells it) */
+.fv-haicon--fluvy {
+  --icon-secondary-opactity: 0.3;
+}
+
 .fv-ruler-host,
 fluvy-ruler {
   display: block;

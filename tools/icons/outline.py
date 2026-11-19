@@ -2,18 +2,21 @@
 """Turns the fluvy stroke glyphs into filled outlines Home Assistant can draw (ha-svg-icon fills, it never strokes).
 
   .venv/bin/python tools/icons/outline.py glyphs.json packages/core/src/icons/generated.ts \
-      packages/core/src/icons/generated-on-demand.ts
+      packages/core/src/icons/generated-on-demand.ts packages/core/src/icons/parts
 
 Every stroked element is sampled into a polyline and buffered by half the stroke (round caps and joins, like the
 glyph's SVG), filled elements become polygons, the union is simplified to 0.02 units and written as one path per
-glyph on the same 24 × 24 grid. Needs shapely and svgpathtools (tools/icons/requirements.txt)."""
+glyph on the same 24 × 24 grid; what a glyph draws faint (`opacity`, a signal's bars it does not reach) is a second
+path, which Home Assistant draws faint (`secondaryPath`). Core's part, the part `getIcon` fetches first (with the index
+of the others) and each other part (`parts/<name>.ts`) are written apart. Needs shapely and svgpathtools
+(tools/icons/requirements.txt)."""
 import json, re, sys
 from svgpathtools import parse_path
 from shapely.geometry import LineString, Polygon
 from shapely.ops import unary_union
 from shapely.geometry.polygon import orient
 
-ELEMENT = re.compile(r'<(path|circle|rect|line|g)\b([^>]*?)(/>|>)', re.S)
+ELEMENT = re.compile(r'<(path|circle|ellipse|rect|line|g)\b([^>]*?)(/>|>)', re.S)
 ATTR = re.compile(r'([a-zA-Z-]+)="([^"]*)"')
 
 def attrs(s):
@@ -46,17 +49,17 @@ def apply(pts, m):
     return [(a * x + c * y + e, b * x + d * y + f) for x, y in pts]
 
 def shapes(body, default_stroke):
-    """Yields (points, closed, filled, stroke_width) per drawn element, transforms applied."""
+    """Yields (points, closed, filled, stroke_width, faint) per drawn element, transforms applied."""
     stack = [(1, 0, 0, 1, 0, 0)]
-    pos = 0
     for m in ELEMENT.finditer(body):
-        tag, raw, end = m.group(1), m.group(2), m.group(3)
+        tag, raw = m.group(1), m.group(2)
         a = attrs(raw)
         if tag == 'g':
             stack.append(transform_of(a.get('transform', '')))
             continue
         filled = a.get('fill', 'none') not in ('none', '') and a.get('stroke', '') == 'none'
         sw = float(a['stroke-width']) if 'stroke-width' in a else default_stroke
+        faint = float(a.get('opacity', 1)) < 1
         if tag == 'path':
             d = a['d']
             p = parse_path(d)
@@ -71,11 +74,13 @@ def shapes(body, default_stroke):
             for segs in subs:
                 pts = sample(segs)
                 closed = abs(segs[0].start - segs[-1].end) < 1e-6 or bool(re.search(r'[zZ]\s*$', d))
-                yield apply(pts, stack[-1]), closed, filled, sw
-        elif tag == 'circle':
-            cx, cy, r = float(a['cx']), float(a['cy']), float(a['r'])
-            p = parse_path(f'M{cx + r},{cy} A{r},{r} 0 1 1 {cx - r},{cy} A{r},{r} 0 1 1 {cx + r},{cy}')
-            yield apply(sample(p), stack[-1]), True, filled, sw
+                yield apply(pts, stack[-1]), closed, filled, sw, faint
+        elif tag in ('circle', 'ellipse'):
+            cx, cy = float(a['cx']), float(a['cy'])
+            rx = float(a['r'] if tag == 'circle' else a['rx'])
+            ry = float(a['r'] if tag == 'circle' else a['ry'])
+            p = parse_path(f'M{cx + rx},{cy} A{rx},{ry} 0 1 1 {cx - rx},{cy} A{rx},{ry} 0 1 1 {cx + rx},{cy}')
+            yield apply(sample(p), stack[-1]), True, filled, sw, faint
         elif tag == 'rect':
             x, y, w, h = (float(a[k]) for k in ('x', 'y', 'width', 'height'))
             rx = float(a.get('rx', 0)); ry = float(a.get('ry', rx))
@@ -84,24 +89,25 @@ def shapes(body, default_stroke):
                      f'H{x + rx} A{rx},{ry} 0 0 1 {x},{y + h - ry} V{y + ry} A{rx},{ry} 0 0 1 {x + rx},{y} Z')
             else:
                 d = f'M{x},{y} H{x + w} V{y + h} H{x} Z'
-            yield apply(sample(parse_path(d)), stack[-1]), True, filled, sw
+            yield apply(sample(parse_path(d)), stack[-1]), True, filled, sw, faint
         elif tag == 'line':
             pts = [(float(a['x1']), float(a['y1'])), (float(a['x2']), float(a['y2']))]
-            yield apply(pts, stack[-1]), False, filled, sw
-    # closing </g> tags pop the stack
-    return
+            yield apply(pts, stack[-1]), False, filled, sw, faint
 
 def outline(body, default_stroke):
-    parts = []
-    depth_bodies = body
-    # handle </g> pops by splitting: simple approach — process groups sequentially
-    for pts, closed, filled, sw in shapes(body, default_stroke):
+    """The glyph's path, and the path of what it draws faint ('' where it draws nothing faint)."""
+    drawn = ([], [])
+    for pts, closed, filled, sw, faint in shapes(body, default_stroke):
         if filled and len(pts) >= 3:
-            parts.append(Polygon(pts).buffer(0))
+            drawn[faint].append(Polygon(pts).buffer(0))
         else:
             line = LineString(pts + ([pts[0]] if closed and pts[0] != pts[-1] else []))
-            parts.append(line.buffer(sw / 2, cap_style=1, join_style=1, resolution=6))
-    geom = unary_union(parts).simplify(0.06, preserve_topology=True)
+            drawn[faint].append(line.buffer(sw / 2, cap_style=1, join_style=1, resolution=6))
+    return tuple(rings(unary_union(geoms)) if geoms else '' for geoms in drawn)
+
+def rings(geom):
+    """A shape's rings as one path."""
+    geom = geom.simplify(0.06, preserve_topology=True)
     polys = [geom] if geom.geom_type == 'Polygon' else list(geom.geoms)
     d = []
     SCALE = 10 / 9  # the cards draw the glyph's ink 3..21 in 24; beside Material icons (ink 2..22) the set is scaled about the centre
@@ -139,39 +145,69 @@ def kebab(name):
     return re.sub(r'([a-z0-9])([A-Z])', r'\1-\2', name).lower()
 
 glyphs = json.load(open(sys.argv[1]))
-# core's part (on every page: the shell draws from it), and the part `getIcon` fetches when one of its icons is asked for
-parts = ({}, {})
+# core's part (on every page: the shell draws from it), the part `getIcon` fetches first, and the set's other parts
+parts = {}
 for name, g in glyphs.items():
     body = g['body']
     # strip closing group tags (the opener sets the transform for what follows; every glyph has at most one group)
     body = body.replace('</g>', '')
-    parts[1 if g.get('onDemand') else 0][kebab(name)] = outline(body, float(g['strokeWidth']))
+    parts.setdefault(g.get('part', 'core'), {})[kebab(name)] = outline(body, float(g['strokeWidth']))
 
-def entry(name, path):
+def entry(name, drawn):
     """An entry as the repository's formatter lays it out (the file is not formatted again): a key quoted only where
-    it must be; a key of five or more characters breaks before a value that would run past 100."""
+    it must be; a key of five or more characters breaks before a value that would run past 100; a glyph with a faint
+    part is its two paths."""
+    path, faint = drawn
     key = name if re.match(r'^[A-Za-z_$][A-Za-z0-9_$]*$', name) else f"'{name}'"
+    if faint:
+        return [f"  {key}: [", f"    '{path}',", f"    '{faint}',", '  ],']
     line = f"  {key}: '{path}',"
     if len(line) <= 100 or len(key) < 5:
         return [line]
     return [f"  {key}:", f"    '{path}',"]
 
-def module(paths, const, doc, names=None):
-    """A part as a module. `names`, for core's part (the shell names its glyphs), also exports the union of the part's
-    names as a type, and the part keyed by it: a glyph the part does not hold is a type error where the code names it."""
-    head = ['/* Generated by tools/icons/outline.py from packages/ui/src/glyphs.ts — do not edit. */']
-    body = [entry_line for name in sorted(paths) for entry_line in entry(name, paths[name])]
-    if not names:
-        return '\n'.join([*head, doc, f'export const {const}: Readonly<Record<string, string>> = {{', *body, '};']) + '\n'
-    return '\n'.join([*head, 'const paths = {', *body, '};',
-                      "/** A glyph of this part by its name (`mask('check')`): a name it does not hold does not compile. */",
-                      f'export type {names} = keyof typeof paths;', doc,
-                      f'export const {const}: Readonly<Record<{names}, string>> = paths;']) + '\n'
+HEAD = '/* Generated by tools/icons/outline.py from the glyphs of packages/ui — do not edit. */'
+OUTLINE = 'string | readonly [path: string, faint: string]'
 
-open(sys.argv[2], 'w').write(module(
-    parts[0], 'ICON_PATHS',
-    '/** The fluvy glyphs as filled outlines on the 24 grid: what `ha-icon` draws for `fluvy:<name>`. */', 'IconName'))
-open(sys.argv[3], 'w').write(module(
-    parts[1], 'ON_DEMAND_PATHS',
-    '/** The rest of the set, outlined the same: fetched by `getIcon` the first time one of them is asked for. */'))
-print(f'{len(parts[0])} icons → {sys.argv[2]}, {len(parts[1])} → {sys.argv[3]}')
+def entries(paths):
+    return [line for name in sorted(paths) for line in entry(name, paths[name])]
+
+def core(paths):
+    """Core's part. The shell names its glyphs: the module also exports the union of the part's names as a type, and
+    the part keyed by it, so a glyph the part does not hold is a type error where the code names it."""
+    assert not any(faint for _, faint in paths.values()), 'nothing in core is drawn faint'
+    return '\n'.join([HEAD, 'const paths = {', *entries(paths), '};',
+                      "/** A glyph of this part by its name (`mask('check')`): a name it does not hold does not compile. */",
+                      'export type IconName = keyof typeof paths;',
+                      '/** The fluvy glyphs as filled outlines on the 24 grid: what `ha-icon` draws for `fluvy:<name>`. */',
+                      'export const ICON_PATHS: Readonly<Record<IconName, string>> = paths;']) + '\n'
+
+def first(paths, others):
+    """The part `getIcon` fetches first: its own glyphs and, for each other part, the names it holds and its fetch."""
+    assert not any(faint for _, faint in paths.values()), 'nothing in the first part is drawn faint'
+    index = []
+    for name in sorted(others):
+        index += [f'  {name}: [', f"    '{' '.join(sorted(others[name]))}',", f"    () => import('./parts/{name}.js'),", '  ],']
+    return '\n'.join([HEAD,
+                      '/** The rest of the set, outlined the same: fetched by `getIcon` the first time one of them is asked for. */',
+                      'export const ON_DEMAND_PATHS: Readonly<Record<string, string>> = {', *entries(paths), '};',
+                      "/** The set's other parts, each fetched the first time one of its glyphs is asked for: the names it holds, its fetch. */",
+                      'export const PARTS: Readonly<',
+                      '  Record<string, readonly [names: string, load: () => Promise<{ PATHS: Readonly<Record<string, Outline>> }>]>',
+                      '> = {', *index, '};',
+                      '/** A glyph outlined: its path, or its path and the path of what it draws faint. */',
+                      f'export type Outline = {OUTLINE};']) + '\n'
+
+def part(paths, name):
+    return '\n'.join([HEAD, "import type { Outline } from '../generated-on-demand.js';",
+                      '',
+                      f"/** The set's part `{name}`, outlined: fetched the first time Home Assistant asks for one of its glyphs. */",
+                      'export const PATHS: Readonly<Record<string, Outline>> = {', *entries(paths), '};']) + '\n'
+
+others = {name: paths for name, paths in parts.items() if name not in ('core', 'icons')}
+open(sys.argv[2], 'w').write(core(parts['core']))
+open(sys.argv[3], 'w').write(first(parts['icons'], others))
+for name, paths in others.items():
+    open(f'{sys.argv[4]}/{name}.ts', 'w').write(part(paths, name))
+print(f"{len(parts['core'])} icons → {sys.argv[2]}, {len(parts['icons'])} → {sys.argv[3]}, "
+      + ', '.join(f'{len(paths)} → {name}' for name, paths in others.items()))

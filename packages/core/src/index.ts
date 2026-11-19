@@ -16,7 +16,7 @@ export * from './i18n/index.js';
 export * from './fonts.js';
 export * from './register.js';
 export * from './card.js';
-export { ICON_SET, iconNames, registerIcons } from './icons/index.js';
+export { ICON_SET, iconNames, iconOutline, registerIcons } from './icons/index.js';
 export { HA_LOGO_URL } from './icons/ha-logo.js';
 export {
   guard,

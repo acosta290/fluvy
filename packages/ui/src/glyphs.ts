@@ -264,11 +264,16 @@ export type GlyphName = keyof typeof GLYPHS;
 
 export const glyphNames = Object.keys(GLYPHS) as GlyphName[];
 
-/** Glyphs a family brings with its chunk (the appliances' kinds): drawn as the set's own once it has landed. */
-const ADDED: Record<string, string> = {};
+/**
+ * Glyphs a family brings with its chunk (the appliances' kinds, the levels' batteries and bars): drawn as the set's own
+ * once it has landed.
+ */
+const ADDED: Record<string, string | readonly [string, number]> = {};
 
 /** Adds a chunk's glyphs to the set, so `icon('washer')` and a config's `fluvy:washer` draw them. */
-export function addGlyphs(table: Readonly<Record<string, string>>): void {
+export function addGlyphs(
+  table: Readonly<Record<string, string | readonly [string, number]>>,
+): void {
   Object.assign(ADDED, table);
 }
 

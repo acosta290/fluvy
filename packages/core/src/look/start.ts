@@ -6,6 +6,7 @@ import {
   resyncCardThemes,
   setCardDefaults,
   setChartDefaults,
+  setLevelGlyphs,
   setLightDefaults,
   setRoomDefaults,
   setSliderDefaults,
@@ -85,6 +86,7 @@ export type LookPreview = Partial<
     | 'chartSets'
     | 'cards'
     | 'rooms'
+    | 'levelIcons'
   >
 >;
 
@@ -261,6 +263,12 @@ export function startLook(): LookHandle | undefined {
     setCardDefaults(now.cards, lite);
     setSliderDefaults(now.sliders);
     setRoomDefaults(now.rooms);
+    // the levels in Fluvy's icons, their chunk fetched the first time the house turns them on
+    if (now.levelIcons)
+      void import('../icons/levels.js').then(({ levelOf }) =>
+        setLevelGlyphs(current().levelIcons ? levelOf : undefined),
+      );
+    else setLevelGlyphs(undefined);
     // the corner of every page: the sidebar's head (the shell's sheets fill on these), the dashboards' headers marked
     const chrome = chromeOf(now.look);
     env.document.documentElement.toggleAttribute(SIDEBAR_LOGO_ATTRIBUTE, chrome.logo);
