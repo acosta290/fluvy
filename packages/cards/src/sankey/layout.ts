@@ -277,6 +277,8 @@ export function layoutSankey(
   model: SankeyModel,
   width: number,
   measure: (key: string) => number,
+  /** The devices' words: a card that names them in a legend of its own asks for none. */
+  kidLabels = true,
 ): SankeyLayout {
   const scale = scaleOf(model, width);
   const top = lay(model.sources, scale);
@@ -290,7 +292,7 @@ export function layoutSankey(
 
   const topWords = packLabels(top, measure, width);
   const midWords = packLabels(mid, measure, width);
-  const kidWords = packLabels(kids, measure, width);
+  const kidWords = kidLabels ? packLabels(kids, measure, width) : [];
   const y0 = tiersOf(topWords) * TIER + WORDS_GAP;
   const y1 = y0 + BAR + RIBBONS;
   const midY = y1 + BAR + WORDS_GAP;
