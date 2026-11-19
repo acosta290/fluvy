@@ -2960,6 +2960,40 @@ wash — the editor offers it in tiles alone).
 the room's): the average of what is on; a change sets what is on (everything when nothing is). An empty card's panel
 sits 16 under its head.
 
+## Rounds (1.23, #224)
+
+Any entities as the room lights' rounds (§ Room lights), one engine for every card that draws them
+(`shared/rounds.ts`: a room's quick actions, this card, a row's rounds): its glyph, lit in its kind's tone (a light in
+its bulb's colour) with a 2 px ring of its level while on — a light's brightness, a blind's position, a fan's speed,
+all the way round for what has none — the neutral circle off, the dashed ring out of reach (no tap; a hold still opens
+it). **A tap flips what a second tap undoes** (`SAFE_TOGGLE`, core: lights, switches, fans, blinds, valves,
+humidifiers, sirens, automations, remotes, groups — the rows' switches of the Entities and Water & gas cards read the
+same set); **a lock locks at once and asks before it unlocks** (Home Assistant's own dialog, wherever a tap toggles one:
+a tile, a round, a row; `confirmation: false` its way out); a vacuum, a player, a scene, a script and a button open
+their details, never started by a slip (a room's quick action runs what it stands for, as before). A hold opens the
+details. An item's own name, icon, tone, colour, actions and `show_state`.
+
+- **Rounds** (the default): in lines, 44 each, 8 apart; as many a line as hold (`columns` asks for fewer), the lines
+  balanced (seven are four and three), each line from its start, in its middle or from edge to edge on one set of
+  columns (`align`); placed on whole pixels. `show_names`: a name under each round, 4 under it in 12/500 and the
+  secondary ink on its 16 line, to its ellipsis in its cell — a cell then the line's share, 64 the least and 96 the
+  most (a wide card lines them up as it does rounds), the lines 16 apart.
+- **Labels**: each round grown into the quick actions' pill under its glyph (64 tall, its words 12/600 4 under it, as
+  wide as its words, 44 the least) in its cell; the states in the longest form they all hold (a temperature's degree
+  alone, a count's short words), else each in its own, else none — that round a round again; "—" out of reach. A
+  round's own `show_state` asks for its pill in any layout, and `false` takes it away.
+- **Row**: a list row each (60), its circle lit as its round, its name over its state; the whole row its round's tap
+  and hold.
+- **The head** only where the card has a title: its icon (`grid` by default) lit while any is on, "2 of 6 on" under it
+  (`show_count`); no title, the rounds stand alone, the card's 20 all round.
+- **Its height is its config's**: the lines its items take at a 360 column (44 a line, 64 with states under, 20 more
+  with names), never its states; the rows' 60 each; the empty panel and its hint where it lists nothing.
+- **A row's rounds** (`shared/rounds-row.ts`, for the cards that end a list row in them): the row's circle, its name
+  over its line, a value, then its rounds, 12 after; what does not hold gives way in order — the line's last segments,
+  the rounds from the end, the value, then every row's circle together (`rowsKeepIcon`'s rule) — the name keeping 96 of
+  itself (all of a shorter one) and its line's first segment whole. A row never stacks: 60 tall, 48 compact; a round's
+  state beside its glyph, never under it. A press on a round is the round's: the row does not dim under it.
+
 ## Template (1.10)
 
 The template card (#59) is the tile card's tile — compact (76, the default), mini (108) or large (168), the same

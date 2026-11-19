@@ -87,8 +87,10 @@ tap_action:
   confirmation: false # this lock unlocks without asking
 ```
 
-A row's switch (the Entities and Water & gas cards) flips only what a second tap undoes: lights, switches, fans,
-blinds, valves, humidifiers, sirens, automations, remotes, groups.
+A row's switch (the Entities and Water & gas cards) and a round of the [Rounds](cards/rounds.md) card, where it names
+no tap, flip only what a second tap undoes: lights, switches, fans, blinds, valves, humidifiers, sirens, automations,
+remotes, groups (and a lock, as above). A vacuum, a player, a scene, a script and a button open their details there; a
+room's quick action runs what it stands for (a scene, a vacuum, a player).
 
 ## Details sheets
 

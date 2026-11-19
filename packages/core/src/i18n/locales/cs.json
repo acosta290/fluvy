@@ -724,7 +724,8 @@
     "items": "Položky atributu seznamu senzoru, řádek pro každou (lety nad hlavou, odjezdy, zásilky), s předvolbou letů pro FlightRadar24.",
     "chart": "Jakákoli časová řada v jednom grafu (historie, statistiky, seznam v atributu jako ceny Nordpool nebo solární předpověď, nebo předpověď počasí), od minulosti po budoucnost s vyznačeným teď, prahy v jejich barvách a nalezenými nejlevnějšími hodinami.",
     "swipe": "Libovolné karty, jedna na stránku, listované přejetím prstem nebo značkami stránek pod nimi: na širokém displeji vedle sebe, od poslední zase k první.",
-    "compass": "Rychlost a směr větru, směr jízdy vozidla nebo jakýkoli směr na 360° růžici kompasu, s druhým ukazatelem směru a až třemi hodnotami pod ní."
+    "compass": "Rychlost a směr větru, směr jízdy vozidla nebo jakýkoli směr na 360° růžici kompasu, s druhým ukazatelem směru a až třemi hodnotami pod ní.",
+    "rounds": "Libovolné entity jako kulatá tlačítka, každé rozsvícené, dokud je zapnuté: klepnutí přepne, co je bezpečné přepnout, podržení otevře podrobnosti, s volitelnou hlavičkou s počtem zapnutých."
   },
   "chart-card": {
     "title": "Graf",
@@ -1921,7 +1922,8 @@
     "items": "Položky",
     "chart": "Graf",
     "swipe": "Listování",
-    "compass": "Kompas"
+    "compass": "Kompas",
+    "rounds": "Kulatá tlačítka"
   },
   "alarm": {
     "arm_home": "Zastřežit doma",
@@ -3661,6 +3663,18 @@
     "north_offset": "Posun severu",
     "show_cardinals": "Světové strany",
     "point16": "{cardinal}{intercardinal}"
+  },
+  "rounds": {
+    "rounds": "Kulatá tlačítka",
+    "labels": "Se stavy",
+    "show_names": "Zobrazit jejich názvy",
+    "align": "Zarovnání",
+    "start": "Od začátku",
+    "center": "Uprostřed",
+    "spread": "Od okraje k okraji",
+    "empty": "Zatím žádná tlačítka",
+    "empty_hint": "Přidejte entity v nastavení karty",
+    "quick_picks": "Rychlý výběr"
   },
   "thermostat": {
     "room": "Místnost"

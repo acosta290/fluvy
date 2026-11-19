@@ -119,6 +119,21 @@
     "width": 784,
     "height": 920
   },
+  "rounds": {
+    "example": "68479628e45c",
+    "width": 784,
+    "height": 352
+  },
+  "rounds.row": {
+    "example": "4cf48b5ebf52",
+    "width": 784,
+    "height": 968
+  },
+  "rounds.labels": {
+    "example": "56050b0cab2a",
+    "width": 784,
+    "height": 632
+  },
   "items": {
     "example": "71f2a74dec0f",
     "width": 784,

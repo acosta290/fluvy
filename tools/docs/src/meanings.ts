@@ -527,6 +527,11 @@ export const MEANINGS: Readonly<Record<string, string>> = {
     'Shows every quick action’s state in its round, unless the action says otherwise.',
   'room.temperature_entity':
     'The room’s temperature sensor, or a thermostat; left out, the area’s.',
+  'rounds.align':
+    'Where the rounds stand on their line: from its start, in its middle, or from edge to edge.',
+  'rounds.columns': 'How many rounds stand on a line, at most as many as the width holds.',
+  'rounds.show_count': 'Says on the head’s line how many are on.',
+  'rounds.show_names': 'Shows each round’s name under it.',
   'scene.entity': 'The scene, script or button the tile runs.',
   'scenes.columns': 'How many scenes stand in a row.',
   'scenes.tint': 'When each scene’s tile shows its colour.',
@@ -668,6 +673,7 @@ export const MEANINGS: Readonly<Record<string, string>> = {
   'room.quick_actions[]':
     'The quick actions in the room’s head, each on a group of its devices or on one entity.',
   'room.tiles[]': 'Tiles of the room’s entities, in this order.',
+  'rounds.items[]': 'The entities the card draws as rounds, in this order.',
   'scenes.scenes[]': 'The scenes, in the order they are drawn.',
   'sensor.entities[]': 'Up to two more sensors drawn on the same chart.',
   'stat-tiles.rows[]': 'Rows under the tiles.',
@@ -848,5 +854,7 @@ export const MEANINGS: Readonly<Record<string, string>> = {
   'remote.custom[].key': 'The key it stands in for.',
   'room.quick_actions[].show_state':
     'Shows this quick action’s state in its round, or hides it, whatever the card says.',
+  'rounds.items[].show_state':
+    'Shows this round’s state under its icon, or hides it, whatever the layout says.',
   'vehicle.roles[].role': 'What the entity is to the car.',
 };

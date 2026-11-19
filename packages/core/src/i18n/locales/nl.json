@@ -2082,7 +2082,8 @@
     "items": "De items van het lijstattribuut van een sensor, een rij per item (vluchten boven je, vertrektijden, bezorgingen), met een vluchtenpreset voor FlightRadar24.",
     "chart": "Elke tijdreeks in één grafiek (historie, statistieken, een lijst in een attribuut zoals de prijzen van Nordpool of een zonneverwachting, of de verwachting van het weer), van verleden naar toekomst met nu gemarkeerd, drempels in hun kleuren en de goedkoopste uren gevonden.",
     "swipe": "Willekeurige kaarten, één per pagina, om te vegen of via de paginamarkeringen eronder: naast elkaar op een breed scherm, van de laatste weer naar de eerste.",
-    "compass": "Windsnelheid en -richting, de koers van een voertuig of elke richting op een 360°-kompasring, met een tweede richtingswijzer en tot drie waarden eronder."
+    "compass": "Windsnelheid en -richting, de koers van een voertuig of elke richting op een 360°-kompasring, met een tweede richtingswijzer en tot drie waarden eronder.",
+    "rounds": "Willekeurige entiteiten als ronde knoppen, elk verlicht zolang hij aan is: een tik schakelt wat veilig te schakelen is, ingedrukt houden opent de details, met een optionele kop die zegt hoeveel er aan zijn."
   },
   "time": {
     "minutes_ago": "{n} min geleden",
@@ -2555,7 +2556,8 @@
     "items": "Items",
     "chart": "Grafiek",
     "swipe": "Vegen",
-    "compass": "Kompas"
+    "compass": "Kompas",
+    "rounds": "Ronde knoppen"
   },
   "appliance": {
     "kind_washer": "Wasmachine",
@@ -3602,6 +3604,18 @@
     "north_offset": "Noordverschuiving",
     "show_cardinals": "Windstreken",
     "point16": "{cardinal}{intercardinal}"
+  },
+  "rounds": {
+    "rounds": "Ronde knoppen",
+    "labels": "Met hun status",
+    "show_names": "Hun namen tonen",
+    "align": "Uitlijning",
+    "start": "Aan het begin",
+    "center": "In het midden",
+    "spread": "Van rand tot rand",
+    "empty": "Nog geen knoppen",
+    "empty_hint": "Voeg entiteiten toe in de instellingen van de kaart",
+    "quick_picks": "Snelkeuzes"
   },
   "thermostat": {
     "room": "Kamer"

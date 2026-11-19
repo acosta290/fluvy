@@ -1,0 +1,14 @@
+{
+  "rounds": {
+    "rounds": "Rounds",
+    "labels": "With their states",
+    "show_names": "Show their names",
+    "align": "Line them up",
+    "start": "From the start",
+    "center": "In the middle",
+    "spread": "Edge to edge",
+    "empty": "No rounds yet",
+    "empty_hint": "Add entities in the card’s settings",
+    "quick_picks": "Quick picks"
+  }
+}

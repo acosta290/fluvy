@@ -10,6 +10,7 @@ import {
   type HaFormSchemaItem,
   type HomeAssistant,
   type LovelaceConfigForm,
+  type MessageKey,
 } from '@fluvy/core';
 import { configKeys } from '../shared/config.js';
 import {
@@ -172,21 +173,79 @@ const groupField = choiceField('group', [
   ...ROUND_GROUPS.map((group) => [group, `room.${group}`] as const),
   ['entity', 'editor.entity'],
 ]);
-/** A set's round: its own name, icon, colour, state (empty: the card's) and actions; an entity's, the entity first. */
+/** A round's own colour, its state (empty: its card's say) and its actions: a round turns on and off what switches, else opens. */
+const ROUND_OWN: readonly HaFormSchemaItem[] = [
+  fieldRow(toneField(), accentField('color', { item: 'bulb' })),
+  itemToggleField('show_state'),
+  actionFields({ tap: null }),
+];
+/** An entity's round: the entity first, then its own name and icon. */
+const ROUND_ITEM: readonly HaFormSchemaItem[] = [
+  entityField(undefined, 'entity', false),
+  nameIconFields(),
+  ...ROUND_OWN,
+];
+/** A room's round, of a set or of an entity: what it stands for first, a set's own name and icon. */
 const GROUP_ITEM: readonly HaFormSchemaItem[] = [
   groupField,
   fieldRow(textField('name'), iconField()),
-  fieldRow(toneField(), accentField('color', { item: 'bulb' })),
-  itemToggleField('show_state'),
-  // a round turns on and off what switches, else opens
-  actionFields({ tap: null }),
+  ...ROUND_OWN,
 ];
-const ENTITY_ITEM: readonly HaFormSchemaItem[] = [
-  groupField,
-  entityField(undefined, 'entity', false),
-  nameIconFields(),
-  ...GROUP_ITEM.slice(2),
+const ENTITY_ITEM: readonly HaFormSchemaItem[] = [groupField, ...ROUND_ITEM];
+/** What a round may carry, as `RoundSpec` declares it (a set's word beside them where it stands for a room's). */
+const ROUND_KEYS: readonly string[] = [
+  'entity',
+  'name',
+  'icon',
+  'tone',
+  'color',
+  'show_state',
+  'tap_action',
+  'hold_action',
+  'double_tap_action',
 ];
+const roundLabel = (schema: HaFormSchemaItem): string | undefined =>
+  schema.name === 'group'
+    ? editorWord('room-editor.group')
+    : schema.name === 'show_state'
+      ? editorWord('room-editor.show_state')
+      : undefined;
+
+/**
+ * A list of rounds, one item form on every card that draws them (#224): an entity's round, its id and its own name,
+ * icon, colour, state and actions; or, where the rounds stand for a room's sets (`sets`), one of them by its word as
+ * well — a set alone written as its word, an entity alone as its id, an entity's kind never beside it.
+ */
+export const roundsList = (
+  key: string,
+  title: MessageKey,
+  when: RowsListSpec['when'],
+  sets = false,
+): RowsListSpec =>
+  sets
+    ? {
+        key,
+        idKey: 'group',
+        also: ['entity'],
+        title,
+        keys: ['group', ...ROUND_KEYS],
+        picker: groupField,
+        computeLabel: roundLabel,
+        read: (raw) => roundEntry(raw) as Record<string, unknown> | null,
+        write: ({ group, entity, ...own }) => {
+          const kept = Object.fromEntries(
+            Object.entries(own).filter(([, value]) => value !== undefined && value !== ''),
+          );
+          const bare = !Object.keys(kept).length;
+          if (group !== 'entity') return bare ? String(group) : { group, ...kept };
+          if (typeof entity !== 'string' || !entity) return { group };
+          return bare ? entity : { entity, ...kept };
+        },
+        schema: ENTITY_ITEM,
+        schemaOf: (item) => (item['group'] === 'entity' ? ENTITY_ITEM : GROUP_ITEM),
+        when,
+      }
+    : { key, title, keys: ROUND_KEYS, schema: ROUND_ITEM, computeLabel: roundLabel, when };
 
 /**
  * A room's tiles are a group's but for their look out of reach, which is the room's (they sit inside it), and a large
@@ -215,45 +274,7 @@ export const lists: readonly RowsListSpec[] = [
       TILE_FORMS[Number(switches(item['entity']))]?.[Number(acts(item['entity']))] ?? TILE_FIELDS,
     when: drawsTiles,
   },
-  {
-    key: 'quick_actions',
-    idKey: 'group',
-    also: ['entity'],
-    title: 'room-editor.quick_actions',
-    keys: [
-      'group',
-      'entity',
-      'name',
-      'icon',
-      'tone',
-      'color',
-      'show_state',
-      'tap_action',
-      'hold_action',
-      'double_tap_action',
-    ],
-    picker: groupField,
-    computeLabel: (schema) =>
-      schema.name === 'group'
-        ? editorWord('room-editor.group')
-        : schema.name === 'show_state'
-          ? editorWord('room-editor.show_state')
-          : undefined,
-    read: (raw) => roundEntry(raw) as Record<string, unknown> | null,
-    // a set alone is its word, an entity alone its id; an entity's kind is never written beside it
-    write: ({ group, entity, ...own }) => {
-      const kept = Object.fromEntries(
-        Object.entries(own).filter(([, value]) => value !== undefined && value !== ''),
-      );
-      const bare = !Object.keys(kept).length;
-      if (group !== 'entity') return bare ? String(group) : { group, ...kept };
-      if (typeof entity !== 'string' || !entity) return { group };
-      return bare ? entity : { entity, ...kept };
-    },
-    schema: ENTITY_ITEM,
-    schemaOf: (item) => (item['group'] === 'entity' ? ENTITY_ITEM : GROUP_ITEM),
-    when: drawsQuick,
-  },
+  roundsList('quick_actions', 'room-editor.quick_actions', drawsQuick, true),
 ];
 
 /**

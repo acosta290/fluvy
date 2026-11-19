@@ -1530,7 +1530,8 @@ describe('custom:fluvy-home strategy', () => {
     // the person's to say, and a player's own card stands for a television on the dashboards; one scene's tile too,
     // the dashboards gathering the scenes on one Scenes card (#172); and the Expander card (#180), which folds away
     // the cards a person chooses to; and the Swipe card (#206), whose pages are the person's to choose; and the
-    // Compass card, whose wind speed and its matching bearing sensor are a pairing only the person can name
+    // Compass card, whose wind speed and its matching bearing sensor are a pairing only the person can name; and the
+    // Rounds card (#224), whose picks are the person's own
     const byHand = new Set([
       'custom:fluvy-scene-card',
       'custom:fluvy-automations-card',
@@ -1547,6 +1548,7 @@ describe('custom:fluvy-home strategy', () => {
       'custom:fluvy-expander-card',
       'custom:fluvy-swipe-card',
       'custom:fluvy-compass-card',
+      'custom:fluvy-rounds-card',
     ]);
     expect(
       CATALOGUE.map(([tag]) => `custom:${tag}`).filter(

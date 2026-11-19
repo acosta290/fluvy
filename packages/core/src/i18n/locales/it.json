@@ -2082,7 +2082,8 @@
     "items": "Gli elementi dell’attributo elenco di un sensore, una riga ciascuno (voli sopra di te, partenze, consegne), con una preimpostazione voli per FlightRadar24.",
     "chart": "Qualsiasi serie temporale su un grafico (storico, statistiche, un elenco in un attributo come i prezzi di Nordpool o una previsione solare, o le previsioni di un meteo), dal passato al futuro con l’adesso segnato, le soglie nei loro colori e le ore più economiche trovate.",
     "swipe": "Qualsiasi scheda, una per pagina, sfogliate con uno scorrimento o con i segni di pagina sotto: affiancate su uno schermo largo, dall’ultima di nuovo alla prima.",
-    "compass": "Velocità e direzione del vento, la direzione di marcia di un veicolo o qualsiasi rilevamento su un anello bussola a 360°, con un secondo indicatore di direzione e fino a tre valori sotto."
+    "compass": "Velocità e direzione del vento, la direzione di marcia di un veicolo o qualsiasi rilevamento su un anello bussola a 360°, con un secondo indicatore di direzione e fino a tre valori sotto.",
+    "rounds": "Qualsiasi entità come pulsante tondo, acceso finché è attivo: un tocco commuta ciò che si può commutare senza rischi, una pressione prolungata ne apre i dettagli, con un’intestazione facoltativa che dice quanti sono accesi."
   },
   "time": {
     "minutes_ago": "{n} min fa",
@@ -2555,7 +2556,8 @@
     "items": "Elementi",
     "chart": "Grafico",
     "swipe": "Scorrimento",
-    "compass": "Bussola"
+    "compass": "Bussola",
+    "rounds": "Pulsanti tondi"
   },
   "appliance": {
     "kind_washer": "Lavatrice",
@@ -3602,6 +3604,18 @@
     "north_offset": "Scostamento del nord",
     "show_cardinals": "Punti cardinali",
     "point16": "{cardinal}{intercardinal}"
+  },
+  "rounds": {
+    "rounds": "Pulsanti tondi",
+    "labels": "Con i loro stati",
+    "show_names": "Mostra i loro nomi",
+    "align": "Allineamento",
+    "start": "All’inizio",
+    "center": "Al centro",
+    "spread": "Da bordo a bordo",
+    "empty": "Ancora nessun pulsante",
+    "empty_hint": "Aggiungi entità nelle impostazioni della scheda",
+    "quick_picks": "Scelte rapide"
   },
   "thermostat": {
     "room": "Stanza"

@@ -846,7 +846,8 @@
     "items": "Objekt",
     "chart": "Diagram",
     "swipe": "Svep",
-    "compass": "Kompass"
+    "compass": "Kompass",
+    "rounds": "Runda knappar"
   },
   "activity": {
     "title": "Aktivitet",
@@ -1555,7 +1556,8 @@
     "items": "Objekten i en sensors listattribut, en rad vart (flygplan ovanför, avgångar, leveranser), med en flygförinställning för FlightRadar24.",
     "chart": "Valfri tidsserie i ett diagram (historik, statistik, en lista i ett attribut som Nordpools priser eller en solprognos, eller ett väders prognos) från dåtid till framtid med nu markerat, tröskelvärden i sina färger och de billigaste timmarna utpekade.",
     "swipe": "Valfria kort, ett per sida, som bläddras med ett svep eller med sidmarkeringarna under dem: sida vid sida på en bred skärm, runt från den sista till den första.",
-    "compass": "Vindhastighet och -riktning, ett fordons kurs eller vilken riktning som helst på en 360°-kompassring med en sekundär riktningsmarkör och upp till tre värden undertill."
+    "compass": "Vindhastighet och -riktning, ett fordons kurs eller vilken riktning som helst på en 360°-kompassring med en sekundär riktningsmarkör och upp till tre värden undertill.",
+    "rounds": "Valfria entiteter som runda knappar, var och en tänd medan den är på: ett tryck växlar det som är säkert att växla, ett långt tryck öppnar detaljerna, med en valfri rubrik som säger hur många som är på."
   },
   "chart-card": {
     "title": "Diagram",
@@ -3602,6 +3604,18 @@
     "north_offset": "Nordförskjutning",
     "show_cardinals": "Väderstreck",
     "point16": "{cardinal}{intercardinal}"
+  },
+  "rounds": {
+    "rounds": "Runda knappar",
+    "labels": "Med deras tillstånd",
+    "show_names": "Visa deras namn",
+    "align": "Placering",
+    "start": "Från början",
+    "center": "I mitten",
+    "spread": "Kant till kant",
+    "empty": "Inga knappar än",
+    "empty_hint": "Lägg till entiteter i kortets inställningar",
+    "quick_picks": "Snabbval"
   },
   "thermostat": {
     "room": "Rum"

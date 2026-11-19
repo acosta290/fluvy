@@ -158,6 +158,22 @@ export const GALLERY: Readonly<Record<string, Example>> = {
     },
     variants: { compact: {} },
   },
+  'fluvy-rounds-card': {
+    // the reporter's own (#224)
+    config: {
+      type: 'custom:fluvy-rounds-card',
+      title: 'Quick picks',
+      items: [
+        'switch.kitchen_light',
+        'switch.washer',
+        'binary_sensor.kitchen_window',
+        'binary_sensor.motion_hall',
+        'lock.front_door',
+        'switch.ghost',
+      ],
+    },
+    variants: { row: {}, labels: { config: { show_names: true } } },
+  },
   'fluvy-items-card': {
     config: { type: 'custom:fluvy-items-card', entity: 'sensor.it_flights' },
     variants: { compact: {}, tiles: {} },

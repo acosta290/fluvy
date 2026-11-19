@@ -777,7 +777,8 @@
     "items": "Pozycje atrybutu listy czujnika, wiersz na każdą (loty nad głową, odjazdy, przesyłki), z ustawieniem lotów dla FlightRadar24.",
     "chart": "Dowolny szereg czasowy na jednym wykresie (historia, statystyki, lista w atrybucie jak ceny Nordpool lub prognoza słoneczna albo prognoza pogody), od przeszłości do przyszłości z zaznaczonym teraz, progami w ich kolorach i znalezionymi najtańszymi godzinami.",
     "swipe": "Dowolne karty, po jednej na stronę, przewijane przesunięciem palca lub znacznikami stron pod nimi: obok siebie na szerokim ekranie, od ostatniej z powrotem do pierwszej.",
-    "compass": "Prędkość i kierunek wiatru, kurs pojazdu lub dowolny kierunek na tarczy kompasu 360°, z drugim wskaźnikiem kierunku i maksymalnie trzema odczytami poniżej."
+    "compass": "Prędkość i kierunek wiatru, kurs pojazdu lub dowolny kierunek na tarczy kompasu 360°, z drugim wskaźnikiem kierunku i maksymalnie trzema odczytami poniżej.",
+    "rounds": "Dowolne encje jako okrągłe przyciski, każdy podświetlony, gdy jest włączony: dotknięcie przełącza to, co można bezpiecznie przełączyć, przytrzymanie otwiera szczegóły, a opcjonalny nagłówek mówi, ile jest włączonych."
   },
   "bars": {
     "levels": "Poziomy",
@@ -3413,7 +3414,8 @@
     "items": "Pozycje",
     "chart": "Wykres",
     "swipe": "Przesuwanie",
-    "compass": "Kompas"
+    "compass": "Kompas",
+    "rounds": "Okrągłe przyciski"
   },
   "weather": {
     "feels_like": "Odczuwalna",
@@ -3725,6 +3727,18 @@
     "north_offset": "Przesunięcie północy",
     "show_cardinals": "Kierunki świata",
     "point16": "{cardinal}-{intercardinal}"
+  },
+  "rounds": {
+    "rounds": "Okrągłe przyciski",
+    "labels": "Ze stanami",
+    "show_names": "Pokaż ich nazwy",
+    "align": "Wyrównanie",
+    "start": "Od początku",
+    "center": "Pośrodku",
+    "spread": "Od krawędzi do krawędzi",
+    "empty": "Brak przycisków",
+    "empty_hint": "Dodaj encje w ustawieniach karty",
+    "quick_picks": "Szybki wybór"
   },
   "thermostat": {
     "room": "Pokój"

@@ -2082,7 +2082,8 @@
     "items": "Les éléments de l’attribut liste d’un capteur, une ligne chacun (vols au-dessus, départs, livraisons), avec un préréglage de vols pour FlightRadar24.",
     "chart": "Toute série temporelle sur un graphique (historique, statistiques, une liste dans un attribut comme les prix de Nordpool ou une prévision solaire, ou les prévisions d’une météo), du passé au futur avec maintenant marqué, les seuils dans leurs couleurs et les heures les moins chères trouvées.",
     "swipe": "N’importe quelles cartes, une par page, qu’on fait défiler d’un balayage ou par les repères de page en dessous : côte à côte sur un grand écran, de la dernière à nouveau à la première.",
-    "compass": "Vitesse et direction du vent, le cap d’un véhicule ou toute direction sur une rose de 360°, avec un second repère de cap et jusqu’à trois mesures en dessous."
+    "compass": "Vitesse et direction du vent, le cap d’un véhicule ou toute direction sur une rose de 360°, avec un second repère de cap et jusqu’à trois mesures en dessous.",
+    "rounds": "N’importe quelles entités en boutons ronds, chacun allumé tant qu’il est actif : un appui bascule ce qui peut l’être sans risque, un appui long ouvre ses détails, avec un en-tête facultatif qui dit combien sont allumés."
   },
   "time": {
     "minutes_ago": "il y a {n} min",
@@ -2555,7 +2556,8 @@
     "items": "Éléments",
     "chart": "Graphique",
     "swipe": "Balayage",
-    "compass": "Boussole"
+    "compass": "Boussole",
+    "rounds": "Boutons ronds"
   },
   "appliance": {
     "kind_washer": "Lave-linge",
@@ -3602,6 +3604,18 @@
     "north_offset": "Décalage du nord",
     "show_cardinals": "Points cardinaux",
     "point16": "{cardinal}{intercardinal}"
+  },
+  "rounds": {
+    "rounds": "Boutons ronds",
+    "labels": "Avec leurs états",
+    "show_names": "Afficher leurs noms",
+    "align": "Alignement",
+    "start": "Au début",
+    "center": "Au milieu",
+    "spread": "D’un bord à l’autre",
+    "empty": "Pas encore de boutons",
+    "empty_hint": "Ajoutez des entités dans les réglages de la carte",
+    "quick_picks": "Raccourcis"
   },
   "thermostat": {
     "room": "Pièce"

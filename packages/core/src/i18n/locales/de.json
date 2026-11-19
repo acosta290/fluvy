@@ -2082,7 +2082,8 @@
     "items": "Die Einträge des Listenattributs eines Sensors, eine Zeile je Eintrag (Flüge über dir, Abfahrten, Lieferungen), mit einer Flug-Voreinstellung für FlightRadar24.",
     "chart": "Jede Zeitreihe in einem Diagramm (Verlauf, Statistik, eine Liste in einem Attribut wie die Preise von Nordpool oder eine Solarprognose, oder die Vorhersage eines Wetters), von der Vergangenheit bis in die Zukunft mit markiertem Jetzt, Schwellenwerte in ihren Farben und die günstigsten Stunden gefunden.",
     "swipe": "Beliebige Karten, eine pro Seite, zum Wischen oder über die Seitenmarken darunter: auf breiten Bildschirmen nebeneinander, von der letzten wieder zur ersten.",
-    "compass": "Windgeschwindigkeit und -richtung, der Kurs eines Fahrzeugs oder jede beliebige Richtung auf einem 360°-Kompassring, mit zweiter Richtungsmarkierung und bis zu drei Messwerten darunter."
+    "compass": "Windgeschwindigkeit und -richtung, der Kurs eines Fahrzeugs oder jede beliebige Richtung auf einem 360°-Kompassring, mit zweiter Richtungsmarkierung und bis zu drei Messwerten darunter.",
+    "rounds": "Beliebige Entitäten als runde Tasten, jede leuchtet, solange sie an ist: Antippen schaltet, was gefahrlos schaltbar ist, Gedrückthalten öffnet die Details, dazu auf Wunsch eine Kopfzeile, die sagt, wie viele an sind."
   },
   "time": {
     "minutes_ago": "vor {n} min",
@@ -2555,7 +2556,8 @@
     "items": "Einträge",
     "chart": "Diagramm",
     "swipe": "Wischen",
-    "compass": "Kompass"
+    "compass": "Kompass",
+    "rounds": "Runde Tasten"
   },
   "appliance": {
     "kind_washer": "Waschmaschine",
@@ -3602,6 +3604,18 @@
     "north_offset": "Nordversatz",
     "show_cardinals": "Himmelsrichtungen",
     "point16": "{cardinal}{intercardinal}"
+  },
+  "rounds": {
+    "rounds": "Runde Tasten",
+    "labels": "Mit ihrem Status",
+    "show_names": "Namen anzeigen",
+    "align": "Ausrichtung",
+    "start": "Am Anfang",
+    "center": "In der Mitte",
+    "spread": "Von Rand zu Rand",
+    "empty": "Noch keine Tasten",
+    "empty_hint": "Entitäten in den Karteneinstellungen hinzufügen",
+    "quick_picks": "Schnellauswahl"
   },
   "thermostat": {
     "room": "Raum"

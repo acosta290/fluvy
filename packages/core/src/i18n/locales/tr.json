@@ -2082,7 +2082,8 @@
     "items": "Bir sensörün liste özniteliğindeki öğeler, her biri bir satır (üstten geçen uçuşlar, kalkışlar, teslimatlar), FlightRadar24 için bir uçuş ön ayarıyla.",
     "chart": "Tek grafikte herhangi bir zaman serisi (geçmiş, istatistikler, Nordpool fiyatları veya güneş tahmini gibi bir öznitelikteki liste ya da bir hava durumunun tahmini), şimdi işaretli olarak geçmişten geleceğe, eşikler kendi renklerinde ve en ucuz saatler bulunmuş.",
     "swipe": "Herhangi kartlar, sayfa başına bir tane, kaydırarak ya da altlarındaki sayfa işaretleriyle çevrilir: geniş ekranda yan yana, sondan yeniden başa.",
-    "compass": "360° pusula halkasında rüzgâr hızı ve yönü, bir aracın yönü veya herhangi bir yön, ikincil yön işaretçisi ve altında en fazla üç okuma ile."
+    "compass": "360° pusula halkasında rüzgâr hızı ve yönü, bir aracın yönü veya herhangi bir yön, ikincil yön işaretçisi ve altında en fazla üç okuma ile.",
+    "rounds": "Herhangi bir varlık yuvarlak düğme olarak, açıkken her biri yanar: dokunmak güvenle değiştirilebileni açıp kapatır, basılı tutmak ayrıntıları açar; isteğe bağlı bir başlık kaç tanesinin açık olduğunu söyler."
   },
   "time": {
     "minutes_ago": "{n} dk önce",
@@ -2555,7 +2556,8 @@
     "items": "Öğeler",
     "chart": "Grafik",
     "swipe": "Kaydırma",
-    "compass": "Pusula"
+    "compass": "Pusula",
+    "rounds": "Yuvarlak düğmeler"
   },
   "appliance": {
     "kind_washer": "Çamaşır makinesi",
@@ -3602,6 +3604,18 @@
     "north_offset": "Kuzey kayması",
     "show_cardinals": "Ana yönler",
     "point16": "{cardinal}{intercardinal}"
+  },
+  "rounds": {
+    "rounds": "Yuvarlak düğmeler",
+    "labels": "Durumlarıyla",
+    "show_names": "Adlarını göster",
+    "align": "Hizalama",
+    "start": "Baştan",
+    "center": "Ortada",
+    "spread": "Kenardan kenara",
+    "empty": "Henüz düğme yok",
+    "empty_hint": "Kartın ayarlarından varlık ekleyin",
+    "quick_picks": "Hızlı seçimler"
   },
   "thermostat": {
     "room": "Oda"

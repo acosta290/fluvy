@@ -846,6 +846,7 @@
     "items": "Items",
     "chart": "Chart",
     "swipe": "Swipe",
-    "compass": "Compass"
+    "compass": "Compass",
+    "rounds": "Rounds"
   }
 }

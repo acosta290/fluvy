@@ -27,6 +27,7 @@ import { sheet as period } from './period.js';
 import { sheet as printer } from './printer.js';
 import { sheet as remote } from './remote.js';
 import { sheet as rooms } from './rooms.js';
+import { sheet as rounds } from './rounds.js';
 import { sheet as sankey } from './sankey.js';
 import { sheet as slider } from './slider.js';
 import { sheet as sliderCard } from './slider-card.js';
@@ -102,6 +103,7 @@ export const sheet: SheetSpec = {
     chart,
     clocks,
     calendar,
+    rounds,
     // last: its own answers to the Energy dashboard's questions are the balance sheet's, which must not come first
     swipe,
   ],

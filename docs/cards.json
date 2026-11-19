@@ -3733,6 +3733,426 @@
       ]
     },
     {
+      "type": "custom:fluvy-rounds-card",
+      "name": "Rounds",
+      "description": "Any entities as round buttons, each lit while it is on: a tap switches what is safe to switch, a hold opens its details, with an optional head saying how many are on.",
+      "section": "Everyday",
+      "page": "cards/rounds.md",
+      "demo": "https://acosta290.github.io/fluvy/?card=rounds",
+      "pictures": {
+        "light": "images/cards/rounds-light.webp",
+        "dark": "images/cards/rounds-dark.webp",
+        "width": 784,
+        "height": 352
+      },
+      "example": {
+        "type": "custom:fluvy-rounds-card",
+        "title": "Quick picks",
+        "items": [
+          "switch.kitchen_light",
+          "switch.washer",
+          "binary_sensor.kitchen_window",
+          "binary_sensor.motion_hall",
+          "lock.front_door",
+          "switch.ghost"
+        ]
+      },
+      "layout": {
+        "key": "variant",
+        "values": [
+          "rounds",
+          "row",
+          "labels"
+        ],
+        "default": "rounds"
+      },
+      "layouts": {
+        "row": {
+          "type": "custom:fluvy-rounds-card",
+          "title": "Quick picks",
+          "items": [
+            "switch.kitchen_light",
+            "switch.washer",
+            "binary_sensor.kitchen_window",
+            "binary_sensor.motion_hall",
+            "lock.front_door",
+            "switch.ghost"
+          ],
+          "variant": "row"
+        },
+        "labels": {
+          "type": "custom:fluvy-rounds-card",
+          "title": "Quick picks",
+          "items": [
+            "switch.kitchen_light",
+            "switch.washer",
+            "binary_sensor.kitchen_window",
+            "binary_sensor.motion_hall",
+            "lock.front_door",
+            "switch.ghost"
+          ],
+          "variant": "labels",
+          "show_names": true
+        }
+      },
+      "layout_pictures": {
+        "row": {
+          "light": "images/cards/rounds.row-light.webp",
+          "dark": "images/cards/rounds.row-dark.webp",
+          "width": 784,
+          "height": 968
+        },
+        "labels": {
+          "light": "images/cards/rounds.labels-light.webp",
+          "dark": "images/cards/rounds.labels-dark.webp",
+          "width": 784,
+          "height": 632
+        }
+      },
+      "keys": [
+        {
+          "key": "title",
+          "label": "Title",
+          "does": "The title at the top of the card.",
+          "type": "text"
+        },
+        {
+          "key": "icon",
+          "label": "Icon",
+          "does": "The card’s icon, in place of the entity’s own.",
+          "type": "icon"
+        },
+        {
+          "key": "variant",
+          "label": "Style",
+          "does": "The card’s layout.",
+          "type": "choice",
+          "default": "rounds",
+          "values": {
+            "rounds": "Rounds",
+            "row": "Rows",
+            "labels": "With their states"
+          }
+        },
+        {
+          "key": "show_count",
+          "label": "Show how many are on",
+          "does": "Says on the head’s line how many are on.",
+          "type": "boolean",
+          "default": true
+        },
+        {
+          "key": "show_icon",
+          "label": "Show the icon",
+          "does": "Shows the icon, hides it, or lets the card decide.",
+          "type": "choice",
+          "default": "auto",
+          "values": {
+            "auto": "Automatic",
+            "always": "Always",
+            "never": "Never"
+          }
+        },
+        {
+          "key": "name_lines",
+          "label": "Lines for the name",
+          "does": "Lets the name in the card’s head take two balanced lines where one would cut it; the head is a line taller whatever the name.",
+          "type": "choice",
+          "default": "1",
+          "values": {
+            "1": "1",
+            "2": "2"
+          }
+        },
+        {
+          "key": "show_names",
+          "label": "Show their names",
+          "does": "Shows each round’s name under it.",
+          "type": "boolean",
+          "default": false
+        },
+        {
+          "key": "columns",
+          "label": "Columns",
+          "does": "How many rounds stand on a line, at most as many as the width holds.",
+          "type": "number",
+          "range": "1 to 12"
+        },
+        {
+          "key": "align",
+          "label": "Line them up",
+          "does": "Where the rounds stand on their line: from its start, in its middle, or from edge to edge.",
+          "type": "choice",
+          "default": "start",
+          "values": {
+            "start": "From the start",
+            "center": "In the middle",
+            "spread": "Edge to edge"
+          }
+        },
+        {
+          "key": "names",
+          "label": "Names",
+          "does": "How a row is named where it has no name of its own: the entity’s full name, its own, or its device’s.",
+          "helper": "Where no name of its own is set",
+          "type": "choice",
+          "default": "full",
+          "values": {
+            "full": "Full name",
+            "entity": "Entity name",
+            "device": "Device name"
+          }
+        },
+        {
+          "key": "tone",
+          "label": "Tone",
+          "does": "The card’s colour from the palette’s tones; left out, the tone of what it shows.",
+          "type": "choice",
+          "default_in_words": "the card’s own",
+          "values": {
+            "accent": "Accent",
+            "light": "Light",
+            "heat": "Heat",
+            "cool": "Cool",
+            "dry": "Dry",
+            "fan": "Fan",
+            "water": "Water",
+            "solar": "Solar",
+            "grid": "Grid",
+            "media": "Media",
+            "presence": "Presence",
+            "armed": "Armed",
+            "battery": "Battery",
+            "house": "House",
+            "gas": "Gas",
+            "vehicle": "Car",
+            "neutral": "Neutral",
+            "ok": "Good",
+            "warning": "Warning",
+            "danger": "Danger"
+          }
+        },
+        {
+          "key": "color",
+          "label": "Colour",
+          "does": "The card’s colour: its circle, its accents and its tints wear it. Left out, the colour of what it shows.",
+          "type": "colour"
+        },
+        {
+          "key": "card_color",
+          "label": "Card colour",
+          "does": "Paints the card’s surface in a colour of your own.",
+          "type": "colour"
+        },
+        {
+          "key": "card_opacity",
+          "label": "Card opacity",
+          "does": "How solid the card’s surface is, in percent: under 100 the view’s background shows through. Left out, the house’s.",
+          "helper": "Untouched: every card’s, from Fluvy’s settings",
+          "type": "number",
+          "default": 100,
+          "range": "0 % to 100 %, in steps of 5"
+        },
+        {
+          "key": "card_border",
+          "label": "Card border",
+          "does": "Whether the card draws its hairline border. Left out, the house’s.",
+          "helper": "Untouched: every card’s, from Fluvy’s settings",
+          "type": "boolean",
+          "default": true
+        },
+        {
+          "key": "unavailable",
+          "label": "When unavailable",
+          "does": "How the card looks while its entity is unavailable: dashed, or quiet as when it is off. Left out, the house’s.",
+          "helper": "Untouched: every card’s, from Fluvy’s settings",
+          "type": "choice",
+          "default": "dashed",
+          "values": {
+            "dashed": "Dashed",
+            "quiet": "As when off"
+          }
+        },
+        {
+          "key": "light_colors",
+          "label": "Each light on in its bulb’s colour",
+          "does": "Shows each light that is on in its bulb’s own colour.",
+          "type": "boolean",
+          "default": false
+        },
+        {
+          "key": "light_whites",
+          "label": "Whites",
+          "does": "Draws a lit white by its colour temperature, or as the palette’s light.",
+          "type": "choice",
+          "default": "temperature",
+          "values": {
+            "palette": "The theme’s light",
+            "temperature": "The bulb’s white"
+          }
+        },
+        {
+          "key": "tap_action",
+          "label": "Tap action",
+          "does": "What a tap on the card does.",
+          "type": "action",
+          "default": "none"
+        },
+        {
+          "key": "hold_action",
+          "label": "Hold action",
+          "does": "What a long press on the card does.",
+          "type": "action",
+          "default": "none"
+        },
+        {
+          "key": "double_tap_action",
+          "label": "Double tap action",
+          "does": "What two taps on the card do.",
+          "helper": "A tap waits a moment to tell it from a double tap",
+          "type": "action",
+          "default": "none"
+        },
+        {
+          "key": "icon_tap_action",
+          "label": "Icon tap action",
+          "does": "What a tap on the icon does.",
+          "type": "action",
+          "default": "none"
+        },
+        {
+          "key": "icon_hold_action",
+          "label": "Icon hold action",
+          "does": "What a long press on the icon does.",
+          "type": "action",
+          "default": "none"
+        },
+        {
+          "key": "icon_double_tap_action",
+          "label": "Icon double tap action",
+          "does": "What two taps on the icon do.",
+          "helper": "A tap waits a moment to tell it from a double tap",
+          "type": "action",
+          "default": "none"
+        }
+      ],
+      "lists": [
+        {
+          "key": "items",
+          "label": "Rounds",
+          "does": "The entities the card draws as rounds, in this order.",
+          "id": "entity",
+          "item": [
+            {
+              "key": "entity",
+              "label": "Entity",
+              "does": "The entity the item shows.",
+              "type": "entity"
+            },
+            {
+              "key": "name",
+              "label": "Name",
+              "does": "The item’s own name, in place of the one the card would give it.",
+              "type": "name"
+            },
+            {
+              "key": "icon",
+              "label": "Icon",
+              "does": "The item’s own icon, in place of the one the card would give it.",
+              "type": "icon"
+            },
+            {
+              "key": "tone",
+              "label": "Tone",
+              "does": "The item’s colour from the palette’s tones.",
+              "type": "choice",
+              "default_in_words": "the card’s own",
+              "values": {
+                "accent": "Accent",
+                "light": "Light",
+                "heat": "Heat",
+                "cool": "Cool",
+                "dry": "Dry",
+                "fan": "Fan",
+                "water": "Water",
+                "solar": "Solar",
+                "grid": "Grid",
+                "media": "Media",
+                "presence": "Presence",
+                "armed": "Armed",
+                "battery": "Battery",
+                "house": "House",
+                "gas": "Gas",
+                "vehicle": "Car",
+                "neutral": "Neutral",
+                "ok": "Good",
+                "warning": "Warning",
+                "danger": "Danger"
+              }
+            },
+            {
+              "key": "color",
+              "label": "Colour",
+              "does": "The item’s colour, in place of the one the card gives it.",
+              "helper": "Empty: the light’s bulb colour where the card shows bulbs’ colours, else the card’s",
+              "type": "colour"
+            },
+            {
+              "key": "show_state",
+              "label": "Show its state",
+              "does": "Shows this round’s state under its icon, or hides it, whatever the layout says.",
+              "helper": "Empty: the card’s",
+              "type": "choice",
+              "values": {
+                "true": "On",
+                "false": "Off"
+              }
+            },
+            {
+              "key": "tap_action",
+              "label": "Tap action",
+              "does": "What a tap on the item does.",
+              "type": "action",
+              "default_in_words": "the card’s own"
+            },
+            {
+              "key": "hold_action",
+              "label": "Hold action",
+              "does": "What a long press on the item does.",
+              "type": "action",
+              "default": "more-info"
+            },
+            {
+              "key": "double_tap_action",
+              "label": "Double tap action",
+              "does": "What two taps on the item do.",
+              "helper": "A tap waits a moment to tell it from a double tap",
+              "type": "action",
+              "default": "none"
+            }
+          ]
+        }
+      ],
+      "older_names": [
+        {
+          "from": "entities",
+          "to": "items"
+        },
+        {
+          "from": "layout",
+          "to": "variant"
+        },
+        {
+          "from": "view",
+          "to": "variant"
+        },
+        {
+          "from": "accent",
+          "to": "color"
+        }
+      ]
+    },
+    {
       "type": "custom:fluvy-items-card",
       "name": "Items",
       "description": "The items of a sensor’s list attribute, a row each — flights overhead, departures, deliveries — with a flights preset for FlightRadar24.",

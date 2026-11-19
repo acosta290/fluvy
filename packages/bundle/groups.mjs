@@ -193,6 +193,14 @@ const TEMPLATE =
   /\/packages\/(cards\/src\/(template-cards\.ts|template\/)|core\/src\/i18n\/locales\/en\/template\.json)/;
 
 /**
+ * The Rounds card (1.23, #224: its card and its English; its editor goes with the forms, the rounds it draws with the
+ * quick actions): fetched as the bundle starts and defined as it lands, as the template card is (`rounds-family.ts`
+ * stays in core: the tag, the height, the lines its rounds stand in).
+ */
+const ROUNDS =
+  /\/packages\/(cards\/src\/(rounds-cards\.ts|rounds\/)|core\/src\/i18n\/locales\/en\/rounds\.json)/;
+
+/**
  * The web page card (its card, what it decides of an address and a plate's rounds, and its English): fetched as the
  * bundle starts and defined as it lands, as the template card is (`web-family.ts` stays in core: the tag, the height).
  */
@@ -469,7 +477,7 @@ const FORMS =
  * strategy and the heights it counts with the house, the wall, the forms of the cards every page carries, the weather
  * card, the calendar card, the media, the chart engine, the Chart card, the Energy period card, energy (the history
  * bars' readings on their own), devices (the cameras' sheet on its own), appliances (their pictures on their own),
- * automations and alerts families (each sheet on its own), the template card, the web page card, what each card is, the
+ * automations and alerts families (each sheet on its own), the template card, the web page card, the Rounds card, what each card is, the
  * Expander card (its editor on its own, before the forms, with the Swipe card's), the Swipe card, a dashboard's own
  * sidebar, the Slider card, the ring, the Cover card, the drive pad, the Vacuum card, the Thermostat card, the platforms' logos, the
  * remote card, the Vehicle card, Fluvy's own details, the items card (its sheet on its own), the light card's colours,
@@ -512,6 +520,7 @@ export const GROUPS = [
   { name: 'alerts', test: ALERTS },
   { name: 'template', test: TEMPLATE },
   { name: 'web', test: WEB },
+  { name: 'rounds', test: ROUNDS },
   { name: 'about', test: ABOUT },
   { name: 'expander', test: EXPANDER },
   { name: 'swipe', test: SWIPE },

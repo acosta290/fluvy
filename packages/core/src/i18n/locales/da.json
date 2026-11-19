@@ -846,7 +846,8 @@
     "items": "Elementer",
     "chart": "Graf",
     "swipe": "Karrusel",
-    "compass": "Kompas"
+    "compass": "Kompas",
+    "rounds": "Runde knapper"
   },
   "activity": {
     "title": "Aktivitet",
@@ -1555,7 +1556,8 @@
     "items": "Elementerne i en sensors listeegenskab, en række hver (fly over huset, afgange, leveringer), med en forudindstilling til FlightRadar24.",
     "chart": "Enhver tidsserie på én graf (historik, statistik, en liste i en egenskab som Nordpools priser eller en solprognose, eller en vejrudsigt) fra fortid til fremtid med nu markeret, tærskler i deres farver og de billigste timer fundet.",
     "swipe": "Alle slags kort, ét pr. side, bladret med et stryg eller med sidemarkeringerne under dem: side om side på en bred skærm, rundt fra den sidste til den første.",
-    "compass": "Vindhastighed og -retning, et køretøjs kurs eller enhver retning på en 360°-kompasring med en sekundær retningsmarkør og op til tre aflæsninger nedenunder."
+    "compass": "Vindhastighed og -retning, et køretøjs kurs eller enhver retning på en 360°-kompasring med en sekundær retningsmarkør og op til tre aflæsninger nedenunder.",
+    "rounds": "Vilkårlige entiteter som runde knapper, hver tændt, mens den er tændt: et tryk skifter det, der er sikkert at skifte, et langt tryk åbner detaljerne, med en valgfri overskrift, der siger, hvor mange der er tændt."
   },
   "chart-card": {
     "title": "Graf",
@@ -3602,6 +3604,18 @@
     "north_offset": "Nordforskydning",
     "show_cardinals": "Verdenshjørner",
     "point16": "{cardinal}{intercardinal}"
+  },
+  "rounds": {
+    "rounds": "Runde knapper",
+    "labels": "Med deres tilstande",
+    "show_names": "Vis deres navne",
+    "align": "Placering",
+    "start": "Fra starten",
+    "center": "I midten",
+    "spread": "Fra kant til kant",
+    "empty": "Ingen knapper endnu",
+    "empty_hint": "Tilføj entiteter i kortets indstillinger",
+    "quick_picks": "Hurtigvalg"
   },
   "thermostat": {
     "room": "Rum"

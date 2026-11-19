@@ -2082,7 +2082,8 @@
     "items": "Los elementos del atributo de lista de un sensor, una fila cada uno (vuelos sobre tu casa, salidas, entregas), con un preajuste de vuelos para FlightRadar24.",
     "chart": "Cualquier serie temporal en un gráfico (historial, estadísticas, una lista en un atributo como los precios de Nordpool o una previsión solar, o la previsión de un tiempo), del pasado al futuro con el ahora marcado, los umbrales en sus colores y las horas más baratas encontradas.",
     "swipe": "Cualquier tarjeta, una por página, que se pasa deslizando o con las marcas de página debajo: lado a lado en una pantalla ancha, de la última de vuelta a la primera.",
-    "compass": "Velocidad y dirección del viento, el rumbo de un vehículo o cualquier dirección en un anillo de brújula de 360°, con un segundo marcador de rumbo y hasta tres lecturas debajo."
+    "compass": "Velocidad y dirección del viento, el rumbo de un vehículo o cualquier dirección en un anillo de brújula de 360°, con un segundo marcador de rumbo y hasta tres lecturas debajo.",
+    "rounds": "Cualquier entidad como botón redondo, iluminado mientras está encendido: un toque conmuta lo que es seguro conmutar, mantener pulsado abre sus detalles, con una cabecera opcional que dice cuántos están encendidos."
   },
   "time": {
     "minutes_ago": "hace {n} min",
@@ -2555,7 +2556,8 @@
     "items": "Elementos",
     "chart": "Gráfico",
     "swipe": "Deslizar",
-    "compass": "Brújula"
+    "compass": "Brújula",
+    "rounds": "Botones redondos"
   },
   "appliance": {
     "kind_washer": "Lavadora",
@@ -3602,6 +3604,18 @@
     "north_offset": "Desfase del norte",
     "show_cardinals": "Puntos cardinales",
     "point16": "{cardinal}{intercardinal}"
+  },
+  "rounds": {
+    "rounds": "Botones redondos",
+    "labels": "Con sus estados",
+    "show_names": "Mostrar sus nombres",
+    "align": "Alineación",
+    "start": "Al principio",
+    "center": "En el centro",
+    "spread": "De borde a borde",
+    "empty": "Aún no hay botones",
+    "empty_hint": "Añade entidades en los ajustes de la tarjeta",
+    "quick_picks": "Accesos rápidos"
   },
   "thermostat": {
     "room": "Habitación"
