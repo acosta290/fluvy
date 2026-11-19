@@ -302,7 +302,7 @@ key hold.
 | Continuous value | ruler (lit from its origin — left, or bottom on a vertical — up to the knob; value-based ticks: minor 5 %, major 25 %; tile rulers 1/12 & 1/4, temperature tiles 1 °C / 5 °C; fine mode 1 % / 2 %) + knob | ruler 44 high (vertical: 44 wide, ticks and knob centred on the band's centre line); end ticks keep their full 2 px stroke |
 | Knob | white disc, tone ring 2 px, centre dot, drop lift (falls on the halo), and a 4 px halo of the surface colour outside the ring (`--knob-halo`); a ruler tick that would meet the halo is omitted — ticks are whole or absent | **28 compact** (tiles, seek bar, small dial) · **36 standard** (card rulers, vertical ruler, large dial) |
 | Read-only marker | the knob ring without the dot and without lift, same size as the knob | battery, vacuum battery, timer elapsed |
-| Nudge | stepper pill 96 × 44 (− │ +) | on the value row; centred under a dial |
+| Nudge | stepper pill 96 × 44 (− │ +); with its value (1.23, #215) − 21.5° +: its halves at 44, the value 20/600 in the accent's ink between them on a room laid out from every figure it can show | on the value row; centred under a dial |
 | Setpoint | dial: soft disc, tick ring, knob riding the ring, current-temperature dot, min/max labels, stepper below | `dial({ min, max, target | range, current })` — real units, never fractions; a range dial keeps the stepper and marks the selected knob with the focus halo (tap to select); its ring comes from the column (84 where it has 216, down to 56: twice the ring, its ticks and their 12, on the 4 grid), and its figure takes the largest size the disc holds with its unit, measured on what it says at rest (a range's two ends), so a knob under the finger never resizes it; `show_stepper: false` draws none, 56 shorter |
 | Toggle | 48 × 28 switch in a 56 × 44 hit | tile heads, rows, sheet heads |
 | Rocker | a tile's switch as the one on the wall (`switch_style: rocker`, 1.20): a 32 × 44 plate in a 44 × 44 target, its raised half the one pressed next, a bar lit while on (§ Rocker) | a large tile's head, a compact tile's end |
@@ -520,6 +520,38 @@ form for a line that holds no more.
   shows for a climate or a humidifier alone; in a group each such tile has its own, empty until chosen.
 - **The automatic dashboards**: one option, Thermostat state: Brief (the default, nothing written) · Detailed, which
   writes `show_valve`, `show_window` and `show_battery` on the thermostats and `show_action` on the rooms.
+
+## Thermostat: the room first (1.23, #215)
+
+After @waphbs's sketch: on a phone the card said the target large and the room as a grey line over it, its modes took
+half the card as a 2 × 2 of tiles, and nothing else of the room was said. Each answer is a key, off until asked; the
+card a house upgraded to 1.23 draws is the card it drew.
+
+- **The room as the figure** (`focus: current`, the compact and ruler layouts; the dial is left as it is: its centre
+  is its knob's figure, and it draws the room already, its dot and its line). The value row's readout is the room's
+  reading in plain ink under its caption ("Room"), and the target is the control beside it: the stepper with its
+  value between its halves (`stepper({ value, width })`), the value 20/600 in the accent's ink on a room laid out from
+  every figure it can show (its ends, a range, Off, a dash), so a step never resizes the pill, under the caption
+  "Target". The caption is the readout's label over the pill's 44: the column is the readout's 64, and the row and
+  the card keep their height. Beside it, a figure at m keeps the 44 line, so the two captions stand on one line. A
+  range says its two ends between the halves, the end it steps in the accent and the other in the text's ink.
+  Without a stepper the target stands alone in the accent, the row then the card's tap.
+- **Laid out as the value row is** (`fitValueRow`, every figure, never the state): beside, else the target centred
+  under the room; where the column cannot hold the pill (a 0.5-step thermostat in half a section on a phone), the
+  row is the target's again, the room in its label whatever `show_current` says. Off, the pill stays, still, and says
+  Off; out of reach, the room and the target are dashes.
+- **Modes as icons** (`modes_style: icons`): the option tile's icon form (`options(…, 'icon')`), 44 tall at the
+  tappable radius, its 20 glyph over its 11/14 word, centred, no value, chosen in the mode's tone as the tile is. As
+  many a row as keep each 44 wide, 4 apart, the rows as even as they can be (seven in a 320 column: four and three),
+  from the count and the width alone (`iconColumns`), so the height the card declares is its count's. Where a cell
+  cannot hold every word of the row, the glyphs alone, each word read out and its title.
+- **Mode chips in their tone** (`modes_style: chips | full`, a fix): a chosen mode chip wears its mode's tone, as its
+  tile and its details sheet's chip do (`modeChoice`); it wore the accent.
+- **Readings** (`readouts`, up to four): one row of equal columns 16 under the value (`fv-cols`), each readout
+  centred: its sensor's figure in its unit and decimals, in its tone's ink where it names one, under its words as a
+  tile's readout says them (`readoutName`: its own name, a measure's word, its sensor's name beyond the card's), or
+  its icon where the row's words would not hold (`readoutsRow`). Each is 44 tall at either size and a target that
+  opens its sensor's details, or does what it is told. The card declares them as one row of 60.
 
 ## A device's state in colour (1.22, #196)
 
