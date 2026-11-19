@@ -8,7 +8,8 @@ import { LINE } from './line.js';
  * down, at 0, 50 and 100 % — beside the position at a phone's column, under the commands at 211, 172 and 152 — with
  * its presets, counted as the blind comes down (`direction: down`), on a cover that reports its position turned round
  * (`invert_position`), with its badge hidden, see-through on a view's background, read by its edges (E-ink), out of
- * reach, on a cover with no position and in degrees; and the card as it was, its tilt in steps, unchanged.
+ * reach, on a cover with no position and in degrees; and the card as it was, its tilt in steps, unchanged; a cover with
+ * no position and its favourites, in steps and as slats.
  */
 
 // its chunk lands after the page has drawn: the sheet defines the card from its module, as the vacuum sheet does
@@ -60,6 +61,13 @@ const blind = (
     current_tilt_position: tilt,
     ...more,
   },
+];
+
+/** What the patio's louvres are set to most: their slats' angle, as a cover with no position takes a favourite. */
+const LOUVRE_FAVOURITES = [
+  { name: 'Shade', tilt: 30 },
+  { name: 'Breeze', tilt: 70 },
+  { name: 'Open', tilt: 100 },
 ];
 
 /**
@@ -140,6 +148,17 @@ export const sheet: SheetSpec = {
       gap: 0,
       cards: [{ type: COVER, entity: 'cover.ct_office' }],
     })),
+    // louvres with no position and their favourites, in steps and as slats: the favourites under the commands
+    {
+      title: 'No position · favourites',
+      width: 360,
+      gap: 0,
+      cards: [{ type: COVER, entity: 'cover.ct_patio', favorites: LOUVRE_FAVOURITES }],
+    },
+    slats('Slats · no position, favourites', {
+      entity: 'cover.ct_patio',
+      favorites: LOUVRE_FAVOURITES,
+    }),
   ],
   registry: {
     entities: Object.fromEntries(

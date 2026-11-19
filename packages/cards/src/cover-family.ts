@@ -1,6 +1,6 @@
 import type { LovelaceCardConfig } from '@fluvy/core';
 import type { FamilyEntry } from './energy-family.js';
-import { chipBlock, chipRows, COMPACT, listLength } from './shared/heights.js';
+import { chipBlock, chipRows, COMPACT } from './shared/heights.js';
 
 /**
  * The Cover card, announced at start and defined when its chunk lands (`cover-cards.ts`), as the Vacuum card is: what
@@ -34,12 +34,26 @@ export function presetsOf(list: unknown): number[] {
   return presets;
 }
 
+/** A favourite as a config writes it, as far as a height reads it: none that is not an object. */
+const favoritesOf = (
+  config: LovelaceCardConfig,
+): { name?: unknown; position?: unknown; tilt?: unknown }[] =>
+  Array.isArray(config['favorites'])
+    ? (config['favorites'] as unknown[]).filter(
+        (favorite): favorite is Record<string, unknown> =>
+          favorite !== null && typeof favorite === 'object',
+      )
+    : [];
+
 /**
  * What a cover the house is not there to say draws for its config: its usual parts, and its tilt where the config
- * asks for the tilt's slats or presets (#203), so a card asked for them keeps their room before its cover is read.
+ * asks for the tilt's slats or presets (#203), or a favourite sets it, so a card asked for them keeps their room
+ * before its cover is read.
  */
 export const usualFor = (config: LovelaceCardConfig): number =>
-  config['tilt_style'] === 'slats' || presetsOf(config['tilt_presets']).length
+  config['tilt_style'] === 'slats' ||
+  presetsOf(config['tilt_presets']).length ||
+  favoritesOf(config).some((favorite) => typeof favorite.tilt === 'number')
     ? USUAL | SET_TILT_POSITION
     : USUAL;
 
@@ -55,11 +69,31 @@ const presetsBlock = (list: unknown, labelled = false): number => {
 };
 
 /**
+ * The favourites under their label (`show_favorites`), those the cover can go to: a position where it takes one, its
+ * slats' angle where it sets them (the tilt shown or not). Their chips' rows are counted by what each says in English,
+ * every chip as long as its longest words: its name, then where it goes ("closed", or "tilt 100 %").
+ */
+function favoritesBlock(config: LovelaceCardConfig, positioned: boolean, tilts: boolean): number {
+  if (config['show_favorites'] === false) return 0;
+  const labels = favoritesOf(config).flatMap(({ name, position, tilt }) => {
+    const goes =
+      positioned && typeof position === 'number'
+        ? 'closed'
+        : tilts && typeof tilt === 'number'
+          ? 'tilt 100 %'
+          : '';
+    return !goes ? [] : [typeof name === 'string' && name ? `${name} · ${goes}` : goes];
+  });
+  const style = config['favorites_style'] === 'chips' ? 'chips' : 'full';
+  return chipBlock(chipRows(labels, style), style);
+}
+
+/**
  * The card's height at a 360 column, for the automatic dashboard's columns, for what the cover does (`features`, as
  * the house describes it: `house-heights.ts`): the ruler with its side column where it takes a position (the whole
  * card where the house is not there to say), 16 taller where the tilt is drawn as its slats, then each row of presets
- * the cover can go to and the favourites; else the tilt's readout and stepper over the commands, or its slats and
- * their ruler, and its presets; else the head and the commands.
+ * the cover can go to; else the tilt's readout and stepper over the commands, or its slats and their ruler, and its
+ * presets; else the head and the commands. Under them, the favourites the cover can go to.
  */
 export function coverHeight(config: LovelaceCardConfig, features = usualFor(config)): number {
   if (config['variant'] === 'compact') return COMPACT;
@@ -71,15 +105,9 @@ export function coverHeight(config: LovelaceCardConfig, features = usualFor(conf
   const presets =
     (positioned ? presetsBlock(config['position_presets']) : 0) +
     (sets ? presetsBlock(config['tilt_presets'], positioned) : 0);
-  const favorites =
-    config['show_favorites'] !== false && listLength(config, ['favorites']) ? 88 : 0;
-  return positioned
-    ? 328 + (slats ? 16 : 0) + presets + favorites
-    : slats
-      ? 280 + presets
-      : tilt
-        ? 224 + presets
-        : COMPACT;
+  const favorites = favoritesBlock(config, positioned, (features & SET_TILT_POSITION) !== 0);
+  if (positioned) return 328 + (slats ? 16 : 0) + presets + favorites;
+  return (slats ? 280 + presets : tilt ? 224 + presets : COMPACT) + favorites;
 }
 
 export const COVER_FAMILY: readonly FamilyEntry[] = [['fluvy-cover-card', coverHeight]];

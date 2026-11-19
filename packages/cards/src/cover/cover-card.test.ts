@@ -149,6 +149,32 @@ describe('the cover’s height (#203), from its config', () => {
     expect(coverHeight({ position_presets: [] })).toBe(328);
   });
 
+  it('counts the favourites the cover can go to, on one with no position too, their chips’ rows by their words', () => {
+    const shade = { name: 'Shade', tilt: 30 };
+    const louvres = 1 | 2 | 8 | 16 | 32 | 64 | 128;
+    // louvres with no position: their angles, under the readout and stepper, or the slats
+    expect(coverHeight({ favorites: [shade] }, louvres)).toBe(224 + 88);
+    expect(coverHeight({ favorites: [shade], tilt_style: 'slats' }, louvres)).toBe(280 + 88);
+    // the tilt hidden, the favourites still set it
+    expect(coverHeight({ favorites: [shade], show_tilt: false }, louvres)).toBe(144 + 88);
+    expect(coverHeight({ favorites: [shade], show_favorites: false }, louvres)).toBe(224);
+    // a favourite the cover cannot go to is not drawn, nor counted: a position on louvres, an angle on a blind that
+    // takes none
+    expect(coverHeight({ favorites: [{ name: 'Half', position: 50 }] }, louvres)).toBe(224);
+    expect(coverHeight({ favorites: [shade] }, 15)).toBe(328);
+    // a cover not yet read: one a favourite tilts is counted as one that tilts
+    expect(usualFor({ favorites: [shade] }) & 128).toBe(128);
+    expect(coverHeight({ favorites: [shade] })).toBe(328 + 88);
+    // three named ones are two rows at 360, as the card lays them out; content-sized, 8 between their rows
+    const three = [shade, { name: 'Breeze', tilt: 70 }, { name: 'Open', tilt: 100 }];
+    expect(coverHeight({ favorites: three }, louvres)).toBe(224 + 132);
+    expect(coverHeight({ favorites: three, favorites_style: 'chips' }, louvres)).toBe(224 + 140);
+    // three that say their place alone hold one row
+    expect(coverHeight({ favorites: [{ position: 0 }, { position: 100 }, { position: 50 }] })).toBe(
+      416,
+    );
+  });
+
   it('reads presets as whole percents, each once, in their order', () => {
     expect(presetsOf(['50', 0, 100, 'half', 50.2, 120, -5, null])).toEqual([50, 0, 100]);
     expect(presetsOf('50')).toEqual([]);
