@@ -155,6 +155,8 @@ const FOUND = {
     'finds the house’s appliances in its registries unless told which (#47): their entities gone from the house keep each its card, its roles the registry’s',
   'fluvy-thermostats-card':
     'lists the house’s thermostats unless told which (#230): one gone from the house is not one of them',
+  'fluvy-rooms-card':
+    'lists the house’s rooms with something to show unless told which (#225): a room whose every entity is gone from the house shows nothing, and is none of them',
 };
 
 /**

@@ -1,0 +1,16 @@
+{
+  "rooms-card": {
+    "count_one": "{count} room",
+    "count": "{count} rooms",
+    "average": "{value} average",
+    "empty": "No rooms yet",
+    "empty_hint": "Add rooms in the card’s settings",
+    "rooms": "Rooms",
+    "default_actions": "Quick actions of every room",
+    "default_actions_help": "For each room without quick actions of its own: its lights, its thermostat, its blinds.",
+    "show_head": "Show the head",
+    "show_average": "Show the average temperature",
+    "max_rooms": "Rooms at most",
+    "title_short": "Rooms"
+  }
+}

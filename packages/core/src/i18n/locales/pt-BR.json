@@ -2104,6 +2104,7 @@
     "swipe": "Quaisquer cartões, um por página, passados deslizando ou pelas marcas de página abaixo: lado a lado numa tela larga, do último de volta ao primeiro.",
     "compass": "Velocidade e direção do vento, a direção de um veículo ou qualquer rumo em um anel de bússola de 360°, com um segundo marcador de direção e até três leituras abaixo.",
     "rounds": "Quaisquer entidades como botões redondos, cada um aceso enquanto está ligado: um toque alterna o que é seguro alternar, segurar abre os detalhes, com um cabeçalho opcional que diz quantos estão ligados.",
+    "rooms": "Todos os cômodos em um cartão: o ícone, o nome, a temperatura e a umidade de cada um e suas ações rápidas no fim; um toque abre a página do cômodo.",
     "thermostats": "Todos os termostatos da casa ou de um cômodo em um cartão: a temperatura de cada cômodo, o que está fazendo, sua predefinição e seu alvo, botões redondos e, se quiser, − e +, com Desligar todos e as predefinições para a casa toda.",
     "schedule": "A semana de aquecimento de um cômodo no auxiliar de agendamento do Home Assistant: uma linha por dia nas cores das suas predefinições, Conforto, Eco e Ausente com suas temperaturas, horários editados, um dia copiado para outros, a agenda ligada ou desligada."
   },
@@ -2580,6 +2581,7 @@
     "swipe": "Deslizar",
     "compass": "Bússola",
     "rounds": "Botões redondos",
+    "rooms": "Cômodos",
     "thermostats": "Termostatos",
     "schedule": "Agenda de aquecimento"
   },
@@ -3708,6 +3710,20 @@
   },
   "thermostat": {
     "room": "Cômodo"
+  },
+  "rooms-card": {
+    "count_one": "{count} cômodo",
+    "count": "{count} cômodos",
+    "average": "média de {value}",
+    "empty": "Ainda sem cômodos",
+    "empty_hint": "Adicione cômodos nas configurações do cartão",
+    "rooms": "Cômodos",
+    "default_actions": "Ações rápidas de cada cômodo",
+    "default_actions_help": "Para cada cômodo sem ações rápidas próprias: suas luzes, seu termostato, suas persianas.",
+    "show_head": "Mostrar o cabeçalho",
+    "show_average": "Mostrar a temperatura média",
+    "max_rooms": "Cômodos no máximo",
+    "title_short": "Cômodos"
   },
   "thermostats": {
     "title": "Termostatos",

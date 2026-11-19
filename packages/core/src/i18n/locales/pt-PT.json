@@ -2104,6 +2104,7 @@
     "swipe": "Quaisquer cartões, um por página, passados ao deslizar ou pelas marcas de página por baixo: lado a lado num ecrã largo, do último de volta ao primeiro.",
     "compass": "Velocidade e direção do vento, a direção de um veículo ou qualquer rumo num anel de bússola de 360°, com um segundo marcador de direção e até três leituras por baixo.",
     "rounds": "Quaisquer entidades como botões redondos, cada um aceso enquanto está ligado: um toque alterna o que é seguro alternar, manter premido abre os detalhes, com um cabeçalho opcional que diz quantos estão ligados.",
+    "rooms": "Todas as divisões num cartão: o ícone, o nome, a temperatura e a humidade de cada uma e as suas ações rápidas no fim; um toque abre a página da divisão.",
     "thermostats": "Todos os termóstatos da casa ou de uma divisão num cartão: a temperatura de cada divisão, o que está a fazer, a sua predefinição e o seu alvo, botões redondos e, se quiser, − e +, com Desligar todos e as predefinições para a casa toda.",
     "schedule": "A semana de aquecimento de uma divisão no auxiliar de horário do Home Assistant: uma linha por dia nas cores das suas predefinições, Conforto, Eco e Ausente com as suas temperaturas, horas editadas, um dia copiado para outros, o horário ligado ou desligado."
   },
@@ -2580,6 +2581,7 @@
     "swipe": "Deslizar",
     "compass": "Bússola",
     "rounds": "Botões redondos",
+    "rooms": "Divisões",
     "thermostats": "Termóstatos",
     "schedule": "Horário de aquecimento"
   },
@@ -3708,6 +3710,20 @@
   },
   "thermostat": {
     "room": "Divisão"
+  },
+  "rooms-card": {
+    "count_one": "{count} divisão",
+    "count": "{count} divisões",
+    "average": "média de {value}",
+    "empty": "Ainda sem divisões",
+    "empty_hint": "Adicione divisões nas definições do cartão",
+    "rooms": "Divisões",
+    "default_actions": "Ações rápidas de cada divisão",
+    "default_actions_help": "Para cada divisão sem ações rápidas próprias: as suas luzes, o seu termóstato, as suas persianas.",
+    "show_head": "Mostrar o cabeçalho",
+    "show_average": "Mostrar a temperatura média",
+    "max_rooms": "Divisões no máximo",
+    "title_short": "Divisões"
   },
   "thermostats": {
     "title": "Termóstatos",

@@ -2104,6 +2104,7 @@
     "swipe": "Qualsiasi scheda, una per pagina, sfogliate con uno scorrimento o con i segni di pagina sotto: affiancate su uno schermo largo, dall’ultima di nuovo alla prima.",
     "compass": "Velocità e direzione del vento, la direzione di marcia di un veicolo o qualsiasi rilevamento su un anello bussola a 360°, con un secondo indicatore di direzione e fino a tre valori sotto.",
     "rounds": "Qualsiasi entità come pulsante tondo, acceso finché è attivo: un tocco commuta ciò che si può commutare senza rischi, una pressione prolungata ne apre i dettagli, con un’intestazione facoltativa che dice quanti sono accesi.",
+    "rooms": "Tutte le stanze in una scheda: l’icona, il nome, la temperatura e l’umidità di ciascuna e le sue azioni rapide in fondo; un tocco apre la pagina della stanza.",
     "thermostats": "Tutti i termostati della casa o di una stanza in una scheda: la temperatura di ogni stanza, cosa sta facendo, la sua preimpostazione e il suo obiettivo, pulsanti tondi e, a scelta, − e +, con Spegni tutto e le preimpostazioni per tutta la casa.",
     "schedule": "La settimana di riscaldamento di una stanza sull’aiutante Programmazione di Home Assistant: una linea al giorno nei colori dei suoi preset, Comfort, Eco e Fuori casa con le loro temperature, orari modificati, un giorno copiato su altri, il programma acceso o spento."
   },
@@ -2580,6 +2581,7 @@
     "swipe": "Scorrimento",
     "compass": "Bussola",
     "rounds": "Pulsanti tondi",
+    "rooms": "Stanze",
     "thermostats": "Termostati",
     "schedule": "Programma riscaldamento"
   },
@@ -3708,6 +3710,20 @@
   },
   "thermostat": {
     "room": "Stanza"
+  },
+  "rooms-card": {
+    "count_one": "{count} stanza",
+    "count": "{count} stanze",
+    "average": "media {value}",
+    "empty": "Ancora nessuna stanza",
+    "empty_hint": "Aggiungi stanze nelle impostazioni della scheda",
+    "rooms": "Stanze",
+    "default_actions": "Azioni rapide di ogni stanza",
+    "default_actions_help": "Per ogni stanza senza azioni rapide proprie: le sue luci, il suo termostato, le sue tapparelle.",
+    "show_head": "Mostra l’intestazione",
+    "show_average": "Mostra la temperatura media",
+    "max_rooms": "Stanze al massimo",
+    "title_short": "Stanze"
   },
   "thermostats": {
     "title": "Termostati",

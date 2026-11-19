@@ -256,12 +256,13 @@ async function drawn(tag: string, config: LovelaceCardConfig, house: HomeAssista
 }
 
 /**
- * Cards that find what they show (a room in its area, the house's automations, the house's appliances, its
- * thermostats) instead of being told: missing, an entity is gone from the house and so from what they find (#39, #48)
- * — only what their config names is taken out of it for that twin (`interactions-unavailable.mjs`'s `FOUND`).
+ * Cards that find what they show (a room in its area, the house's rooms, automations, appliances and thermostats)
+ * instead of being told: missing, an entity is gone from the house and so from what they find (#39, #48, #225) — only
+ * what their config names is taken out of it for that twin (`interactions-unavailable.mjs`'s `FOUND`).
  */
 const FOUND = new Set([
   'fluvy-room-card',
+  'fluvy-rooms-card',
   'fluvy-automations-card',
   'fluvy-appliances-card',
   'fluvy-thermostats-card',

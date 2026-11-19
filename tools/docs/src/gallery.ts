@@ -397,6 +397,15 @@ export const GALLERY: Readonly<Record<string, Example>> = {
     own: 'photo',
     variants: { tile: {}, row: {} },
   },
+  'fluvy-rooms-card': {
+    // the reporter's own (#225): each room with its lights', its thermostat's and its blinds' rounds
+    config: {
+      type: 'custom:fluvy-rooms-card',
+      rooms: ['rm_living', 'rm_kitchen', 'rm_bedroom'],
+      default_actions: ['lights', 'climate', 'covers'],
+    },
+    variants: { compact: {}, tiles: {} },
+  },
   'fluvy-map-card': {
     config: {
       type: 'custom:fluvy-map-card',

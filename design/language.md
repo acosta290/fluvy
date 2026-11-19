@@ -3100,7 +3100,48 @@ details. An item's own name, icon, tone, colour, actions and `show_state`.
   over its line, a value, then its rounds, 12 after; what does not hold gives way in order — the line's last segments,
   the rounds from the end, the value, then every row's circle together (`rowsKeepIcon`'s rule) — the name keeping 96 of
   itself (all of a shorter one) and its line's first segment whole. A row never stacks: 60 tall, 48 compact; a round's
-  state beside its glyph, never under it. A press on a round is the round's: the row does not dim under it.
+  state beside its glyph, never under it. A press on a round is the round's: the row does not dim under it. A row
+  that opens a page may end in the rows' chevron after its rounds, where its list asks (`arrows`): its 44 and the 12
+  before it, less the 8 its ink stands past the column edge; a row that opens nothing keeps that room empty, so every
+  row's rounds end on one line, and the chevrons give way before a round, every row's together.
+
+## Rooms (1.23, #225)
+
+Every room of the house in one card, as the issue's picture draws it: the **head** (the `rooms` glyph, "Rooms", "6
+rooms · 20.9° average", the average giving way first; its chevron and its tap open every room where the house's rooms
+open on a dashboard), then **a row a room** (§ Rounds: a row's rounds): the room's glyph in its 44 circle — the area's
+own icon drawn as the set's room where it names one (`mdi:sofa` the sofa, `mdi:bed` the bed: `ROOM_ICONS`), the
+person's `icon` before it, the house else — lit in the room's tone or colour while anything of it is on (the Room
+card's count: a heating thermostat is on), its name (a name: its ellipsis), its line "21.4° · 48 %" (the readings as
+the compact surfaces write them: the degree alone, a percent with its space; "—" for one out of reach, in its place;
+`show_count` adds "3 of 5 on" after them, and the readings give way from the end), its rounds at its end and the
+chevron where it opens a page. The hairline from the text's left edge, as every list.
+
+- **Which rooms**: the person's `rooms`, in order (an area's id, or an entry with its own name, icon, tone, colour,
+  readings, rounds, path and actions); none, every area with something to show (`holdsSomething`, the Room card's
+  rule) in the house's order of its rooms (`areasInOrder`), `max_rooms` the first of them. An area the house no longer
+  has stays a row: the dashed circle and the ban glyph, "Not found" (the short word), no tap.
+- **Its rounds** are the room's quick actions (§ Room): none unless asked — `default_actions` for every room that
+  names none (its `lights`, its `climate`: its first thermostat, its `covers`, `fans`, `media`), a room's own
+  `quick_actions` over them — each set its own room's, a tap flipping what is safe to flip (a set all of it at once), a
+  lock locking at once and asking before it unlocks, the rest opening their details (§ Rounds). A room's colour is its
+  lights' round's too, where the house shows no bulb's colour.
+- **Where a tap goes**: the room's own `tap_action`; else its `path`; else its page on the automatic dashboard the
+  house's rooms open on — the one the card stands on, else Fluvy's Rooms dashboard, else Home's while it keeps its Rooms
+  view (read once a page from those dashboards' configurations, nothing written) — where the room has one; else the
+  area's settings for an administrator; nowhere for anyone else (no chevron, no button). A hold runs its
+  `hold_action`; without one it is a tap, as Home Assistant's.
+- **Compact**: 48 rows, the line gone, the temperature at the row's end as its value (the humidity where it has
+  none; "—" out of reach). **Tiles**: an inner tile a room (the page's fill, the control radius, no hairline; 144 tall: 16, the room's
+  glyph big in the hero's 64 circle with its rounds beside it from the end, 12, its name's 20 and its line's 16, 16),
+  two a row from a column of 320 on whole pixels (156 + 8 + 156), an odd last one taking the row, one a row under
+  320; at rest its circle and its rounds wear the card's fill, as an inner tile's do; the tile is its room's button,
+  its rounds raised over it, and it does not give under a round.
+- **Its height is its config's**: a 60 row a room (48 compact) under the head's 44 and 8, else 8 into the card's
+  padding at each end; tiles in their lines of 144, 8 apart, 16 under the head; the empty panel and its hint. Where it
+  lists none, the house's rooms with something to show (the automatic dashboard counts them, `house-heights.ts`), four
+  where the house is not there to say.
+- **Folding** a card of rooms, or a room, under a head is the Expander's (§ Expander), which remembers it.
 
 ## Thermostats (1.23, #230, #219)
 

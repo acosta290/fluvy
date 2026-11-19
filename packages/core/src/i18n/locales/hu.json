@@ -1207,6 +1207,7 @@
     "swipe": "Lapozó",
     "compass": "Iránytű",
     "rounds": "Kerek gombok",
+    "rooms": "Szobák",
     "thermostats": "Termosztátok",
     "schedule": "Fűtési ütemterv"
   },
@@ -1919,6 +1920,7 @@
     "swipe": "Bármilyen kártyák, oldalanként egy, húzással vagy az alattuk lévő oldaljelekkel lapozva: széles kijelzőn egymás mellett, az utolsótól újra az elsőig.",
     "compass": "Szélsebesség és szélirány, egy jármű iránya vagy bármely irány egy 360°-os iránytűgyűrűn, másodlagos irányjelzővel és legfeljebb három értékkel alatta.",
     "rounds": "Bármilyen entitás kerek gombként, mindegyik világít, amíg be van kapcsolva: koppintásra átkapcsolja, ami biztonságosan kapcsolható, nyomva tartásra megnyitja a részleteket, és egy választható fejléc megmondja, hány van bekapcsolva.",
+    "rooms": "Minden szoba egy kártyán: mindegyik ikonja, neve, hőmérséklete és páratartalma, a végén pedig a gyorsműveletei; koppintásra megnyílik a szoba oldala.",
     "thermostats": "A ház vagy egy szoba összes termosztátja egy kártyán: minden szoba hőmérséklete, hogy mit csinál, az előbeállítása és a célja, kerek gombok és igény szerint − és +, a Mind ki gombbal és az egész ház előbeállításaival.",
     "schedule": "Egy szoba fűtési hete a Home Assistant Ütemezés segédjén: naponta egy sáv az előbeállítások színeiben, Komfort, Eco és Távol a hőmérsékletükkel, szerkesztett időpontok, egy nap másolása más napokra, az ütemterv be- vagy kikapcsolása."
   },
@@ -3708,6 +3710,20 @@
   },
   "thermostat": {
     "room": "Szoba"
+  },
+  "rooms-card": {
+    "count_one": "{count} szoba",
+    "count": "{count} szoba",
+    "average": "átlag {value}",
+    "empty": "Még nincs szoba",
+    "empty_hint": "Adj hozzá szobákat a kártya beállításaiban",
+    "rooms": "Szobák",
+    "default_actions": "Minden szoba gyorsműveletei",
+    "default_actions_help": "Minden saját gyorsművelet nélküli szobának: a lámpái, a termosztátja, a redőnyei.",
+    "show_head": "A fejléc megjelenítése",
+    "show_average": "Az átlaghőmérséklet megjelenítése",
+    "max_rooms": "Legfeljebb ennyi szoba",
+    "title_short": "Szobák"
   },
   "thermostats": {
     "title": "Termosztátok",

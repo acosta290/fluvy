@@ -2104,6 +2104,7 @@
     "swipe": "Beliebige Karten, eine pro Seite, zum Wischen oder über die Seitenmarken darunter: auf breiten Bildschirmen nebeneinander, von der letzten wieder zur ersten.",
     "compass": "Windgeschwindigkeit und -richtung, der Kurs eines Fahrzeugs oder jede beliebige Richtung auf einem 360°-Kompassring, mit zweiter Richtungsmarkierung und bis zu drei Messwerten darunter.",
     "rounds": "Beliebige Entitäten als runde Tasten, jede leuchtet, solange sie an ist: Antippen schaltet, was gefahrlos schaltbar ist, Gedrückthalten öffnet die Details, dazu auf Wunsch eine Kopfzeile, die sagt, wie viele an sind.",
+    "rooms": "Alle Räume in einer Karte: Symbol, Name, Temperatur und Luftfeuchtigkeit jedes Raums und seine Schnellaktionen am Ende; Antippen öffnet die Seite des Raums.",
     "thermostats": "Alle Thermostate des Hauses oder eines Raums auf einer Karte: die Temperatur jedes Raums, was jedes gerade tut, seine Voreinstellung und sein Ziel, runde Tasten und auf Wunsch − und +, dazu „Alle aus“ und die Voreinstellungen für das ganze Haus.",
     "schedule": "Die Heizwoche eines Raums auf dem Zeitplan-Helfer von Home Assistant: eine Zeitleiste pro Tag in den Farben der Voreinstellungen, Komfort, Eco und Abwesend mit ihren Temperaturen, Zeiten bearbeiten, einen Tag auf andere kopieren, den Plan ein- oder ausschalten."
   },
@@ -2580,6 +2581,7 @@
     "swipe": "Wischen",
     "compass": "Kompass",
     "rounds": "Runde Tasten",
+    "rooms": "Räume",
     "thermostats": "Thermostate",
     "schedule": "Heizplan"
   },
@@ -3708,6 +3710,20 @@
   },
   "thermostat": {
     "room": "Raum"
+  },
+  "rooms-card": {
+    "count_one": "{count} Raum",
+    "count": "{count} Räume",
+    "average": "Ø {value}",
+    "empty": "Noch keine Räume",
+    "empty_hint": "Räume in den Karteneinstellungen hinzufügen",
+    "rooms": "Räume",
+    "default_actions": "Schnellaktionen jedes Raums",
+    "default_actions_help": "Für jeden Raum ohne eigene Schnellaktionen: sein Licht, sein Thermostat, seine Rollos.",
+    "show_head": "Kopfzeile anzeigen",
+    "show_average": "Durchschnittstemperatur anzeigen",
+    "max_rooms": "Höchstens so viele Räume",
+    "title_short": "Räume"
   },
   "thermostats": {
     "title": "Thermostate",

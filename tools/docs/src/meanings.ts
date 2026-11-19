@@ -535,6 +535,13 @@ export const MEANINGS: Readonly<Record<string, string>> = {
     'Shows every quick action’s state in its round, unless the action says otherwise.',
   'room.temperature_entity':
     'The room’s temperature sensor, or a thermostat; left out, the area’s.',
+  'rooms.default_actions':
+    'The quick actions of every room that names none of its own, each where the room has it: its lights, its thermostat, its blinds, its fans, its players.',
+  'rooms.max_rooms': 'Draws this many rooms at most, the first in their order.',
+  'rooms.show_average': 'Says the rooms’ average temperature on the head’s line.',
+  'rooms.show_count': 'Says how many of each room’s devices are on, after its readings.',
+  'rooms.show_head':
+    'Shows the head: its title, its icon, how many rooms and their average temperature.',
   'rounds.align':
     'Where the rounds stand on their line: from its start, in its middle, or from edge to edge.',
   'rounds.columns': 'How many rounds stand on a line, at most as many as the width holds.',
@@ -704,6 +711,8 @@ export const MEANINGS: Readonly<Record<string, string>> = {
   'room.quick_actions[]':
     'The quick actions in the room’s head, each on a group of its devices or on one entity.',
   'room.tiles[]': 'Tiles of the room’s entities, in this order.',
+  'rooms.rooms[]':
+    'The rooms, in this order; left out, every area with something to show, in the house’s order.',
   'rounds.items[]': 'The entities the card draws as rounds, in this order.',
   'thermostats.thermostats[]':
     'The thermostats, in this order; left out, every climate of the area, else of the house.',
@@ -891,6 +900,14 @@ export const MEANINGS: Readonly<Record<string, string>> = {
   'remote.custom[].key': 'The key it stands in for.',
   'room.quick_actions[].show_state':
     'Shows this quick action’s state in its round, or hides it, whatever the card says.',
+  'rooms.rooms[].area': 'The room: its area.',
+  'rooms.rooms[].humidity_entity':
+    'The room’s humidity sensor, or a thermostat or a humidifier; left out, the area’s.',
+  'rooms.rooms[].path': 'Where a tap on the room goes, before its page on the automatic dashboard.',
+  'rooms.rooms[].quick_actions':
+    'The rounds at the room’s end: its lights, blinds, fans, players or thermostat by their words, or any entity; left out, the card’s default actions.',
+  'rooms.rooms[].temperature_entity':
+    'The room’s temperature sensor, or a thermostat; left out, the area’s.',
   'rounds.items[].show_state':
     'Shows this round’s state under its icon, or hides it, whatever the layout says.',
   'schedule.presets[].preset':

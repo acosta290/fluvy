@@ -1532,8 +1532,8 @@ describe('custom:fluvy-home strategy', () => {
     // the cards a person chooses to; and the Swipe card (#206), whose pages are the person's to choose; and the
     // Compass card, whose wind speed and its matching bearing sensor are a pairing only the person can name; and the
     // Rounds card (#224), whose picks are the person's own; the Heating schedule card (#229), whose week the
-    // person makes on it, written into Home Assistant from its sheet; and the Thermostats card (#230), new and the
-    // person's to place
+    // person makes on it, written into Home Assistant from its sheet; the Thermostats card (#230), new and the
+    // person's to place; and the Rooms card (#225), whose rooms the dashboards draw as a Room card each
     const byHand = new Set([
       'custom:fluvy-scene-card',
       'custom:fluvy-automations-card',
@@ -1553,6 +1553,7 @@ describe('custom:fluvy-home strategy', () => {
       'custom:fluvy-rounds-card',
       'custom:fluvy-schedule-card',
       'custom:fluvy-thermostats-card',
+      'custom:fluvy-rooms-card',
     ]);
     expect(
       CATALOGUE.map(([tag]) => `custom:${tag}`).filter(

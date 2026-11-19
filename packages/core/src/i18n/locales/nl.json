@@ -2104,6 +2104,7 @@
     "swipe": "Willekeurige kaarten, één per pagina, om te vegen of via de paginamarkeringen eronder: naast elkaar op een breed scherm, van de laatste weer naar de eerste.",
     "compass": "Windsnelheid en -richting, de koers van een voertuig of elke richting op een 360°-kompasring, met een tweede richtingswijzer en tot drie waarden eronder.",
     "rounds": "Willekeurige entiteiten als ronde knoppen, elk verlicht zolang hij aan is: een tik schakelt wat veilig te schakelen is, ingedrukt houden opent de details, met een optionele kop die zegt hoeveel er aan zijn.",
+    "rooms": "Alle kamers in één kaart: van elke kamer het pictogram, de naam, de temperatuur en de luchtvochtigheid, en aan het eind de snelle acties; een tik opent de pagina van de kamer.",
     "thermostats": "Alle thermostaten van het huis of een ruimte op één kaart: de temperatuur van elke kamer, wat hij doet, zijn preset en zijn doel, ronde knoppen en naar keuze − en +, met Alles uit en de presets voor het hele huis.",
     "schedule": "De verwarmingsweek van een kamer op de schemahelper van Home Assistant: een lijn per dag in de kleuren van de voorinstellingen, Comfort, Eco en Afwezig met hun temperaturen, tijden bewerkt, een dag naar andere gekopieerd, het schema aan of uit."
   },
@@ -2580,6 +2581,7 @@
     "swipe": "Vegen",
     "compass": "Kompas",
     "rounds": "Ronde knoppen",
+    "rooms": "Kamers",
     "thermostats": "Thermostaten",
     "schedule": "Verwarmingsschema"
   },
@@ -3708,6 +3710,20 @@
   },
   "thermostat": {
     "room": "Kamer"
+  },
+  "rooms-card": {
+    "count_one": "{count} kamer",
+    "count": "{count} kamers",
+    "average": "gemiddeld {value}",
+    "empty": "Nog geen kamers",
+    "empty_hint": "Voeg kamers toe in de instellingen van de kaart",
+    "rooms": "Kamers",
+    "default_actions": "Snelle acties van elke kamer",
+    "default_actions_help": "Voor elke kamer zonder eigen snelle acties: de lampen, de thermostaat, de jaloezieën.",
+    "show_head": "Kop tonen",
+    "show_average": "Gemiddelde temperatuur tonen",
+    "max_rooms": "Hoogstens zoveel kamers",
+    "title_short": "Kamers"
   },
   "thermostats": {
     "title": "Thermostaten",

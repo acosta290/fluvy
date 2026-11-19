@@ -27,6 +27,7 @@ import { sheet as period } from './period.js';
 import { sheet as printer } from './printer.js';
 import { sheet as remote } from './remote.js';
 import { sheet as rooms } from './rooms.js';
+import { sheet as roomsCard } from './rooms-card.js';
 import { sheet as rounds } from './rounds.js';
 import { sheet as sankey } from './sankey.js';
 import { sheet as schedule } from './schedule.js';
@@ -110,6 +111,7 @@ export const sheet: SheetSpec = {
     calendar,
     rounds,
     thermostats,
+    roomsCard,
     // last: its own answers to the Energy dashboard's questions are the balance sheet's, which must not come first
     swipe,
   ],

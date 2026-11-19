@@ -2104,6 +2104,7 @@
     "swipe": "Cualquier tarjeta, una por página, que se pasa deslizando o con las marcas de página debajo: lado a lado en una pantalla ancha, de la última de vuelta a la primera.",
     "compass": "Velocidad y dirección del viento, el rumbo de un vehículo o cualquier dirección en un anillo de brújula de 360°, con un segundo marcador de rumbo y hasta tres lecturas debajo.",
     "rounds": "Cualquier entidad como botón redondo, iluminado mientras está encendido: un toque conmuta lo que es seguro conmutar, mantener pulsado abre sus detalles, con una cabecera opcional que dice cuántos están encendidos.",
+    "rooms": "Todas las habitaciones en una tarjeta: el icono, el nombre, la temperatura y la humedad de cada una y sus acciones rápidas al final; un toque abre la página de la habitación.",
     "thermostats": "Todos los termostatos de la casa o de una habitación en una tarjeta: la temperatura de cada habitación, qué está haciendo, su preajuste y su objetivo, botones redondos y, si quieres, − y +, con Apagar todo y los preajustes para toda la casa.",
     "schedule": "La semana de calefacción de una habitación en el ayudante de horario de Home Assistant: una línea por día en los colores de sus preajustes, Confort, Eco y Ausente con sus temperaturas, sus horas editadas, un día copiado a otros, el horario encendido o apagado."
   },
@@ -2580,6 +2581,7 @@
     "swipe": "Deslizar",
     "compass": "Brújula",
     "rounds": "Botones redondos",
+    "rooms": "Habitaciones",
     "thermostats": "Termostatos",
     "schedule": "Calendario de calefacción"
   },
@@ -3708,6 +3710,20 @@
   },
   "thermostat": {
     "room": "Habitación"
+  },
+  "rooms-card": {
+    "count_one": "{count} habitación",
+    "count": "{count} habitaciones",
+    "average": "{value} de media",
+    "empty": "Aún no hay habitaciones",
+    "empty_hint": "Añade habitaciones en los ajustes de la tarjeta",
+    "rooms": "Habitaciones",
+    "default_actions": "Acciones rápidas de cada habitación",
+    "default_actions_help": "Para cada habitación sin acciones rápidas propias: sus luces, su termostato, sus persianas.",
+    "show_head": "Mostrar la cabecera",
+    "show_average": "Mostrar la temperatura media",
+    "max_rooms": "Habitaciones como máximo",
+    "title_short": "Habitaciones"
   },
   "thermostats": {
     "title": "Termostatos",

@@ -48,6 +48,7 @@ To write a card’s configuration, read its page: it has the card’s picture, t
 ## Rooms and the map
 
 - [Room](https://raw.githubusercontent.com/acosta290/fluvy/main/docs/cards/room.md): `custom:fluvy-room-card`. A room of the house from its area: its picture, its climate, what is on, and its controls.
+- [Rooms](https://raw.githubusercontent.com/acosta290/fluvy/main/docs/cards/rooms.md): `custom:fluvy-rooms-card`. Every room in one card: its icon, its name, its temperature and humidity, and its quick actions at its end; a tap opens the room’s page.
 - [Map](https://raw.githubusercontent.com/acosta290/fluvy/main/docs/cards/map.md): `custom:fluvy-map-card`. Where everyone is: the house’s zones as columns of faces, a row a person, or Home Assistant’s map on a plate.
 
 ## Structure and navigation

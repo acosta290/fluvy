@@ -399,10 +399,11 @@ export const compact = (item: Item, idKey: string): Entry => {
 };
 
 /**
- * A list inside an item's form: its field's name, the selects of its entries' own fields (`selectsOf`), and the field
- * that names an entry (its list's `label_field`: a readout's sensor, a threshold's value).
+ * A list inside an item's form: its field's name, the selects of its entries' own fields (`selectsOf`), the field
+ * that names an entry (its list's `label_field`: a readout's sensor, a threshold's value), and whether an entry may be
+ * without it (that field not required: a room's round of its lights names no entity).
  */
-type InnerList = readonly [string, ReadonlyMap<string, readonly unknown[]>, string];
+type InnerList = readonly [string, ReadonlyMap<string, readonly unknown[]>, string, boolean];
 
 /**
  * The fields of an item's form that hold a list of their own (a tile's readouts, a row's thresholds), which Home
@@ -418,12 +419,14 @@ const innerLists = (schema: readonly HaFormSchemaItem[]): InnerList[] =>
           fields?: Readonly<Record<string, HaFormSchemaItem>>;
         }
       | undefined;
+    const id = object?.label_field ?? 'entity';
     return object?.multiple && object.fields
       ? [
           [
             item.name,
             selectsOf(Object.entries(object.fields).map(([name, field]) => ({ ...field, name }))),
-            object.label_field ?? 'entity',
+            id,
+            object.fields[id]?.required === false,
           ],
         ]
       : [];
@@ -443,6 +446,7 @@ const withInner = (
     entry: unknown,
     selects: ReadonlyMap<string, readonly unknown[]>,
     idKey: string,
+    optional: boolean,
   ) => unknown,
 ): Item => {
   let lists = inner.get(list);
@@ -452,10 +456,10 @@ const withInner = (
     ? {
         ...item,
         ...Object.fromEntries(
-          held.map(([name, selects, idKey]) => [
+          held.map(([name, selects, idKey, optional]) => [
             name,
             (item[name] as unknown[])
-              .map((entry) => each(entry, selects, idKey))
+              .map((entry) => each(entry, selects, idKey, optional))
               .filter((entry) => entry !== null),
           ]),
         ),
@@ -484,8 +488,9 @@ export const isSection = (item: Item, list: RowsListSpec): boolean =>
 
 /**
  * A config entry as the list's item: the list's own reading, else the id rule, else a section where it takes them. A
- * list inside it (a tile's readouts) holds items too, a bare id among them an item of its own and a number its YAML
- * holds as its select's word (`decimals: 2`), as an item's own are.
+ * list inside it (a tile's readouts) holds items too, a bare id among them an item of its own, an entry without one
+ * where its list names none it must have, and a number its YAML holds as its select's word (`decimals: 2`), as an
+ * item's own are.
  */
 export const itemOf = (raw: unknown, list: RowsListSpec): Item | null => {
   const item = list.read
@@ -493,8 +498,10 @@ export const itemOf = (raw: unknown, list: RowsListSpec): Item | null => {
     : (toItem(raw, idKeyOf(list), list.also) ?? (list.sections ? sectionItem(raw) : null));
   return (
     item &&
-    withInner(item, list, (entry, selects, idKey) => {
-      const own = toItem(entry, idKey);
+    withInner(item, list, (entry, selects, idKey, optional) => {
+      const own =
+        toItem(entry, idKey) ??
+        (optional && typeof entry === 'object' && entry !== null ? (entry as Item) : null);
       return own && worded(own, selects);
     })
   );

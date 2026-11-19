@@ -2104,6 +2104,7 @@
     "swipe": "Herhangi kartlar, sayfa başına bir tane, kaydırarak ya da altlarındaki sayfa işaretleriyle çevrilir: geniş ekranda yan yana, sondan yeniden başa.",
     "compass": "360° pusula halkasında rüzgâr hızı ve yönü, bir aracın yönü veya herhangi bir yön, ikincil yön işaretçisi ve altında en fazla üç okuma ile.",
     "rounds": "Herhangi bir varlık yuvarlak düğme olarak, açıkken her biri yanar: dokunmak güvenle değiştirilebileni açıp kapatır, basılı tutmak ayrıntıları açar; isteğe bağlı bir başlık kaç tanesinin açık olduğunu söyler.",
+    "rooms": "Tüm odalar tek kartta: her odanın simgesi, adı, sıcaklığı ve nemi, sonunda da hızlı eylemleri; dokunmak odanın sayfasını açar.",
     "thermostats": "Evin ya da bir odanın tüm termostatları tek kartta: her odanın sıcaklığı, ne yaptığı, ön ayarı ve hedefi, yuvarlak düğmeler ve isteğe bağlı − ve +, tüm ev için Tümünü kapat ve ön ayarlarla.",
     "schedule": "Bir odanın ısıtma haftası, Home Assistant’ın zamanlama yardımcısında: ön ayarların renklerinde günde bir çizgi, sıcaklıklarıyla Konfor, Eko ve Dışarıda, düzenlenen saatler, diğer günlere kopyalanan bir gün, planı açıp kapatma."
   },
@@ -2580,6 +2581,7 @@
     "swipe": "Kaydırma",
     "compass": "Pusula",
     "rounds": "Yuvarlak düğmeler",
+    "rooms": "Odalar",
     "thermostats": "Termostatlar",
     "schedule": "Isıtma planı"
   },
@@ -3708,6 +3710,20 @@
   },
   "thermostat": {
     "room": "Oda"
+  },
+  "rooms-card": {
+    "count_one": "{count} oda",
+    "count": "{count} oda",
+    "average": "ortalama {value}",
+    "empty": "Henüz oda yok",
+    "empty_hint": "Kartın ayarlarından oda ekleyin",
+    "rooms": "Odalar",
+    "default_actions": "Her odanın hızlı eylemleri",
+    "default_actions_help": "Kendi hızlı eylemi olmayan her oda için: ışıkları, termostatı, panjurları.",
+    "show_head": "Başlığı göster",
+    "show_average": "Ortalama sıcaklığı göster",
+    "max_rooms": "En fazla oda",
+    "title_short": "Odalar"
   },
   "thermostats": {
     "title": "Termostatlar",

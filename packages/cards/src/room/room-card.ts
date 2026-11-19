@@ -20,6 +20,7 @@ import {
   withTextName,
   type AreaContents,
   type ClimateKind,
+  type EntityView,
   type FluvyCardConfig,
   type HomeAssistant,
   type LovelaceGridOptions,
@@ -256,6 +257,35 @@ export const roomLights = (
     ? [...lights, ...lamps(devices.filter((id) => id.startsWith('switch.')))]
     : lights;
 };
+
+/** A reading as a thermostat writes its own: a tenth of a degree in the house's unit, a whole percent. */
+export function writtenReading(
+  hass: HomeAssistant | undefined,
+  kind: ClimateKind,
+  value: number,
+): ValueParts {
+  const degrees = kind === 'temperature';
+  return {
+    value: formatNumber(hass, value, { digits: degrees ? 1 : 0 }),
+    unit: degrees ? (hass?.config.unit_system.temperature ?? '°C') : '%',
+  };
+}
+
+/**
+ * A room's reading as its readouts write it — a sensor's state, a thermostat's own (`writtenReading`) — or undefined
+ * where it cannot be read: the Room card's and every room's of the Rooms card.
+ */
+export function roomReading(
+  hass: HomeAssistant | undefined,
+  view: EntityView,
+  kind: ClimateKind,
+): ValueParts | undefined {
+  if (!isUsable(view)) return undefined;
+  const attribute = climateAttribute(view.id, kind);
+  if (!attribute) return valueParts(hass, view);
+  const value = numberAttr(view, attribute);
+  return value === null ? undefined : writtenReading(hass, kind, value);
+}
 
 /** The labels a room's readouts may be asked for besides `auto`, which anything else is read as. */
 const LABELS: readonly ReadoutLabels[] = ['words', 'icons', 'none'];
@@ -528,23 +558,9 @@ export class FluvyRoomCard extends FluvyTileCard {
     );
   }
 
-  /** A reading as the readouts write it — a sensor's state, a thermostat's own — or undefined where it cannot be read. */
+  /** A reading as the readouts write it (`roomReading`), or undefined where it cannot be read. */
   private reading(id: string, kind: ClimateKind): ValueParts | undefined {
-    const view = this.entity(id);
-    if (!isUsable(view)) return undefined;
-    const attribute = climateAttribute(id, kind);
-    if (!attribute) return valueParts(this.hass, view);
-    const value = numberAttr(view, attribute);
-    return value === null ? undefined : this.written(kind, value);
-  }
-
-  /** A reading as the thermostat writes its own: a tenth of a degree in the house's unit, a whole percent. */
-  private written(kind: ClimateKind, value: number): ValueParts {
-    const degrees = kind === 'temperature';
-    return {
-      value: formatNumber(this.hass, value, { digits: degrees ? 1 : 0 }),
-      unit: degrees ? (this.hass?.config.unit_system.temperature ?? '°C') : '%',
-    };
+    return roomReading(this.hass, this.entity(id), kind);
   }
 
   override getCardSize(): number {
@@ -668,7 +684,7 @@ export class FluvyRoomCard extends FluvyTileCard {
       const id = readings[kind];
       if (!climate || !id) continue;
       const parts = this.reading(id, kind) ?? { value: '—', unit: '' };
-      const usual = this.written(kind, USUAL);
+      const usual = writtenReading(this.hass, kind, USUAL);
       stats.push({
         label: s(this.hass, kind),
         glyph: kind === 'temperature' ? 'thermo' : 'drop',

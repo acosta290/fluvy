@@ -185,7 +185,7 @@ export const SECTIONS: ReadonlyArray<readonly [title: string, tags: readonly str
       'fluvy-alerts-card',
     ],
   ],
-  ['Rooms and the map', ['fluvy-room-card', 'fluvy-map-card']],
+  ['Rooms and the map', ['fluvy-room-card', 'fluvy-rooms-card', 'fluvy-map-card']],
   [
     'Structure and navigation',
     [

@@ -23,6 +23,7 @@ import type media from './locales/en/media.json';
 import type panel from './locales/en/panel.json';
 import type remote from './locales/en/remote.json';
 import type roomEditor from './locales/en/room-editor.json';
+import type roomsCard from './locales/en/rooms-card.json';
 import type rounds from './locales/en/rounds.json';
 import type schedule from './locales/en/schedule.json';
 import type sheets from './locales/en/sheets.json';
@@ -71,6 +72,7 @@ export type Catalogue = typeof core &
   typeof panel &
   typeof remote &
   typeof roomEditor &
+  typeof roomsCard &
   typeof rounds &
   typeof schedule &
   typeof sheets &

@@ -116,7 +116,7 @@ const keepsWords = ({ readout_labels: labels }: Readonly<Record<string, unknown>
   labels !== 'icons' && labels !== 'none';
 
 /** A reading's field: a sensor of its class, or the thermostat (the humidifier) that carries it (`climateAttribute`). */
-const readingField = (kind: ClimateKind, ...domain: string[]): HaFormSchemaItem => ({
+export const readingField = (kind: ClimateKind, ...domain: string[]): HaFormSchemaItem => ({
   name: `${kind}_entity`,
   selector: { entity: { filter: [{ domain: 'sensor', device_class: kind }, { domain }] } },
 });

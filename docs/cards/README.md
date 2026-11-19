@@ -2,7 +2,7 @@
 
 # The cards
 
-Seventy-one cards, each in the card picker as **Fluvy · …** with a live preview and an editor. Every card has a page of its own: its picture, an example in YAML, a picture of each of its layouts, a YAML with every option, and what each option does. [The live demo](https://acosta290.github.io/fluvy/) has each one to try.
+Seventy-two cards, each in the card picker as **Fluvy · …** with a live preview and an editor. Every card has a page of its own: its picture, an example in YAML, a picture of each of its layouts, a YAML with every option, and what each option does. [The live demo](https://acosta290.github.io/fluvy/) has each one to try.
 
 In YAML a card is `type: custom:fluvy-<name>-card` plus the entity or entities it draws and any of its options; an option left at its default is left out.
 
@@ -77,8 +77,8 @@ In YAML a card is `type: custom:fluvy-<name>-card` plus the entity or entities i
 <table>
 <tbody><tr>
 <td align="center" valign="top" width="33%"><a href="room.md"><picture><source media="(prefers-color-scheme: dark)" srcset="../images/cards/thumbs/room-dark.webp"><img src="../images/cards/thumbs/room-light.webp" width="280" alt=""></picture><br><b>Room</b></a><br>A room of the house from its area: its picture, its climate, what is on, and its controls.</td>
+<td align="center" valign="top" width="33%"><a href="rooms.md"><picture><source media="(prefers-color-scheme: dark)" srcset="../images/cards/thumbs/rooms-dark.webp"><img src="../images/cards/thumbs/rooms-light.webp" width="280" alt=""></picture><br><b>Rooms</b></a><br>Every room in one card: its icon, its name, its temperature and humidity, and its quick actions at its end; a tap opens the room’s page.</td>
 <td align="center" valign="top" width="33%"><a href="map.md"><picture><source media="(prefers-color-scheme: dark)" srcset="../images/cards/thumbs/map-dark.webp"><img src="../images/cards/thumbs/map-light.webp" width="280" alt=""></picture><br><b>Map</b></a><br>Where everyone is: the house’s zones as columns of faces, a row a person, or Home Assistant’s map on a plate.</td>
-<td align="center" valign="top" width="33%"></td>
 </tr></tbody>
 </table>
 

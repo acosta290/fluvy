@@ -39,6 +39,7 @@ import { remoteGroups, remoteHeight } from './remote-family.js';
 import { buttonService } from './remote/keys.js';
 import { appSaid, platformOf, sourceChips, type AppSaid } from './remote/platforms.js';
 import { roomHeight, type RoomCardConfig } from './room/room-card.js';
+import { houseRooms, roomsHeight } from './rooms-family.js';
 import { scenesHeight, type ScenesCardConfig } from './scenes/scenes-card.js';
 import { isWord, sensorHeight, type SensorCardConfig } from './sensor/sensor-card.js';
 import { normaliseExtras } from './sensor/series.js';
@@ -375,6 +376,10 @@ const batteries = (config: LovelaceCardConfig, hass: HomeAssistant): number =>
 const charger = (config: LovelaceCardConfig, hass: HomeAssistant): number =>
   chargerHeight(config, listAttr(hass, config['mode'], 'options'));
 
+/** The rooms a Rooms card lists where its config names none: the house's with something to show. */
+const rooms = (config: LovelaceCardConfig, hass: HomeAssistant): number =>
+  roomsHeight(config, houseRooms(hass).length);
+
 /** The cards a swipe card holds, each counted with the house: its tallest is its own. */
 const swipe = (config: LovelaceCardConfig, hass: HomeAssistant): number =>
   swipeHeight(config, (card, fallback) => houseHeightOf(card, fallback, hass));
@@ -394,6 +399,7 @@ const HOUSE: ReadonlyMap<string, HouseHeight> = new Map<string, HouseHeight>([
   ['fluvy-sensor-card', sensor],
   ['fluvy-clock-card', clock],
   ['fluvy-room-card', room],
+  ['fluvy-rooms-card', rooms],
   ['fluvy-helpers-card', helpers],
   ['fluvy-updates-card', updates],
   ['fluvy-stat-tiles-card', statTiles],

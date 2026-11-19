@@ -2104,6 +2104,7 @@
     "swipe": "N’importe quelles cartes, une par page, qu’on fait défiler d’un balayage ou par les repères de page en dessous : côte à côte sur un grand écran, de la dernière à nouveau à la première.",
     "compass": "Vitesse et direction du vent, le cap d’un véhicule ou toute direction sur une rose de 360°, avec un second repère de cap et jusqu’à trois mesures en dessous.",
     "rounds": "N’importe quelles entités en boutons ronds, chacun allumé tant qu’il est actif : un appui bascule ce qui peut l’être sans risque, un appui long ouvre ses détails, avec un en-tête facultatif qui dit combien sont allumés.",
+    "rooms": "Toutes les pièces dans une carte : l’icône, le nom, la température et l’humidité de chacune, et ses actions rapides au bout ; un appui ouvre la page de la pièce.",
     "thermostats": "Tous les thermostats de la maison ou d’une pièce sur une carte : la température de chaque pièce, ce que fait chacun, son préréglage et sa consigne, des boutons ronds et, au choix, − et +, avec Tout éteindre et les préréglages pour toute la maison.",
     "schedule": "La semaine de chauffage d’une pièce sur l’entrée Planification de Home Assistant : une ligne par jour aux couleurs de ses préréglages, Confort, Éco et Absent avec leurs températures, ses horaires modifiés, un jour copié sur d’autres, le programme activé ou non."
   },
@@ -2580,6 +2581,7 @@
     "swipe": "Balayage",
     "compass": "Boussole",
     "rounds": "Boutons ronds",
+    "rooms": "Pièces",
     "thermostats": "Thermostats",
     "schedule": "Programme de chauffage"
   },
@@ -3708,6 +3710,20 @@
   },
   "thermostat": {
     "room": "Pièce"
+  },
+  "rooms-card": {
+    "count_one": "{count} pièce",
+    "count": "{count} pièces",
+    "average": "{value} en moyenne",
+    "empty": "Pas encore de pièces",
+    "empty_hint": "Ajoutez des pièces dans les réglages de la carte",
+    "rooms": "Pièces",
+    "default_actions": "Actions rapides de chaque pièce",
+    "default_actions_help": "Pour chaque pièce sans actions rapides à elle : ses lumières, son thermostat, ses stores.",
+    "show_head": "Afficher l’en-tête",
+    "show_average": "Afficher la température moyenne",
+    "max_rooms": "Pièces au maximum",
+    "title_short": "Pièces"
   },
   "thermostats": {
     "title": "Thermostats",

@@ -779,6 +779,7 @@
     "swipe": "Dowolne karty, po jednej na stronę, przewijane przesunięciem palca lub znacznikami stron pod nimi: obok siebie na szerokim ekranie, od ostatniej z powrotem do pierwszej.",
     "compass": "Prędkość i kierunek wiatru, kurs pojazdu lub dowolny kierunek na tarczy kompasu 360°, z drugim wskaźnikiem kierunku i maksymalnie trzema odczytami poniżej.",
     "rounds": "Dowolne encje jako okrągłe przyciski, każdy podświetlony, gdy jest włączony: dotknięcie przełącza to, co można bezpiecznie przełączyć, przytrzymanie otwiera szczegóły, a opcjonalny nagłówek mówi, ile jest włączonych.",
+    "rooms": "Wszystkie pomieszczenia na jednej karcie: ikona, nazwa, temperatura i wilgotność każdego z nich oraz jego szybkie akcje na końcu; dotknięcie otwiera stronę pomieszczenia.",
     "thermostats": "Wszystkie termostaty domu lub pokoju na jednej karcie: temperatura w każdym pokoju, co robi, jego ustawienie i cel, okrągłe przyciski i opcjonalnie − i +, z przyciskiem Wyłącz wszystkie i ustawieniami dla całego domu.",
     "schedule": "Tydzień ogrzewania pokoju na pomocniku Harmonogram z Home Assistant: linia na każdy dzień w kolorach ustawień, Komfort, Eko i Poza domem z ich temperaturami, edytowane godziny, dzień skopiowany na inne, harmonogram włączony lub wyłączony."
   },
@@ -3440,6 +3441,7 @@
     "swipe": "Przesuwanie",
     "compass": "Kompas",
     "rounds": "Okrągłe przyciski",
+    "rooms": "Pomieszczenia",
     "thermostats": "Termostaty",
     "schedule": "Harmonogram ogrzewania"
   },
@@ -3833,6 +3835,22 @@
   },
   "thermostat": {
     "room": "Pokój"
+  },
+  "rooms-card": {
+    "count_one": "{count} pomieszczenie",
+    "count_few": "{count} pomieszczenia",
+    "count_many": "{count} pomieszczeń",
+    "count": "{count} pomieszczeń",
+    "average": "średnio {value}",
+    "empty": "Brak pomieszczeń",
+    "empty_hint": "Dodaj pomieszczenia w ustawieniach karty",
+    "rooms": "Pomieszczenia",
+    "default_actions": "Szybkie akcje każdego pomieszczenia",
+    "default_actions_help": "Dla każdego pomieszczenia bez własnych szybkich akcji: jego światła, termostat, rolety.",
+    "show_head": "Pokaż nagłówek",
+    "show_average": "Pokaż średnią temperaturę",
+    "max_rooms": "Najwyżej tyle pomieszczeń",
+    "title_short": "Pokoje"
   },
   "thermostats": {
     "title": "Termostaty",

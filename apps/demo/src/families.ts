@@ -167,6 +167,7 @@ export const CARD_GROUPS: readonly CardGroup[] = [
       'people',
       'map',
       'room',
+      'rooms',
       'heading',
       'chips',
       'scene',

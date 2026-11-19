@@ -850,6 +850,7 @@
     "swipe": "Karrusel",
     "compass": "Kompas",
     "rounds": "Runde knapper",
+    "rooms": "Rum",
     "thermostats": "Termostater",
     "schedule": "Varmeplan"
   },
@@ -1562,6 +1563,7 @@
     "swipe": "Alle slags kort, ét pr. side, bladret med et stryg eller med sidemarkeringerne under dem: side om side på en bred skærm, rundt fra den sidste til den første.",
     "compass": "Vindhastighed og -retning, et køretøjs kurs eller enhver retning på en 360°-kompasring med en sekundær retningsmarkør og op til tre aflæsninger nedenunder.",
     "rounds": "Vilkårlige entiteter som runde knapper, hver tændt, mens den er tændt: et tryk skifter det, der er sikkert at skifte, et langt tryk åbner detaljerne, med en valgfri overskrift, der siger, hvor mange der er tændt.",
+    "rooms": "Alle rum i ét kort: hvert rums ikon, navn, temperatur og luftfugtighed og dets hurtighandlinger til sidst; et tryk åbner rummets side.",
     "thermostats": "Alle termostater i huset eller et rum på ét kort: hvert rums temperatur, hvad det gør, dets forudindstilling og dets mål, runde knapper og efter ønske − og +, med Sluk alle og forudindstillingerne for hele huset.",
     "schedule": "Et rums varmeuge på Home Assistants tidsplan-hjælper: en linje pr. dag i forindstillingernes farver, Komfort, Øko og Ude med deres temperaturer, tider redigeret, en dag kopieret til andre, planen til eller fra."
   },
@@ -3708,6 +3710,20 @@
   },
   "thermostat": {
     "room": "Rum"
+  },
+  "rooms-card": {
+    "count_one": "{count} rum",
+    "count": "{count} rum",
+    "average": "{value} i gennemsnit",
+    "empty": "Ingen rum endnu",
+    "empty_hint": "Tilføj rum i kortets indstillinger",
+    "rooms": "Rum",
+    "default_actions": "Hurtighandlinger for hvert rum",
+    "default_actions_help": "For hvert rum uden egne hurtighandlinger: dets lys, dets termostat, dets persienner.",
+    "show_head": "Vis overskriften",
+    "show_average": "Vis gennemsnitstemperaturen",
+    "max_rooms": "Højst antal rum",
+    "title_short": "Rum"
   },
   "thermostats": {
     "title": "Termostater",

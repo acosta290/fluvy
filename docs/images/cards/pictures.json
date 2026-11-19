@@ -469,6 +469,21 @@
     "width": 784,
     "height": 216
   },
+  "rooms": {
+    "example": "228adabf41b4",
+    "width": 784,
+    "height": 608
+  },
+  "rooms.compact": {
+    "example": "8a80eac648c6",
+    "width": 784,
+    "height": 536
+  },
+  "rooms.tiles": {
+    "example": "9efe6f66f01a",
+    "width": 784,
+    "height": 856
+  },
   "map": {
     "example": "2792a9bb7afc",
     "width": 784,

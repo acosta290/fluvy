@@ -726,6 +726,7 @@
     "swipe": "Libovolné karty, jedna na stránku, listované přejetím prstem nebo značkami stránek pod nimi: na širokém displeji vedle sebe, od poslední zase k první.",
     "compass": "Rychlost a směr větru, směr jízdy vozidla nebo jakýkoli směr na 360° růžici kompasu, s druhým ukazatelem směru a až třemi hodnotami pod ní.",
     "rounds": "Libovolné entity jako kulatá tlačítka, každé rozsvícené, dokud je zapnuté: klepnutí přepne, co je bezpečné přepnout, podržení otevře podrobnosti, s volitelnou hlavičkou s počtem zapnutých.",
+    "rooms": "Všechny místnosti v jedné kartě: ikona, název, teplota a vlhkost každé z nich a její rychlé akce na konci; klepnutí otevře stránku místnosti.",
     "thermostats": "Všechny termostaty domu nebo místnosti na jedné kartě: teplota každé místnosti, co právě dělá, jeho předvolba a cíl, kulatá tlačítka a volitelně − a +, s tlačítkem Vypnout vše a předvolbami pro celý dům.",
     "schedule": "Týden vytápění místnosti na pomocníkovi Časový plán v Home Assistant: čára pro každý den v barvách předvoleb, Komfort, Eko a Pryč s jejich teplotami, upravené časy, den zkopírovaný na další, plán zapnutý nebo vypnutý."
   },
@@ -1943,6 +1944,7 @@
     "swipe": "Listování",
     "compass": "Kompas",
     "rounds": "Kulatá tlačítka",
+    "rooms": "Místnosti",
     "thermostats": "Termostaty",
     "schedule": "Plán vytápění"
   },
@@ -3768,6 +3770,21 @@
   },
   "thermostat": {
     "room": "Místnost"
+  },
+  "rooms-card": {
+    "count_one": "{count} místnost",
+    "count_few": "{count} místnosti",
+    "count": "{count} místností",
+    "average": "průměr {value}",
+    "empty": "Zatím žádné místnosti",
+    "empty_hint": "Přidejte místnosti v nastavení karty",
+    "rooms": "Místnosti",
+    "default_actions": "Rychlé akce každé místnosti",
+    "default_actions_help": "Pro každou místnost bez vlastních rychlých akcí: její světla, termostat a žaluzie.",
+    "show_head": "Zobrazit hlavičku",
+    "show_average": "Zobrazit průměrnou teplotu",
+    "max_rooms": "Nejvýše místností",
+    "title_short": "Místnosti"
   },
   "thermostats": {
     "title": "Termostaty",

@@ -16648,6 +16648,457 @@
       ]
     },
     {
+      "type": "custom:fluvy-rooms-card",
+      "name": "Rooms",
+      "description": "Every room in one card: its icon, its name, its temperature and humidity, and its quick actions at its end; a tap opens the room’s page.",
+      "section": "Rooms and the map",
+      "page": "cards/rooms.md",
+      "demo": "https://acosta290.github.io/fluvy/?card=rooms",
+      "pictures": {
+        "light": "images/cards/rooms-light.webp",
+        "dark": "images/cards/rooms-dark.webp",
+        "width": 784,
+        "height": 608
+      },
+      "example": {
+        "type": "custom:fluvy-rooms-card",
+        "rooms": [
+          "rm_living",
+          "rm_kitchen",
+          "rm_bedroom"
+        ],
+        "default_actions": [
+          "lights",
+          "climate",
+          "covers"
+        ]
+      },
+      "layout": {
+        "key": "variant",
+        "values": [
+          "rows",
+          "compact",
+          "tiles"
+        ],
+        "default": "rows"
+      },
+      "layouts": {
+        "compact": {
+          "type": "custom:fluvy-rooms-card",
+          "rooms": [
+            "rm_living",
+            "rm_kitchen",
+            "rm_bedroom"
+          ],
+          "default_actions": [
+            "lights",
+            "climate",
+            "covers"
+          ],
+          "variant": "compact"
+        },
+        "tiles": {
+          "type": "custom:fluvy-rooms-card",
+          "rooms": [
+            "rm_living",
+            "rm_kitchen",
+            "rm_bedroom"
+          ],
+          "default_actions": [
+            "lights",
+            "climate",
+            "covers"
+          ],
+          "variant": "tiles"
+        }
+      },
+      "layout_pictures": {
+        "compact": {
+          "light": "images/cards/rooms.compact-light.webp",
+          "dark": "images/cards/rooms.compact-dark.webp",
+          "width": 784,
+          "height": 536
+        },
+        "tiles": {
+          "light": "images/cards/rooms.tiles-light.webp",
+          "dark": "images/cards/rooms.tiles-dark.webp",
+          "width": 784,
+          "height": 856
+        }
+      },
+      "keys": [
+        {
+          "key": "variant",
+          "label": "Style",
+          "does": "The card’s layout.",
+          "type": "choice",
+          "default": "rows",
+          "values": {
+            "rows": "Rows",
+            "compact": "Compact",
+            "tiles": "Tiles"
+          }
+        },
+        {
+          "key": "show_head",
+          "label": "Show the head",
+          "does": "Shows the head: its title, its icon, how many rooms and their average temperature.",
+          "type": "boolean",
+          "default": true
+        },
+        {
+          "key": "title",
+          "label": "Title",
+          "does": "The title at the top of the card.",
+          "type": "text"
+        },
+        {
+          "key": "icon",
+          "label": "Icon",
+          "does": "The card’s icon, in place of the entity’s own.",
+          "type": "icon"
+        },
+        {
+          "key": "show_average",
+          "label": "Show the average temperature",
+          "does": "Says the rooms’ average temperature on the head’s line.",
+          "type": "boolean",
+          "default": true
+        },
+        {
+          "key": "show_icon",
+          "label": "Show the icon",
+          "does": "Shows the icon, hides it, or lets the card decide.",
+          "type": "choice",
+          "default": "auto",
+          "values": {
+            "auto": "Automatic",
+            "always": "Always",
+            "never": "Never"
+          }
+        },
+        {
+          "key": "name_lines",
+          "label": "Lines for the name",
+          "does": "Lets the name in the card’s head take two balanced lines where one would cut it; the head is a line taller whatever the name.",
+          "type": "choice",
+          "default": "1",
+          "values": {
+            "1": "1",
+            "2": "2"
+          }
+        },
+        {
+          "key": "show_climate",
+          "label": "Show the climate",
+          "does": "Shows the room’s temperature and humidity.",
+          "type": "boolean",
+          "default": true
+        },
+        {
+          "key": "show_count",
+          "label": "Show how many are on",
+          "does": "Says how many of each room’s devices are on, after its readings.",
+          "type": "boolean",
+          "default": false
+        },
+        {
+          "key": "show_arrow",
+          "label": "Show the arrow",
+          "does": "Shows the arrows that say the room opens.",
+          "type": "boolean",
+          "default": true
+        },
+        {
+          "key": "max_rooms",
+          "label": "Rooms at most",
+          "does": "Draws this many rooms at most, the first in their order.",
+          "type": "number",
+          "range": "1 to 99"
+        },
+        {
+          "key": "default_actions",
+          "label": "Quick actions of every room",
+          "does": "The quick actions of every room that names none of its own, each where the room has it: its lights, its thermostat, its blinds, its fans, its players.",
+          "helper": "For each room without quick actions of its own: its lights, its thermostat, its blinds.",
+          "type": "choices",
+          "default": [],
+          "values": {
+            "lights": "Lights",
+            "climate": "Climate",
+            "covers": "Blinds",
+            "fans": "Fans",
+            "media": "Media"
+          }
+        },
+        {
+          "key": "tone",
+          "label": "Tone",
+          "does": "The card’s colour from the palette’s tones; left out, the tone of what it shows.",
+          "type": "choice",
+          "default_in_words": "the card’s own",
+          "values": {
+            "accent": "Accent",
+            "light": "Light",
+            "heat": "Heat",
+            "cool": "Cool",
+            "dry": "Dry",
+            "fan": "Fan",
+            "water": "Water",
+            "solar": "Solar",
+            "grid": "Grid",
+            "media": "Media",
+            "presence": "Presence",
+            "armed": "Armed",
+            "battery": "Battery",
+            "house": "House",
+            "gas": "Gas",
+            "vehicle": "Car",
+            "neutral": "Neutral",
+            "ok": "Good",
+            "warning": "Warning",
+            "danger": "Danger"
+          }
+        },
+        {
+          "key": "color",
+          "label": "Colour",
+          "does": "The card’s colour: its circle, its accents and its tints wear it. Left out, the colour of what it shows.",
+          "type": "colour"
+        },
+        {
+          "key": "card_color",
+          "label": "Card colour",
+          "does": "Paints the card’s surface in a colour of your own.",
+          "type": "colour"
+        },
+        {
+          "key": "card_opacity",
+          "label": "Card opacity",
+          "does": "How solid the card’s surface is, in percent: under 100 the view’s background shows through. Left out, the house’s.",
+          "helper": "Untouched: every card’s, from Fluvy’s settings",
+          "type": "number",
+          "default": 100,
+          "range": "0 % to 100 %, in steps of 5"
+        },
+        {
+          "key": "card_border",
+          "label": "Card border",
+          "does": "Whether the card draws its hairline border. Left out, the house’s.",
+          "helper": "Untouched: every card’s, from Fluvy’s settings",
+          "type": "boolean",
+          "default": true
+        },
+        {
+          "key": "card_blur",
+          "label": "Blur what shows through",
+          "does": "Whether what shows through a see-through card is blurred. Left out, the house’s, and none at 0 %.",
+          "helper": "Untouched: every card’s, from Fluvy’s settings; none at 0 %",
+          "type": "boolean",
+          "default": true
+        },
+        {
+          "key": "unavailable",
+          "label": "When unavailable",
+          "does": "How the card looks while its entity is unavailable: dashed, or quiet as when it is off. Left out, the house’s.",
+          "helper": "Untouched: every card’s, from Fluvy’s settings",
+          "type": "choice",
+          "default": "dashed",
+          "values": {
+            "dashed": "Dashed",
+            "quiet": "As when off"
+          }
+        },
+        {
+          "key": "light_colors",
+          "label": "Each light on in its bulb’s colour",
+          "does": "Shows each light that is on in its bulb’s own colour.",
+          "type": "boolean",
+          "default": false
+        },
+        {
+          "key": "light_whites",
+          "label": "Whites",
+          "does": "Draws a lit white by its colour temperature, or as the palette’s light.",
+          "type": "choice",
+          "default": "temperature",
+          "values": {
+            "palette": "The theme’s light",
+            "temperature": "The bulb’s white"
+          }
+        },
+        {
+          "key": "tap_action",
+          "label": "Tap action",
+          "does": "What a tap on the card does.",
+          "type": "action",
+          "default_in_words": "the card’s own"
+        },
+        {
+          "key": "hold_action",
+          "label": "Hold action",
+          "does": "What a long press on the card does.",
+          "type": "action",
+          "default": "none"
+        },
+        {
+          "key": "double_tap_action",
+          "label": "Double tap action",
+          "does": "What two taps on the card do.",
+          "helper": "A tap waits a moment to tell it from a double tap",
+          "type": "action",
+          "default": "none"
+        },
+        {
+          "key": "icon_tap_action",
+          "label": "Icon tap action",
+          "does": "What a tap on the icon does.",
+          "type": "action",
+          "default": "none"
+        },
+        {
+          "key": "icon_hold_action",
+          "label": "Icon hold action",
+          "does": "What a long press on the icon does.",
+          "type": "action",
+          "default": "none"
+        },
+        {
+          "key": "icon_double_tap_action",
+          "label": "Icon double tap action",
+          "does": "What two taps on the icon do.",
+          "helper": "A tap waits a moment to tell it from a double tap",
+          "type": "action",
+          "default": "none"
+        }
+      ],
+      "lists": [
+        {
+          "key": "rooms",
+          "label": "Rooms",
+          "does": "The rooms, in this order; left out, every area with something to show, in the house’s order.",
+          "id": "area",
+          "item": [
+            {
+              "key": "area",
+              "label": "Area",
+              "does": "The room: its area.",
+              "type": "area",
+              "required": true
+            },
+            {
+              "key": "name",
+              "label": "Name",
+              "does": "The item’s own name, in place of the one the card would give it.",
+              "type": "text"
+            },
+            {
+              "key": "icon",
+              "label": "Icon",
+              "does": "The item’s own icon, in place of the one the card would give it.",
+              "type": "icon"
+            },
+            {
+              "key": "tone",
+              "label": "Tone",
+              "does": "The item’s colour from the palette’s tones.",
+              "type": "choice",
+              "default_in_words": "the card’s own",
+              "values": {
+                "accent": "Accent",
+                "light": "Light",
+                "heat": "Heat",
+                "cool": "Cool",
+                "dry": "Dry",
+                "fan": "Fan",
+                "water": "Water",
+                "solar": "Solar",
+                "grid": "Grid",
+                "media": "Media",
+                "presence": "Presence",
+                "armed": "Armed",
+                "battery": "Battery",
+                "house": "House",
+                "gas": "Gas",
+                "vehicle": "Car",
+                "neutral": "Neutral",
+                "ok": "Good",
+                "warning": "Warning",
+                "danger": "Danger"
+              }
+            },
+            {
+              "key": "color",
+              "label": "Colour",
+              "does": "The item’s colour, in place of the one the card gives it.",
+              "helper": "Empty: the card’s colour",
+              "type": "colour"
+            },
+            {
+              "key": "temperature_entity",
+              "label": "Temperature",
+              "does": "The room’s temperature sensor, or a thermostat; left out, the area’s.",
+              "type": "entity"
+            },
+            {
+              "key": "humidity_entity",
+              "label": "Humidity",
+              "does": "The room’s humidity sensor, or a thermostat or a humidifier; left out, the area’s.",
+              "type": "entity"
+            },
+            {
+              "key": "quick_actions",
+              "label": "Quick actions",
+              "does": "The rounds at the room’s end: its lights, blinds, fans, players or thermostat by their words, or any entity; left out, the card’s default actions.",
+              "type": "object"
+            },
+            {
+              "key": "path",
+              "label": "Opens (path)",
+              "does": "Where a tap on the room goes, before its page on the automatic dashboard.",
+              "type": "text"
+            },
+            {
+              "key": "tap_action",
+              "label": "Tap action",
+              "does": "What a tap on the item does.",
+              "type": "action",
+              "default_in_words": "the card’s own"
+            },
+            {
+              "key": "hold_action",
+              "label": "Hold action",
+              "does": "What a long press on the item does.",
+              "type": "action",
+              "default_in_words": "the card’s own"
+            },
+            {
+              "key": "double_tap_action",
+              "label": "Double tap action",
+              "does": "What two taps on the item do.",
+              "helper": "A tap waits a moment to tell it from a double tap",
+              "type": "action",
+              "default": "none"
+            }
+          ]
+        }
+      ],
+      "older_names": [
+        {
+          "from": "layout",
+          "to": "variant"
+        },
+        {
+          "from": "view",
+          "to": "variant"
+        },
+        {
+          "from": "accent",
+          "to": "color"
+        }
+      ]
+    },
+    {
       "type": "custom:fluvy-map-card",
       "name": "Map",
       "description": "Where everyone is: the house’s zones as columns of faces, a row a person, or Home Assistant’s map on a plate.",

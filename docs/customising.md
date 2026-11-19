@@ -56,6 +56,8 @@ card_opacity: 0     # clear: no fill, no frost
   of them).
 - `slider_style`: the light, slider, tile, tiles, lights, media, fan, cover and helpers cards.
 - `hide_empty` helps a list filled by [auto-entities](troubleshooting.md#a-list-filled-by-auto-entities).
+- To fold a card away under a head (a [Room](cards/room.md), [Rooms](cards/rooms.md) or any other), put it in an
+  [Expander](cards/expander.md): a tap opens it, and it remembers whether it was open.
 
 ![The same tiles and list named by friendly name, then by Home Assistant's parts](images/1.22/names.webp)
 

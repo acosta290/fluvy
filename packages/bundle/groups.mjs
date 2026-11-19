@@ -216,6 +216,15 @@ const THERMOSTATS =
   /\/packages\/(cards\/src\/(thermostats-cards\.ts|thermostats\/)|core\/src\/i18n\/locales\/en\/thermostats\.json)/;
 
 /**
+ * The Rooms card (1.23, #225: its card, where the house's rooms open and its English; its editor goes with the forms,
+ * its rounds with the quick actions, the rooms' glyphs it draws with their set, `glyphs-rooms`): fetched as the bundle
+ * starts and defined as it lands, as the Rounds card is (`rooms-family.ts` stays in core: the tag, the height, the
+ * house's rooms).
+ */
+const ROOMS =
+  /\/packages\/(cards\/src\/(rooms-cards\.ts|rooms\/)|core\/src\/i18n\/locales\/en\/rooms-card\.json)/;
+
+/**
  * The web page card (its card, what it decides of an address and a plate's rounds, and its English): fetched as the
  * bundle starts and defined as it lands, as the template card is (`web-family.ts` stays in core: the tag, the height).
  */
@@ -515,7 +524,7 @@ const FORMS =
  * naming words, the strategy and the heights it counts with the house, the wall, the forms of the cards every page carries, the weather
  * card, the calendar card, the media, the chart engine, the Chart card, the Energy period card, energy (the history
  * bars' readings on their own), devices (the cameras' sheet on its own), appliances (their pictures on their own),
- * automations and alerts families (each sheet on its own), the template card, the web page card, the Rounds card, the Thermostats card, what each card is, the
+ * automations and alerts families (each sheet on its own), the template card, the web page card, the Rounds card, the Thermostats card, the Rooms card, what each card is, the
  * Expander card (its editor on its own, before the forms, with the Swipe card's), the Swipe card, a dashboard's own
  * sidebar, the Slider card, the ring, the Cover card, the drive pad, the Vacuum card, the Thermostat card, the platforms' logos, the
  * remote card, the Vehicle card, the Heating schedule card (its sheet on its own), Fluvy's own details, the items card (its sheet on its own), the light card's colours,
@@ -562,6 +571,7 @@ export const GROUPS = [
   { name: 'web', test: WEB },
   { name: 'rounds', test: ROUNDS },
   { name: 'thermostats', test: THERMOSTATS },
+  { name: 'rooms', test: ROOMS },
   { name: 'about', test: ABOUT },
   { name: 'expander', test: EXPANDER },
   { name: 'swipe', test: SWIPE },
