@@ -422,13 +422,51 @@ export const chargerHeight = (config: LovelaceCardConfig, options?: readonly str
   (config['mode'] ? optionBlock(optionRows(modeOptions(options))) : 0);
 
 /**
- * The sankey's body at a 360 column for a house with the sun, a battery and a few devices: a tier of source words,
- * the sources' ribbons, two tiers of targets, the house's ribbons, two tiers of devices (the approved figure).
+ * The sankey's drawing at a 360 column for a house with the sun, a battery and devices: a tier of source words, the
+ * sources' ribbons, two tiers of targets, the house's ribbons and its devices' bars, 8 under them.
  */
-export const SANKEY_BODY = 416;
+const SANKEY_DRAWING = 344;
+
+/**
+ * The devices' legend under the drawing, 12 under it, in the rows its names take (`legendRows`, 40 a row and 12
+ * between): the devices a config lists that stand on their own (one inside another listed is in that one's figure),
+ * by their names, else their ids' words; else the Energy dashboard's, which a config cannot name nor count: a few
+ * (three, `max_devices` at most); past `max_devices` (4) the smallest, two at least, as "Other devices"; and what no
+ * meter accounts for.
+ */
+function sankeyLegend(config: LovelaceCardConfig): number {
+  const max = config['max_devices'];
+  const cap = Math.max(1, Math.floor(typeof max === 'number' ? max : 4));
+  const listed = (Array.isArray(config['devices']) ? (config['devices'] as unknown[]) : []).map(
+    (item) =>
+      (typeof item === 'string' ? { entity: item } : (item ?? {})) as Record<string, unknown>,
+  );
+  const ids = new Set(listed.map((item) => item['entity']));
+  const own = listed
+    .filter((item) => !ids.has(item['parent']))
+    .map((item) =>
+      typeof item['name'] === 'string'
+        ? item['name']
+        : String(item['entity'])
+            .replace(/^.*\.|_energy$/g, '')
+            .replace(/_/g, ' '),
+    );
+  const names = own.length ? own : Array<string>(Math.min(cap, 3)).fill('Device');
+  const rows = legendRows([
+    ...(names.length > cap
+      ? [...names.slice(0, Math.min(cap, names.length - 2)), 'Other devices']
+      : names),
+    'Not measured',
+  ]);
+  return 12 + rows * 40 + (rows - 1) * 12;
+}
+
+/** The sankey's body: its drawing and its legend, which a loading card keeps as it waits. */
+export const sankeyBody = (config: LovelaceCardConfig): number =>
+  SANKEY_DRAWING + sankeyLegend(config);
 
 export const sankeyHeight = (config: LovelaceCardConfig): number =>
-  HEAD + periodChips(config) + SANKEY_BODY;
+  HEAD + periodChips(config) + sankeyBody(config);
 
 /** The score: three rings (88 and their label, 20 under what is above) and a row of three readouts. */
 export const scoreHeight = (config: LovelaceCardConfig): number =>

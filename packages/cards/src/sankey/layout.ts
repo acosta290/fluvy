@@ -7,7 +7,8 @@ import type { FlowLink, FlowNode, Ink, SankeyModel } from './model.js';
  * lines that keep each over its bar.
  *
  *   sources' words (tiers of 36, the nearest under) · 8 · bars 8 · ribbons 88 · bars 8 · 8 · targets' words · 12 ·
- *   the house's ribbons 88 (leaving under its words' band) · its devices' bars 8 · 8 · their words
+ *   the house's ribbons 88 (leaving under its words' band) · its devices' bars 8 · 8 · their words (none where the
+ *   card names them in a legend)
  */
 
 export const GAP = 8;
@@ -273,12 +274,20 @@ function attach(
   });
 }
 
+/** How a card lays the diagram out: `legend`, it names the house's devices in a legend of its own, under the drawing. */
+export interface SankeyOptions {
+  readonly legend?: boolean;
+}
+
+/**
+ * The diagram in `width`, each row's words `measure`d by their node's key; under a legend (`options.legend`) the
+ * devices have no words over their bars, and the drawing ends 8 under them.
+ */
 export function layoutSankey(
   model: SankeyModel,
   width: number,
   measure: (key: string) => number,
-  /** The devices' words: a card that names them in a legend of its own asks for none. */
-  kidLabels = true,
+  options: SankeyOptions = {},
 ): SankeyLayout {
   const scale = scaleOf(model, width);
   const top = lay(model.sources, scale);
@@ -292,7 +301,7 @@ export function layoutSankey(
 
   const topWords = packLabels(top, measure, width);
   const midWords = packLabels(mid, measure, width);
-  const kidWords = kidLabels ? packLabels(kids, measure, width) : [];
+  const kidWords = options.legend ? [] : packLabels(kids, measure, width);
   const y0 = tiersOf(topWords) * TIER + WORDS_GAP;
   const y1 = y0 + BAR + RIBBONS;
   const midY = y1 + BAR + WORDS_GAP;

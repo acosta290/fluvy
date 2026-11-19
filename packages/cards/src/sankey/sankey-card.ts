@@ -1,4 +1,4 @@
-import { SANKEY_BODY, sankeyHeight } from '../energy-family.js';
+import { sankeyBody, sankeyHeight } from '../energy-family.js';
 import {
   isEntityId,
   strings,
@@ -7,7 +7,7 @@ import {
   type LovelaceConfigForm,
   type LovelaceGridOptions,
 } from '@fluvy/core';
-import { activateKey, emptyState, head, optionGrid } from '@fluvy/ui';
+import { activateKey, emptyState, head } from '@fluvy/ui';
 import { energyStyles } from '@fluvy/ui/styles/energy';
 import {
   css,
@@ -49,7 +49,7 @@ import {
   following,
 } from '../energy/collection-field.js';
 import { HeadFit } from '../energy/head.js';
-import { legendColumns } from '../energy/legend-row.js';
+import { energyLegend, type LegendEntry } from '../energy/legend-row.js';
 import { deviceName, scaled, scaleOf, type Scale } from '../energy/power.js';
 import { ACTIONS_BASE, Card, ICON_ACTIONS_BASE, type BaseKey } from '../shared/base.js';
 import { chipRow } from '../shared/chips.js';
@@ -441,15 +441,15 @@ export class FluvyEnergySankeyCard extends Card<EnergySankeyCardConfig> {
   }
 
   /**
-   * The words' box: its name or its figure, whichever is wider, measured in the classes that draw them. A name that is
-   * only an id's (a device no longer in the house) takes no more than its figure's room and ends in an ellipsis there:
-   * the labels keep the places they had while the device is away (the owner's rule, 1.9).
+   * The words' box over a source's or a target's bar: its name or its figure, whichever is wider, measured in the
+   * classes that draw them (the devices are named in the legend, where a name that is only an id's keeps to its
+   * figure's room: `energyLegend`).
    */
   private labelWidth(scene: Scene, key: string): number {
     const w = scene.words.get(key);
     if (!w) return 0;
     return Math.max(
-      w.idName ? 0 : this.head.ruler.width('en-sk-name', w.name),
+      this.head.ruler.width('en-sk-name', w.name),
       this.head.ruler.width('en-sk-value', w.value, 'en-unit', w.unit),
     );
   }
@@ -506,7 +506,11 @@ export class FluvyEnergySankeyCard extends Card<EnergySankeyCardConfig> {
         s(this.hass, 'no_statistics_hint'),
         this.contentWidth,
       );
-    else if (!scene) body = html`<div class="en-sankey" style="height:${SANKEY_BODY}px"></div>`;
+    else if (!scene)
+      body = html`<div
+        class="en-sankey"
+        style="height:${sankeyBody(this.config ?? { type: '' })}px"
+      ></div>`;
     else if (empty) body = emptyState('bolt', s(this.hass, 'nothing_yet'));
     else body = this.renderDiagram(scene, w);
     return html`<article class="fv-card en-card" data-card>
@@ -550,11 +554,13 @@ export class FluvyEnergySankeyCard extends Card<EnergySankeyCardConfig> {
   }
 
   private renderDiagram(scene: Scene, w: number): TemplateResult {
-    const g: SankeyLayout = layoutSankey(scene.model, w, (key) => this.labelWidth(scene, key), false);
+    const g: SankeyLayout = layoutSankey(scene.model, w, (key) => this.labelWidth(scene, key), {
+      legend: true,
+    });
     const lit = this.lit;
     // a ribbon is its two nodes' (`grid-house`), lifted with either
     const on = (keys: string): string => (lit && keys.split('-').includes(lit) ? 'is-on' : '');
-    // the devices' words stand in a legend under the diagram, so any of their keys lights it too
+    // a node's words or its item in the devices' legend lift it; a key no node has any more (another period's) none
     const known = lit !== undefined && [...g.top, ...g.mid, ...g.kids].some((n) => n.key === lit);
     const bars = (row: readonly LaidNode[], y: number): TemplateResult[] =>
       row.map(
@@ -562,99 +568,77 @@ export class FluvyEnergySankeyCard extends Card<EnergySankeyCardConfig> {
           svg`<rect class="en-node-bar en-ink--${n.ink} ${n.dashed ? 'is-dashed' : ''} ${on(n.key)}" data-key=${n.key} x=${n.x.toFixed(1)} y=${y} width=${Math.max(0, n.w).toFixed(1)} height=${BAR} rx=${Math.min(4, n.w / 2).toFixed(1)}></rect>`,
       );
     return html`<div class="en-sankey ${known ? 'is-lit' : ''}" style="height:${g.height}px">
-      <svg
-        width=${w}
-        height=${g.height}
-        viewBox="0 0 ${w} ${g.height}"
-        aria-hidden="true"
-        data-measure="drawn"
-      >
-        ${g.ribbons.map((r) => svg`<path class="en-ribbon en-ink--${r.ink} ${on(r.key)}" data-key=${r.key} d=${r.d}></path>`)}
-        ${g.stem ? svg`<rect class="en-node-bar en-ink--home is-stem ${on('house')}" x=${g.stem.x.toFixed(1)} y=${g.stem.y} width=${g.stem.w.toFixed(1)} height="4" rx="2"></rect>` : nothing}
-        ${bars(g.top, g.y0)}${bars(g.mid, g.y1)}${bars(g.kids, g.y2)}
-      </svg>
-      ${g.labels.map((l) => {
-        const words = scene.words.get(l.key);
-        if (!words) return nothing;
-        const entity = words.entity;
-        const open = entity ? () => this.tap(entity, { action: 'more-info' }) : undefined;
-        const light = (): void => this.light(l.key);
-        const rest = (): void => this.light();
-        // every word is reached by the keyboard, to lift what it names; a meter's is a button that opens it, the others
-        // the diagram's words for their node, read as one
-        return html`<span
-          class="en-sk-label ${l.end ? 'is-end' : ''} ${open ? 'fv-row--tap' : ''}"
-          data-key=${l.key}
-          style="left:${l.x}px;top:${l.y}px;width:${l.w}px"
-          role=${open ? 'button' : 'img'}
-          aria-label=${open ? nothing : `${words.name} ${words.value} ${words.unit}`.trim()}
-          tabindex="0"
-          @pointerenter=${light}
-          @pointerleave=${rest}
-          @focus=${light}
-          @blur=${rest}
-          @click=${open ?? nothing}
-          @keydown=${open ? activateKey(open) : nothing}
-          ><span class="en-sk-name" data-name>${words.name}</span
-          ><span class="en-sk-value"
-            >${words.value}<span class="en-unit">${words.unit}</span></span
-          ></span
-        >`;
-      })}
-    </div>${this.renderKids(scene, g.kids, w)}`;
+        <svg
+          width=${w}
+          height=${g.height}
+          viewBox="0 0 ${w} ${g.height}"
+          aria-hidden="true"
+          data-measure="drawn"
+        >
+          ${g.ribbons.map((r) => svg`<path class="en-ribbon en-ink--${r.ink} ${on(r.key)}" data-key=${r.key} d=${r.d}></path>`)}
+          ${g.stem ? svg`<rect class="en-node-bar en-ink--home is-stem ${on('house')}" x=${g.stem.x.toFixed(1)} y=${g.stem.y} width=${g.stem.w.toFixed(1)} height="4" rx="2"></rect>` : nothing}
+          ${bars(g.top, g.y0)}${bars(g.mid, g.y1)}${bars(g.kids, g.y2)}
+        </svg>
+        ${g.labels.map((l) => {
+          const words = scene.words.get(l.key);
+          if (!words) return nothing;
+          const entity = words.entity;
+          const open = entity ? () => this.tap(entity, { action: 'more-info' }) : undefined;
+          const light = (): void => this.light(l.key);
+          const rest = (): void => this.light();
+          // every word is reached by the keyboard, to lift what it names; a meter's is a button that opens it, the others
+          // the diagram's words for their node, read as one
+          return html`<span
+            class="en-sk-label ${l.end ? 'is-end' : ''} ${open ? 'fv-row--tap' : ''}"
+            data-key=${l.key}
+            style="left:${l.x}px;top:${l.y}px;width:${l.w}px"
+            role=${open ? 'button' : 'img'}
+            aria-label=${open ? nothing : `${words.name} ${words.value} ${words.unit}`.trim()}
+            tabindex="0"
+            @pointerenter=${light}
+            @pointerleave=${rest}
+            @focus=${light}
+            @blur=${rest}
+            @click=${open ?? nothing}
+            @keydown=${open ? activateKey(open) : nothing}
+            ><span class="en-sk-name" data-name>${words.name}</span
+            ><span class="en-sk-value"
+              >${words.value}<span class="en-unit">${words.unit}</span></span
+            ></span
+          >`;
+        })}
+      </div>
+      ${this.renderLegend(scene, g.kids, w)}`;
   }
 
   /**
-   * The devices' names, as the usage card's legend: a square in the device's ink, its name, its figure under it, in
-   * equal columns — folded when the names do not hold them — rather than words that must stand in tiers over bars one
-   * or two pixels wide.
+   * The house's devices under the drawing, as the usage card's legend (`energyLegend`): a square in its bar's ink
+   * (dashed where the bar is: what no meter accounts for), its name, its figure under it, in equal columns, folded where
+   * the names do not hold them. An item under the pointer or the focus lifts its bar and ribbon as a word does; a
+   * meter's opens it.
    */
-  private renderKids(scene: Scene, kids: readonly LaidNode[], w: number): TemplateResult | typeof nothing {
-    const items = kids.flatMap((node) => {
+  private renderLegend(
+    scene: Scene,
+    kids: readonly LaidNode[],
+    w: number,
+  ): TemplateResult | typeof nothing {
+    const items = kids.flatMap((node): LegendEntry[] => {
       const words = scene.words.get(node.key);
-      return words ? [{ node, words }] : [];
+      if (!words) return [];
+      const entity = words.entity;
+      return [
+        {
+          key: node.key,
+          ink: `en-ink--${node.ink}`,
+          name: words.name,
+          value: words.value,
+          unit: words.unit,
+          ...(node.dashed ? { square: 'dashed' as const } : {}),
+          ...(words.idName ? { idName: true } : {}),
+          ...(entity ? { open: () => this.tap(entity, { action: 'more-info' }) } : {}),
+        },
+      ];
     });
-    if (!items.length) return nothing;
-    const columns = legendColumns(
-      items.map((item) => item.words.name),
-      w,
-      this.head.ruler,
-    );
-    const grid = columns < items.length ? optionGrid(items.length, columns) : undefined;
-    const light = (key?: string): void => this.light(key);
-    return html`<div
-      class="en-legend en-sk-legend"
-      data-align="center"
-      style=${
-        grid
-          ? `grid-template-columns:repeat(${grid.tracks}, minmax(0,1fr));grid-auto-flow:row;row-gap:12px`
-          : nothing
-      }
-    >
-      ${items.map((item, index) => {
-        const entity = item.words.entity;
-        const open = entity ? () => this.tap(entity, { action: 'more-info' }) : undefined;
-        return html`<span
-          class="en-legend__item ${open ? 'fv-row--tap' : ''}"
-          data-key=${item.node.key}
-          style=${grid ? `grid-column:span ${grid.spans[index] ?? 1}` : nothing}
-          role=${open ? 'button' : 'img'}
-          aria-label=${open ? nothing : `${item.words.name} ${item.words.value} ${item.words.unit}`.trim()}
-          tabindex="0"
-          @pointerenter=${() => light(item.node.key)}
-          @pointerleave=${() => light()}
-          @focus=${() => light(item.node.key)}
-          @blur=${() => light()}
-          @click=${open ?? nothing}
-          @keydown=${open ? activateKey(open) : nothing}
-          ><span class="en-legend__name"
-            ><i class="en-sq en-ink--${item.node.ink}"></i
-            ><span class="en-legend__text">${item.words.name}</span></span
-          ><span class="en-legend__value"
-            >${item.words.value}<span class="en-unit">${item.words.unit}</span></span
-          ></span
-        >`;
-      })}
-    </div>`;
+    return energyLegend(items, w, this.head.ruler, undefined, (key) => this.light(key));
   }
 }

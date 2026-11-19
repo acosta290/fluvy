@@ -22685,7 +22685,7 @@
         "light": "images/cards/energy-sankey-light.webp",
         "dark": "images/cards/energy-sankey-dark.webp",
         "width": 784,
-        "height": 1216
+        "height": 1280
       },
       "example": {
         "type": "custom:fluvy-energy-sankey-card"

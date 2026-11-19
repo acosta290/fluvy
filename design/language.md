@@ -124,7 +124,8 @@ once, among what comes in (its way is not known). The weather keeps its hero's l
 and its days ahead with nothing forecast in them (no glyph, "—"). A word in a figure's slot is the short one: a
 badge, the weather's condition, a meter's dash say "Not found" where the line says "Entity not found". A name that is
 only an id's (a sankey device, a sensor among several) takes no more room than the live name would: the device's
-ends in an ellipsis inside its figure's box, the sensor's is the last word of its id ("…_humidity" is "Humidity").
+takes its figure's room in its legend's fold and ends in an ellipsis inside its column, the sensor's is the last word
+of its id ("…_humidity" is "Humidity").
 The score keeps its low-carbon ring while the CO₂ signal is out of reach.
 
 - **A card that hides itself** (a list asked to hide while empty, the alerts while all is clear) does it as Home
@@ -1459,7 +1460,11 @@ follows it; where that leaves one outside its room, the tier settles from the ri
 start as the next allows. A word pulled left of its bar is right-aligned toward it (a tier's last then ends where the
 column does), so a word never stands at the column's end over another's bar. A word under the pointer or the focus
 (every word is reached by the keyboard) lifts its bar and ribbons; the rest of the diagram rests at 45 % (200 ms,
-none under reduced motion).
+none under reduced motion). Since 1.23 (#210, by @waphbs) the house's devices have no words over their bars, which a
+meter of a few hundredths of a kWh draws one or two pixels wide: they are named in the energy legend under the
+drawing, 12 under it (a square in its bar's grey, dashed for what no meter accounts for as its bar is, the name, the
+figure under it, in equal columns folded where a name does not hold one), each item a finger's 44 round its 40 of
+words (laid out as the 40), reached by the keyboard, lifting its bar and ribbon as a word does, a meter's opening it.
 
 **Glyphs.** `tower` is the grid in every state (the head keeps the bolt), `generator` a fuel can, `swap` two opposed
 arrows (the balance), `oven`.
@@ -1614,8 +1619,8 @@ never cut a word. The sankey in half a column (under 200): a tier holds its word
 only (since 1.21 its first at the start and its second at the end, read in order; a word alone at the end where its
 bar is in the right half), so the words stand in two columns in their bars' order, instead of a start per bar (five
 columns of words where the eye reads two). A device gone from the house keeps the room of the name
-it had (the friendly name the page last read, or the registry's), so its labels keep their tiers; only a name that is
-the id's alone takes no more than its figure's room and ends in its ellipsis there.
+it had (the friendly name the page last read, or the registry's), so its legend keeps its rows (its tiers before 1.23);
+only a name that is the id's alone takes no more than its figure's room and ends in its ellipsis in its column.
 
 **Following a date picker (1.11, #62).** An energy card given a `collection_key` follows that picker's range and
 draws Home Assistant's own figures for it: the statistics Home Assistant fetched once for the whole view, allocated as

@@ -693,42 +693,42 @@
     {
       "frame": "sankey/A device that is not there",
       "tag": "fluvy-energy-sankey-card",
-      "declared": 516,
-      "drawn": 480,
-      "reason": "the house's sources and devices draw the tiers (live; the sankey's layout is its own)"
+      "declared": 600,
+      "drawn": 496,
+      "reason": "a device with no statistics is left out of the drawing and its legend (live)"
     },
     {
       "frame": "sankey/A meter down",
       "tag": "fluvy-energy-sankey-card",
-      "declared": 516,
-      "drawn": 444,
-      "reason": "the house's sources and devices draw the tiers (live; the sankey's layout is its own)"
+      "declared": 548,
+      "drawn": 460,
+      "reason": "the house's sources and devices draw the tiers and the legend's rows (live; the sankey's layout is its own)"
     },
     {
-      "frame": "sankey/Devices of its own",
+      "frame": "sankey/Devices in a legend",
       "tag": "fluvy-energy-sankey-card",
-      "declared": 576,
-      "drawn": 612,
-      "reason": "the house's sources and devices draw the tiers (live; the sankey's layout is its own)"
+      "declared": 608,
+      "drawn": 624,
+      "reason": "the house's sources and devices draw the tiers and the legend's rows (live; the sankey's layout is its own)"
     },
     {
-      "frame": "sankey/Five words under the house",
+      "frame": "sankey/Devices in a legend · Chinese names",
       "tag": "fluvy-energy-sankey-card",
-      "declared": 576,
-      "drawn": 612,
-      "reason": "the house's sources and devices draw the tiers (live; the sankey's layout is its own)"
+      "declared": 608,
+      "drawn": 624,
+      "reason": "the house's sources and devices draw the tiers and the legend's rows (live; the sankey's layout is its own)"
     },
     {
-      "frame": "sankey/Long names",
+      "frame": "sankey/Devices in a legend · one gone, its history kept",
       "tag": "fluvy-energy-sankey-card",
-      "declared": 516,
-      "drawn": 552,
-      "reason": "the house's sources and devices draw the tiers (live; the sankey's layout is its own)"
+      "declared": 652,
+      "drawn": 512,
+      "reason": "a device gone from the house is named by its id in its figure's room (live): its config reads the id as the house's name"
     },
     {
       "frame": "sankey/Nothing configured",
       "tag": "fluvy-energy-sankey-card",
-      "declared": 576,
+      "declared": 608,
       "drawn": 252,
       "reason": "the panel in place of the diagram (live)"
     },
@@ -749,23 +749,23 @@
     {
       "frame": "sankey/Statistics that cannot be read",
       "tag": "fluvy-energy-sankey-card",
-      "declared": 516,
+      "declared": 548,
       "drawn": 252,
       "reason": "the panel in place of the diagram (live)"
     },
     {
       "frame": "sankey/The grid alone",
       "tag": "fluvy-energy-sankey-card",
-      "declared": 576,
-      "drawn": 504,
-      "reason": "the house's sources and devices draw the tiers (live; the sankey's layout is its own)"
+      "declared": 608,
+      "drawn": 520,
+      "reason": "the house's sources and devices draw the tiers and the legend's rows (live; the sankey's layout is its own)"
     },
     {
       "frame": "sankey/The grid charges the battery",
       "tag": "fluvy-energy-sankey-card",
-      "declared": 516,
+      "declared": 548,
       "drawn": 292,
-      "reason": "the house's sources and devices draw the tiers (live; the sankey's layout is its own)"
+      "reason": "the house's sources and devices draw the tiers and the legend's rows (live; the sankey's layout is its own)"
     },
     {
       "frame": "sections/Bars · a condition on another entity",

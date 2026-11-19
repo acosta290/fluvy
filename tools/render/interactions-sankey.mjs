@@ -30,19 +30,24 @@ const sankey = (page, title, n = 0) =>
 const score = (page, title, n = 0) => frame(page, title).locator('fluvy-energy-score-card').nth(n);
 const text = async (locator) => ((await locator.textContent()) ?? '').replace(/\s+/g, ' ').trim();
 
-/** Every label of a sankey: its key, words and box, and whether a tap opens something. */
+/**
+ * Every label of a sankey: the words over its sources' and targets' bars, then the items of its devices' legend
+ * (`legend`); each with its key, words and box, and whether a tap opens something.
+ */
 const labels = (card) =>
   card.evaluate((c) =>
-    [...c.shadowRoot.querySelectorAll('.en-sk-label')].map((l) => {
+    [...c.shadowRoot.querySelectorAll('.en-sk-label, .en-legend__item')].map((l) => {
       const r = l.getBoundingClientRect();
       return {
         key: l.dataset.key,
-        name: l.querySelector('.en-sk-name').textContent.trim(),
-        value: l.querySelector('.en-sk-value').textContent.replace(/\s+/g, ''),
+        name: l.querySelector('.en-sk-name, .en-legend__text').textContent.trim(),
+        value: l.querySelector('.en-sk-value, .en-legend__value').textContent.replace(/\s+/g, ''),
         button: l.getAttribute('role') === 'button',
+        legend: l.classList.contains('en-legend__item'),
         x: r.left,
         y: r.top,
         w: r.width,
+        h: r.height,
         right: r.right,
       };
     }),
@@ -130,9 +135,10 @@ const drawing = (card) =>
     JSON.stringify(d.ribbons.map((r) => `${r.key} ${r.ink} ${r.fill}`)),
   );
   // words: inside the column, 16 apart on a tier
+  const words = l.filter((x) => !x.legend);
   const clash = [];
-  for (const a of l)
-    for (const b of l)
+  for (const a of words)
+    for (const b of words)
       if (a !== b && Math.abs(a.y - b.y) < 1 && a.x < b.x && b.x - a.right < 15.5)
         clash.push(`${a.name} / ${b.name}`);
   const first = l[0].x;
@@ -141,11 +147,30 @@ const drawing = (card) =>
     clash.length === 0 && l.every((x) => x.x >= first - 0.5 && x.right <= first + d.width + 0.5),
     clash.join(', '),
   );
+  // the devices: no words over their bars, a legend under the drawing in their bars' order (#210), each item a
+  // finger's 44 tall, its square 12 under the drawing
+  const legend = l.filter((x) => x.legend);
+  const under = await card.evaluate((c) => {
+    const root = c.shadowRoot;
+    const drawing = root.querySelector('.en-sankey').getBoundingClientRect();
+    const square = root.querySelector('.en-legend .en-sq').getBoundingClientRect();
+    const name = root.querySelector('.en-legend .en-legend__name').getBoundingClientRect();
+    return { gap: name.top - drawing.bottom, square: square.width };
+  });
+  check(
+    'the devices in a legend under the drawing, in their bars’ order, each a finger’s 44 round its words 12 under it',
+    legend.map((x) => x.key).join() === 'device:0,device:1,device:2,unmeasured' &&
+      words.every((x) => !x.key.startsWith('device:') && x.key !== 'unmeasured') &&
+      legend.every((x) => Math.round(x.h) === 44) &&
+      under.gap === 12 &&
+      under.square === 12,
+    JSON.stringify({ legend, under }),
+  );
 
-  // a tap on a meter's words opens it; a figure that is worked out opens nothing
+  // a tap on a meter's words, or on its item in the legend, opens it; a figure that is worked out opens nothing
   await reset(page);
   await card.locator('.en-sk-label[data-key="grid"]').click();
-  await card.locator('.en-sk-label[data-key="device:0"]').click();
+  await card.locator('.en-legend__item[data-key="device:0"]').click();
   check(
     'a tap on the grid’s and a device’s words opens their meters',
     JSON.stringify(await moreInfo(page)) ===
@@ -186,12 +211,23 @@ const drawing = (card) =>
     'the pointer gone, every part is as it was',
     rested.on.length === 0 && rested.resting === 0,
   );
-  await card.locator('.en-sk-label[data-key="unmeasured"]').focus();
+  await card.locator('.en-legend__item[data-key="device:1"]').hover();
+  await page.waitForTimeout(400);
+  const car = await lifted();
+  check(
+    'an item of the legend under the pointer lifts its device’s bar and ribbon as a word does',
+    car.on.join() === 'house-device:1,device:1' && car.resting === car.all - car.on.length,
+    JSON.stringify(car),
+  );
+  await page.mouse.move(0, 0);
+  await card.locator('.en-legend__item[data-key="unmeasured"]').focus();
   const kept = await lifted();
   check(
-    'every word is reached by the keyboard, a figure worked out too: its focus lifts what it names',
+    'every word and item is reached by the keyboard, a figure worked out too: its focus lifts what it names',
     kept.on.join() === 'house-unmeasured,unmeasured' &&
-      (await card.locator('.en-sk-label:not([tabindex="0"])').count()) === 0,
+      (await card
+        .locator('.en-sk-label:not([tabindex="0"]), .en-legend__item:not([tabindex="0"])')
+        .count()) === 0,
     JSON.stringify(kept),
   );
   // reached by the keyboard's Tab, the word wears the focus ring, and says what it is: a meter's a button, a figure
@@ -205,7 +241,7 @@ const drawing = (card) =>
       key: focused?.dataset.key,
       visible: focused?.matches(':focus-visible') ?? false,
       ring: style ? `${style.outlineStyle} ${style.outlineWidth}` : '',
-      roles: [...c.shadowRoot.querySelectorAll('.en-sk-label')].map((l) => [
+      roles: [...c.shadowRoot.querySelectorAll('.en-sk-label, .en-legend__item')].map((l) => [
         l.dataset.key,
         l.getAttribute('role'),
         l.getAttribute('aria-label'),
@@ -224,7 +260,7 @@ const drawing = (card) =>
       /^\S.* \d[\d.,]* kWh$/.test(unmeasured?.[2] ?? ''),
     JSON.stringify(reached),
   );
-  await card.locator('.en-sk-label[data-key="unmeasured"]').blur();
+  await card.locator('.en-legend__item[data-key="unmeasured"]').blur();
 
   // a meter goes down while the card is on screen: the head says so
   await page.evaluate(() => window.fluvyMock.set('sensor.fl_grid_in_energy', 'unavailable'));
@@ -338,6 +374,39 @@ const drawing = (card) =>
       dashes.every((t) => t.trim() === '—') &&
       (await unread.locator('fluvy-energy-score-card .en-score__arc').count()) === 0,
     dashes.join(' | '),
+  );
+  await page.close();
+}
+
+/* ---------- #210: two meters of a few hundredths, named in the legend, not in tiers over their bars ---------- */
+{
+  /** The legend's rows (its items' tops) and names, and the words over the bars' keys. */
+  const laid = (card) =>
+    card.evaluate((c) => {
+      const root = c.shadowRoot;
+      const items = [...root.querySelectorAll('.en-legend__item')];
+      return {
+        rows: new Set(items.map((i) => Math.round(i.getBoundingClientRect().top))).size,
+        names: items.map((i) => i.querySelector('.en-legend__text').textContent.trim()).join(' · '),
+        words: [...root.querySelectorAll('.en-sk-label')].map((l) => l.dataset.key).join(),
+        cut: items.filter((i) => {
+          const text = i.querySelector('.en-legend__text');
+          return text.scrollWidth > text.clientWidth + 1;
+        }).length,
+      };
+    });
+  const page = await suite.sheet('sankey', { width: 360, lang: 'zh-Hans' });
+  await page.waitForTimeout(600);
+  const phone = await laid(sankey(page, 'Devices in a legend · Chinese names'));
+  const wide = await laid(sankey(page, 'Devices in a legend · Chinese names · 431'));
+  check(
+    'the reporter’s house in Chinese: five items 3 + 2 in a phone’s 360, one row at 431, no name cut, no word over a device’s bar',
+    phone.names === '工作室 · 北屋 · 南屋西 · 壁挂炉 · 未计量' &&
+      phone.rows === 2 &&
+      wide.rows === 1 &&
+      phone.cut + wide.cut === 0 &&
+      phone.words === 'grid,solar,house,exported',
+    JSON.stringify({ phone, wide }),
   );
   await page.close();
 }

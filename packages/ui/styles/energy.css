@@ -531,6 +531,18 @@
   text-align: center;
 }
 
+/* a legend whose items answer the pointer and the keyboard (the sankey's devices): each a finger's 44 round its 40 of
+   words, the focus ring round it; the legend stands where the 40s would (12 above the first, 12 between rows, its
+   last 2 in the card's padding) */
+.en-legend--live {
+  margin: 10px 0 -2px;
+}
+
+.en-legend--live > .en-legend__item {
+  padding: 2px 0;
+  border-radius: 12px;
+}
+
 .en-legend__name {
   display: flex;
   align-items: center;
@@ -1102,6 +1114,13 @@
 
 .en-sq.is-out {
   opacity: 0.6;
+}
+
+/* a figure worked out, not metered (the house less its devices): its bar's dashed outline */
+.en-sq.is-dashed {
+  box-sizing: border-box;
+  border: 1.5px dashed var(--fluvy-text-secondary);
+  background: none;
 }
 
 /* -------------------------------------------------------------------------------------------- nested list */

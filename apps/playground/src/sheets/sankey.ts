@@ -193,6 +193,45 @@ const down = house({
   'energy/fossil_energy_consumption': fossil,
 });
 
+/**
+ * #210's house: a studio and a room that use most of the day, two meters that read next to nothing (bars one or two
+ * pixels wide) and what no meter accounts for; its Energy dashboard names them, in English or in Chinese.
+ */
+const TINY: Record<string, Rows> = {
+  'sensor.sk_t_grid_in': buckets([6.2, 4.1, 3.9, 7.4]),
+  'sensor.sk_t_grid_out': buckets([0, 0.6, 1.59, 0]),
+  'sensor.sk_t_solar': buckets([0, 3.6, 5.8, 0]),
+  'sensor.sk_t_studio': buckets([3.1, 3.4, 3.2, 3.3]),
+  'sensor.sk_t_north': buckets([2.6, 2.2, 2.0, 2.9]),
+  'sensor.sk_t_south_west': buckets([0.05, 0.08, 0.07, 0.09]),
+  'sensor.sk_t_boiler': buckets([0.03, 0.03, 0.03, 0.03]),
+  // a heater taken out of the house: its meter is gone, its history is not
+  'sensor.sk_t_garden_office_heater_energy': buckets([0.6, 0.2, 0.1, 0.5]),
+};
+const tiny = (names: readonly [string, string, string, string]) =>
+  house({
+    'energy/get_prefs': () => ({
+      energy_sources: [
+        {
+          type: 'grid',
+          stat_energy_from: 'sensor.sk_t_grid_in',
+          stat_energy_to: 'sensor.sk_t_grid_out',
+        },
+        { type: 'solar', stat_energy_from: 'sensor.sk_t_solar' },
+      ],
+      device_consumption: [
+        'sensor.sk_t_studio',
+        'sensor.sk_t_north',
+        'sensor.sk_t_south_west',
+        'sensor.sk_t_boiler',
+      ].map((stat, i) => ({ stat_consumption: stat, name: names[i] })),
+    }),
+    'recorder/statistics_during_period': statistics(TINY),
+    'energy/fossil_energy_consumption': fossil,
+  });
+const tinyEnglish = tiny(['Studio', 'North room', 'South-west room', 'Wall boiler']);
+const tinyChinese = tiny(['工作室', '北屋', '南屋西', '壁挂炉']);
+
 /** No Energy dashboard at all. */
 const bare = house({ 'energy/get_prefs': () => ({ energy_sources: [], device_consumption: [] }) });
 
@@ -262,6 +301,13 @@ export const sheet: SheetSpec = {
     ['sensor.sk_u_grid_in', '2.0', energy('Grid import')],
     ['sensor.sk_u_grid_out', '1.0', energy('Grid export')],
     ['sensor.sk_u_solar', '5.0', energy('Solar')],
+    ['sensor.sk_t_grid_in', '21.6', energy('Grid import')],
+    ['sensor.sk_t_grid_out', '2.2', energy('Grid export')],
+    ['sensor.sk_t_solar', '9.4', energy('Solar')],
+    ['sensor.sk_t_studio', '13.0', energy('Studio energy')],
+    ['sensor.sk_t_north', '9.7', energy('North room energy')],
+    ['sensor.sk_t_south_west', '0.29', energy('South-west room energy')],
+    ['sensor.sk_t_boiler', '0.12', energy('Wall boiler energy')],
   ],
 
   registry: {
@@ -414,6 +460,49 @@ export const sheet: SheetSpec = {
     { title: 'Five words · a phone at 125 %', width: 240, cards: [ROOMS] },
     // a short title of its own, as a card this narrow is given ("Where it went" is longer in Dutch and Russian)
     { title: 'Five words · a phone at 150 %', width: 192, cards: [{ ...ROOMS, title: 'Energy' }] },
+
+    /* the devices in a legend under the drawing (#210): two of them read a few hundredths of a kWh, their bars a pixel
+       or two wide, where their words stood in tiers drifting off what they named; a phone's 360 and a 431 column, the
+       house's names in English and in Chinese (shot with &lang=zh-Hans) */
+    {
+      title: 'Devices in a legend',
+      hass: tinyEnglish,
+      cards: [{ type: 'custom:fluvy-energy-sankey-card', _now: NOW }],
+    },
+    {
+      title: 'Devices in a legend · 431',
+      width: 431,
+      hass: tinyEnglish,
+      cards: [{ type: 'custom:fluvy-energy-sankey-card', _now: NOW }],
+    },
+    {
+      title: 'Devices in a legend · Chinese names',
+      hass: tinyChinese,
+      cards: [{ type: 'custom:fluvy-energy-sankey-card', _now: NOW }],
+    },
+    {
+      title: 'Devices in a legend · Chinese names · 431',
+      width: 431,
+      hass: tinyChinese,
+      cards: [{ type: 'custom:fluvy-energy-sankey-card', _now: NOW }],
+    },
+    // a device gone from the house with its history kept: its id, in no more room than its figure, folds nothing
+    {
+      title: 'Devices in a legend · one gone, its history kept',
+      hass: tinyEnglish,
+      cards: [
+        {
+          type: 'custom:fluvy-energy-sankey-card',
+          show_period: false,
+          devices: [
+            { entity: 'sensor.sk_t_studio', name: 'Studio' },
+            { entity: 'sensor.sk_t_north', name: 'North room' },
+            'sensor.sk_t_garden_office_heater_energy',
+          ],
+          _now: NOW,
+        },
+      ],
+    },
 
     /* the score */
     {

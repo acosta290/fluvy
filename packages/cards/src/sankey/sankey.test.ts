@@ -1,5 +1,6 @@
 import { resolveEntity, type HomeAssistant } from '@fluvy/core';
 import { describe, expect, it } from 'vitest';
+import { sankeyHeight } from '../energy-family.js';
 import { allocatePeriod } from '../energy-model/period.js';
 import type { PrefSource } from '../energy-model/prefs.js';
 import {
@@ -224,13 +225,49 @@ describe('the sankey’s geometry', () => {
   });
 
   it('a card that names the devices in a legend asks for no words over their bars', () => {
-    const legend = layoutSankey(model, 320, (key) => WORDS[key] ?? 60, false);
+    const legend = layoutSankey(model, 320, (key) => WORDS[key] ?? 60, { legend: true });
     const kidKeys = new Set(g.kids.map((n) => n.key));
     expect(legend.kids).toHaveLength(g.kids.length);
     expect(legend.labels.some((l) => kidKeys.has(l.key))).toBe(false);
-    // the bars of the devices, the 8 px under them, and no tier of words there
+    // the bars of the devices, the 8 px under them, and no tier of words there: the approved drawing's 344
     expect(legend.height).toBe(g.y2 + BAR + WORDS_GAP);
+    expect(legend.height).toBe(344);
     expect(g.height - legend.height).toBeGreaterThan(0);
+  });
+
+  it('the card declares its drawing and its legend from its config alone, in the rows its names take at 320', () => {
+    // the head (100) and the chips (60), the drawing (344); the legend 12 under it, 40 a row and 12 between rows.
+    // "Not measured" holds no quarter of 320: a few of the Energy dashboard's devices and it, four items, two a row
+    const legend = (rows: number): number => 12 + rows * 40 + (rows - 1) * 12;
+    expect(sankeyHeight({ type: 'x' })).toBe(100 + 60 + 344 + legend(2));
+    expect(sankeyHeight({ type: 'x', show_period: false, max_devices: 8 })).toBe(
+      100 + 344 + legend(2),
+    );
+    expect(sankeyHeight({ type: 'x', show_period: false, max_devices: 1 })).toBe(
+      100 + 344 + legend(1),
+    );
+    // one of its own and the rest of the house: one row; two and the rest, three, one a line (the legend's fold)
+    expect(sankeyHeight({ type: 'x', show_period: false, devices: ['sensor.boiler_energy'] })).toBe(
+      100 + 344 + legend(1),
+    );
+    expect(sankeyHeight({ type: 'x', show_period: false, devices: ['sensor.a', 'sensor.b'] })).toBe(
+      100 + 344 + legend(3),
+    );
+    // the oven is in the kitchen's figure; past three, the smallest two are "Other devices": five items
+    const own = {
+      type: 'x',
+      show_period: false,
+      max_devices: 3,
+      devices: [
+        { entity: 'sensor.heat_pump_energy', name: 'Heat pump' },
+        'sensor.car_energy',
+        'sensor.kitchen_energy',
+        { entity: 'sensor.oven_energy', parent: 'sensor.kitchen_energy' },
+        'sensor.washer_energy',
+        'sensor.fridge_energy',
+      ],
+    };
+    expect(sankeyHeight(own)).toBe(100 + 344 + legend(3));
   });
 
   it('packs each row’s words on the 4 grid, 16 apart, inside the column: at the bar’s start, else its end', () => {
