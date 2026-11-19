@@ -696,6 +696,54 @@ describe('a large tile without its switch: its circle is the switch (#160)', () 
     expect(calls[0]!.slice(0, 2)).toEqual(['light', 'turn_off']);
   });
 
+  it('a lock locks at one tap and asks before it unlocks, on its tile, its switch and its circle (1.23)', async () => {
+    const lock = (value: string) => ({
+      ...LIVE,
+      'lock.front': state('lock.front', value, { friendly_name: 'Front door' }),
+    });
+    const LOCK = { type: 'custom:fluvy-tile-card', entity: 'lock.front' };
+    const asked: unknown[] = [];
+    const ask = (event: Event): void => void asked.push((event as CustomEvent).detail);
+    document.addEventListener('hass-action', ask);
+    try {
+      // locked: the compact tile's tap, the large tile's switch and its circle each ask Home Assistant's dialog
+      const locked = calling(lock('locked'));
+      const [compact] = await drawn({ ...LOCK, size: 'compact' }, {}, 360, locked.hass);
+      compact!.querySelector<HTMLElement>('.fv-tile__tap')!.click();
+      const [large] = await drawn(LOCK, {}, 360, locked.hass);
+      large!.querySelector<HTMLElement>('.fv-hit')!.click();
+      const [bare] = await drawn({ ...LOCK, show_switch: false }, {}, 360, locked.hass);
+      circle(bare!).click();
+      expect(locked.calls).toEqual([]);
+      expect(asked).toHaveLength(3);
+      for (const said of asked)
+        expect((said as { config: { tap_action: unknown } }).config.tap_action).toEqual({
+          action: 'perform-action',
+          perform_action: 'lock.unlock',
+          target: { entity_id: 'lock.front' },
+          confirmation: true,
+        });
+      // unlocked: one tap locks it, drawn locked at once
+      const open = calling(lock('unlocked'));
+      const [tile] = await drawn({ ...LOCK, size: 'compact' }, {}, 360, open.hass);
+      tile!.querySelector<HTMLElement>('.fv-tile__tap')!.click();
+      expect(open.calls).toEqual([['lock', 'lock', {}, { entity_id: 'lock.front' }]]);
+      expect(asked).toHaveLength(3);
+      // its own `confirmation: false` unlocks at once
+      const own = calling(lock('locked'));
+      const [mine] = await drawn(
+        { ...LOCK, size: 'compact', tap_action: { action: 'toggle', confirmation: false } },
+        {},
+        360,
+        own.hass,
+      );
+      mine!.querySelector<HTMLElement>('.fv-tile__tap')!.click();
+      expect(own.calls).toEqual([['lock', 'unlock', {}, { entity_id: 'lock.front' }]]);
+    } finally {
+      document.removeEventListener('hass-action', ask);
+    }
+  });
+
   it('out of reach it keeps its anatomy and its size: a circle that is not pressed, its ruler at rest', async () => {
     for (const show_switch of [false, 'value'] as const) {
       const [off] = await drawn({ ...LAMP, show_switch }, OFF);

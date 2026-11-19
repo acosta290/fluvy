@@ -3,6 +3,7 @@ import {
   formatTime,
   isActive,
   isEntityId,
+  SAFE_TOGGLE,
   stateText,
   strings,
   toggleService,
@@ -125,17 +126,6 @@ const FIGURE_MIN = 120;
 const GAP = 16;
 /** A day's middle, from its midnight: the day a date is said of, whatever a clock change made of its length. */
 const HALF_DAY = 43_200_000;
-
-/** Rows that get a switch: what is safe to flip from a list (a valve, a switch), never a lock or a scene. */
-const SWITCHED = new Set([
-  'valve',
-  'switch',
-  'input_boolean',
-  'fan',
-  'light',
-  'humidifier',
-  'siren',
-]);
 
 interface Meter {
   readonly key: string;
@@ -775,7 +765,7 @@ export class FluvyMetersCard extends Card<MetersCardConfig> {
   private rowEnd(r: MeterRowConfig): { title: string; value: string; end?: number; sub: string } {
     const view = this.entity(r.entity);
     const title = this.nameFor(view, r.name);
-    if (SWITCHED.has(view.domain)) return { title, value: '', end: SWITCH_SLOT, sub: '' };
+    if (SAFE_TOGGLE.has(view.domain)) return { title, value: '', end: SWITCH_SLOT, sub: '' };
     return { title, value: this.rowValue(view), sub: this.rowSub(view)[0]?.short ?? '' };
   }
 
@@ -788,14 +778,17 @@ export class FluvyMetersCard extends Card<MetersCardConfig> {
       : stateText(this.hass, view);
   }
 
-  /** A row under the meters: a valve or a switch gets its switch; anything else says its state ("Dry", "3.1 bar"). */
+  /**
+   * A row under the meters: what is safe to flip from a list (`SAFE_TOGGLE`: a valve, a switch) gets its switch;
+   * anything else says its state ("Dry", "3.1 bar").
+   */
   private entityRow(r: MeterRowConfig, w: number, keep: boolean): TemplateResult {
     const view = this.entity(r.entity);
     const usable = view.status === 'ok';
     const title = this.nameFor(view, r.name);
     const glyph = keep ? iconOf(view, r.icon) : null;
     const open = (): void => this.tap(view.id, { action: 'more-info' });
-    if (SWITCHED.has(view.domain)) {
+    if (SAFE_TOGGLE.has(view.domain)) {
       const state = this.stateOf(view);
       const on =
         state === view.state ? isActive(view) : !['off', 'closed', 'closing'].includes(state);
@@ -859,8 +852,9 @@ export class FluvyMetersCard extends Card<MetersCardConfig> {
   /** The switch flips at once; the valve or switch is called through the card's own helper. */
   private flip(view: EntityView, next: boolean): void {
     if (!this.hass) return;
-    const valve = view.domain === 'valve';
-    this.expect(view.id, next ? (valve ? 'open' : 'on') : valve ? 'closed' : 'off');
+    // a valve and a blind open and shut; the rest go on and off
+    const opens = view.domain === 'valve' || view.domain === 'cover';
+    this.expect(view.id, next ? (opens ? 'open' : 'on') : opens ? 'closed' : 'off');
     const [domain, service] = toggleService(this.hass, view.id);
     this.call(domain, service, {}, view.id);
   }

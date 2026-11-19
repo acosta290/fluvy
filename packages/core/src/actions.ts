@@ -166,6 +166,44 @@ export const TOGGLE_DOMAINS = new Set([
 ]);
 
 /**
+ * What a stray tap may flip (1.23): on and off, open and shut, what a second tap undoes. A row's switch is for these
+ * alone (the Entities and Meters cards), and so is a round's tap where it names none (the Rounds card); a vacuum, a
+ * player, a scene, a script and a button open their details there, never started or run by a slip.
+ */
+export const SAFE_TOGGLE: ReadonlySet<string> = new Set([
+  'light',
+  'switch',
+  'input_boolean',
+  'fan',
+  'humidifier',
+  'siren',
+  'automation',
+  'cover',
+  'valve',
+  'group',
+  'remote',
+]);
+
+/** What a round's tap turns on and off where it names no tap of its own: what is safe, and a lock (`confirmationOf`). */
+export const ROUND_TOGGLE: ReadonlySet<string> = new Set([...SAFE_TOGGLE, 'lock']);
+
+/**
+ * What an action asks before it runs: its own `confirmation`; where it says none, a toggle that would unlock a lock
+ * asks (1.23), Home Assistant's dialog naming the service, and locking stays one tap. `confirmation: false`, Home
+ * Assistant's own key, says never.
+ */
+export function confirmationOf(
+  hass: HomeAssistant,
+  action: ActionConfig,
+  entity: string | undefined,
+): ActionConfig['confirmation'] {
+  if (action.confirmation !== undefined) return action.confirmation;
+  return action.action === 'toggle' && entity !== undefined
+    ? toggleService(hass, entity)[1] === 'unlock' || undefined
+    : undefined;
+}
+
+/**
  * What only Home Assistant's own handler does: ask first (`confirmation` — its dialog, its words, its exemptions)
  * and open Assist. The action goes to it as `hass-action`, which its root element answers. A toggle goes as the
  * service Fluvy would have called, so a vacuum still starts and a cover still opens. Where nobody answers (outside
@@ -212,8 +250,15 @@ export async function runAction(
   const config: ActionConfig = action ?? { action: 'more-info' };
   const entity = config.entity ?? fallbackEntity;
   if (config.action === 'none') return;
-  if (config.confirmation || config.action === 'assist') {
-    handOver(node, hass, config, entity);
+  const confirmation = confirmationOf(hass, config, entity);
+  if (confirmation || config.action === 'assist') {
+    // the action itself where it asks of its own: what Home Assistant hands back at its yes is that very object
+    handOver(
+      node,
+      hass,
+      confirmation && confirmation !== config.confirmation ? { ...config, confirmation } : config,
+      entity,
+    );
     return;
   }
   switch (config.action) {

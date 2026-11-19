@@ -1,5 +1,6 @@
 import {
   actionRuns,
+  confirmationOf,
   formatNumber,
   idsOf,
   isActive,
@@ -741,8 +742,13 @@ export class FluvyTileCard extends Card<TileCardConfig> {
     return { count, width };
   }
 
-  private flip(view: EntityView, next: boolean): void {
+  /**
+   * Flips the tile's entity, drawn so until Home Assistant agrees; where the toggle asks first (`action`'s own
+   * `confirmation`, or a lock that would unlock: `confirmationOf`), Home Assistant's dialog, nothing moving before its yes.
+   */
+  private flip(view: EntityView, next: boolean, action: ActionConfig = TOGGLE): void {
     if (!this.hass) return;
+    if (confirmationOf(this.hass, action, view.id)) return this.tap(view.id, action);
     this.expect(
       view.id,
       next
@@ -765,7 +771,7 @@ export class FluvyTileCard extends Card<TileCardConfig> {
    * is to be asked about first: then nothing moves before the answer.
    */
   private act(view: EntityView, on: boolean, action: ActionConfig): void {
-    if (action.action === 'toggle' && !action.entity && !action.confirmation) this.flip(view, !on);
+    if (action.action === 'toggle' && !action.entity) this.flip(view, !on, action);
     else this.tap(view.id, action);
   }
 

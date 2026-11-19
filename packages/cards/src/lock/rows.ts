@@ -3,9 +3,9 @@ import {
   isActive,
   isUsable,
   relativeTime,
+  SAFE_TOGGLE,
   stateText,
   strings,
-  TOGGLE_DOMAINS,
   toggleEntity,
   valueParts,
   type ActionConfig,
@@ -65,18 +65,11 @@ export interface RowsCardConfig extends FluvyCardConfig {
 
 const s = strings('lock');
 
-/** A row switch is only for what is harmless to flip by accident — never a lock, a garage door or a valve. */
-const NEVER_A_SWITCH = new Set([
-  'lock',
-  'cover',
-  'valve',
-  'scene',
-  'script',
-  'button',
-  'input_button',
-  'vacuum',
-  'media_player',
-]);
+/**
+ * A row switch is only for what is harmless to flip by accident (`SAFE_TOGGLE`), and under a lock, an alarm or a
+ * camera never a way in: a garage door, a gate, a valve.
+ */
+const WAYS_IN: ReadonlySet<string> = new Set(['cover', 'valve']);
 /** Domains whose state is worth reading at the end of the row. */
 const READ_OUT = new Set([
   'sensor',
@@ -257,7 +250,7 @@ export abstract class RowsCard<C extends RowsCardConfig = RowsCardConfig> extend
   private plan(row: RowConfig, events: boolean): RowPlan {
     const view = this.entity(row.entity);
     const usable = isUsable(view);
-    const canToggle = usable && TOGGLE_DOMAINS.has(view.domain) && !NEVER_A_SWITCH.has(view.domain);
+    const canToggle = usable && SAFE_TOGGLE.has(view.domain) && !WAYS_IN.has(view.domain);
     // a select's value opens its dropdown (#96), unless the row names a tap of its own
     const trailing: RowPlan['trailing'] =
       SELECTS.has(view.domain) && !row.tap_action

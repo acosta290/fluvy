@@ -77,6 +77,19 @@ open or shut; a battery's charge, a signal's bars and a valve open or shut where
 the head, and the body's controls, keep their own taps. With a keyboard: Enter taps, Shift+F10 holds. An action with
 a `confirmation` asks first.
 
+**A lock locks at one tap and asks before it unlocks**, wherever a tap toggles it (a tile, a round, a row): Home
+Assistant's own dialog, its words naming the service. An action's own `confirmation` asks in its place, and
+`confirmation: false` unlocks at once:
+
+```yaml
+tap_action:
+  action: toggle
+  confirmation: false # this lock unlocks without asking
+```
+
+A row's switch (the Entities and Water & gas cards) flips only what a second tap undoes: lights, switches, fans,
+blinds, valves, humidifiers, sirens, automations, remotes, groups.
+
 ## Details sheets
 
 A `more-info` on a Fluvy card (a head's tap, a row's tap, a tile's hold) opens Fluvy's own sheet for these kinds. Any

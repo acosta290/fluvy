@@ -4,8 +4,8 @@ import {
   lightDefaults,
   localize,
   navigate,
+  SAFE_TOGGLE,
   stateText,
-  TOGGLE_DOMAINS,
   toggleEntity,
   valueParts,
   type EntityView,
@@ -315,12 +315,7 @@ export class FluvyEntitiesCard extends Card<EntitiesCardConfig> {
       // a select's value opens its dropdown (#96), unless the row names a tap of its own
       const menu = SELECTS.has(view.domain) && !row.tap_action;
       // a row switch is for what is safe to flip by accident: never a lock, and not the things that are not on/off
-      const canToggle =
-        usable &&
-        TOGGLE_DOMAINS.has(view.domain) &&
-        !['scene', 'script', 'button', 'input_button', 'lock', 'vacuum', 'media_player'].includes(
-          view.domain,
-        );
+      const canToggle = usable && SAFE_TOGGLE.has(view.domain);
       const measured = view.domain === 'sensor' || view.number !== null;
       const trailing: 'switch' | 'value' | 'chevron' | 'menu' = menu
         ? 'menu'

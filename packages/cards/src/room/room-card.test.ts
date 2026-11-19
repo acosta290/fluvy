@@ -942,28 +942,71 @@ describe('a room’s quick actions (#113)', () => {
     expect(names(bare)).toEqual(['Lights', 'Blinds']);
   });
 
-  it('pauses what plays, toggles a lock as Home Assistant does, and runs an action of its own', async () => {
+  it('pauses what plays, asks before it unlocks a lock, and runs an action of its own', async () => {
     sent.length = 0;
+    const asked: unknown[] = [];
+    const ask = (event: Event): void => void asked.push((event as CustomEvent).detail);
+    document.addEventListener('hass-action', ask);
+    try {
+      const card = await room(
+        {
+          area: 'lounge',
+          quick_actions: [
+            'media',
+            'lock.front',
+            {
+              entity: 'switch.kettle',
+              tap_action: { action: 'perform-action', perform_action: 'script.tea' },
+            },
+          ],
+        },
+        lounge(),
+      );
+      for (const round of rounds(card)) round.click();
+      await new Promise((resolve) => setTimeout(resolve));
+      // the locked front door is Home Assistant's dialog's to unlock, at its yes (1.23): one tap never opens it
+      expect(sent.map(({ domain, service }) => `${domain}.${service}`)).toEqual([
+        'media_player.media_pause',
+        'script.tea',
+      ]);
+      expect(asked).toEqual([
+        {
+          config: {
+            entity: 'lock.front',
+            tap_action: {
+              action: 'perform-action',
+              perform_action: 'lock.unlock',
+              target: { entity_id: 'lock.front' },
+              confirmation: true,
+            },
+          },
+          action: 'tap',
+        },
+      ]);
+    } finally {
+      document.removeEventListener('hass-action', ask);
+    }
+  });
+
+  it('locks an unlocked lock at one tap, and unlocks at once where its own tap says `confirmation: false`', async () => {
+    sent.length = 0;
+    const open: Seed = ['lock.back', 'unlocked', { friendly_name: 'Back door' }];
     const card = await room(
       {
         area: 'lounge',
         quick_actions: [
-          'media',
-          'lock.front',
-          {
-            entity: 'switch.kettle',
-            tap_action: { action: 'perform-action', perform_action: 'script.tea' },
-          },
+          'lock.back',
+          { entity: 'lock.front', tap_action: { action: 'toggle', confirmation: false } },
         ],
       },
-      lounge(),
+      lounge([open]),
     );
     for (const round of rounds(card)) round.click();
     await new Promise((resolve) => setTimeout(resolve));
+    // the back door locks, the front door (its own tap) unlocks
     expect(sent.map(({ domain, service }) => `${domain}.${service}`)).toEqual([
-      'media_player.media_pause',
+      'lock.lock',
       'lock.unlock',
-      'script.tea',
     ]);
   });
 

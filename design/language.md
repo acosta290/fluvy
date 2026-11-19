@@ -873,7 +873,8 @@ longer than the ends' 56 ends in an ellipsis.
   `quick_actions` orders the room's `lights`, `covers`, `fans` (their speed) and `media` (their volume while they play)
   and any entity, each with its own name, icon, tone, colour and actions. A tap is the set's switch in one call — off
   while any of it is on, else on; blinds stop while they move, else close when open and open when closed; players pause
-  what plays, else play — and an entity's the house's own toggle; a hold opens an entity's details, a set of one's
+  what plays, else play — and an entity's the house's own toggle (a lock locks at once and asks before it unlocks,
+  1.23: Home Assistant's dialog, as anywhere a tap toggles one); a hold opens an entity's details, a set of one's
   too, and a set of several where the room opens (none where it opens nowhere). **Where:** the head's end, before the
   chevron, 12 after the words; the compact row's end, 12 after its words; the picture's foot, 20 from its edge and
   centred on the name's pill (12 from the foot), each round that is off on the card's fill as the pill is. Inside a lit

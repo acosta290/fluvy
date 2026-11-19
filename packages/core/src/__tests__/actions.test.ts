@@ -1,10 +1,14 @@
 // @vitest-environment happy-dom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
+  confirmationOf,
   goBack,
   navigate,
+  ROUND_TOGGLE,
   runAction,
+  SAFE_TOGGLE,
   setDetailsSheets,
+  TOGGLE_DOMAINS,
   toggleService,
   type ActionConfig,
   type DetailsSheetsOpener,
@@ -250,6 +254,101 @@ describe('runAction', () => {
         { entity_id: 'light.desk' },
       );
     });
+  });
+
+  describe('a lock (1.23): locking is one tap, unlocking asks first', () => {
+    it('a toggle of a locked lock goes to Home Assistant’s dialog, nothing unlocked before its yes', async () => {
+      const handed = listen('hass-action');
+
+      await runAction(card, house({ 'lock.front': 'locked' }), { action: 'toggle' }, 'lock.front');
+
+      expect(handed).toEqual([
+        {
+          config: {
+            entity: 'lock.front',
+            tap_action: {
+              action: 'perform-action',
+              perform_action: 'lock.unlock',
+              target: { entity_id: 'lock.front' },
+              confirmation: true,
+            },
+          },
+          action: 'tap',
+        },
+      ]);
+      expect(callService).not.toHaveBeenCalled();
+    });
+
+    it('a toggle of an unlocked, a jammed or an open lock locks it at once', async () => {
+      const handed = listen('hass-action');
+      for (const state of ['unlocked', 'jammed', 'open'])
+        await runAction(card, house({ 'lock.front': state }), { action: 'toggle' }, 'lock.front');
+
+      expect(handed).toEqual([]);
+      expect(callService.mock.calls).toEqual(
+        Array.from({ length: 3 }, () => ['lock', 'lock', {}, { entity_id: 'lock.front' }]),
+      );
+    });
+
+    it('its own words ask in their place, and `confirmation: false` unlocks at once', async () => {
+      const handed = listen('hass-action');
+      const locked = house({ 'lock.front': 'locked' });
+
+      await runAction(
+        card,
+        locked,
+        { action: 'toggle', confirmation: { text: 'Open up?' } },
+        'lock.front',
+      );
+      await runAction(card, locked, { action: 'toggle', confirmation: false }, 'lock.front');
+
+      expect(handed).toHaveLength(1);
+      expect(
+        (handed[0] as { config: { tap_action: ActionConfig } }).config.tap_action.confirmation,
+      ).toEqual({ text: 'Open up?' });
+      expect(callService).toHaveBeenCalledExactlyOnceWith(
+        'lock',
+        'unlock',
+        {},
+        { entity_id: 'lock.front' },
+      );
+    });
+
+    it('asks of a toggle alone: a service the person wrote runs as written', async () => {
+      const locked = house({ 'lock.front': 'locked' });
+      const unlock: ActionConfig = {
+        action: 'perform-action',
+        perform_action: 'lock.unlock',
+        target: { entity_id: 'lock.front' },
+      };
+
+      expect(confirmationOf(locked, unlock, 'lock.front')).toBeUndefined();
+      expect(confirmationOf(locked, { action: 'more-info' }, 'lock.front')).toBeUndefined();
+      expect(confirmationOf(locked, { action: 'toggle' }, undefined)).toBeUndefined();
+      expect(confirmationOf(locked, { action: 'toggle' }, 'lock.front')).toBe(true);
+    });
+  });
+
+  it('what a stray tap may flip, and what a round turns on and off of its own', () => {
+    expect([...SAFE_TOGGLE].sort()).toEqual([
+      'automation',
+      'cover',
+      'fan',
+      'group',
+      'humidifier',
+      'input_boolean',
+      'light',
+      'remote',
+      'siren',
+      'switch',
+      'valve',
+    ]);
+    expect([...ROUND_TOGGLE].filter((domain) => !SAFE_TOGGLE.has(domain))).toEqual(['lock']);
+    // never by a slip: what starts, plays, runs or is pressed
+    for (const domain of ['vacuum', 'media_player', 'scene', 'script', 'button', 'input_button'])
+      expect(ROUND_TOGGLE.has(domain), domain).toBe(false);
+    // every one of them a toggle Fluvy knows how to send
+    for (const domain of ROUND_TOGGLE) expect(TOGGLE_DOMAINS.has(domain), domain).toBe(true);
   });
 
   it('assist is Home Assistant’s to open', async () => {

@@ -180,3 +180,49 @@ describe('a meter that is a statistic a utility imports (#181)', () => {
     });
   });
 });
+
+describe('its rows switch what is safe to flip from a list (1.23)', () => {
+  it('a valve, a switch, a blind and an automation get their switch, the Entities card’s rule; a lock and a reading say their state', async () => {
+    const plain = (id: string, value: string, attributes: Record<string, unknown> = {}) => ({
+      entity_id: id,
+      state: value,
+      attributes,
+      last_changed: '',
+      last_updated: '',
+    });
+    const live = house('live');
+    const hass = {
+      ...live,
+      states: {
+        ...live.states,
+        'valve.main': plain('valve.main', 'open'),
+        'switch.pump': plain('switch.pump', 'off'),
+        'cover.cellar': plain('cover.cellar', 'closed'),
+        'automation.leak_shutoff': plain('automation.leak_shutoff', 'on'),
+        'lock.cellar': plain('lock.cellar', 'locked'),
+        'sensor.pressure': plain('sensor.pressure', '3.1', { unit_of_measurement: 'bar' }),
+      },
+    } as HomeAssistant;
+    const card = document.createElement('fluvy-meters-card') as CardElement;
+    card.setConfig({
+      type: 'custom:fluvy-meters-card',
+      meters: ['sensor.water'],
+      rows: [
+        'valve.main',
+        'switch.pump',
+        'cover.cellar',
+        'automation.leak_shutoff',
+        'lock.cellar',
+        'sensor.pressure',
+      ],
+    });
+    card.hass = hass;
+    card.width = 360;
+    document.body.append(card);
+    await card.updateComplete;
+    const ends = [...card.shadowRoot!.querySelectorAll('.fv-row')].map((row) =>
+      row.querySelector('[role="switch"]') ? 'switch' : 'value',
+    );
+    expect(ends).toEqual(['switch', 'switch', 'switch', 'switch', 'value', 'value']);
+  });
+});
