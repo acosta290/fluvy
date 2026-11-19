@@ -2958,7 +2958,10 @@ tiles take the card's tone and colour where a lamp shows none of its own, say th
 wash — the editor offers it in tiles alone).
 `show_brightness` puts one ruler for the room under the head (16 + 44 + 20; the 16 above it is the ruler's own, never
 the room's): the average of what is on; a change sets what is on (everything when nothing is). An empty card's panel
-sits 16 under its head.
+sits 16 under its head. `lamp_switches: true` (1.23, #219; the room card's too): an area's switches whose names say
+they are lamps ("Workbench lamp", 工作室 电灯) are among its lights, by the automatic dashboards' own rule
+(`shared/lamps.ts`, in the naming words' chunk, fetched by the first card that asks), drawn as lights that only switch
+and switched as switches; a kettle on its plug never; a list of the card's own wins. Off by default.
 
 ## Rounds (1.23, #224)
 

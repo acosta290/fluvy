@@ -1010,6 +1010,32 @@ describe('a room’s quick actions (#113)', () => {
     ]);
   });
 
+  it('counts its lamps on plugs among its lights where it asks, by their names (#219)', async () => {
+    const lamp: Seed = ['switch.lounge_corner', 'on', { friendly_name: 'Corner lamp' }];
+    const lightsRow = async (config: Partial<RoomCardConfig>): Promise<string> => {
+      const card = await room({ area: 'lounge', ...config }, lounge([lamp]));
+      // the rule's chunk lands, and the card is drawn again
+      await import('../shared/lamps.js');
+      await new Promise((resolve) => setTimeout(resolve));
+      await card.updateComplete;
+      return root(card).querySelector('.am-rows .fv-row__sub')?.textContent?.trim() ?? '';
+    };
+    expect(await lightsRow({})).toBe('2 of 3 on');
+    const asked = await room({ area: 'lounge', lamp_switches: true }, lounge([lamp]));
+    await import('../shared/lamps.js');
+    await new Promise((resolve) => setTimeout(resolve));
+    await asked.updateComplete;
+    // the lights' round switches the lamp with them, as a switch
+    sent.length = 0;
+    rounds(asked)[0]!.click();
+    await new Promise((resolve) => setTimeout(resolve));
+    expect(sent.map(({ domain, service, data }) => [domain, service, data['entity_id']])).toEqual([
+      ['light', 'turn_off', ['light.lounge_ceiling', 'light.lounge_reading', 'light.lounge_shelf']],
+      ['switch', 'turn_off', ['switch.lounge_corner']],
+    ]);
+    expect(await lightsRow({ lamp_switches: true })).toBe('3 of 4 on');
+  });
+
   it('runs a scene of its own at a tap, never drawn as on (#172)', async () => {
     sent.length = 0;
     const evening: Seed = [

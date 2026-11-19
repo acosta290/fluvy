@@ -666,6 +666,8 @@
     "below_helper": "Désactivé, à partir de la valeur et au-dessus",
     "past_threshold": "Au-delà d’un seuil",
     "show_mixed": "Indiquer quand seules certaines sont allumées",
+    "lamp_switches": "Compter les lampes sur prise",
+    "lamp_switches_help": "Un interrupteur dont le nom dit qu’il s’agit d’une lampe, comme Lampe de l’atelier, compte parmi les lumières de la pièce.",
     "focus": "Grand chiffre",
     "card_blur": "Flouter ce qui transparaît",
     "card_blur_helper": "Inchangé, celui de toutes les cartes dans les réglages de Fluvy ; pas de flou à 0 %"

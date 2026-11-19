@@ -63,9 +63,11 @@ import { hideEmpty, itemsOf, listOf, type EmptyList } from '../shared/lists.js';
 import {
   COLOURED,
   DIMMABLE,
+  lampSwitchesOf,
   lightLook,
   litColour,
   withMembers,
+  type LampSwitches,
   type LightWhites,
 } from '../shared/light.js';
 import type { SwatchEntry } from '../light/swatches.js';
@@ -88,8 +90,8 @@ export interface LightItem {
   color?: string;
 }
 
-export interface LightsCardConfig extends FluvyCardConfig, EmptyList {
-  /** The room: its lights, in name order, when `lights` lists none. */
+export interface LightsCardConfig extends FluvyCardConfig, EmptyList, LampSwitches {
+  /** The room: its lights, in name order, when `lights` lists none (its lamps on plugs too, `lamp_switches`). */
   area?: string;
   /** `tiles`: each lamp shows its colour at rest too (`always`), or only when on (`on`, the default). */
   tint?: Tint;
@@ -297,13 +299,19 @@ export class FluvyLightsCard extends FluvyTileCard {
     return asked && LIGHTS_VARIANTS.includes(asked) ? asked : 'row';
   }
 
-  /** The lights asked for, else the area's in name order. */
+  /** The lights asked for, else the area's in name order: its lamps on plugs among them where the card asks (#219). */
   private items(): LightItem[] {
     const asked = itemsOf<LightItem>(this.room?.lights);
     if (asked.length) return asked;
     const area = this.room?.area;
-    if (!area || !this.hass) return [];
-    return areaEntities(this.hass, area, { domains: ['light'] })
+    const hass = this.hass;
+    if (!area || !hass) return [];
+    const lamps = this.room?.lamp_switches
+      ? lampSwitchesOf(hass, areaEntities(hass, area, { domains: ['switch'] }), () =>
+          this.requestUpdate(),
+        )
+      : [];
+    return [...areaEntities(hass, area, { domains: ['light'] }), ...lamps]
       .map((entity) => ({ entity, name: this.entity(entity).name }))
       .sort((a, b) => a.name.localeCompare(b.name, this.hass?.language))
       .map(({ entity }) => ({ entity }));

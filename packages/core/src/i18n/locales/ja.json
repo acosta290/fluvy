@@ -616,6 +616,8 @@
     "below_helper": "オフのときは値から上",
     "past_threshold": "しきい値を超えたとき",
     "show_mixed": "一部だけ点灯しているときに表示",
+    "lamp_switches": "プラグのランプも数える",
+    "lamp_switches_help": "名前がランプを示すスイッチ（「作業場のランプ」など）を部屋の照明として数えます。",
     "focus": "大きく表示する値",
     "card_blur": "透けて見える背景をぼかす",
     "card_blur_helper": "変更しないときは Fluvy の設定のすべてのカードの値（0% ではぼかさない）"

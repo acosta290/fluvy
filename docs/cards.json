@@ -2240,6 +2240,14 @@
           "required": true
         },
         {
+          "key": "lamp_switches",
+          "label": "Count lamps on plugs",
+          "does": "Counts a switch whose name says it is a lamp, such as Workbench lamp, among the room’s lights.",
+          "helper": "A switch whose name says it is a lamp, such as Workshop lamp, counts as one of the room’s lights.",
+          "type": "boolean",
+          "default": false
+        },
+        {
           "key": "names",
           "label": "Names",
           "does": "How a row is named where it has no name of its own: the entity’s full name, its own, or its device’s.",
@@ -15184,6 +15192,14 @@
           "helper": "What its Lights row counts and its quick action switches. A lamp on a plug added here comes on and goes off with them.",
           "type": "entities (light, switch)",
           "default": []
+        },
+        {
+          "key": "lamp_switches",
+          "label": "Count lamps on plugs",
+          "does": "Counts a switch whose name says it is a lamp, such as Workbench lamp, among the room’s lights.",
+          "helper": "A switch whose name says it is a lamp, such as Workshop lamp, counts as one of the room’s lights.",
+          "type": "boolean",
+          "default": false
         },
         {
           "key": "temperature_entity",

@@ -666,6 +666,8 @@
     "below_helper": "Aus: ab dem Wert aufwärts",
     "past_threshold": "Jenseits eines Schwellenwerts",
     "show_mixed": "Anzeigen, wenn nur einige an sind",
+    "lamp_switches": "Lampen an Steckdosen mitzählen",
+    "lamp_switches_help": "Ein Schalter, dessen Name sagt, dass er eine Lampe ist, etwa Werkstattlampe, zählt zu den Lichtern des Raums.",
     "focus": "Großer Wert",
     "card_blur": "Durchscheinendes weichzeichnen",
     "card_blur_helper": "Unverändert: wie in den Fluvy-Einstellungen für alle Karten; bei 0 % keine Unschärfe"

@@ -666,6 +666,8 @@
     "below_helper": "Desligado: do valor para cima",
     "past_threshold": "Ao passar um limiar",
     "show_mixed": "Mostrar quando só algumas estão acesas",
+    "lamp_switches": "Contar candeeiros em tomadas",
+    "lamp_switches_help": "Um interruptor cujo nome diz que é um candeeiro, como Candeeiro da oficina, conta como uma das luzes da divisão.",
     "focus": "Valor em destaque",
     "card_blur": "Desfocar o que se vê através",
     "card_blur_helper": "Sem alterar: o de todos os cartões, nas definições do Fluvy; sem desfocagem a 0 %"

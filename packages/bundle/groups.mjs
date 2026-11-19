@@ -63,6 +63,13 @@ const SIDEBAR_EDITOR =
 const PANEL =
   /\/packages\/(cards\/src\/(panel\/(?!on-demand\.ts)|chart\/engine\/preview\.ts)|tokens\/src\/palettes\/community\/|demo-home\/src\/simulate\.ts|core\/src\/i18n\/locales\/en\/panel\.json)/;
 
+/**
+ * The naming words (every language's, what the automatic dashboards read a house's names by: `words.generated.ts`)
+ * and the rule that reads a switch's name as a lamp's (1.23, #219: `shared/lamps.ts`): fetched with the strategy, and
+ * by the first Room lights or Room card asked for `lamp_switches`, never by a dashboard that asks for neither.
+ */
+const WORDS = /\/packages\/cards\/src\/(strategy\/words\.generated|shared\/lamps)\.ts/;
+
 /** The automatic dashboard's strategy (all of its folder but the definer, and its English): fetched when a dashboard asks for it. */
 const STRATEGY =
   /\/packages\/(cards\/src\/strategy\/(?!define\.ts)|core\/src\/i18n\/locales\/en\/strategy\.json)/;
@@ -474,7 +481,7 @@ const FORMS =
 /**
  * Where each module goes, first match wins: a language's catalogue, the page controls, the Activity page, the History
  * page, our history in the details dialog, Customise, a dashboard's sidebar in the panel, the settings panel, the
- * strategy and the heights it counts with the house, the wall, the forms of the cards every page carries, the weather
+ * naming words, the strategy and the heights it counts with the house, the wall, the forms of the cards every page carries, the weather
  * card, the calendar card, the media, the chart engine, the Chart card, the Energy period card, energy (the history
  * bars' readings on their own), devices (the cameras' sheet on its own), appliances (their pictures on their own),
  * automations and alerts families (each sheet on its own), the template card, the web page card, the Rounds card, what each card is, the
@@ -497,6 +504,7 @@ export const GROUPS = [
   { name: 'customise', test: CUSTOMISE },
   { name: 'sidebar-editor', test: SIDEBAR_EDITOR },
   { name: 'panel', test: PANEL },
+  { name: 'words', test: WORDS },
   { name: 'strategy', test: STRATEGY },
   { name: 'house-heights', test: HOUSE_HEIGHTS },
   { name: 'wall', test: WALL },

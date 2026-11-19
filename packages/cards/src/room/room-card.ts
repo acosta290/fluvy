@@ -44,7 +44,14 @@ import { Crossfade } from '../shared/crossfade.js';
 import { counted } from '../shared/counted.js';
 import { doingReading } from '../climate-family.js';
 import { ITEM_ALIASES, type AliasSpec } from '../shared/config.js';
-import { lampsOf, lightLook, meanHex, withMembers } from '../shared/light.js';
+import {
+  lampsOf,
+  lampSwitchesOf,
+  lightLook,
+  meanHex,
+  withMembers,
+  type LampSwitches,
+} from '../shared/light.js';
 import { sinceIds } from '../shared/since.js';
 import { EMPTY, NAME_LINE, ROW, rowsOf, statsRows, twoLines } from '../shared/heights.js';
 import { fitLine, type Segment } from '../shared/fit.js';
@@ -75,7 +82,7 @@ export type NamePosition = 'bottom' | 'top';
 export type ReadoutStyle = 'row' | 'wrap';
 export type ReadoutLabels = 'auto' | StatLabels;
 
-export interface RoomCardConfig extends FluvyCardConfig, LightColours, RoomTuning {
+export interface RoomCardConfig extends FluvyCardConfig, LightColours, RoomTuning, LampSwitches {
   /** The area (its id). */
   area: string;
   /** `photo` (default where the area has a picture, else `tile`): the picture, the readouts and the controls. `tile`: the head and the controls. `row`: a compact tile. */
@@ -232,13 +239,22 @@ const NOTHING: RoomContents = {
 const askedTiles = (config: RoomCardConfig | undefined): readonly TileItem[] | undefined =>
   Array.isArray(config?.tiles) && config.tiles.length ? config.tiles : undefined;
 
-/** The room's lights: those its config lists, else its `light.*` devices (what it declares and what it draws alike). */
+/**
+ * The room's lights: those its config lists, else its `light.*` devices (what it declares and what it draws alike) —
+ * and, where it asks (`lamp_switches`, #219), the switches among them `lamps` says are lamps on plugs: the card draws
+ * them once the rule's chunk has landed (`lampSwitchesOf`), what it declares never counts them.
+ */
 export const roomLights = (
   config: RoomCardConfig | undefined,
   devices: readonly string[],
+  lamps: (switches: readonly string[]) => readonly string[] = () => [],
 ): readonly string[] => {
   const own = idsOf(config?.lights);
-  return own.length ? own : devices.filter((id) => id.startsWith('light.'));
+  if (own.length) return own;
+  const lights = devices.filter((id) => id.startsWith('light.'));
+  return config?.lamp_switches
+    ? [...lights, ...lamps(devices.filter((id) => id.startsWith('switch.')))]
+    : lights;
 };
 
 /** The labels a room's readouts may be asked for besides `auto`, which anything else is read as. */
@@ -463,6 +479,13 @@ export class FluvyRoomCard extends FluvyTileCard {
     return contents;
   }
 
+  /** The room's lights among `devices`, its lamps on plugs with them where it asks (`roomLights`). */
+  private lights(devices: readonly string[]): readonly string[] {
+    return roomLights(this.room, devices, (switches) =>
+      lampSwitchesOf(this.hass, switches, () => this.requestUpdate()),
+    );
+  }
+
   /** The tiles the room offers: those asked for, else its lights then its other controls, four at most. */
   private tiles(): TileItem[] {
     const asked = askedTiles(this.room);
@@ -579,7 +602,7 @@ export class FluvyRoomCard extends FluvyTileCard {
         hass: this.hass,
         config: this.room,
         devices: this.contents().devices,
-        lights: roomLights(this.room, this.contents().devices),
+        lights: this.lights(this.contents().devices),
         state: (view) => this.stateOf(view),
         expect: (id, state) => this.expect(id, state),
         call: (domain, service, data) => this.call(domain, service, data, ''),
@@ -704,7 +727,7 @@ export class FluvyRoomCard extends FluvyTileCard {
     const { devices: ids } = this.contents();
     if (!this.hass) return nothing;
     const to = this.destination();
-    const lights = roomLights(this.room, ids);
+    const lights = this.lights(ids);
     const climate = ids.find((id) => id.startsWith('climate.'));
     const thermostat = climate ? this.entity(climate) : undefined;
     // what it is doing where the card asks, once its reading has landed (the Thermostat card's chunk): a window

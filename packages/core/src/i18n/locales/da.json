@@ -2107,6 +2107,8 @@
     "below_helper": "Fra: fra værdien og op",
     "past_threshold": "Forbi en tærskel",
     "show_mixed": "Vis, når kun nogle er tændt",
+    "lamp_switches": "Tæl lamper på stikkontakter",
+    "lamp_switches_help": "En kontakt, hvis navn siger, at den er en lampe, som Værkstedslampe, tæller som et af rummets lys.",
     "focus": "Stort tal",
     "card_blur": "Slør det, der skinner igennem",
     "card_blur_helper": "Uberørt: alle korts, fra Fluvys indstillinger; ingen sløring ved 0 %"

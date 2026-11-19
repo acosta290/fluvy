@@ -1412,6 +1412,8 @@
     "below_helper": "Vypnuté: od hodnoty nahor",
     "past_threshold": "Po prekročení prahu",
     "show_mixed": "Zobraziť, keď sú zapnuté len niektoré",
+    "lamp_switches": "Počítať lampy v zásuvkách",
+    "lamp_switches_help": "Spínač, ktorého názov hovorí, že ide o lampu, napríklad Lampa v dielni, sa počíta medzi svetlá miestnosti.",
     "focus": "Veľká hodnota",
     "card_blur": "Rozmazať to, čo presvitá",
     "card_blur_helper": "Bez zmeny: ako pri všetkých kartách v nastaveniach Fluvy; pri 0 % bez rozmazania"

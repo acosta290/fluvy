@@ -78,6 +78,7 @@ lights:
 | Option | Default | What it does |
 | --- | --- | --- |
 | `area` | **required** | Limits the card to the entities of this area. |
+| `lamp_switches` | `false` | Counts a switch whose name says it is a lamp, such as Workbench lamp, among the room’s lights. |
 | `names` | `full` | How a row is named where it has no name of its own: the entity’s full name, its own, or its device’s. `full` · `entity` · `device`. |
 | `name` |  | The name the card shows, in place of the entity’s own. |
 | `icon` |  | The card’s icon, in place of the entity’s own. |

@@ -258,6 +258,8 @@
     "below_helper": "Off: from the value up",
     "past_threshold": "Past a threshold",
     "show_mixed": "Show when only some are on",
+    "lamp_switches": "Count lamps on plugs",
+    "lamp_switches_help": "A switch whose name says it is a lamp, such as Workshop lamp, counts as one of the room’s lights.",
     "focus": "Large figure",
     "card_blur": "Blur what shows through",
     "card_blur_helper": "Untouched: every card’s, from Fluvy’s settings; none at 0 %"

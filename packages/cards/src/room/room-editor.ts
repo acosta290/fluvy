@@ -155,6 +155,7 @@ export const keys = configKeys<RoomCardConfig>()([
   'tiles',
   'quick_actions',
   'lights',
+  'lamp_switches',
   'path',
   'temperature_entity',
   'humidity_entity',
@@ -344,6 +345,7 @@ export const defaults: EditorDefaults = (config, hass) => {
     show_action: false,
     quick_actions: defaultGroups({ hass, devices, lights }),
     lights,
+    lamp_switches: false,
     tint: 'on',
     light_colors: lightDefaults().colors,
     light_whites: 'temperature',
@@ -414,6 +416,11 @@ export function getConfigForm(): LovelaceConfigForm {
         ...entitiesField('lights', ['light', 'switch']),
         helper: 'room-editor.lights_help',
       }),
+      // …or, where it lists none, the room's lamps on plugs among them by their names (#219)
+      onlyWhen((form) => (drawsRows(form) || drawsQuick(form)) && !listed(form, 'lights').length, {
+        ...boolField('lamp_switches'),
+        helper: 'editor.lamp_switches_help',
+      }),
       fieldRow(
         readingField('temperature', 'climate'),
         readingField('humidity', 'climate', 'humidifier'),
@@ -457,6 +464,7 @@ export function getConfigForm(): LovelaceConfigForm {
       readout_labels: 'room-editor.readout_labels',
       quick_actions: 'room-editor.quick_actions',
       lights: 'room.lights',
+      lamp_switches: 'editor.lamp_switches',
       include: 'room-editor.include',
       exclude: 'room-editor.exclude',
     }),

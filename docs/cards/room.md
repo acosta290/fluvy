@@ -51,6 +51,7 @@ show_quick_states: false
 # picture:
 path: /fluvy-auto/room-rm_living
 # lights:
+lamp_switches: false
 # temperature_entity:
 # humidity_entity:
 # include:
@@ -97,6 +98,7 @@ path: /fluvy-auto/room-rm_living
 | `picture` |  | A picture of the room, as an address; left out, the area’s own. |
 | `path` |  | Where a tap on the room goes. |
 | `lights` | none | The lights the room counts and its lights action switches; a lamp on a plug may be one of them. A list of `light` or `switch` entities. |
+| `lamp_switches` | `false` | Counts a switch whose name says it is a lamp, such as Workbench lamp, among the room’s lights. |
 | `temperature_entity` | none | The room’s temperature sensor, or a thermostat; left out, the area’s. |
 | `humidity_entity` | none | The humidity sensor the card reads, where it is not the one found by itself. |
 | `include` | nothing more | Counts these entities, devices or domains as the room’s too. A list. |

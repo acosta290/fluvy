@@ -174,6 +174,52 @@ describe('the room lights in their bulbs’ colours, in every style (#58)', () =
   });
 });
 
+describe('an area’s lamps on plugs, by their names, where the card asks (1.23, #219)', () => {
+  /** A workshop: a light, a lamp and a door light on relays, and a kettle on its plug. */
+  const workshop = (): HomeAssistant => {
+    const seeds = {
+      'light.workshop': state('light.workshop', 'on', { friendly_name: 'Workshop ceiling' }),
+      'switch.workshop_lamp': state('switch.workshop_lamp', 'on', { friendly_name: '工作室 电灯' }),
+      'switch.relay_door': state('switch.relay_door', 'off', { friendly_name: 'Door light' }),
+      'switch.kettle': state('switch.kettle', 'off', { friendly_name: 'Kettle' }),
+    };
+    return {
+      ...house(seeds),
+      entities: Object.fromEntries(
+        Object.keys(seeds).map((id) => [id, { entity_id: id, area_id: 'workshop' }]),
+      ),
+      areas: { workshop: { area_id: 'workshop', name: 'Workshop', picture: null } },
+    } as unknown as HomeAssistant;
+  };
+  const names = async (config: Record<string, unknown>): Promise<string[]> => {
+    const card = document.createElement('fluvy-lights-card') as CardElement;
+    card.setConfig({ type: 'custom:fluvy-lights-card', area: 'workshop', ...config });
+    card.hass = workshop();
+    document.body.append(card);
+    await card.updateComplete;
+    // the rule's chunk lands, and the card is drawn again
+    await import('../shared/lamps.js');
+    await new Promise((resolve) => setTimeout(resolve));
+    await card.updateComplete;
+    return [...card.shadowRoot!.querySelectorAll('.lt-bulb')].map(
+      (round) => round.getAttribute('aria-label') ?? '',
+    );
+  };
+
+  it('counts the lamps among the area’s lights, never the kettle; not unless asked', async () => {
+    expect(await names({})).toEqual(['Workshop ceiling']);
+    expect(await names({ lamp_switches: true })).toEqual([
+      'Door light',
+      'Workshop ceiling',
+      '工作室 电灯',
+    ]);
+    // a list of its own is the card's: the area's lamps are not added to it
+    expect(await names({ lamp_switches: true, lights: ['light.workshop'] })).toEqual([
+      'Workshop ceiling',
+    ]);
+  });
+});
+
 describe('a lamp on a plug, switched in its own domain (#170)', () => {
   /**
    * A room of a light and a lamp on a plug (a switch the house counts as a light), both off: its card and each call it

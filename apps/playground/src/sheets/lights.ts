@@ -93,6 +93,11 @@ export const sheet: SheetSpec = {
     ['light.lt_plug_b', 'off', plain('Salt lamp')],
     // a lamp on a plug: a switch the automatic dashboards count as a light by its name (#170)
     ['switch.lt_lamp', 'off', { friendly_name: 'Corner lamp' }],
+    // #219: a workshop whose lamps are on relays, named as lamps, beside its ceiling light and its kettle's plug
+    ['light.lt_workshop', 'on', dimmer('Workshop ceiling', 80)],
+    ['switch.lt_workshop_lamp', 'on', { friendly_name: 'Workbench lamp' }],
+    ['switch.lt_workshop_door', 'off', { friendly_name: 'Door light' }],
+    ['switch.lt_workshop_kettle', 'off', { friendly_name: 'Kettle', device_class: 'outlet' }],
     ['light.lt_long', 'on', white('The big paper lantern over the dining table in the corner', 60)],
     // a cool white: Home Assistant's colour for 8000 K, a blue a shade off white (6500 K is daylight, neutral)
     ['light.lt_cool', 'on', white('Bathroom', 80, 8000)],
@@ -123,10 +128,18 @@ export const sheet: SheetSpec = {
     entities: {
       'light.lt_island': { entity_id: 'light.lt_island', area_id: 'lt_kitchen' },
       'light.lt_pendants': { entity_id: 'light.lt_pendants', area_id: 'lt_kitchen' },
+      'light.lt_workshop': { entity_id: 'light.lt_workshop', area_id: 'lt_workshop' },
+      'switch.lt_workshop_lamp': { entity_id: 'switch.lt_workshop_lamp', area_id: 'lt_workshop' },
+      'switch.lt_workshop_door': { entity_id: 'switch.lt_workshop_door', area_id: 'lt_workshop' },
+      'switch.lt_workshop_kettle': {
+        entity_id: 'switch.lt_workshop_kettle',
+        area_id: 'lt_workshop',
+      },
     },
     areas: {
       lt_kitchen: { area_id: 'lt_kitchen', name: 'Kitchen' },
       lt_attic: { area_id: 'lt_attic', name: 'Attic' },
+      lt_workshop: { area_id: 'lt_workshop', name: 'Workshop', icon: 'wrench' },
     },
   },
   frames: [
@@ -461,6 +474,20 @@ export const sheet: SheetSpec = {
             { entity: 'light.lt_floor', name: 'Floor lamp by the sofa' },
           ],
         }),
+      ],
+    },
+    // #219: asked, the workshop's lamps on relays count among its lights by their names, never its kettle: the
+    // Room lights card's rounds and the room's lights row and round
+    {
+      title: 'Lamps on plugs, by their names (#219)',
+      cards: [
+        lights({ area: 'lt_workshop', lamp_switches: true }),
+        {
+          type: 'custom:fluvy-room-card',
+          area: 'lt_workshop',
+          variant: 'tile',
+          lamp_switches: true,
+        },
       ],
     },
     // #170: a lamp on a plug beside the room's lights, drawn as one that only switches and switched as a switch; the

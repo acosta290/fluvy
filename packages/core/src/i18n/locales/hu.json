@@ -616,6 +616,8 @@
     "below_helper": "Kikapcsolva: az értéktől felfelé",
     "past_threshold": "Küszöbérték átlépésekor",
     "show_mixed": "Jelezze, ha csak néhány ég",
+    "lamp_switches": "A konnektoros lámpák számolása",
+    "lamp_switches_help": "Az a kapcsoló, amelynek a neve szerint lámpa, például Műhelylámpa, a szoba lámpái közé számít.",
     "focus": "Nagy érték",
     "card_blur": "Az átlátszó háttér elmosása",
     "card_blur_helper": "Érintetlenül: az összes kártyáé, a Fluvy beállításaiból; 0 %-nál nincs elmosás"

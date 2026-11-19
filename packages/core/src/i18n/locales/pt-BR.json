@@ -666,6 +666,8 @@
     "below_helper": "Desligado, do valor para cima",
     "past_threshold": "Ao passar de um limite",
     "show_mixed": "Mostrar quando só algumas estão acesas",
+    "lamp_switches": "Contar luminárias em tomadas",
+    "lamp_switches_help": "Um interruptor cujo nome diz que é uma luminária, como Luminária da oficina, conta como uma das luzes do cômodo.",
     "focus": "Valor em destaque",
     "card_blur": "Desfocar o que aparece por trás",
     "card_blur_helper": "Sem mexer, o de todos os cartões nas configurações do Fluvy; sem desfoque em 0 %"

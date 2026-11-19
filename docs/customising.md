@@ -250,6 +250,10 @@ show_color: true
 colors: [warm, cool, red, orange, '#8e44ad', picker]
 ```
 
+`lamp_switches: true` on the room lights and room cards counts an area's lamps on plugs among its lights: a switch whose
+name says it is a lamp (Workbench lamp, 工作室 电灯), read in every language as the automatic dashboards read it. A
+kettle on its plug stays out. A list of your own `lights` wins.
+
 ### History bars
 
 The history bars card reads a sensor's long-term statistics: `days` bars of a `period` (days, weeks, months). `head`

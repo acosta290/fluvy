@@ -666,6 +666,8 @@
     "below_helper": "Uit: vanaf de waarde omhoog",
     "past_threshold": "Voorbij een drempel",
     "show_mixed": "Tonen wanneer er maar een paar aan zijn",
+    "lamp_switches": "Lampen aan stekkers meetellen",
+    "lamp_switches_help": "Een schakelaar waarvan de naam zegt dat het een lamp is, zoals Werkplaatslamp, telt mee als een van de lampen van de kamer.",
     "focus": "Groot getal",
     "card_blur": "Wat doorschijnt vervagen",
     "card_blur_helper": "Onaangeroerd: die van alle kaarten, uit de instellingen van Fluvy; geen vervaging bij 0 %"

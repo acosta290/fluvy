@@ -148,6 +148,8 @@ export const MEANINGS: Readonly<Record<string, string>> = {
   item_value: 'Where each item’s value comes from.',
   items_template: 'Makes the list from a template, so that any sensor can be a list of items.',
   keys: 'The keys the compact remote shows in its row, in this order.',
+  lamp_switches:
+    'Counts a switch whose name says it is a lamp, such as Workbench lamp, among the room’s lights.',
   level: 'A sensor of the car’s state of charge.',
   light_colors: 'Shows each light that is on in its bulb’s own colour.',
   light_whites: 'Draws a lit white by its colour temperature, or as the palette’s light.',

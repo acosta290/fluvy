@@ -1,12 +1,7 @@
-import {
-  APPLIANCE_WORDS,
-  applianceDevices,
-  kindOf,
-  signalsOf,
-  type ApplianceKind,
-} from '../appliance/kinds.js';
+import { applianceDevices, kindOf, signalsOf, type ApplianceKind } from '../appliance/kinds.js';
 import { printerDevices } from '../printer/roles.js';
 import { GATEWAYS } from '../shared/domain.js';
+import { isLampSwitch } from '../shared/lamps.js';
 import { says, type Rules } from '../shared/words.js';
 import {
   areaContents,
@@ -94,14 +89,6 @@ const OPENINGS = new Set([
 const TWIN_SWITCH = /outlet|usb|child|lock/i;
 /** The home's own forecast by its id, as Home Assistant names it after the home: Swedish's "hem" a word, no Chemnitz. */
 const HOME_FORECAST = /home|casa|hogar|[._]hem(?:_|$)/i;
-/**
- * What a switch's name says it is, read plain: a light, else an appliance of a kind or never one (電気ケトル is a kettle
- * on its plug, not the light 電気; a light's words win over a kind's that stand apart: "oven light").
- */
-const SWITCH_WORDS: Rules<'light' | ApplianceKind | 'never'> = [
-  ['light', LIGHT_WORDS],
-  ...APPLIANCE_WORDS,
-];
 /** Where a thing is: outdoors, against the house's own words (家庭, the household, holds no garden 庭). */
 const PLACE_WORDS: Rules<'outdoor' | 'home'> = [
   ['outdoor', OUTDOOR],
@@ -543,7 +530,7 @@ export class HomeRegistry {
     return says(where, PLACE_WORDS) === 'outdoor';
   }
   private isLightSwitch(id: string): boolean {
-    return id.startsWith('switch.') && says(this.label(id), SWITCH_WORDS) === 'light';
+    return isLampSwitch(id, this.name(id));
   }
   private fromWeather(id: string): boolean {
     return WEATHER_PLATFORMS.test(this.platform(id)) || this.forecast(id);

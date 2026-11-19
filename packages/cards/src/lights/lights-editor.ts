@@ -25,6 +25,7 @@ import {
   nameIconFields,
   nameLinesField,
   namesField,
+  listed,
   onlyWhen,
   selectField,
   showIconField,
@@ -66,6 +67,7 @@ export const base: readonly BaseKey[] = [
 
 export const keys = configKeys<LightsCardConfig>()([
   'area',
+  'lamp_switches',
   'lights',
   'variant',
   'switch_style',
@@ -135,6 +137,7 @@ export const lists: readonly RowsListSpec[] = [
 ];
 
 export const defaults: EditorDefaults = (config, hass) => ({
+  lamp_switches: false,
   variant: 'row',
   name_lines: '1',
   switch_style: 'toggle',
@@ -155,6 +158,11 @@ export function getConfigForm(): LovelaceConfigForm {
   return {
     schema: [
       areaField(),
+      // the area's lamps on plugs among its lights, where the card finds them there (#219)
+      onlyWhen((form) => Boolean(form['area']) && !listed(form, 'lights', 'entities').length, {
+        ...boolField('lamp_switches'),
+        helper: 'editor.lamp_switches_help',
+      }),
       // the lights' names, the list's or the area's: the room's own name is the card's
       onlyWhen(holdsDevice('lights', 'entities', 'light'), namesField()),
       fieldRow(textField('name'), iconField()),
@@ -208,6 +216,7 @@ export function getConfigForm(): LovelaceConfigForm {
       show_level: 'lights.editor_show_level',
       show_brightness: 'lights.editor_show_brightness',
       show_mixed: 'editor.show_mixed',
+      lamp_switches: 'editor.lamp_switches',
       show_color: 'editor.color_round',
       color_action: 'editor.color_action',
       color_control: 'editor.color_control',

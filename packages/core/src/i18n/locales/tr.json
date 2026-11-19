@@ -666,6 +666,8 @@
     "below_helper": "Kapalıysa, değerden yukarısı",
     "past_threshold": "Bir eşik geçildiğinde",
     "show_mixed": "Yalnızca bazıları açıkken göster",
+    "lamp_switches": "Prizdeki lambaları say",
+    "lamp_switches_help": "Adı onun bir lamba olduğunu söyleyen bir anahtar, örneğin Atölye lambası, odanın ışıklarından biri sayılır.",
     "focus": "Büyük değer",
     "card_blur": "Arkada görüneni bulanıklaştır",
     "card_blur_helper": "Dokunulmazsa, Fluvy ayarlarındaki tüm kartlarınki; %0’da bulanıklık yok"

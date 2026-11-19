@@ -666,6 +666,8 @@
     "below_helper": "Spento, dal valore in su",
     "past_threshold": "Oltre una soglia",
     "show_mixed": "Indica quando solo alcune sono accese",
+    "lamp_switches": "Conta le lampade sulle prese",
+    "lamp_switches_help": "Un interruttore il cui nome dice che è una lampada, come Lampada del laboratorio, conta tra le luci della stanza.",
     "focus": "Cifra grande",
     "card_blur": "Sfoca ciò che si vede attraverso",
     "card_blur_helper": "Invariato, quello di tutte le schede nelle impostazioni di Fluvy; niente sfocatura allo 0 %"

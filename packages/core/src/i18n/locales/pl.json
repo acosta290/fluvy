@@ -1351,6 +1351,8 @@
     "below_helper": "Wyłączone: od wartości w górę",
     "past_threshold": "Po przekroczeniu progu",
     "show_mixed": "Pokaż, gdy włączone są tylko niektóre",
+    "lamp_switches": "Licz lampy na gniazdkach",
+    "lamp_switches_help": "Przełącznik, którego nazwa mówi, że to lampa, na przykład Lampa w warsztacie, liczy się jako jedno ze świateł pomieszczenia.",
     "focus": "Duża wartość",
     "card_blur": "Rozmyj to, co prześwituje",
     "card_blur_helper": "Nieustawione: wspólne dla wszystkich kart, z ustawień Fluvy; przy 0 % bez rozmycia"

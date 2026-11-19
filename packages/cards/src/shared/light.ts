@@ -2,6 +2,37 @@ import { resolveEntity, WHITE, type EntityView, type HomeAssistant } from '@fluv
 import type { Tone } from '@fluvy/ui';
 import type { Coloured } from './colour.js';
 
+/** A room's lights, as a card that finds them in an area may count them (#219). */
+export interface LampSwitches {
+  /** A switch whose name says it is a lamp ("Workshop lamp") is one of the room's lights; off by default. */
+  lamp_switches?: boolean;
+}
+
+/** The lamp rule's module (`lamps.ts`, the naming words' chunk), once the first card that asks has fetched it. */
+let lamps: typeof import('./lamps.js') | undefined;
+let fetchingLamps: Promise<unknown> | undefined;
+
+/**
+ * The switches among `ids` whose names say they are lamps (`lamp_switches`), by the rule the automatic dashboards
+ * count a room's lights by: none until its chunk has landed, fetched by the first card that asks, which is drawn again
+ * then (`redraw`).
+ */
+export function lampSwitchesOf(
+  hass: HomeAssistant | undefined,
+  ids: readonly string[],
+  redraw: () => void,
+): readonly string[] {
+  if (lamps) {
+    const { isLampSwitch } = lamps;
+    return ids.filter((id) => isLampSwitch(id, resolveEntity(hass, id).name));
+  }
+  (fetchingLamps ??= import('./lamps.js').then((module) => (lamps = module))).then(
+    redraw,
+    () => undefined,
+  );
+  return [];
+}
+
 /** Home Assistant's colour modes that carry a colour of their own (a white or a dimmed lamp does not). */
 export const COLOURED: ReadonlySet<string> = new Set(['hs', 'rgb', 'rgbw', 'rgbww', 'xy']);
 

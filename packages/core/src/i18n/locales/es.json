@@ -666,6 +666,8 @@
     "below_helper": "Apagado, desde el valor hacia arriba",
     "past_threshold": "Al pasar un umbral",
     "show_mixed": "Mostrar cuando solo algunas están encendidas",
+    "lamp_switches": "Contar las lámparas en enchufes",
+    "lamp_switches_help": "Un interruptor cuyo nombre dice que es una lámpara, como Lámpara del taller, cuenta entre las luces de la estancia.",
     "focus": "Cifra grande",
     "card_blur": "Desenfocar lo que se ve a través",
     "card_blur_helper": "Sin tocar, el de todas las tarjetas en los ajustes de Fluvy; sin desenfoque al 0 %"
