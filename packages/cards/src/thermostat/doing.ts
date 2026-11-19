@@ -11,6 +11,7 @@ import {
 import type { Tone } from '@fluvy/ui';
 import { onItsDevice } from '../shared/battery.js';
 import { haWord, pretty } from '../shared/mode-words.js';
+import { ACTION_TONE } from './tones.js';
 
 /*
  * What a thermostat is doing (1.21, #185), read once for everything that says it: the Thermostat card's head, its
@@ -51,21 +52,6 @@ export interface DoingHost {
   readonly rawHass: HomeAssistant | undefined;
 }
 
-/**
- * The tone an action's word wears, by what Home Assistant calls it (a climate's `hvac_action`, a humidifier's
- * `action`): what the device is doing, whatever mode it is in. Idle and off are quiet.
- */
-const ACTION_TONE: ReadonlyMap<string, Tone> = new Map([
-  ['preheating', 'heat'],
-  ['heating', 'heat'],
-  ['defrosting', 'heat'],
-  ['cooling', 'cool'],
-  ['drying', 'dry'],
-  ['fan', 'fan'],
-  ['humidifying', 'water'],
-  ['idle', 'neutral'],
-  ['off', 'neutral'],
-]);
 /** What a mode does while it runs: what a switch that is on says of a thermostat in it (heating in any other). */
 const RUNS: Readonly<Record<string, string>> = { cool: 'cooling', dry: 'drying', fan_only: 'fan' };
 

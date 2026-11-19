@@ -265,3 +265,33 @@ what fills a control inside a card, `var(--fluvy-inset, var(--fluvy-page))`; and
 the palette casts, `rgb(0 0 0 / calc(0.25 * var(--fluvy-shade, 1)))`, which is none there. Home Assistant's own variables (`--primary-color`,
 `--card-background-color`, the `--ha-color-*` scales, the state colours, the chart colours) are all set by the theme
 file, so anything themed the Home Assistant way follows too.
+
+### The tones a card wears
+
+A part that is on wears a tone: four variables, its ink (a line, a glyph, a figure), the fill of an "on" surface, that
+fill's hairline and the ink on the fill. A card of your own wears the same by their names, and follows the palette, its
+mode and the house's colours with Fluvy's cards:
+
+| Tone | Ink | Fill | Hairline | Ink on the fill |
+| --- | --- | --- | --- | --- |
+| Heat | `--fluvy-state-climate-heat` | `--fluvy-state-climate-heat-fill` | `--fluvy-state-climate-heat-fill-border` | `--fluvy-state-climate-heat-on-fill` |
+| Cool | `--fluvy-state-climate-cool` | `--fluvy-state-climate-cool-fill` | `--fluvy-state-climate-cool-fill-border` | `--fluvy-state-climate-cool-on-fill` |
+| Dry | `--fluvy-state-climate-dry` | `--fluvy-state-climate-dry-fill` | `--fluvy-state-climate-dry-fill-border` | `--fluvy-state-climate-dry-on-fill` |
+| Fan | `--fluvy-state-climate-fan` | `--fluvy-state-climate-fan-fill` | `--fluvy-state-climate-fan-fill-border` | `--fluvy-state-climate-fan-on-fill` |
+| Water (humidifying) | `--fluvy-state-energy-water` | `--fluvy-state-energy-water-fill` | `--fluvy-state-energy-water-fill-border` | `--fluvy-state-energy-water-on-fill` |
+| Light | `--fluvy-state-light-active` | `--fluvy-state-light-active-fill` | `--fluvy-state-light-active-fill-border` | `--fluvy-state-light-active-on-fill` |
+| Accent (auto, heat and cool) | `--fluvy-accent` | `--fluvy-accent-fill` | `--fluvy-accent-fill-border` | `--fluvy-accent-on-fill` |
+
+A thermostat's mode takes the tone of its name (`heat_cool` and `auto` the accent, `off` none); what it is doing takes
+its action's: heating, preheating and defrosting the heat, cooling the cool, drying the dry, the fan its own,
+humidifying the water, idle and off none. Home Assistant's own names stay set by the theme too
+(`--state-climate-heat-color`, `--state-climate-cool-color`, `--state-climate-dry-color`,
+`--state-climate-fan_only-color`).
+
+```css
+.my-row.heating {
+  background: var(--fluvy-state-climate-heat-fill);
+  box-shadow: inset 0 0 0 1px var(--fluvy-state-climate-heat-fill-border);
+  color: var(--fluvy-state-climate-heat-on-fill);
+}
+```

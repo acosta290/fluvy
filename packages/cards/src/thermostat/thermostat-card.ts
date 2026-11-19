@@ -67,6 +67,7 @@ import {
 } from '../shared/value-row.js';
 import { degrees, doing, setpoint, type Doing } from './doing.js';
 import { batteryLevel, humidityOf, valveOf, windowBy, type ReadingsAsk } from './readings.js';
+import { MODE_TONE } from './tones.js';
 
 export type ThermostatVariant = 'dial' | 'compact' | 'ruler';
 export type RowStyle = 'chips' | 'full';
@@ -200,15 +201,6 @@ const MODE_GLYPH: Record<string, GlyphName> = {
   comfort: 'home',
   baby: 'person',
   home: 'home',
-};
-const MODE_TONE: Record<string, Tone> = {
-  heat: 'heat',
-  cool: 'cool',
-  heat_cool: 'accent',
-  auto: 'accent',
-  dry: 'dry',
-  fan_only: 'fan',
-  off: 'neutral',
 };
 /** A climate's modes, in Home Assistant's order: the card draws them so, and has a word for each. */
 export const MODE_ORDER = ['off', 'heat', 'cool', 'heat_cool', 'auto', 'dry', 'fan_only'];
