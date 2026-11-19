@@ -2748,6 +2748,8 @@
     "dashboard.two_lines": "Dwa wiersze",
     "wall.subview_none": "Brak",
     "wall.subview_none_sub": "Sam podwidok: podwidoki Fluvy prowadzą z powrotem z nagłówka, a wyjście zostaje w rogu",
+    "dashboard.up_to": "Do…",
+    "dashboard.up_to_count": "Do {count} na listę",
     "cards.levels": "Ikony pokazują poziom",
     "cards.levels_sub": "Naładowanie baterii, kreski sygnału, zawór otwarty lub zamknięty"
   },

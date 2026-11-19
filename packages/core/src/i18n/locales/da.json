@@ -3153,6 +3153,8 @@
     "dashboard.two_lines": "To linjer",
     "wall.subview_none": "Ingen",
     "wall.subview_none_sub": "Kun under-visningen: Fluvys under-visninger fører tilbage fra deres overskrift, og vejen ud bliver i hjørnet",
+    "dashboard.up_to": "Op til…",
+    "dashboard.up_to_count": "Op til {count} pr. liste",
     "cards.levels": "Ikoner viser niveauet",
     "cards.levels_sub": "Et batteris opladning, et signals streger, en ventil åben eller lukket"
   },

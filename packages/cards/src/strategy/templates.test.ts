@@ -592,7 +592,7 @@ describe('the dashboard templates', () => {
     }
     expect(strategyOptions({ names: 'entity' }, templateById('energy'))).toEqual({});
     expect(strategyOptions('nonsense', HOME_TEMPLATE)).toEqual({});
-    // the caps: every list whole, or a list's own number or `none`, the lists every template knows
+    // the caps: every list whole, up to a number, or a list's own number or `none`, the lists every template knows
     for (const template of TEMPLATES) {
       expect(strategyOptions({ caps: 'none' }, template)).toEqual({ caps: 'none' });
       expect(
@@ -602,6 +602,13 @@ describe('the dashboard templates', () => {
         ),
       ).toEqual({ caps: { lights: 12, humidity: 'none' } });
       expect(strategyOptions({ caps: 'some' }, template)).toEqual({});
+      // every list up to a number (#231), a list's own winning over `all`
+      expect(strategyOptions({ caps: 10 }, template)).toEqual({ caps: 10 });
+      expect(strategyOptions({ caps: { all: 10, lights: 4, every: 3 } }, template)).toEqual({
+        caps: { all: 10, lights: 4 },
+      });
+      for (const nonsense of [0, 1.5, -2])
+        expect(strategyOptions({ caps: nonsense }, template)).toEqual({});
       // what a dashboard leaves out is the house's own, as its weather is: every template offers it, no file carries it
       expect(template.options.some((option) => option.key === 'exclude')).toBe(true);
       expect(strategyOptions({ exclude: ['climate.water_heater'] }, template)).toEqual({});

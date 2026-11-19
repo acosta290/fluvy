@@ -34,7 +34,7 @@ export type TemplateOption =
   | { readonly key: 'hide'; readonly kind: 'views'; readonly label: KeyOf<'panel'> }
   /** Which rooms the dashboard shows (`areas`). */
   | { readonly key: 'areas'; readonly kind: 'areas'; readonly label: KeyOf<'panel'> }
-  /** How many of a long list a view shows (`caps`): the house's caps, or every list whole (`none`). */
+  /** How many of a long list a view shows (`caps`): the house's caps, up to a number (#231), or every list whole. */
   | { readonly key: 'caps'; readonly kind: 'caps'; readonly label: KeyOf<'panel'> }
   /** What no view shows nor counts (`exclude`, #141): the house's own entities, which a settings file never carries. */
   | { readonly key: 'exclude'; readonly kind: 'entities'; readonly label: KeyOf<'panel'> }
@@ -166,7 +166,7 @@ const NAME_LINES = choice('name_lines', 'dashboard.name_lines', [
   { value: 1, label: 'dashboard.one_line' },
   { value: 2, label: 'dashboard.two_lines' },
 ]);
-/** The long lists: at the house's caps, each with its "N more" row, or whole. */
+/** The long lists: at the house's caps, each with its "N more" row, up to a number of the person's, or whole. */
 const CAPS: TemplateOption = { key: 'caps', kind: 'caps', label: 'dashboard.caps' };
 /** What every view leaves out, as if the house had none of it. */
 const EXCLUDE: TemplateOption = { key: 'exclude', kind: 'entities', label: 'dashboard.exclude' };
@@ -395,7 +395,7 @@ export function strategyOptions(raw: unknown, template: Template): Record<string
       if (option.values.some((known) => known.value === value)) options[option.key] = value;
     } else if (option.kind === 'caps') {
       const caps = capsOf(value);
-      if (caps === 'none' || Object.keys(caps).length) options[option.key] = caps;
+      if (typeof caps !== 'object' || Object.keys(caps).length) options[option.key] = caps;
     } else if (option.kind === 'background') {
       if (isRecord(value)) options[option.key] = parseBackground(value);
     } else if (option.kind !== 'entities' && Array.isArray(value)) {

@@ -1655,6 +1655,8 @@
     "dashboard.two_lines": "İki satır",
     "wall.subview_none": "Yok",
     "wall.subview_none_sub": "Yalnızca alt görünüm: Fluvy’nin alt görünümleri başlıklarından geri götürür, çıkış köşede kalır",
+    "dashboard.up_to": "En fazla…",
+    "dashboard.up_to_count": "Liste başına en fazla {count}",
     "cards.levels": "Simgeler seviyeyi gösterir",
     "cards.levels_sub": "Pilin şarjı, sinyalin çubukları, vananın açık ya da kapalı olması"
   },

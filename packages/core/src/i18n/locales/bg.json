@@ -3174,6 +3174,8 @@
     "dashboard.two_lines": "Два реда",
     "wall.subview_none": "Няма",
     "wall.subview_none_sub": "Само подизгледът: подизгледите на Fluvy водят обратно от заглавието си, а изходът остава в ъгъла",
+    "dashboard.up_to": "До…",
+    "dashboard.up_to_count": "До {count} на списък",
     "cards.levels": "Иконите показват нивото",
     "cards.levels_sub": "Зарядът на батерия, чертите на сигнал, клапан отворен или затворен"
   },

@@ -3073,6 +3073,8 @@
     "dashboard.two_lines": "Dva riadky",
     "wall.subview_none": "Žiadne",
     "wall.subview_none_sub": "Iba podzobrazenie: podzobrazenia Fluvy vedú späť zo svojho nadpisu a ukončenie zostáva v rohu",
+    "dashboard.up_to": "Najviac…",
+    "dashboard.up_to_count": "Najviac {count} v každom zozname",
     "cards.levels": "Ikony ukazujú úroveň",
     "cards.levels_sub": "Nabitie batérie, čiarky signálu, ventil otvorený alebo zatvorený"
   },

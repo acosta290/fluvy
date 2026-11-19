@@ -61,10 +61,11 @@ export type CapKey =
   | 'openings'
   | 'automations';
 /**
- * How many of each list a view shows before its "N more" row: `none`, every list whole; else a list's own number (or
- * `none`, that list whole), the others at the house's caps.
+ * How many of each list a view shows before its "N more" row: `none`, every list whole; a whole number, every list up
+ * to it (#231); else a list's own number (or `none`, that list whole), and `all` the lists it does not name, the others
+ * at the house's caps.
  */
-export type Caps = 'none' | Readonly<Partial<Record<CapKey, number | 'none'>>>;
+export type Caps = 'none' | number | Readonly<Partial<Record<CapKey | 'all', number | 'none'>>>;
 
 /**
  * What is a room's photo's alone (#159), as its card takes it: where its name stands, its readouts on one row or
@@ -150,7 +151,10 @@ export interface FluvyStrategyConfig {
    * header's tabs wear the look: 1.5).
    */
   greeting_tabs?: 'show' | 'hide';
-  /** How many of a long list a view shows (default: the house's caps, each with its "N more" row). */
+  /**
+   * How many of a long list a view shows (default: the house's caps, each with its "N more" row; a number: every list
+   * up to it).
+   */
   caps?: Caps;
   /**
    * A room's own `include` and `exclude` by its area's id (#95), as its card takes them: what its card counts and fills

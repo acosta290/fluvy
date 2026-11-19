@@ -3138,6 +3138,8 @@
     "dashboard.two_lines": "Два рядки",
     "wall.subview_none": "Немає",
     "wall.subview_none_sub": "Лише підвкладка: підвкладки Fluvy ведуть назад зі свого заголовка, а вихід лишається в куті",
+    "dashboard.up_to": "До…",
+    "dashboard.up_to_count": "До {count} у списку",
     "cards.levels": "Значки показують рівень",
     "cards.levels_sub": "Заряд батареї, поділки сигналу, клапан відкритий чи закритий"
   },

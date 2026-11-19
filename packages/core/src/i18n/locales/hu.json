@@ -3091,6 +3091,8 @@
     "dashboard.two_lines": "Két sor",
     "wall.subview_none": "Nincs",
     "wall.subview_none_sub": "Csak az almező: a Fluvy almezői a címsorukból vezetnek vissza, a kijárat pedig a sarokban marad",
+    "dashboard.up_to": "Legfeljebb…",
+    "dashboard.up_to_count": "Listánként legfeljebb {count}",
     "cards.levels": "Az ikonok mutatják a szintet",
     "cards.levels_sub": "Az akkumulátor töltöttsége, a jel sávjai, a szelep nyitva vagy zárva"
   },

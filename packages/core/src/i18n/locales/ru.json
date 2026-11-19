@@ -3138,6 +3138,8 @@
     "dashboard.two_lines": "Две строки",
     "wall.subview_none": "Нет",
     "wall.subview_none_sub": "Только вспомогательный вид: виды Fluvy ведут назад из своего заголовка, а выход остаётся в углу",
+    "dashboard.up_to": "До…",
+    "dashboard.up_to_count": "До {count} в списке",
     "cards.levels": "Значки показывают уровень",
     "cards.levels_sub": "Заряд батареи, деления сигнала, клапан открыт или закрыт"
   },

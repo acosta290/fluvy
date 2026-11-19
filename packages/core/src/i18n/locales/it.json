@@ -1655,6 +1655,8 @@
     "dashboard.two_lines": "Due righe",
     "wall.subview_none": "Nessuno",
     "wall.subview_none_sub": "Solo la sottovista: le sottoviste di Fluvy riportano indietro dalla loro intestazione, e l’uscita resta nell’angolo",
+    "dashboard.up_to": "Fino a…",
+    "dashboard.up_to_count": "Fino a {count} per elenco",
     "cards.levels": "Le icone mostrano il livello",
     "cards.levels_sub": "La carica di una batteria, le tacche di un segnale, una valvola aperta o chiusa"
   },

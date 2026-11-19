@@ -61,6 +61,7 @@ import {
   round,
   rulerLabels,
   type RulerChangeDetail,
+  stepper,
 } from '@fluvy/ui';
 import '@fluvy/ui/select';
 import '@fluvy/ui/time-field';
@@ -96,6 +97,8 @@ import {
 import { html, nothing, svg, type TemplateResult } from 'lit';
 import { repeat } from 'lit/directives/repeat.js';
 import { defaultColumns, fittedColumns, inForce } from '../shared/chips.js';
+import { STEPPER } from '../shared/value-row.js';
+import { capsOf } from '../strategy/caps.js';
 import {
   optionalViews,
   TEMPLATES,
@@ -1683,26 +1686,74 @@ function areasChoice(ctx: PanelContext, urlPath: string, current: unknown): Temp
   );
 }
 
+/** The number every list shows up to (#231), as the stepper sets it: 1 to 50, 10 where it is first chosen. */
+const UP_TO = { min: 1, max: 50, first: 10 } as const;
+
 /**
- * How long lists are drawn: shortened (the house's caps, each with its "N more" row: the default, which writes nothing)
- * or in full (`caps: none`). A dashboard whose raw configuration raises a list's cap reads as shortened, and keeps its
- * numbers until it asks for every list in full.
+ * How long lists are drawn: shortened (the house's caps, each with its "N more" row: the default, which writes
+ * nothing), up to a number for every list (#231: `caps: 10`, on a stepper under the chips while it is chosen), or in
+ * full (`caps: none`). A list's own number in the raw configuration wins over the one for every list (`all`), and is
+ * kept until every list is asked for in full.
  */
 function capsChoice(ctx: PanelContext, urlPath: string, current: unknown): TemplateResult {
-  const whole = current === 'none';
-  return choice(
+  const caps = capsOf(current);
+  const every = typeof caps === 'object' ? caps.all : caps;
+  const lists =
+    typeof caps === 'object'
+      ? Object.fromEntries(Object.entries(caps).filter(([key]) => key !== 'all'))
+      : {};
+  const own = Object.keys(lists).length > 0;
+  const chosen = every === 'none' ? 'none' : every === undefined ? 'shortened' : 'up_to';
+  const write = (next: number | 'none' | undefined): void =>
+    ctx.editStrategy(urlPath, {
+      caps:
+        next === 'none'
+          ? 'none'
+          : next === undefined
+            ? own
+              ? lists
+              : undefined
+            : own
+              ? { ...lists, all: next }
+              : next,
+    });
+  const chips = choice(
     ctx,
     [
-      { key: 'shortened', label: ctx.t('dashboard.shortened'), active: !whole },
-      { key: 'none', label: ctx.t('dashboard.in_full'), active: whole },
+      { key: 'shortened', label: ctx.t('dashboard.shortened'), active: chosen === 'shortened' },
+      { key: 'up_to', label: ctx.t('dashboard.up_to'), active: chosen === 'up_to' },
+      { key: 'none', label: ctx.t('dashboard.in_full'), active: chosen === 'none' },
     ],
     ctx.admin
       ? (key) => {
-          if ((key === 'none') !== whole)
-            ctx.editStrategy(urlPath, { caps: key === 'none' ? 'none' : undefined });
+          if (key !== chosen)
+            write(key === 'none' ? 'none' : key === 'up_to' ? UP_TO.first : undefined);
         }
       : null,
   );
+  if (typeof every !== 'number') return chips;
+  const title = ctx.t('dashboard.up_to_count', { count: every });
+  // the row gives its circle to its words where they would not hold beside the stepper at the widest number
+  const keep =
+    !ctx.fit ||
+    ctx.fit.ruler.width('fv-row__title', ctx.t('dashboard.up_to_count', { count: UP_TO.max })) <=
+      ctx.fit.width - 56 - 12 - STEPPER;
+  const step = (direction: 1 | -1): void => {
+    const next = Math.min(UP_TO.max, Math.max(UP_TO.min, every + direction));
+    if (next !== every) write(next);
+  };
+  return html`${chips}
+    <div class="pn-rows">
+      ${listRow({
+        icon: keep ? 'list' : null,
+        title,
+        trailing: stepper(step, {
+          disabled: !ctx.admin,
+          decrease: `${title} · ${localize(ctx.hass, 'common.decrease')}`,
+          increase: `${title} · ${localize(ctx.hass, 'common.increase')}`,
+        }),
+      })}
+    </div>`;
 }
 
 /** Home Assistant's entity picker, as many as chosen: what a dashboard leaves out (Home Assistant's own element). */

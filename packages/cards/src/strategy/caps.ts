@@ -6,7 +6,7 @@ import type { Card, CapKey, Caps, DashboardEdit, MoreHost, StrategyContext } fro
 /*
  * The automatic dashboards' capped lists (#78): a view shows the first of a long list, so a big house still reads,
  * and what is past the cap is one row away — "N more", which opens a subview of every one, back to the view. The
- * dashboard's `caps` raises a list's cap, lifts it, or lifts them all.
+ * dashboard's `caps` raises a list's cap, lifts it, sets one for them all (#231), or lifts them all.
  */
 
 /** How many of each list a view shows (design/language.md "Capped lists"); a view may keep its own (`ListSpec.cap`). */
@@ -71,22 +71,25 @@ const isCount = (value: unknown): value is number =>
   typeof value === 'number' && Number.isInteger(value) && value >= 1;
 
 /**
- * A dashboard's `caps`, well formed: `none`, or the lists it names, each a whole number from 1 or `none`; anything else
- * leaves the house's caps.
+ * A dashboard's `caps`, well formed: `none`, a whole number from 1 for every list, or the lists it names and `all` for
+ * the rest, each a whole number from 1 or `none`; anything else leaves the house's caps.
  */
 export function capsOf(raw: unknown): Caps {
-  if (raw === 'none') return 'none';
+  if (raw === 'none' || isCount(raw)) return raw;
   if (typeof raw !== 'object' || raw === null || Array.isArray(raw)) return {};
   return Object.fromEntries(
     Object.entries(raw).filter(
-      ([key, value]) => isCapKey(key) && (value === 'none' || isCount(value)),
+      ([key, value]) => (key === 'all' || isCapKey(key)) && (value === 'none' || isCount(value)),
     ),
   ) as Caps;
 }
 
-/** How many of a list a view shows: the dashboard's number for it, else the view's own cap, else the house's. */
+/**
+ * How many of a list a view shows: the dashboard's number for it, else its number for every list, else the view's own
+ * cap, else the house's.
+ */
 export function capOf(caps: Caps, key: CapKey, own = CAPS[key]): number {
-  const asked = caps === 'none' ? 'none' : caps[key];
+  const asked = typeof caps === 'object' ? (caps[key] ?? caps.all) : caps;
   return asked === 'none' ? Number.POSITIVE_INFINITY : (asked ?? own);
 }
 

@@ -155,6 +155,31 @@ The Openings and Automations cards fold their own lists at their cap, the rest o
 than on a page of their own; in full, they fold none. Home's appliance bands keep their own two rows (eight large, five
 small) and lead to every appliance.
 
+The panel's *Long lists* offers three choices: *Shortened* (the caps above, the default, which writes nothing), *Up
+to…* (one number for every list, from 1 to 50 on a stepper, 1.23) or *In full* (every list whole). In YAML, `caps`
+takes the same and a list's own number besides, which wins over the one for every list (`all`):
+
+```yaml
+strategy:
+  type: custom:fluvy-home
+  # every list up to 10, each "N more" row past them
+  caps: 10
+```
+
+```yaml
+strategy:
+  type: custom:fluvy-home
+  # every list up to 10, the lights up to 4 and the cameras whole
+  caps:
+    all: 10
+    lights: 4
+    cameras: none
+```
+
+A number for every list takes the place of a view's own cap too (the wall's six security rows, the Cameras view's
+twelve, the twelve scenes as chips); one past it is still shown on a list of rows or tiles. Home's appliance bands
+keep their own rows whatever `caps` says.
+
 ## How it reads a home
 
 - **Words**, in every language Fluvy speaks (a house is named in its own language, whatever the UI's), the way people
@@ -232,7 +257,7 @@ goes past an option, one card hidden, moved or tuned, is [Customise](#customise)
 | `greeting_tabs` | `hide` (default), `show` | home, rooms, energy, security, lights, climate | the views as chips under the greeting too, besides the header's tabs (until 1.4 they always were): the way between them on a kiosk with no header |
 | `rooms_as` | `pages` (default), `tabs` | rooms | each room a page behind its card, or a tab of its own after *All rooms*, in the house's order of its rooms (1.22, [Rooms as tabs](#rooms-as-tabs)) |
 | `background` | `type`: `plain`, `gradient`, `color` or `image`, and that type's own keys: `colors` (one hex, or two from the top to the bottom), `image` (a path of Home Assistant's such as `/local/backgrounds/garden.jpg`, or a web address), `dim` (0 to 80 in steps of 5, default 40), `blur` (default `false`) | all | what lies behind this dashboard's cards in place of the house's (default: the house's, the panel's *Appearance › Background*; below); `type: plain` keeps this dashboard plain whatever the house chooses |
-| `caps` | a list's own number or `none` by its key (`caps: { lights: 12, humidity: none }`), or `none` for every list | all | how many of a long list a view shows (default: the house's caps, above, each with its "N more" row); the panel offers *Shortened* (the default) or *In full* |
+| `caps` | a whole number for every list (`caps: 10`, 1.23), a list's own number or `none` by its key and `all` for the lists it does not name (`caps: { all: 10, lights: 12, humidity: none }`), or `none` for every list | all | how many of a long list a view shows (default: the house's caps, above, each with its "N more" row); the panel offers *Shortened* (the default), *Up to…* (a number on a stepper) or *In full* ([Capped lists](#capped-lists)) |
 | `rooms` | by area id, a room's `include` and `exclude`, as the room card takes them: entity ids, patterns of ids, device ids or domains (`rooms: { kitchen: { exclude: [switch.dishwasher_*] } }`); and that room's own `name_position`, `readout_style` and `readout_labels`, over the dashboard's (`rooms: { kitchen: { name_position: top } }`) | home, rooms, wall | what that room's card counts and fills by, whether the room is shown, and what its page holds, and how its photo is drawn; in the raw configuration only (the settings file never carries a house's entities) |
 | `exclude` | a list of entity ids, patterns of ids, device ids or domains, as a room's `exclude` takes them (`exclude: [climate.water_heater, sensor.inverter_mppt_*]`) | all | what no view shows nor counts, as if the house had none of it (below); the panel offers it in Home Assistant's entity picker, and the settings file never carries it |
 | `edit` | an object of `views`, `cards` and `entities` | all | what was changed on its views and cards, kept as differences: hidden, moved, given options, a list's entities left out, added or put in order ([Customise](#customise), which writes it) |

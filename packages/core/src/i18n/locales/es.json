@@ -1655,6 +1655,8 @@
     "dashboard.two_lines": "Dos líneas",
     "wall.subview_none": "Ninguno",
     "wall.subview_none_sub": "Solo la subvista: las subvistas de Fluvy vuelven desde su encabezado, y la salida sigue en la esquina",
+    "dashboard.up_to": "Hasta…",
+    "dashboard.up_to_count": "Hasta {count} por lista",
     "cards.levels": "Los iconos muestran su nivel",
     "cards.levels_sub": "La carga de una batería, las barras de una señal, una válvula abierta o cerrada"
   },

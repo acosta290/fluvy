@@ -3153,6 +3153,8 @@
     "dashboard.two_lines": "Två rader",
     "wall.subview_none": "Ingen",
     "wall.subview_none_sub": "Bara undervyn: Fluvys undervyer leder tillbaka från sin rubrik, och utgången finns kvar i hörnet",
+    "dashboard.up_to": "Upp till…",
+    "dashboard.up_to_count": "Upp till {count} per lista",
     "cards.levels": "Ikoner visar nivån",
     "cards.levels_sub": "Ett batteris laddning, en signals staplar, en ventil öppen eller stängd"
   },

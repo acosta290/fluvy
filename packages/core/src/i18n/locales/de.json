@@ -1655,6 +1655,8 @@
     "dashboard.two_lines": "Zwei Zeilen",
     "wall.subview_none": "Keine",
     "wall.subview_none_sub": "Nur die Unteransicht: Die Unteransichten von Fluvy führen über ihre Überschrift zurück, die Ecke zum Verlassen bleibt",
+    "dashboard.up_to": "Bis zu…",
+    "dashboard.up_to_count": "Bis zu {count} je Liste",
     "cards.levels": "Symbole zeigen den Stand",
     "cards.levels_sub": "Ladung einer Batterie, Balken eines Signals, ein Ventil offen oder geschlossen"
   },

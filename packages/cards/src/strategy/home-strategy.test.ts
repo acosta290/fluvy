@@ -2946,6 +2946,40 @@ describe('custom:fluvy-home strategy — capped lists (#78)', () => {
     ).toHaveLength(CAPS.humidity);
   });
 
+  it('shows every list up to one number (#231), a list’s own number winning over it', async () => {
+    const hass = twelveRooms();
+    const home = new HomeRegistry(hass);
+    const climate = async (caps: unknown) =>
+      cardsIn(
+        (await generate({ type: 'custom:fluvy-home', caps } as never, hass as never)).views.filter(
+          (view) => view.path === 'climate',
+        ),
+      );
+    const of = (cards: readonly Record<string, unknown>[], type: string) =>
+      cards.filter((card) => card.type === `custom:fluvy-${type}-card`);
+    // twelve rooms: past the house's three and four, and past two
+    expect(home.humidities.length).toBeGreaterThan(5);
+    expect(home.temperatures.length).toBeGreaterThan(5);
+    const five = await climate(5);
+    expect(of(five, 'humidity')).toHaveLength(5);
+    expect(of(five, 'sensor')).toHaveLength(5);
+    expect(moreRows(five).map((card) => card['more'])).toEqual([
+      home.humidities.length - 5,
+      home.temperatures.length - 5,
+    ]);
+    // a list's own number wins, `all` the rest
+    const mixed = await climate({ all: 2, humidity: 'none' });
+    expect(of(mixed, 'humidity')).toHaveLength(home.humidities.length);
+    expect(of(mixed, 'sensor')).toHaveLength(2);
+    // every list whole but one
+    const lifted = await climate({ all: 'none', temperatures: 1 });
+    expect(of(lifted, 'humidity')).toHaveLength(home.humidities.length);
+    expect(of(lifted, 'sensor')).toHaveLength(1);
+    // a number that is no whole one from 1 is the house's
+    for (const nonsense of [0, 2.5, -3])
+      expect(of(await climate(nonsense), 'humidity')).toHaveLength(CAPS.humidity);
+  });
+
   it('folds the cards that fold their own lists, a room’s openings and automations, at the house’s cap, raised or lifted (`caps`)', async () => {
     const hass = house([
       ...Array.from({ length: 7 }, (_, i) =>

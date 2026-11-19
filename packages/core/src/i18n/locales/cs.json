@@ -3073,6 +3073,8 @@
     "dashboard.two_lines": "Dva řádky",
     "wall.subview_none": "Žádné",
     "wall.subview_none_sub": "Jen podpohled: podpohledy Fluvy vedou zpět ze svého nadpisu a cesta ven zůstává v rohu",
+    "dashboard.up_to": "Až…",
+    "dashboard.up_to_count": "Až {count} v každém seznamu",
     "cards.levels": "Ikony ukazují úroveň",
     "cards.levels_sub": "Nabití baterie, čárky signálu, ventil otevřený nebo zavřený"
   },

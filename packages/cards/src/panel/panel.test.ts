@@ -667,6 +667,88 @@ describe('the settings panel', () => {
     panel.remove();
   });
 
+  it('offers every list up to a number on a stepper (#231), a list’s own number kept beside it', async () => {
+    const saved: { type: string; url_path?: string; config?: unknown }[] = [];
+    let strategy: Record<string, unknown> = { type: 'custom:fluvy-home' };
+    const { panel, root, chip, button, settle } = await mount(true, {
+      panels: {
+        'fluvy-auto': {
+          component_name: 'lovelace',
+          url_path: 'fluvy-auto',
+          title: 'Fluvy auto',
+          icon: 'fluvy:sun',
+        },
+      },
+      callWS: async (message: { type: string; url_path?: string | null; config?: unknown }) => {
+        if (message.type === 'lovelace/config/save') {
+          saved.push(message as never);
+          strategy = (message.config as { strategy: Record<string, unknown> }).strategy;
+          return {};
+        }
+        if (message.type === 'lovelace/dashboards/list') return [];
+        if (message.type === 'lovelace/config' && message.url_path === 'fluvy-auto')
+          return { strategy };
+        return { views: [] };
+      },
+    });
+    panel.tab = 'dashboard';
+    await settle();
+    const row = (): HTMLElement | undefined =>
+      [...root.querySelectorAll<HTMLElement>('.fv-row')].find((r) =>
+        r.textContent?.includes('per list'),
+      );
+    const half = (name: 'Increase' | 'Decrease'): HTMLButtonElement =>
+      row()!.querySelector<HTMLButtonElement>(`.fv-stepper__half[aria-label$="${name}"]`)!;
+    // shortened: no stepper
+    expect(row()).toBeUndefined();
+    chip('Up to…')!.click();
+    await settle();
+    expect(chip('Up to…')?.classList.contains('is-active')).toBe(true);
+    expect(row()?.textContent).toContain('Up to 10 per list');
+    // a keyboard's press on +: one step
+    half('Increase').click();
+    await settle();
+    expect(row()?.textContent).toContain('Up to 11 per list');
+    button('Save')!.click();
+    await settle();
+    await settle();
+    expect(saved.at(-1)?.config).toEqual({ strategy: { type: 'custom:fluvy-home', caps: 11 } });
+    panel.remove();
+    // a list's own number in the raw configuration stays, the one for every list beside it
+    strategy = { type: 'custom:fluvy-home', caps: { lights: 12 } };
+    const again = await mount(true, {
+      panels: {
+        'fluvy-auto': {
+          component_name: 'lovelace',
+          url_path: 'fluvy-auto',
+          title: 'Fluvy auto',
+          icon: 'fluvy:sun',
+        },
+      },
+      callWS: async (message: { type: string; url_path?: string | null; config?: unknown }) => {
+        if (message.type === 'lovelace/config/save') {
+          saved.push(message as never);
+          return {};
+        }
+        if (message.type === 'lovelace/dashboards/list') return [];
+        if (message.type === 'lovelace/config' && message.url_path === 'fluvy-auto')
+          return { strategy };
+        return { views: [] };
+      },
+    });
+    again.panel.tab = 'dashboard';
+    await again.settle();
+    again.chip('Up to…')!.click();
+    await again.settle();
+    again.button('Save')!.click();
+    await again.settle();
+    await again.settle();
+    expect(saved.at(-1)?.config).toEqual({
+      strategy: { type: 'custom:fluvy-home', caps: { lights: 12, all: 10 } },
+    });
+    again.panel.remove();
+  });
+
   it('lists what a dashboard leaves out in Home Assistant’s entity picker, and saves the list it changes to (#141)', async () => {
     const saved: { type: string; url_path?: string; config?: unknown }[] = [];
     const strategy = {
