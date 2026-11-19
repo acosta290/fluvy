@@ -54,6 +54,10 @@ const BUDGETS = {
   // measured at 27.7 KB); 25 KB since 2026-11-12 (1.19.1: scenes on Home and room pages, labels told apart, forecasts):
   // 24 before
   strategy: 32_768,
+  // the naming words (1.23: every language's, 11.7 KB, out of the strategy's chunk) and the rule that reads a switch's
+  // name as a lamp's (#219), fetched with the strategy and by the first card asked for `lamp_switches`; measured at
+  // 11.7 KB
+  words: 12_288,
   // the heights the strategy counts with the house: what an entity's capabilities draw, what a room holds
   'house-heights': 4096,
   wall: 16_384,
@@ -127,6 +131,8 @@ const BUDGETS = {
   template: 8192,
   // the web page card: its card, its address and rounds rules, its English (1.11, #61)
   web: 8192,
+  // the Rounds card (1.23, #224): its card and its English, the rounds it draws the quick actions'; measured at 2.3 KB
+  rounds: 4096,
   // what each card is (1.22, #193): the line the card picker's search reads and Customise's list says under each name,
   // in English, which left core; measured at 3.6 KB
   about: 4096,
@@ -186,7 +192,8 @@ const BUDGETS = {
   // the room lights' colour sheet (1.18, #137): the room as one bulb, its switch, the hue wheel; fetched when a
   // card's colour round is tapped (its controls are the light card's, in `light-colour`)
   'lights-colour': 8192,
-  // a room's quick actions (1.13, #113): their sets, levels, taps and holds, fetched as the bundle starts
+  // the rounds (1.13, #113; 1.23, #224): a room's quick actions, the engine every card draws rounds with (their sets,
+  // levels, taps, holds and states) and the list row that ends in them, fetched as the bundle starts; measured at 3.9 KB
   'quick-actions': 4096,
   // the weather card, and the Compass card since 1.23 (#209: the card and its English; its editor goes with the forms)
   weather: 12_288,

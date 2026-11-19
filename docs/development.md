@@ -42,18 +42,20 @@ pnpm build
 ```
 
 The bundle is one ES module, `fluvy.js`, that imports `chunks/core-<hash>.js` (everything a page needs) and fetches
-`chunks/{activity,history,details-history,panel,customise,sidebar-editor,pages,strategy,house-heights,wall,weather,calendar,media,chart,chart-card,energy-period,energy,history-bars-readings,devices,cameras-sheet,appliances,appliance-art,automations,automations-sheet,alerts,alerts-sheet,template,web,about,expander,expander-editor,swipe,sidebar,slider,cover,vacuum,ring,vacuum-drive,climate,remote,app-logos,vehicle,details,items,items-sheet,lights-colour,light-colour,quick-actions,editor,fields,forms,view-icons,glass,quiet,thresholds,slider-styles,switch-styles,background,dock,groups,icons,icons-appliances,icons-levels,icons-energy,icons-devices,icons-climate,icons-safety,icons-outdoor,icons-home,icons-rooms,levels,shared,lang-*}-<hash>.js`
+`chunks/{activity,history,details-history,panel,customise,sidebar-editor,pages,words,strategy,house-heights,wall,weather,calendar,media,chart,chart-card,energy-period,energy,history-bars-readings,devices,cameras-sheet,appliances,appliance-art,automations,automations-sheet,alerts,alerts-sheet,template,web,rounds,about,expander,expander-editor,swipe,sidebar,slider,cover,vacuum,ring,vacuum-drive,climate,remote,app-logos,vehicle,details,items,items-sheet,lights-colour,light-colour,quick-actions,editor,fields,forms,view-icons,glass,quiet,thresholds,slider-styles,switch-styles,background,dock,groups,icons,icons-appliances,icons-levels,icons-energy,icons-devices,icons-climate,icons-safety,icons-outdoor,icons-home,icons-rooms,levels,shared,lang-*}-<hash>.js`
 on demand — the Activity page, the History page, our history in Home Assistant's details dialog (the first time a dialog
 shows it), the settings panel (and Customise, the first time one of its dashboards is customised; a dashboard's
 sidebar, the first time its section is opened), what they
 share (the date picker; the pages'
-period, sources, layers, CSV and sheet), the automatic dashboards' strategy (when a dashboard asks for it) and the heights it
+period, sources, layers, CSV and sheet), the automatic dashboards' strategy (when a dashboard asks for it) with its
+naming words (every language's, and the rule that reads a switch's name as a lamp's: the first Room lights or Room card
+asked for `lamp_switches` fetches them too) and the heights it
 counts with the house (what an entity's capabilities draw, what a room holds; every page carries the cards' heights
 from their configs alone), wall mode (on a device that is a wall), the chart engine (fetched as the bundle starts: the
 sensor card in core reaches it through `src/shared/chart-load.ts`, the energy family, the History page and the Chart
 card import it from their own chunks), a room's quick actions (fetched as the bundle starts too: the room card in
 core reaches them through `loadQuickActions`; and what says what a thermostat is doing, which a tile and a room's row
-asked to say it reach through `doingReading`, in the Thermostat card's chunk), the weather, calendar, template, Energy period and usage, web page, Expander, Swipe, Slider, Cover, Vacuum, Thermostat, remote, Vehicle, items and
+asked to say it reach through `doingReading`, in the Thermostat card's chunk), the weather, calendar, template, Energy period and usage, web page, Rounds, Expander, Swipe, Slider, Cover, Vacuum, Thermostat, remote, Vehicle, items and
 chart cards and the media, energy, devices, appliances, automations and alerts families (fetched as the bundle starts:
 their cards are announced in core — `src/energy-family.ts` and its siblings, their tags and heights — and defined as
 `src/energy-cards.ts` and its siblings land; Home Assistant builds a card again the moment its tag is defined), the
@@ -86,6 +88,7 @@ budget (`BUDGETS`; the facts guard in `tools/docs` holds this table to it):
 | `panel` | 44 KB | the settings panel and its English |
 | `customise` | 14 KB | Customise, the Dashboards tab's section that edits an automatic dashboard's views and cards, and its English: fetched the first time a dashboard is customised |
 | `sidebar-editor` | 6 KB | a dashboard's sidebar in the panel (1.21, #187), the Dashboards tab's section that writes `fluvy_sidebar:` without YAML, and its English: fetched the first time a dashboard's sidebar is opened |
+| `words` | 12 KB | the naming words: every language's, what the automatic dashboards read a house's names by, and the rule that reads a switch's name as a lamp's (1.23, #219), fetched with the strategy and by the first card asked for `lamp_switches` |
 | `strategy` | 32 KB | the automatic dashboards: their views and cards, each card in a part with an id of its own, and a person's `edit` laid over them |
 | `house-heights` | 4 KB | the cards' heights counted with the house, for the automatic dashboards |
 | `wall` | 16 KB | wall mode |
@@ -105,6 +108,7 @@ budget (`BUDGETS`; the facts guard in `tools/docs` holds this table to it):
 | `alerts-sheet` | 12 KB | the alerts' sheet |
 | `template` | 8 KB | the template card, the parsers of its templates' answers, its English |
 | `web` | 8 KB | the web page card, its address and rounds rules, its English |
+| `rounds` | 4 KB | the Rounds card (1.23, #224) and its English; the rounds it draws are the quick actions' |
 | `about` | 4 KB | what each card is (1.22, #193): the line the card picker's search reads and Customise's list says under each name, in English; fetched as the bundle starts, with the families |
 | `expander` | 8 KB | the Expander card, what holds the cards it folds, what remembers how it was left, its English |
 | `expander-editor` | 4 KB | the Expander card's editor: its form, Home Assistant's stack editor under it; the Swipe card's, built on it |
@@ -124,7 +128,7 @@ budget (`BUDGETS`; the facts guard in `tools/docs` holds this table to it):
 | `items-sheet` | 8 KB | an item's sheet |
 | `lights-colour` | 8 KB | the Room lights card's colour sheet and its hue wheel (#137), opened by the card's colour round |
 | `light-colour` | 8 KB | the light card's quick colours and hue ruler, and the quick colours' grammar its editor shares |
-| `quick-actions` | 4 KB | a room's quick actions: their sets, levels, taps and holds |
+| `quick-actions` | 4 KB | the rounds: a room's quick actions, the engine every card draws rounds with (their sets, levels, taps, holds and states) and the list row that ends in them |
 | `weather` | 12 KB | the weather card |
 | `calendar` | 16 KB | the calendar card: its views, what reads its events, its sheet |
 | `editor` | 8 KB | the cards' visual editor |
