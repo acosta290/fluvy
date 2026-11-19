@@ -10,6 +10,7 @@ import {
   untitled,
   type StackEditor,
 } from '../../expander/expander-editor.js';
+import { cardHelpersReachable } from '../../shared/rows-editor.js';
 import '../../shared/side-glyph.js';
 import { PHONES, STYLES, type SidebarPhone, type SidebarStyle } from '../../sidebar/config.js';
 import { copyText } from '../clipboard.js';
@@ -77,8 +78,8 @@ export class SidebarEditor {
   private stack: StackEditor | undefined;
   private given = '';
   private taken = false;
-  /** The wait for the stack editor is over: a list without it opens on the YAML field. */
-  private waited = typeof window.loadCardHelpers !== 'function';
+  /** The wait for the stack editor is over (none can come): a list without it opens on the YAML field. */
+  private waited = !cardHelpersReachable();
   private waiting: number | undefined;
   /** The copy button said so, and when it stops; the copy failed. */
   private copied: number | undefined;

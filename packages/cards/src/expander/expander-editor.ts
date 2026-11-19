@@ -33,6 +33,8 @@ import {
   textField,
 } from '../shared/form.js';
 import {
+  cardHelpers,
+  cardHelpersReachable,
   FluvyRowsEditor,
   type EditorDefaults,
   type FormHelper,
@@ -264,15 +266,14 @@ let defining: Promise<unknown> | undefined;
 
 /**
  * Home Assistant's stack editor (a tab a card, its picker, copy, cut, move and delete, the code view), defined by its
- * stack card's own `getConfigElement` once the card helpers have asked for a stack. None of it is public API: where a
- * step is missing the promise never settles, or fails, and the code field stays.
+ * stack card's own `getConfigElement` once the card helpers have asked for a stack — those a page that opened on
+ * Fluvy's settings panel has yet to load too (`cardHelpers`). None of it is public API: where a step is missing the
+ * promise never settles, or fails, and the code field stays.
  */
 export function stackEditor(): Promise<unknown> {
   defining ??= (async () => {
     if (!customElements.get(STACK_EDITOR)) {
-      const helpers = (await window.loadCardHelpers?.()) as
-        { createCardElement?: (config: LovelaceCardConfig) => unknown } | undefined;
-      helpers?.createCardElement?.({ type: 'vertical-stack', cards: [] });
+      (await cardHelpers())?.createCardElement?.({ type: 'vertical-stack', cards: [] });
       await customElements.whenDefined(STACK_CARD);
       const stack = customElements.get(STACK_CARD) as
         { getConfigElement?: () => Promise<unknown> } | undefined;
@@ -490,7 +491,7 @@ export async function withCards(
   base: HTMLElement,
   tag = 'fluvy-expander-editor',
 ): Promise<HTMLElement> {
-  if (typeof window.loadCardHelpers === 'function')
+  if (cardHelpersReachable())
     await Promise.race([
       stackEditor().catch(() => undefined),
       new Promise((resolve) => setTimeout(resolve, GRACE)),

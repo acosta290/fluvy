@@ -295,26 +295,32 @@ interface Resolver extends Element {
   };
 }
 
+/** How Home Assistant's router loads its dashboards' module (its route for `ha-panel-lovelace`), where it has one. */
+const dashboardsModule = (): (() => Promise<unknown>) | undefined =>
+  guard('card-helpers', () => {
+    const resolver = document
+      .querySelector('home-assistant')
+      ?.shadowRoot?.querySelector('home-assistant-main')
+      ?.shadowRoot?.querySelector<Resolver>('partial-panel-resolver');
+    return Object.values(resolver?.routerOptions?.routes ?? {}).find(
+      (route) => route.tag === 'ha-panel-lovelace',
+    )?.load;
+  });
+
+/** Home Assistant's card helpers are to be had (`cardHelpers`): on the window already, or through its router. */
+export const cardHelpersReachable = (): boolean =>
+  typeof window.loadCardHelpers === 'function' || dashboardsModule() !== undefined;
+
 /**
  * Home Assistant's card helpers, which its dashboards' panel puts on the window as its module loads
  * (`loadCardHelpers`). A page that opened on Fluvy's settings panel (a reload on `/fluvy/dashboard/…`) has not loaded
  * that module yet: it is asked for here as Home Assistant's router asks for it as a dashboard opens (its route for
  * `ha-panel-lovelace`). Where a step of that is not there, there are none, and what is moved by a drag keeps its
- * buttons; a step that throws is stepped aside for the session, said once.
+ * buttons, a sidebar's lists their YAML field; a step that throws is stepped aside for the session, said once.
  */
-async function cardHelpers(): Promise<CardHelpers | undefined> {
-  if (typeof window.loadCardHelpers !== 'function') {
-    const load = guard('card-helpers', () => {
-      const resolver = document
-        .querySelector('home-assistant')
-        ?.shadowRoot?.querySelector('home-assistant-main')
-        ?.shadowRoot?.querySelector<Resolver>('partial-panel-resolver');
-      return Object.values(resolver?.routerOptions?.routes ?? {}).find(
-        (route) => route.tag === 'ha-panel-lovelace',
-      )?.load;
-    });
-    await load?.().catch((error: unknown) => stepAside('card-helpers', error));
-  }
+export async function cardHelpers(): Promise<CardHelpers | undefined> {
+  if (typeof window.loadCardHelpers !== 'function')
+    await dashboardsModule()?.().catch((error: unknown) => stepAside('card-helpers', error));
   return (await window.loadCardHelpers?.()) as CardHelpers | undefined;
 }
 
