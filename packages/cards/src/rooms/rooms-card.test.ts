@@ -217,6 +217,35 @@ describe('the Rooms card (#225)', () => {
     expect(text(rows(card)[3]!, 'fv-row__title')).toBe('Lounge');
   });
 
+  it('stands every room’s rounds in columns, a kind a room lacks leaving its place empty, as the issue draws them', async () => {
+    const card = await drawn({
+      default_actions: ['lights', 'climate', 'covers'],
+      rooms: ['living', 'kitchen', 'bedroom'],
+    });
+    // the lights under the lights, the thermostats under the thermostats; a place no room fills is drawn on none
+    const places = (row: Element): string[] =>
+      [...row.querySelectorAll('.lt-bulbs > *')].map(
+        (place) => place.getAttribute('aria-label') ?? '·',
+      );
+    expect(rows(card).map(places)).toEqual([
+      ['Lights', 'Living room', 'Blinds'],
+      ['Lights', '·', '·'],
+      ['·', 'Bedroom', '·'],
+    ]);
+    // a thermostat a room lacks keeps its place too, its lights under the others'; and a compact row's temperature
+    // stands in one column, every row's rounds as wide
+    document.body.replaceChildren();
+    const compact = await drawn({
+      default_actions: ['climate', 'lights'],
+      rooms: ['living', 'kitchen'],
+      variant: 'compact',
+    });
+    expect(rows(compact).map(places)).toEqual([
+      ['Living room', 'Lights'],
+      ['·', 'Lights'],
+    ]);
+  });
+
   it('flips a room’s lights at a round’s tap, the room’s own round, never the row', async () => {
     const { hass, calls } = house();
     const card = await drawn({ rooms: ['living'], default_actions: ['lights'] }, hass);

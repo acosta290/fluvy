@@ -114,7 +114,8 @@ interface Room {
   readonly lights: readonly string[];
   readonly temperature: string | undefined;
   readonly humidity: string | undefined;
-  readonly rounds: readonly RoundSpec[];
+  /** Its rounds in the places its list gives them: `null` where it lacks that kind (no blinds, no thermostat). */
+  readonly rounds: readonly (RoundSpec | null)[];
 }
 
 /** The head's circle and the 12 after it, and its chevron's room: its 44 and the 12 before it, less the 8 past the edge. */
@@ -281,24 +282,30 @@ export class FluvyRoomsCard extends Card<RoomsCardConfig> {
     return this.held;
   }
 
-  /** A room of the house: its area, what it holds, its readings (its own, else the area's) and its rounds. */
+  /**
+   * A room of the house: its area, what it holds, its readings (its own, else the area's) and its rounds, each in its
+   * place of the list (a kind it lacks an empty one, so the rows stand them in columns).
+   */
   private roomOf(hass: HomeAssistant, own: RoomEntry): Room {
     const found = hass.areas?.[own.area];
     const area = found && withTextName(found);
     const contents = area ? areaContents(hass, own.area) : undefined;
     const devices = contents?.devices ?? [];
     const lights = devices.filter((id) => id.startsWith('light.'));
-    // its rounds: its own, else the card's; its `climate` its first thermostat, by its word or with its own say
+    // its rounds, each in its place: its own, else the card's; its `climate` its first thermostat, by its word or with
+    // its own say; a kind it lacks (no thermostat, no blinds) an empty place
     const asked: unknown[] =
       own.quick_actions === undefined
         ? [...(this.config?.default_actions ?? [])]
         : [own.quick_actions].flat();
     const thermostat = devices.find((id) => id.startsWith('climate.'));
-    const entries = asked.flatMap((entry) => {
+    const rounds = asked.map((entry) => {
       const said = typeof entry === 'object' && entry !== null ? (entry as RoundSpec) : undefined;
-      if (entry !== 'climate' && (said?.group as string | undefined) !== 'climate') return [entry];
-      if (!thermostat) return [];
-      return [said ? { ...said, group: 'entity', entity: thermostat } : thermostat];
+      const climate = entry === 'climate' || (said?.group as string | undefined) === 'climate';
+      const meant = !climate
+        ? entry
+        : thermostat && (said ? { ...said, group: 'entity', entity: thermostat } : thermostat);
+      return roundsOf({ hass, devices, lights }, [meant])[0] ?? null;
     });
     return {
       own,
@@ -309,7 +316,7 @@ export class FluvyRoomsCard extends Card<RoomsCardConfig> {
       lights,
       temperature: own.temperature_entity ?? contents?.climate.temperature,
       humidity: own.humidity_entity ?? contents?.climate.humidity,
-      rounds: roundsOf({ hass, devices, lights }, entries),
+      rounds,
     };
   }
 
@@ -583,7 +590,7 @@ export class FluvyRoomsCard extends Card<RoomsCardConfig> {
       };
     });
     return html`<div class="rs-rows ${headed ? '' : 'rs-rows--bare'}">
-      ${roundsRows(this.host(), w, rows, compact, { arrows })}
+      ${roundsRows(this.host(), w, rows, compact, { arrows, columns: true })}
     </div>`;
   }
 
@@ -615,7 +622,11 @@ export class FluvyRoomsCard extends Card<RoomsCardConfig> {
     const { lit, tone, accent } = this.look(room);
     const { onTap, onHold } = this.press(room);
     const inner = width - TILE_SIDES;
-    const block = roundsIn(this.host(room), room.rounds, inner - HERO);
+    const block = roundsIn(
+      this.host(room),
+      room.rounds.filter((round): round is RoundSpec => round !== null),
+      inner - HERO,
+    );
     const segments = this.segments(room);
     const line = fitLine(
       segments.map((text, index) => ({ text, optional: index > 0 })),

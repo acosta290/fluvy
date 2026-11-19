@@ -3,7 +3,7 @@ import type { HassEntity, HomeAssistant } from '@fluvy/core';
 import { render } from 'lit';
 import { afterEach, describe, expect, it } from 'vitest';
 import { roundsRow, roundsRows, type RoundsRowSpec } from './rounds-row.js';
-import type { RoundsHost } from './rounds.js';
+import type { RoundSpec, RoundsHost } from './rounds.js';
 
 /*
  * The list row with rounds at its end (1.23): what does not hold beside its words gives way in order — its rounds from
@@ -202,6 +202,51 @@ describe('a row with rounds at its end (1.23)', () => {
     const [own, bare] = [...box.querySelectorAll('.lt-bulb')];
     expect(own!.classList.contains('is-on')).toBe(true);
     expect(bare!.classList.contains('is-on')).toBe(false);
+  });
+
+  it('stands its rounds in columns where asked, a row that lacks one leaving its place empty (#225)', () => {
+    const box = document.createElement('div');
+    const [ceiling, blinds, fan] = ROUNDS as [RoundSpec, RoundSpec, RoundSpec];
+    const bare = { ...LOUNGE, sub: undefined, value: undefined };
+    /** Each row's places: a round's name, `·` an empty one. */
+    const places = (width: number, rows: RoundsRowSpec[], columns = true): string[][] => {
+      render(roundsRows(host, width, rows, false, { columns }), box);
+      return [...box.querySelectorAll('.fv-row')].map((row) =>
+        [...row.querySelectorAll('.lt-bulbs > *')].map(
+          (place) => place.getAttribute('title') ?? '·',
+        ),
+      );
+    };
+    const rows: RoundsRowSpec[] = [
+      { ...bare, rounds: [ceiling, blinds, fan] },
+      { ...bare, title: 'Hall', rounds: [ceiling, null, fan] },
+      { ...bare, title: 'Den', rounds: [null, null, fan, null] },
+    ];
+    // every row's n-th round under the others', a place no row fills drawn on none
+    expect(places(400, rows)).toEqual([
+      ['lounge ceiling', 'lounge blinds', 'lounge fan'],
+      ['lounge ceiling', '·', 'lounge fan'],
+      ['·', '·', 'lounge fan'],
+    ]);
+    // a list that does not ask packs them, as ever
+    expect(places(400, rows, false)).toEqual([
+      ['lounge ceiling', 'lounge blinds', 'lounge fan'],
+      ['lounge ceiling', 'lounge fan'],
+      ['lounge fan'],
+    ]);
+    // as many places on every row as the tightest holds: the long name's 96 leaves two (56 + 96 + 112 = 264)
+    const long = { ...bare, title: 'The long living room by the garden' };
+    expect(places(264, [rows[0]!, { ...long, rounds: [null, null, fan] }])).toEqual([
+      ['lounge ceiling', 'lounge blinds'],
+      ['·', '·'],
+    ]);
+    // a round that says its state keeps the list's rounds packed: its pill would push its column apart
+    expect(
+      places(400, [
+        { ...rows[0]!, rounds: [{ ...ceiling, show_state: true }, null, fan] },
+        rows[2]!,
+      ]),
+    ).toEqual([['lounge ceiling', 'lounge fan'], ['lounge fan']]);
   });
 
   it('says its rounds’ states beside their glyphs where they hold, as tall as a round', () => {

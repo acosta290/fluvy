@@ -2,7 +2,16 @@ import { glyph, listRow, type IconRef, type Tone } from '@fluvy/ui';
 import { html, nothing, type TemplateResult } from 'lit';
 import { ROW_NAME_MIN } from '../energy/head.js';
 import { fitLine } from './fit.js';
-import { roundsHeld, roundsIn, type RoundSpec, type RoundsHost } from './rounds.js';
+import {
+  drawRound,
+  roundOf,
+  roundsHeld,
+  roundsIn,
+  roundsTaken,
+  type RoundSpec,
+  type RoundsBlock,
+  type RoundsHost,
+} from './rounds.js';
 
 /*
  * A list row with rounds at its end (1.23): a room's lights and blinds beside its name, a thermostat's own rounds, an
@@ -28,7 +37,11 @@ export interface RoundsRowSpec {
    * as it says (a thermostat's target between − and +).
    */
   readonly value?: string | RowControl | undefined;
-  readonly rounds: readonly RoundSpec[];
+  /**
+   * Its rounds, in order; `null` an empty place (a kind of the list's the row lacks: a room without blinds), kept where
+   * its list stands its rounds in columns (`roundsRows`' `columns`), passed over where it does not.
+   */
+  readonly rounds: readonly (RoundSpec | null)[];
   readonly onTap?: (() => void) | undefined;
   readonly onHold?: (() => void) | undefined;
   /** What a reader hears for the row where its words leave something out. */
@@ -111,12 +124,40 @@ export const roundsRoom = (
 ): number =>
   width - before(row, compact, icon) - valueSlot(host, row.value) - wordsNeed(host, row, compact);
 
+/** A row's rounds as drawn, its empty places passed over. */
+const roundsOfRow = (row: RoundsRowSpec): RoundSpec[] =>
+  row.rounds.filter((round): round is RoundSpec => round !== null);
+
+/**
+ * A row's rounds in its list's columns: its first `places`, each its round or, where the row lacks that kind, its
+ * room left empty; plain rounds, a state's pill pushing no column apart (`roundsRows` keeps such a list's packed).
+ */
+function placesIn(
+  host: RoundsHost,
+  rounds: readonly (RoundSpec | null)[],
+  places: number,
+): RoundsBlock {
+  if (!places) return { taken: 0, template: nothing };
+  return {
+    taken: roundsTaken(places),
+    template: html`<div class="lt-bulbs rm-quick" data-align="end">
+      ${rounds
+        .slice(0, places)
+        .map((round) =>
+          round
+            ? drawRound(host, roundOf(host, round), undefined, false)
+            : html`<span class="lt-bulbs__place"></span>`,
+        )}
+    </div>`,
+  };
+}
+
 /**
  * A row in `width`, its circle where the list keeps it (`roundsRowsKeepIcon`) and its chevron where the list draws
  * them (`arrow`: an empty one's room where it opens nothing, so the rounds of every row end on one line), what does
  * not hold beside its words giving way in order: its rounds from the end (`roundsIn`: as many as hold, and the states
- * they say in what they leave), then its value, then — the list's — its circle; its line's segments after the first
- * from the end, then.
+ * they say in what they leave; in its list's columns, as many places as every row holds, `places`), then its value,
+ * then — the list's — its circle; its line's segments after the first from the end, then.
  */
 export function roundsRow(
   host: RoundsHost,
@@ -126,13 +167,22 @@ export function roundsRow(
     compact = false,
     icon = true,
     arrow = false,
-  }: { readonly compact?: boolean; readonly icon?: boolean; readonly arrow?: boolean } = {},
+    places,
+  }: {
+    readonly compact?: boolean;
+    readonly icon?: boolean;
+    readonly arrow?: boolean;
+    readonly places?: number | undefined;
+  } = {},
 ): TemplateResult {
   const line = width - (arrow ? ARROW : 0);
   // the rounds and the value are laid out beside the circle whether it stands or not (`before`); the rounds in what
   // the words and the value leave (`roundsRoom`), none there, the value going where the words would not hold
   const left = roundsRoom(host, line, row, compact, icon);
-  const block = roundsIn(row.host ?? host, row.rounds, left, false);
+  const block =
+    places === undefined
+      ? roundsIn(row.host ?? host, roundsOfRow(row), left, false)
+      : placesIn(row.host ?? host, row.rounds, places);
   const value = block.taken || left >= 0 ? row.value : undefined;
   const room =
     line - (icon ? before(row, compact, icon) : 0) - valueSlot(host, value) - block.taken;
@@ -169,24 +219,47 @@ export function roundsRow(
   });
 }
 
+/** Whether a round of a row's says its state (its own `show_state`, else its card's): a pill as wide as its words. */
+const saysState = (host: RoundsHost, row: RoundsRowSpec): boolean =>
+  roundsOfRow(row).some((round) => round.show_state ?? (row.host ?? host).look?.states ?? false);
+
 /**
- * A list of rows with their rounds, the circles kept or given away by every row together; and, where it asks
- * (`arrows`), a chevron at the end of each row that opens a page, where every row keeps all its rounds beside one —
- * else none: a chevron gives way before a round, every row's together.
+ * A list of rows with their rounds, the circles kept or given away by every row together; where it asks (`arrows`),
+ * a chevron at the end of each row that opens a page, where every row keeps all its rounds beside one — else none: a
+ * chevron gives way before a round, every row's together; and where it asks (`columns`), its rounds in columns, each
+ * row's n-th round under the others' (a room's lights under every room's lights), a row that lacks one leaving its
+ * place empty: the places some row fills, as many on every row as the tightest holds. A list a round of which says
+ * its state keeps its rounds packed, as every list does.
  */
 export const roundsRows = (
   host: RoundsHost,
   width: number,
   rows: readonly RoundsRowSpec[],
   compact = false,
-  { arrows = false }: { readonly arrows?: boolean } = {},
+  {
+    arrows = false,
+    columns = false,
+  }: { readonly arrows?: boolean; readonly columns?: boolean } = {},
 ): TemplateResult[] => {
   const icon = roundsRowsKeepIcon(host, width, rows, compact);
+  // the columns some row fills, every row's places in them
+  const filled =
+    columns && !rows.some((row) => saysState(host, row))
+      ? [
+          ...new Set(rows.flatMap((row) => row.rounds.flatMap((round, at) => (round ? [at] : [])))),
+        ].sort((a, b) => a - b)
+      : undefined;
+  const placed = filled
+    ? rows.map((row) => ({ ...row, rounds: filled.map((at) => row.rounds[at] ?? null) }))
+    : rows;
+  const wanted = (row: RoundsRowSpec): number => filled?.length ?? roundsOfRow(row).length;
+  const held = (row: RoundsRowSpec, line: number): number =>
+    roundsHeld(roundsRoom(host, line, row, compact, icon));
   const arrow =
     arrows &&
     rows.some((row) => row.opens) &&
-    rows.every(
-      (row) => roundsHeld(roundsRoom(host, width - ARROW, row, compact, icon)) >= row.rounds.length,
-    );
-  return rows.map((row) => roundsRow(host, width, row, { compact, icon, arrow }));
+    placed.every((row) => held(row, width - ARROW) >= wanted(row));
+  const line = width - (arrow ? ARROW : 0);
+  const places = filled && Math.min(filled.length, ...placed.map((row) => held(row, line)));
+  return placed.map((row) => roundsRow(host, width, row, { compact, icon, arrow, places }));
 };

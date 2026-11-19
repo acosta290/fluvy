@@ -21,5 +21,7 @@ rooms: # left out: every area, in the house's order
 - A tap opens the room's own `path`, else its page on the Rooms dashboard (or Home's Rooms view) where the house has
   one, else the area's settings for an administrator; a room's own `tap_action` and `hold_action` come first.
 - `variant`: `rows`, `compact` (48 px rows, the temperature at their end) or `tiles` (two a row from a phone's width).
+- The rooms' quick actions stand in columns, the lights under the lights: a room without blinds or a thermostat
+  leaves that place empty. Where a quick action says its state (`show_state`), they stand packed.
 - What does not fit a row gives way in order: the arrows, then the rounds from the end, then the circles.
 - To fold the card away under a head, put it in an [Expander](expander.md): it remembers whether it was open.

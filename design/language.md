@@ -3103,7 +3103,11 @@ details. An item's own name, icon, tone, colour, actions and `show_state`.
   state beside its glyph, never under it. A press on a round is the round's: the row does not dim under it. A row
   that opens a page may end in the rows' chevron after its rounds, where its list asks (`arrows`): its 44 and the 12
   before it, less the 8 its ink stands past the column edge; a row that opens nothing keeps that room empty, so every
-  row's rounds end on one line, and the chevrons give way before a round, every row's together.
+  row's rounds end on one line, and the chevrons give way before a round, every row's together. Where its list asks
+  (`columns`), the rounds stand in columns: every row's n-th round under the others' (a room's lights under every
+  room's lights), a kind a row lacks leaving its 44 empty, a place no row fills drawn on none, and every row as many
+  places as the tightest holds, so its values stand in one column too; a list a round of which says its state keeps
+  its rounds packed, the pill pushing no column apart.
 
 ## Rooms (1.23, #225)
 
@@ -3125,7 +3129,10 @@ chevron where it opens a page. The hairline from the text's left edge, as every 
   names none (its `lights`, its `climate`: its first thermostat, its `covers`, `fans`, `media`), a room's own
   `quick_actions` over them — each set its own room's, a tap flipping what is safe to flip (a set all of it at once), a
   lock locking at once and asking before it unlocks, the rest opening their details (§ Rounds). A room's colour is its
-  lights' round's too, where the house shows no bulb's colour.
+  lights' round's too, where the house shows no bulb's colour. The rows stand them in columns, as the issue's picture
+  does (§ Rounds: `columns`): each in the place its list gives it, a kind a room lacks (no blinds, no thermostat)
+  leaving its place empty, so every room's lights and every room's temperature stand in one column; a tile keeps its
+  own packed.
 - **Where a tap goes**: the room's own `tap_action`; else its `path`; else its page on the automatic dashboard the
   house's rooms open on — the one the card stands on, else Fluvy's Rooms dashboard, else Home's while it keeps its Rooms
   view (read once a page from those dashboards' configurations, nothing written) — where the room has one; else the

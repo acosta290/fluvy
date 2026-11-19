@@ -643,6 +643,9 @@ export const drawRound = (
 export const roundsHeld = (room: number): number =>
   Math.max(0, Math.floor((room - 12 + ROUND_GAP) / (ROUND + ROUND_GAP)));
 
+/** What `count` rounds take of their line (`roundsHeld`'s other way round): 44 each, 8 apart, and the 12 before them. */
+export const roundsTaken = (count: number): number => 12 + count * (ROUND + ROUND_GAP) - ROUND_GAP;
+
 /**
  * Rounds on one line in `room` (`roundsHeld`): as many as it holds, in their order;
  * then the states asked for in the room they leave (#205), each round that says one grown into the pill that holds
@@ -662,7 +665,7 @@ export function roundsIn(
   // their words are measured in the pills' sheet, which the card wears from the first state asked for
   if (rounds.some((round) => round.said)) wear(host.root);
   const grows = (text: string): number => pillWidth(host, text, under) - ROUND;
-  const taken = 12 + rounds.length * (ROUND + ROUND_GAP) - ROUND_GAP;
+  const taken = roundsTaken(rounds.length);
   const states = statesIn(rounds, room - taken, grows);
   return {
     taken: states.reduce((sum, state) => sum + (state ? grows(state) : 0), taken),

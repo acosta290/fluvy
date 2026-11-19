@@ -279,6 +279,12 @@
   gap: 8px;
 }
 
+/* a round's place left empty where a list stands its rounds in columns (a room without blinds) */
+.lt-bulbs__place {
+  flex: none;
+  width: 44px;
+}
+
 .lt-bulbs--line {
   display: block;
   margin-top: 16px;
