@@ -4112,7 +4112,8 @@ What a card does at those widths, beyond the rules above — never a word cut, n
 - **The panel's option tiles** stand in fewer columns where a value's word would not hold its tile (de
   "Sonnenuntergang", bg "Заоблени" on a phone): a value wraps at its words, never inside one (1.23).
 - **An appliance's figure** steps from 32 to 28, on its 40 line, where it would not hold the card's column (zh-Hans
-  "0 小时 42 分" at 211, 1.23).
+  "0 小时 42 分" at 211, 1.23). **An appliance tile's label** wider than the one tile a row it is given goes onto a
+  second line at its words, inside the tile's 84 (ru "Следующее кормление" at 211).
 - **A pair of equal buttons** stands one over the other, each as wide as its bar, where the longer label would not hold
   its half (the panel's apply pair in French on a phone; measured by `pairStacks` in the Charts tab's set editor and
   Customise's sheets, 1.23: de "Satz speichern", bg "Преместване тук").

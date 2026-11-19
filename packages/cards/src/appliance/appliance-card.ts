@@ -1190,12 +1190,14 @@ export class FluvyApplianceCard extends Card<ApplianceCardConfig> {
         flex-direction: column;
         min-width: 0;
       }
+      /* a label wider than the one tile a row it is given (ru "Следующее кормление" at 211) goes onto a second line at
+         its words, inside the tile's 84 (two 20 lines over the value's 4 and 28) */
       .ap-tile__label {
         font-size: 15px;
         font-weight: 400;
         line-height: 20px;
         color: var(--fluvy-text-secondary);
-        white-space: nowrap;
+        text-wrap: balance;
       }
       .ap-tile__value {
         margin-top: 4px;
