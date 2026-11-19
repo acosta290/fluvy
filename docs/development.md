@@ -92,8 +92,8 @@ budget (`BUDGETS`; the facts guard in `tools/docs` holds this table to it):
 | `strategy` | 32 KB | the automatic dashboards: their views and cards, each card in a part with an id of its own, and a person's `edit` laid over them |
 | `house-heights` | 4 KB | the cards' heights counted with the house, for the automatic dashboards |
 | `wall` | 16 KB | wall mode |
-| `chart` | 24 KB | the chart engine: the scales, paths, bars, axes, rings and gauges every chart is drawn with, the gauges that move, the styles, their sheet, a house's series colours fitted to each mode |
-| `chart-card` | 17 KB | the Chart card: the readers of its series (history, statistics, a list, a forecast), its editor, its English |
+| `chart` | 25 KB | the chart engine: the scales, paths, bars, axes, rings and gauges every chart is drawn with, the gauges that move, the styles, their sheet, a house's series colours fitted to each mode |
+| `chart-card` | 20 KB | the Chart card: the readers of its series (history, statistics, a list, a forecast), its editor, its English |
 | `energy-period` | 17 KB | the Energy period card (the strip, its picker and its sheet) and the Energy usage card, their English |
 | `energy` | 88 KB | the energy family and its sheet, the history bars with it |
 | `history-bars-readings` | 8 KB | a counter read by its readings, the recorder's history |
@@ -119,7 +119,7 @@ budget (`BUDGETS`; the facts guard in `tools/docs` holds this table to it):
 | `vacuum` | 8 KB | the Vacuum card: the robot's and the mower's (1.20: it left core), which robots a hand can drive and how (#178), the drive pad's English |
 | `vacuum-drive` | 8 KB | the drive pad (1.20, #178): the ring with Stop in its middle, a robot's remote control from its start to its stop, its sheet; fetched by the first Vacuum card that draws a Drive command |
 | `ring` | 4 KB | the ring (1.20): the disc of four arrows round a middle key the TV remote's D-pad and the drive pad both draw |
-| `climate` | 8 KB | the Thermostat card: the climate's, the water heater's and the humidifier's (1.21: it left core), its rules, and what says what a thermostat is doing (#185: its action, its valve, its window, its battery), which a tile and a room's climate row asked to say it reach here |
+| `climate` | 9 KB | the Thermostat card: the climate's, the water heater's and the humidifier's (1.21: it left core), its rules, and what says what a thermostat is doing (#185: its action, its valve, its window, its battery), which a tile and a room's climate row asked to say it reach here |
 | `remote` | 16 KB | the TV remote card: its keys and the integrations' commands for them, the platforms it knows by name, its English |
 | `app-logos` | 24 KB | the platforms' logos (Simple Icons, Material Design Icons, Fluvy's monograms), fetched by the first remote card that draws an app |
 | `vehicle` | 26 KB | the Vehicle card: what finds a car's entities and folds its integration's words, its glyphs, its English |
@@ -133,7 +133,7 @@ budget (`BUDGETS`; the facts guard in `tools/docs` holds this table to it):
 | `calendar` | 16 KB | the calendar card: its views, what reads its events, its sheet |
 | `editor` | 8 KB | the cards' visual editor |
 | `fields` | 9 KB | the fields every card's editor is built of: the schema's helpers, a list's row form, the editors' English |
-| `forms` | 16 KB | the editors of the cards every page carries and of the template, Slider, Cover, Vacuum, Thermostat and remote cards: their forms, lists and defaults |
+| `forms` | 19 KB | the editors of the cards every page carries and of the template, Slider, Cover, Vacuum, Thermostat and remote cards: their forms, lists and defaults |
 | `view-icons` | 6 KB | a view's icon from its name |
 | `glass` | 4 KB | what a see-through card wears: its sheet's writer (every fill at its opacity) and its rules (its solid overlays, its blur) |
 | `quiet` | 4 KB | what a card quiet out of reach wears: the rules that give the unavailable skin's paint back, one sheet every such card adopts |
@@ -159,7 +159,7 @@ budget (`BUDGETS`; the facts guard in `tools/docs` holds this table to it):
 | `activity` | 32 KB | the Activity page |
 | `history` | 16 KB | the History page |
 | `details-history` | 10 KB | our history in Home Assistant's details dialog (1.20, #162): the block, its readers of the recorder and its English; fetched the first time a dialog shows it |
-| `lang` | 48 KB | a language's catalogue (`lang-de`, `lang-fr`, …) |
+| `lang` | 52 KB | a language's catalogue (`lang-de`, `lang-fr`, …) |
 | `rolldown-runtime` | 2 KB | the bundler's runtime |
 | `loader.js` | 4 KB | the loader the integration puts on every page |
 

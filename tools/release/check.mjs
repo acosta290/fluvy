@@ -63,12 +63,15 @@ const BUDGETS = {
   wall: 16_384,
   // the chart engine (1.11): the scales, paths, bars, axes, rings and gauges every chart card draws with, the styles,
   // their sheet, the gauges that move (7 KB of it) — what the sensor's chart waits on, so the Chart card keeps a
-  // chunk of its own. Planned at 19–20 KB before the moving gauges
-  chart: 24_576,
+  // chunk of its own. Planned at 19–20 KB before the moving gauges. 25 KB since 2026-11-19 (1.23: a thing's states laid as
+  // stretches, `@fluvy/core/spans`, and the timeline's gaps and its lowest, highest and last readings, #228): measured
+  // at 24.1 KB; 24 before
+  chart: 25_600,
   // the Chart card (1.11, #68): the card, the readers of its series (history, statistics, a list, a forecast), its
   // editor and its English. 17 KB since 2026-11-13 (1.20: following an Energy date picker, `collection_key`, #181, and
-  // the round's double tap on its rows and head, #179): measured at 16.6 KB; 16 before
-  'chart-card': 17_408,
+  // the round's double tap on its rows and head, #179): measured at 16.6 KB; 16 before. 20 KB since 2026-11-19 (1.23:
+  // states as strips under the chart with their colours by state, a history's `stat`, #228): measured at 18.7 KB
+  'chart-card': 20_480,
   // the energy family: every energy card, the flow's drawing and motion, the model they share, its sheet. 88 KB since
   // 2026-11-15 (1.22, #202, 0.6 KB: the flow's names on three lines and its last-resort lane, Production's badge by the
   // hour, Where it went's words said to a screen reader): measured at 87.0 KB; 87 KB since 2026-11-14 (1.21, #190,
@@ -165,8 +168,9 @@ const BUDGETS = {
   // the Thermostat card (1.21, 2026-11-14: it left core, 4.9 KB of what every page loads): the climate's, the water
   // heater's and the humidifier's card and its rules, 5.6 KB, and what says what a thermostat is doing with what it
   // reads of its valve, its window and its battery (#185), which a tile and a room's row reach here; measured at
-  // 7.3 KB
-  climate: 8192,
+  // 7.3 KB. 9 KB since 2026-11-19 (1.23: the room as the large figure with the target's stepper, the modes as icons
+  // and the readouts under the value, #215): measured at 8.7 KB
+  climate: 9216,
   // the TV remote card (1.18, #143): the card, its keys and the integrations' commands for them, the platforms it
   // knows by name, its English; its editor goes with the forms. Measured at 11.2 KB
   remote: 16_384,
@@ -210,8 +214,10 @@ const BUDGETS = {
   // with the sliders' style on every editor that draws one): measured at 12.7 KB; 12 before. 15 KB since 2026-11-13
   // (1.20: every editor's Interactions section, #179, the vacuum's drive pad, #178, the rocker's style, #177): measured
   // at 14.1 KB. 16 KB since 2026-11-15 (1.22: two lines for a head's name, #191, a tile's readouts each with its name,
-  // unit and decimals, #197, a list's names, #200): measured at 15.0 KB
-  forms: 16_384,
+  // unit and decimals, #197, a list's names, #200): measured at 15.0 KB. 19 KB since 2026-11-19 (1.23: the Rounds
+  // card's and the Compass card's editors, a card's own blur, the thermostat's focus, icons and readouts, a chart's
+  // states): measured at 17.1 KB, the round's other new cards' editors to come
+  forms: 19_456,
   // 6 KB since 2026-11-13 (1.20: Ukrainian's words for a view's icon, #176, about 400 B; measured at 5.0 KB); 5 since
   // 2026-11-11 (1.19: Russian's, #167, about 800 B); 4 before
   'view-icons': 6144,
@@ -276,8 +282,11 @@ const BUDGETS = {
   // its states, its line, its controls and rows, its editor and the parts a car's entities play, 1.2 KB a language;
   // Hungarian, the longest, went over 28); 28 since 1.11 (the date picker's, the units', a row's real last change's,
   // the web page's and the Items card's words, the flights preset's among them: Japanese, the longest, went 320 B over
-  // 24); 24 since 1.9 (the appliances' and the alerts' words), 20 in 1.8, 16 before
-  lang: 49_152,
+  // 24); 24 since 1.9 (the appliances' and the alerts' words), 20 in 1.8, 16 before. 52 KB since 2026-11-19 (1.23: the
+  // Compass, Rounds, Rooms, Thermostats and Heating schedule cards' words and their editors', a card's own blur, the
+  // thermostat's room first, a chart's states, the icons' levels: Russian, the longest, went 672 B over 48 with half of
+  // them)
+  lang: 53_248,
   'rolldown-runtime': 2048,
   'loader.js': 4096,
 };

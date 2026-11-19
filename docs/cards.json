@@ -3977,6 +3977,14 @@
           "default": true
         },
         {
+          "key": "card_blur",
+          "label": "Blur what shows through",
+          "does": "Whether what shows through a see-through card is blurred. Left out, the house’s, and none at 0 %.",
+          "helper": "Untouched: every card’s, from Fluvy’s settings; none at 0 %",
+          "type": "boolean",
+          "default": true
+        },
+        {
           "key": "unavailable",
           "label": "When unavailable",
           "does": "How the card looks while its entity is unavailable: dashed, or quiet as when it is off. Left out, the house’s.",
