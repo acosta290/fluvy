@@ -139,6 +139,9 @@ const BUDGETS = {
   // the Thermostats card (1.23, #230, #219): its card, what it reads of the house and its English; what a thermostat
   // is doing and its model the Thermostat card's, the rows and their rounds the quick actions'
   thermostats: 8192,
+  // the Rooms card (1.23, #225): its card, where the house's rooms open and its English; its rounds are the quick
+  // actions', the rooms' glyphs it draws their set's (`glyphs-rooms`). Measured at 4.4 KB
+  rooms: 8192,
   // what each card is (1.22, #193): the line the card picker's search reads and Customise's list says under each name,
   // in English, which left core; measured at 3.6 KB
   about: 4096,
@@ -206,8 +209,10 @@ const BUDGETS = {
   // card's colour round is tapped (its controls are the light card's, in `light-colour`)
   'lights-colour': 8192,
   // the rounds (1.13, #113; 1.23, #224): a room's quick actions, the engine every card draws rounds with (their sets,
-  // levels, taps, holds and states) and the list row that ends in them, fetched as the bundle starts; measured at 3.9 KB
-  'quick-actions': 4096,
+  // levels, taps, holds and states) and the list row that ends in them, fetched as the bundle starts. 5 KB since
+  // 2026-11-20, measured at 4.3 KB: the list row took a card's control at its end (#230), its chevrons, a row's own
+  // room and its rounds in columns (#225); 4 before
+  'quick-actions': 5120,
   // the weather card, and the Compass card since 1.23 (#209: the card and its English; its editor goes with the forms)
   weather: 12_288,
   // the calendar card: its views, what reads its events, its sheet (1.18: it left core, 9.7 KB of what every page
@@ -267,7 +272,8 @@ const BUDGETS = {
   'icons-outdoor': 4096,
   'icons-home': 4096,
   'icons-rooms': 4096,
-  // the glyph sets a card draws by itself (1.23, #226): the rooms', which the Thermostats card's rows draw (#230)
+  // the glyph sets a card draws by itself (1.23, #226): the rooms', which the Rooms and Thermostats cards draw (#225,
+  // #230)
   'glyphs-rooms': 4096,
   // the levels in Fluvy's icons (1.23, #226): what picks a battery's charge, a signal's bars, a valve open or shut, and
   // the twelve glyphs that say them
