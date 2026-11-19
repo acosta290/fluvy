@@ -3249,7 +3249,8 @@
     "editor.color_helper": "Vuoto, il colore della scheda, o i colori delle serie della palette se sono più d’una. I colori della palette la seguono; un nome di colore o un #hex resta come è scritto",
     "editor.highlight_hours": "Ore da evidenziare",
     "editor.show_legend": "Mostra la legenda",
-    "editor.show_head": "Mostra il valore attuale"
+    "editor.show_head": "Mostra il valore attuale",
+    "editor.stat_last": "L’ultima lettura"
   },
   "slider": {
     "mute": "Silenzia",

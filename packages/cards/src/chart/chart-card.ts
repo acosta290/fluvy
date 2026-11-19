@@ -97,7 +97,7 @@ import {
   statOf,
   type ForecastType,
   type Source,
-  type Stat,
+  type Statistic,
 } from './data/sources.js';
 import type { StatPeriod } from './data/statistics.js';
 import { bucketGrid, roundGrid, roundStep, type Grid } from './data/slots.js';
@@ -863,8 +863,8 @@ export class FluvyChartCard extends Card<ChartCardConfig> {
   }
 
   /** What a series' statistics read by: its own stat, else a meter's change and any other sensor's mean. */
-  private statFor(item: ChartSeriesConfig): Stat {
-    return item.stat ?? statOf(this.entity(item.entity).attr('state_class'));
+  private statFor(item: ChartSeriesConfig): Statistic {
+    return statOf(this.entity(item.entity).attr('state_class'), item.stat);
   }
 
   /**
@@ -1169,22 +1169,28 @@ export class FluvyChartCard extends Card<ChartCardConfig> {
       ): Array<number | null> =>
         readings ? shown(readSlots(readings, grid.edges, holding, rule, pick)) : [];
       const kind = item.kind ?? 'line';
-      // a statistic reads by its own: its changes added up, a running total's last, its lowest or highest, else its mean
-      const stat = source === 'statistics' ? (item.stat ?? statOf(view.attr('state_class'))) : null;
+      // a statistic reads by its own: its changes added up, a running total's last, its lowest or highest, else its
+      // mean; a history by the one it names (#228: its lowest, its highest, the last), else its mean
+      const stat =
+        source === 'statistics'
+          ? this.statFor(item)
+          : source === 'history'
+            ? (this.historyStat(item) ?? null)
+            : null;
       const slotRule: SlotRule = !grid.round
         ? 'mean'
         : stat === 'change'
           ? 'sum'
-          : stat === 'sum'
+          : stat === 'sum' || stat === 'last'
             ? 'last'
             : stat === 'min' || stat === 'max'
               ? stat
               : 'mean';
-      // a meter's history drawn as bars reads what it gained in each slot, not what it showed; readings of a range
-      // that is over (`whole`, the one a picker compares with) are read to its end
+      // a meter's history drawn as bars reads what it gained in each slot, not what it showed, unless its stat names
+      // another reading; readings of a range that is over (`whole`, the one a picker compares with) are read to its end
       const meter = readingsOf(view.deviceClass, view.attr('state_class'), view.unit).rule;
       const layOn = (laid: readonly Reading[], whole = false): Array<number | null> =>
-        source === 'history' && meter !== 'mean' && (bars || kind === 'columns')
+        source === 'history' && meter !== 'mean' && !stat && (bars || kind === 'columns')
           ? shown(
               gains(
                 laid,
@@ -1210,6 +1216,7 @@ export class FluvyChartCard extends Card<ChartCardConfig> {
               window,
               style,
               source === 'statistics' ? PERIOD_MS[this.periodFor(item)] : undefined,
+              source === 'history' ? this.historyStat(item) : undefined,
             )
           : null;
       // a slot's band: the lowest and the highest of what it holds, around its mean; a slot still running with nothing
@@ -1268,6 +1275,15 @@ export class FluvyChartCard extends Card<ChartCardConfig> {
   }
 
   /**
+   * What a sensor's history reads of its readings where its series says (#228): their lowest, their highest or the
+   * last, in each slot and around each point; none (their mean) where it says none or the mean.
+   */
+  private historyStat(item: ChartSeriesConfig): 'min' | 'max' | 'last' | undefined {
+    const stat = item.stat;
+    return stat === 'min' || stat === 'max' || stat === 'last' ? stat : undefined;
+  }
+
+  /**
    * A series' line through the window as far as it has happened (`timeLine`, as calmly as the card's width draws it in
    * its style, or every `points`; never finer than its statistics' bucket, `finest`); none where nothing has.
    */
@@ -1276,6 +1292,7 @@ export class FluvyChartCard extends Card<ChartCardConfig> {
     window: Window,
     style: ResolvedStyle,
     finest: number | undefined,
+    rule: 'min' | 'max' | 'last' | undefined,
   ): TimeLine | null {
     const end = Math.min(window.end, window.now);
     if (!(end > window.start) || !readings.length) return null;
@@ -1287,6 +1304,7 @@ export class FluvyChartCard extends Card<ChartCardConfig> {
       style,
       hass: this.hass,
       ...(finest ? { finest } : {}),
+      ...(rule ? { rule } : {}),
     });
   }
 
@@ -1467,7 +1485,7 @@ export class FluvyChartCard extends Card<ChartCardConfig> {
     const back = this.back();
     const to = Math.min(window.now, window.end);
     const statistics = drawn.source === 'statistics';
-    const stat = statistics ? (drawn.item.stat ?? statOf(drawn.view.attr('state_class'))) : null;
+    const stat = statistics ? this.statFor(drawn.item) : null;
     const counter = statistics
       ? stat === 'change' || stat === 'sum'
       : readingsOf(drawn.view.deviceClass, drawn.view.attr('state_class'), drawn.view.unit).rule !==

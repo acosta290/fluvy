@@ -20,7 +20,15 @@ import { remember, statisticsDuring, type StatPeriod, type StatType } from './st
 export type Source = 'history' | 'statistics' | 'attribute' | 'forecast';
 export const SOURCES: readonly Source[] = ['history', 'statistics', 'attribute', 'forecast'];
 export const STATS = ['mean', 'min', 'max', 'sum', 'change'] as const satisfies readonly StatType[];
-export type Stat = (typeof STATS)[number];
+/** What a statistic's buckets are read by. */
+export type Statistic = (typeof STATS)[number];
+/**
+ * What a slot or a line's point of a sensor's history reads of the readings across it (#228): their mean, weighted by
+ * how long each held (the default), their lowest, their highest, or the last, the one in force at its end — a switch
+ * charted as 0 and 100 reads 0 or 100, never a mean between.
+ */
+export const HISTORY_STATS = ['mean', 'min', 'max', 'last'] as const;
+export type Stat = Statistic | (typeof HISTORY_STATS)[number];
 export const PERIODS = ['hour', 'day', 'week', 'month'] as const satisfies readonly StatPeriod[];
 export type Period = (typeof PERIODS)[number];
 
@@ -43,9 +51,16 @@ export function sourceOf(item: SourceKeys, attributes?: Readonly<Record<string, 
   return item.attribute || (attributes && usualList(attributes)) ? 'attribute' : 'history';
 }
 
-/** The stat a sensor's statistics are read by where the card names none: what a meter gained, else the mean. */
-export const statOf = (stateClass: unknown): Stat =>
-  stateClass === 'total' || stateClass === 'total_increasing' ? 'change' : 'mean';
+/**
+ * The stat a sensor's statistics are read by: the one the card names where it is a statistic's, else what a meter
+ * gained, else the mean.
+ */
+export const statOf = (stateClass: unknown, named?: Stat): Statistic =>
+  (STATS as readonly unknown[]).includes(named)
+    ? (named as Statistic)
+    : stateClass === 'total' || stateClass === 'total_increasing'
+      ? 'change'
+      : 'mean';
 
 /** The bucket statistics are read in where the card names none: an hour through a week, a day beyond. */
 export const periodOf = (hours: number): Period => (hours <= 7 * 24 ? 'hour' : 'day');
@@ -114,7 +129,7 @@ export async function statisticsReadings(
   id: string,
   window: { readonly start: number; readonly end: number },
   period: StatPeriod,
-  stat: Stat,
+  stat: Statistic,
   band: boolean,
 ): Promise<Reading[]> {
   const types: StatType[] = band && stat === 'mean' ? ['mean', 'min', 'max'] : [stat];

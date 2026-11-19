@@ -762,7 +762,8 @@
     "editor.color_helper": "Prázdne: farba karty alebo pri viacerých radoch farby palety. Farby palety sa menia so zvolenou paletou; názov farby či #hex zostanú nezmenené",
     "editor.highlight_hours": "Zvýraznené hodiny",
     "editor.show_legend": "Zobraziť legendu",
-    "editor.show_head": "Zobraziť aktuálnu hodnotu"
+    "editor.show_head": "Zobraziť aktuálnu hodnotu",
+    "editor.stat_last": "Posledné meranie"
   },
   "chart": {
     "gauge.cold": "Zima",

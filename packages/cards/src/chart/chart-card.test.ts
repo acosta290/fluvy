@@ -1,5 +1,11 @@
 // @vitest-environment happy-dom
-import { CHART_DEFAULTS, setChartDefaults, type HassEntity, type HomeAssistant } from '@fluvy/core';
+import {
+  CHART_DEFAULTS,
+  setChartDefaults,
+  type HaFormSchemaItem,
+  type HassEntity,
+  type HomeAssistant,
+} from '@fluvy/core';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { chartHeight } from '../chart-family.js';
 import type { EnergyCollectionLike, EnergyDataLike } from '../energy-model/collection.js';
@@ -65,8 +71,9 @@ const STATES = [
   state('sensor.cellar', '14.2', { unit_of_measurement: '°C', state_class: 'measurement' }),
   state('weather.home', 'sunny', { temperature: 16.8, temperature_unit: '°C' }),
   state('sensor.gone', 'unavailable', { unit_of_measurement: 'EUR/kWh' }),
-  // #228: a room sensor that went away
+  // #228: a room sensor that went away, a 0/100 template
   state('sensor.flaky', '21', { unit_of_measurement: '°C', state_class: 'measurement' }),
+  state('sensor.boiler', '0'),
 ];
 
 /** What the recorder kept of these at their own moments (from MIDNIGHT, in hours): each state until the next. */
@@ -78,6 +85,14 @@ const RECORDED: Readonly<Record<string, ReadonlyArray<readonly [number, string]>
     [6, '21'],
     [12, 'unknown'],
     [13, '21'],
+  ],
+  // the boiler's call: 100 for twenty minutes every two hours from 10:10
+  'sensor.boiler': [
+    [-30, '0'],
+    ...[10, 12, 14, 16, 18, 20].flatMap((h) => [
+      [h + 1 / 6, '100'] as const,
+      [h + 0.5, '0'] as const,
+    ]),
   ],
 };
 
@@ -1294,7 +1309,7 @@ describe('following a date picker (#181)', () => {
   });
 });
 
-/* ---------- #228: an unavailable stretch a gap ---------- */
+/* ---------- #228: the history's own stat, an unavailable stretch a gap ---------- */
 
 type Scrubbed = Inner & { scrubber: { set(value: number | null): void } };
 
@@ -1331,5 +1346,58 @@ describe('a sensor that went away (#228)', () => {
       await readAt(card, along(9));
       expect(texts(card, '.ch-now .fv-readout__value')[0]?.replace(/\s+/g, ''), kind).toBe('21°C');
     }
+  });
+});
+
+/** A series' fields in its editor, its rows opened. */
+const fieldsOf = (item: Record<string, unknown>): HaFormSchemaItem[] =>
+  (SERIES_LIST.schemaOf?.(item) ?? []).flatMap((field) => field.schema ?? [field]);
+
+describe('a history’s own stat (#228, with twodrops)', () => {
+  const BOILER = { series: [{ entity: 'sensor.boiler', curve: 'step' as const }], span: '12h' };
+  /** What every slot reads, the pointer across them. */
+  const slotsRead = async (stat?: 'max' | 'last'): Promise<Set<string>> => {
+    const card = await draw({
+      ...BOILER,
+      series: [{ ...BOILER.series[0]!, ...(stat ? { stat } : {}) }],
+    });
+    const read = new Set<string>();
+    for (let f = 0.01; f < 1; f += 0.01) {
+      await readAt(card, f);
+      read.add(texts(card, '.ch-now .fv-readout__value')[0] ?? '');
+    }
+    return read;
+  };
+
+  it('reads a 0/100 template sensor as 0 and 100 by its highest or its last, its mean between them', async () => {
+    const between = (read: Set<string>): string[] =>
+      [...read].filter((v) => v !== '0' && v !== '100' && v !== '—');
+    expect(between(await slotsRead())).not.toEqual([]);
+    expect(between(await slotsRead('max'))).toEqual([]);
+    expect(between(await slotsRead('last'))).toEqual([]);
+    expect(await slotsRead('max')).toContain('100');
+  });
+
+  it('draws a line’s points by it: the highest around each, never a mean', async () => {
+    const ys = async (stat?: 'max'): Promise<Set<string>> => {
+      const card = await draw({
+        series: [{ entity: 'sensor.boiler', ...(stat ? { stat } : {}) }],
+        span: '12h',
+        curve: 'straight',
+      });
+      const d = root(card).querySelector('.curve-line')?.getAttribute('d') ?? '';
+      return new Set([...d.matchAll(/[ML]\s*[\d.]+[ ,]([\d.]+)/g)].map((m) => m[1] ?? ''));
+    };
+    expect((await ys()).size).toBeGreaterThan(2);
+    expect((await ys('max')).size).toBe(2);
+  });
+
+  it('is offered for a history, its own words', () => {
+    const stat = fieldsOf({ entity: 'sensor.temperature' }).find((field) => field.name === 'stat');
+    expect(
+      (stat?.selector as { select: { options: { value: string }[] } }).select.options.map(
+        (o) => o.value,
+      ),
+    ).toEqual(['mean', 'min', 'max', 'last']);
   });
 });

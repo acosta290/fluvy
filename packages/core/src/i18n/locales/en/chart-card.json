@@ -35,6 +35,7 @@
     "editor.color_helper": "Empty: the card’s colour, or the palette’s series colours for several. The palette’s colours follow it; a colour name or a #hex stays as typed",
     "editor.highlight_hours": "Hours to highlight",
     "editor.show_legend": "Show legend",
-    "editor.show_head": "Show the value now"
+    "editor.show_head": "Show the value now",
+    "editor.stat_last": "The last reading"
   }
 }

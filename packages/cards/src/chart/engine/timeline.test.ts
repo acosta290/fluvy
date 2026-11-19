@@ -127,7 +127,7 @@ describe('a line through a window', () => {
       { start: at(9, 47), end: at(21, 47) },
       30 * MINUTE,
       MIDNIGHT,
-      true,
+      'mean',
     );
     const times = laid.at.map((f) => at(9, 47) + f * 12 * HOUR);
     expect(times[0]).toBe(at(9, 47));
@@ -144,14 +144,14 @@ describe('a line through a window', () => {
       { t: at(12), v: 10 },
       { t: at(13), v: 0 },
     ];
-    const laid = layLine(readings, { start: at(11), end: at(13) }, 30 * MINUTE, MIDNIGHT, true);
+    const laid = layLine(readings, { start: at(11), end: at(13) }, 30 * MINUTE, MIDNIGHT, 'mean');
     // 11:45 → 12:15: a quarter of nothing, a quarter of ten
     expect(laid.values[laid.at.findIndex((f) => f === 0.5)]).toBe(5);
     expect(laid.values[laid.at.findIndex((f) => f === 0.75)]).toBe(10);
   });
 
   it('asked: each point Home Assistant’s reading at its time — 12:00 is the bucket from 12:00', () => {
-    const laid = layLine(CLOUDY, { start: at(0), end: at(23, 55) }, 30 * MINUTE, MIDNIGHT, false);
+    const laid = layLine(CLOUDY, { start: at(0), end: at(23, 55) }, 30 * MINUTE, MIDNIGHT, 'last');
     const noon = laid.at.findIndex((f) => Math.abs(f * (at(23, 55) - at(0)) - 12 * HOUR) < 1);
     expect(laid.values[noon]).toBe(2.61);
     expect(laid.values).toHaveLength(49);
@@ -163,7 +163,7 @@ describe('a line through a window', () => {
       { start: at(10), end: at(14) },
       HOUR,
       MIDNIGHT,
-      true,
+      'mean',
     );
     expect(laid.values).toEqual([null, null, 4, 4, 4]);
   });
@@ -179,18 +179,18 @@ describe('a gap in the recorder', () => {
   const window = { start: at(10), end: at(12, 10) };
 
   it('breaks the line, as Home Assistant’s does, drawn automatically or every step', () => {
-    for (const mean of [true, false]) {
-      const laid = layLine(buckets, window, 5 * MINUTE, MIDNIGHT, mean, 5 * MINUTE);
+    for (const rule of ['mean', 'last'] as const) {
+      const laid = layLine(buckets, window, 5 * MINUTE, MIDNIGHT, rule, 5 * MINUTE);
       const value = (minutes: number): number | null | undefined =>
         laid.values[laid.at.findIndex((a) => Math.abs(a - minutes / 130) < 1e-9)];
-      expect(value(70), String(mean)).toBe(2); // 11:10, the last before the gap
-      expect(value(95), String(mean)).toBeNull(); // 11:35: nothing recorded
-      expect(value(105), String(mean)).toBe(4); // 11:45, back
+      expect(value(70), rule).toBe(2); // 11:10, the last before the gap
+      expect(value(95), rule).toBeNull(); // 11:35: nothing recorded
+      expect(value(105), rule).toBe(4); // 11:45, back
     }
   });
 
   it('keeps the stretch after the last reading: those buckets are not compiled yet', () => {
-    const laid = layLine(buckets, window, 5 * MINUTE, MIDNIGHT, false, 5 * MINUTE);
+    const laid = layLine(buckets, window, 5 * MINUTE, MIDNIGHT, 'last', 5 * MINUTE);
     expect(laid.values[laid.values.length - 1]).toBe(4); // 12:10
   });
 
@@ -198,7 +198,7 @@ describe('a gap in the recorder', () => {
     expect(readLine(buckets, window, 95 / 130, 5 * MINUTE, MIDNIGHT, 5 * MINUTE)).toBeNull();
     expect(readLine(buckets, window, 105 / 130, 5 * MINUTE, MIDNIGHT, 5 * MINUTE)?.v).toBe(4);
     // a sensor's own history has no buckets: its reading holds until the next
-    const held = layLine(buckets, window, 5 * MINUTE, MIDNIGHT, false);
+    const held = layLine(buckets, window, 5 * MINUTE, MIDNIGHT, 'last');
     expect(held.values.every((v) => v !== null)).toBe(true);
   });
 });
@@ -214,12 +214,12 @@ describe('a sensor that was unavailable (#228)', () => {
     laid.values[laid.at.findIndex((f) => Math.abs(f * 4 * HOUR - hours * HOUR) < 1)];
 
   it('breaks its line where it said no number, never carrying the last one across', () => {
-    for (const mean of [true, false]) {
-      const laid = layLine(readings, window, 30 * MINUTE, MIDNIGHT, mean);
-      expect(value(laid, 0.5), String(mean)).toBe(20); // 10:30
-      expect(value(laid, 1.5), String(mean)).toBeNull(); // 11:30, unavailable
-      expect(value(laid, 2.5), String(mean)).toBe(22); // 12:30
-      expect(value(laid, 3.5), String(mean)).toBeNull(); // 13:30, unavailable to now
+    for (const rule of ['mean', 'last'] as const) {
+      const laid = layLine(readings, window, 30 * MINUTE, MIDNIGHT, rule);
+      expect(value(laid, 0.5), rule).toBe(20); // 10:30
+      expect(value(laid, 1.5), rule).toBeNull(); // 11:30, unavailable
+      expect(value(laid, 2.5), rule).toBe(22); // 12:30
+      expect(value(laid, 3.5), rule).toBeNull(); // 13:30, unavailable to now
     }
     expect(readLine(readings, window, 1.5 / 4, MINUTE, MIDNIGHT)).toBeNull();
     expect(readLine(readings, window, 2.5 / 4, MINUTE, MIDNIGHT)?.v).toBe(22);
@@ -227,11 +227,54 @@ describe('a sensor that was unavailable (#228)', () => {
 
   it('averages a point on the edge of the gap over what it held alone', () => {
     // 10:45 → 11:15 by the hour's half: a quarter of 20 and a quarter of nothing reads 20, never 10
-    const laid = layLine(readings, window, HOUR, MIDNIGHT, true);
+    const laid = layLine(readings, window, HOUR, MIDNIGHT, 'mean');
     expect(value(laid, 1)).toBeNull(); // 11:00 itself is in the gap
-    const edge = layLine(readings, { start: at(10), end: at(11, 15) }, HOUR, MIDNIGHT, true);
+    const edge = layLine(readings, { start: at(10), end: at(11, 15) }, HOUR, MIDNIGHT, 'mean');
     expect(edge.values.at(-1)).toBeNull();
     expect(edge.values[0]).toBe(20);
+  });
+});
+
+describe('a line’s points by the series’ stat (#228)', () => {
+  // a switch charted as 0 and 100: on 10:00–10:10, off, on 10:40–11:00, then off
+  const switched: Timed[] = [
+    { t: at(10), v: 100 },
+    { t: at(10, 10), v: 0 },
+    { t: at(10, 40), v: 100 },
+    { t: at(11), v: 0 },
+  ];
+  const window = { start: at(9, 30), end: at(11, 30) };
+  const laid = (rule: 'mean' | 'min' | 'max' | 'last') =>
+    layLine(switched, window, 30 * MINUTE, MIDNIGHT, rule).values;
+
+  it('the mean reads between: 10:00 is on for 10 of the 15 minutes known around it, 67', () => {
+    expect(laid('mean')[1]).toBeCloseTo(200 / 3, 6);
+    expect(laid('mean').some((v) => v !== null && v > 0 && v < 100)).toBe(true);
+  });
+
+  it('the highest, the lowest and the last read only what it said: 0 or 100', () => {
+    for (const rule of ['min', 'max', 'last'] as const)
+      expect(
+        laid(rule).every((v) => v === null || v === 0 || v === 100),
+        rule,
+      ).toBe(true);
+    // 9:30 (nothing yet), 10:00, 10:30, 11:00, 11:30
+    expect(laid('max')).toEqual([null, 100, 100, 100, 0]);
+    expect(laid('min')).toEqual([null, 0, 0, 0, 0]);
+    expect(laid('last')).toEqual([null, 100, 0, 0, 0]);
+  });
+
+  it('a line through time takes the series’ rule over the style’s mean', () => {
+    const line = timeLine({
+      readings: switched,
+      start: window.start,
+      end: window.end,
+      width: 24,
+      style: style(2.5),
+      hass,
+      rule: 'max',
+    });
+    expect(line.values.every((v) => v === null || v === 0 || v === 100)).toBe(true);
   });
 });
 

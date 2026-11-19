@@ -162,7 +162,7 @@ An item is an entity id, or a map with `entity` and any of these fields.
 | `attribute` | The attribute that holds the list of readings. `auto`, or your own. |
 | `time_key` | The key of each entry that holds its time. |
 | `value_key` | The key of each entry that holds its value. |
-| `stat` | What each reading of the statistics is. `mean` (The mean) · `min` (The lowest reading) · `max` (The highest reading) · `sum` · `change` (What it gained). |
+| `stat` | What each reading of the statistics is, or what each point and step of a history reads. `mean` (The mean) · `min` (The lowest reading) · `max` (The highest reading) · `sum` · `change` (What it gained) · `last` (The last reading). |
 | `period` | How long each statistic’s reading lasts. `hour` (An hour) · `day` (A day) · `week` (A week) · `month` (A month). |
 | `kind` | How the series is drawn: a line, an area, columns, or a band. `line` · `area` · `columns` · `band`. |
 | `curve` | How this series’ line joins its readings. `smooth` · `straight` · `step`. |

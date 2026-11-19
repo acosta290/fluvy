@@ -1593,7 +1593,8 @@
     "editor.color_helper": "Tomt: kortets färg, eller palettens seriefärger för flera. Palettens färger följer den; ett färgnamn eller en #hex förblir som den skrevs",
     "editor.highlight_hours": "Timmar att markera",
     "editor.show_legend": "Visa förklaring",
-    "editor.show_head": "Visa värdet nu"
+    "editor.show_head": "Visa värdet nu",
+    "editor.stat_last": "Senaste mätvärdet"
   },
   "chart": {
     "gauge.cold": "Kallt",

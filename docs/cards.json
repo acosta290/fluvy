@@ -27004,14 +27004,15 @@
             {
               "key": "stat",
               "label": "Statistic",
-              "does": "What each reading of the statistics is.",
+              "does": "What each reading of the statistics is, or what each point and step of a history reads.",
               "type": "choice",
               "values": {
                 "mean": "The mean",
                 "min": "The lowest reading",
                 "max": "The highest reading",
                 "sum": "Sum",
-                "change": "What it gained"
+                "change": "What it gained",
+                "last": "The last reading"
               }
             },
             {

@@ -1593,7 +1593,8 @@
     "editor.color_helper": "Tom: kortets farve eller palettens seriefarver ved flere. Palettens farver følger den; et farvenavn eller en #hex forbliver, som det er skrevet",
     "editor.highlight_hours": "Timer, der fremhæves",
     "editor.show_legend": "Vis forklaring",
-    "editor.show_head": "Vis værdien nu"
+    "editor.show_head": "Vis værdien nu",
+    "editor.stat_last": "Den seneste måling"
   },
   "chart": {
     "gauge.cold": "Koldt",

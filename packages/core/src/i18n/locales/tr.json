@@ -3249,7 +3249,8 @@
     "editor.color_helper": "Boşsa, kartın rengi; birden fazlaysa paletin seri renkleri. Paletin renkleri onu izler; bir renk adı ya da #hex yazıldığı gibi kalır",
     "editor.highlight_hours": "Vurgulanacak saatler",
     "editor.show_legend": "Göstergeyi göster",
-    "editor.show_head": "Şimdiki değeri göster"
+    "editor.show_head": "Şimdiki değeri göster",
+    "editor.stat_last": "Son okuma"
   },
   "slider": {
     "mute": "Sessize al",

@@ -782,7 +782,6 @@ export const MEANINGS: Readonly<Record<string, string>> = {
   '[].sort_rows': 'The order of the alert’s rows.',
   '[].source': 'Where the readings come from.',
   '[].split': 'Makes an alert of each entity it matches.',
-  '[].stat': 'What each reading of the statistics is.',
   '[].state': 'Counts an entity whose state is one of these.',
   '[].states': 'Words of your own for the sensor’s states.',
   '[].status': 'What the camera’s line says.',
@@ -823,6 +822,8 @@ export const MEANINGS: Readonly<Record<string, string>> = {
   'chart.series[].attribute': 'The attribute that holds the list of readings.',
   'chart.series[].kind': 'How the series is drawn: a line, an area, columns, or a band.',
   'chart.series[].period': 'How long each statistic’s reading lasts.',
+  'chart.series[].stat':
+    'What each reading of the statistics is, or what each point and step of a history reads.',
   'chart.series[].unit': 'The unit this series is written in.',
   'energy.legend[].period': 'What the legend’s figure shows.',
   'energy-sankey.devices[].parent': 'Another device’s meter this device is part of.',

@@ -3249,7 +3249,8 @@
     "editor.color_helper": "Leer: die Farbe der Karte, bei mehreren die Reihenfarben der Palette. Palettenfarben passen sich an; ein Farbname oder #Hex-Wert bleibt wie eingegeben",
     "editor.highlight_hours": "Hervorgehobene Stunden",
     "editor.show_legend": "Legende anzeigen",
-    "editor.show_head": "Aktuellen Wert anzeigen"
+    "editor.show_head": "Aktuellen Wert anzeigen",
+    "editor.stat_last": "Letzter Messwert"
   },
   "slider": {
     "mute": "Stumm",

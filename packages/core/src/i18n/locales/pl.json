@@ -950,7 +950,8 @@
     "editor.color_helper": "Puste: kolor karty albo kolory serii z palety przy kilku seriach. Kolory z palety zmieniają się razem z nią; nazwa koloru lub #hex zostaje jak wpisano",
     "editor.highlight_hours": "Godziny do wyróżnienia",
     "editor.show_legend": "Pokaż legendę",
-    "editor.show_head": "Pokaż bieżącą wartość"
+    "editor.show_head": "Pokaż bieżącą wartość",
+    "editor.stat_last": "Ostatni odczyt"
   },
   "chips": {
     "rooms": "Pomieszczenia",

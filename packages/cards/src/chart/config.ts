@@ -26,6 +26,7 @@ import type { EditorChoices, FormHelper, RowsListSpec } from '../shared/rows-edi
 import { ladderOf, type NumberKeys } from '../shared/units.js';
 import { timedAttributes, type Day } from './data/attribute.js';
 import {
+  HISTORY_STATS,
   PERIOD_MS,
   periodOf,
   PERIODS,
@@ -64,7 +65,10 @@ export interface ChartSeriesConfig extends NumberKeys {
   /** The list's keys where they are not the usual ones (`start`, `from`, `time` …; `value`, `price` …). */
   time_key?: string;
   value_key?: string;
-  /** Statistics: what each bucket reads (a meter's change, a measurement's mean by default), and how long one is. */
+  /**
+   * Statistics: what each bucket reads (a meter's change, a measurement's mean by default), and how long one is; a
+   * sensor's history: what each slot and point reads of its readings (their mean by default, `HISTORY_STATS`).
+   */
   stat?: Stat;
   period?: Period;
   tone?: Tone;
@@ -221,11 +225,23 @@ const kindField = (): HaFormSchemaItem =>
     ['columns', 'option.columns'],
     ['band', 'option.band'],
   ]);
-const statField = (): HaFormSchemaItem =>
+/**
+ * What a series reads of its readings (`stat`): a statistic's buckets their mean, lowest, highest, sum or change; a
+ * history's slots and points (#228) their mean, lowest, highest or the last reading.
+ */
+const statField = (stats: readonly Stat[]): HaFormSchemaItem =>
   choiceField(
     'stat',
-    STATS.map(
-      (stat) => [stat, stat === 'sum' ? 'chart-card.editor.stat_sum' : `option.${stat}`] as const,
+    stats.map(
+      (stat) =>
+        [
+          stat,
+          stat === 'sum'
+            ? 'chart-card.editor.stat_sum'
+            : stat === 'last'
+              ? 'chart-card.editor.stat_last'
+              : `option.${stat}`,
+        ] as const,
     ),
   );
 const periodField = (): HaFormSchemaItem =>
@@ -239,7 +255,8 @@ const NAME = fieldRow(nameField(), sourceField());
 const ATTRIBUTE = selectField('attribute', ['auto'], { custom: true });
 const KEYS = fieldRow(textField('time_key'), textField('value_key'));
 const VALUE_KEY = textField('value_key');
-const STATISTICS = fieldRow(statField(), periodField());
+const STATISTICS = fieldRow(statField(STATS), periodField());
+const HISTORY_STAT = statField(HISTORY_STATS);
 const DRAWN = fieldRow(kindField(), selectField('curve', ['smooth', 'straight', 'step']));
 const FILL = selectField('fill', ['gradient', 'flat', 'none']);
 // a colour of its own: one of the palette's (it follows the palette), or a colour name or a hex
@@ -248,7 +265,7 @@ const NUMBERS = numberFields();
 
 /** The fields of a series by where it is read from: the same array for the same answer, so its form is kept. */
 const SCHEMAS: Readonly<Record<Source, readonly HaFormSchemaItem[]>> = {
-  history: [ENTITY, NAME, DRAWN, FILL, COLOUR, NUMBERS],
+  history: [ENTITY, NAME, HISTORY_STAT, DRAWN, FILL, COLOUR, NUMBERS],
   statistics: [ENTITY, NAME, STATISTICS, DRAWN, FILL, COLOUR, NUMBERS],
   attribute: [ENTITY, NAME, ATTRIBUTE, KEYS, DRAWN, FILL, COLOUR, NUMBERS],
   forecast: [ENTITY, NAME, VALUE_KEY, DRAWN, FILL, COLOUR, NUMBERS],
@@ -305,7 +322,18 @@ export const SERIES_LIST: RowsListSpec = {
     'unit',
     'decimals',
   ],
-  schema: [ENTITY, NAME, ATTRIBUTE, KEYS, STATISTICS, DRAWN, FILL, COLOUR, NUMBERS],
+  // every field a series may show, a statistic's stat and a history's together
+  schema: [
+    ENTITY,
+    NAME,
+    ATTRIBUTE,
+    KEYS,
+    fieldRow(statField([...STATS, 'last']), periodField()),
+    DRAWN,
+    FILL,
+    COLOUR,
+    NUMBERS,
+  ],
   schemaOf: (item) =>
     SCHEMAS[
       sourceOf({ ...(item as Partial<ChartSeriesConfig>), entity: String(item['entity'] ?? '') })

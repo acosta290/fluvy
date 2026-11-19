@@ -744,7 +744,8 @@
     "editor.color_helper": "留空：使用卡片颜色；多条时使用配色的系列颜色。配色的颜色随配色变化；颜色名或 #hex 按输入原样使用",
     "editor.highlight_hours": "高亮时段",
     "editor.show_legend": "显示图例",
-    "editor.show_head": "显示当前值"
+    "editor.show_head": "显示当前值",
+    "editor.stat_last": "最后读数"
   },
   "chart": {
     "gauge.cold": "寒冷",

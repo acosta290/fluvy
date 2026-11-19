@@ -25,6 +25,12 @@ export interface Timed {
   readonly end?: number;
 }
 
+/**
+ * What a line's point reads of the readings around its time: their mean, weighted by how long each held, their lowest,
+ * their highest, or the last — the reading in force at its time.
+ */
+export type LineRule = 'mean' | 'min' | 'max' | 'last';
+
 const MINUTE = 60_000;
 /** The round lengths a line's points stand apart, finest first: five minutes … a day. */
 const STEPS = [5, 10, 15, 30, 60, 120, 180, 360, 720, 1440].map((m) => m * MINUTE);
@@ -185,6 +191,25 @@ function meanOf(
   };
 }
 
+/** The lowest or the highest of the readings that held across a stretch (a gap holds none); none where none did. */
+function extremeOf(
+  readings: readonly Timed[],
+  finest: number,
+  pick: 'min' | 'max',
+): (from: number, to: number) => number | null {
+  return (from, to) => {
+    let out: number | null = null;
+    for (let i = Math.max(0, indexAt(readings, from)); i < readings.length; i++) {
+      const r = readings[i] as Timed;
+      if (r.t >= to) break;
+      // held nowhere across it: a gap's
+      if (Math.min(heldUntil(readings, i, finest), to) <= Math.max(r.t, from)) continue;
+      out = out === null ? r.v : Math[pick](out, r.v);
+    }
+    return out;
+  };
+}
+
 /** A line laid on a window: its values, and where each stands (a fraction of the window from its start). */
 export interface Laid {
   readonly values: (number | null)[];
@@ -193,16 +218,16 @@ export interface Laid {
 
 /**
  * The line of `readings` over a window: a point on each round time `step` apart from `origin` (the house's midnight)
- * and one on each of the window's ends — the mean of the readings within half a step of it (`mean`), else the reading
- * in force at its time. Before the first reading there is none: the line starts where its readings do; in a gap (`inGap`:
- * of the recorder's, or where the sensor said no number) it breaks.
+ * and one on each of the window's ends — by `rule`, the mean of the readings within half a step of it, their lowest or
+ * their highest, or the reading in force at its time (`last`). Before the first reading there is none: the line starts
+ * where its readings do; in a gap (`inGap`: of the recorder's, or where the sensor said no number) it breaks.
  */
 export function layLine(
   readings: readonly Timed[],
   window: { readonly start: number; readonly end: number },
   step: number,
   origin: number,
-  mean: boolean,
+  rule: LineRule,
   finest = 0,
 ): Laid {
   const { start, end } = window;
@@ -210,7 +235,12 @@ export function layLine(
   for (let t = origin + Math.ceil((start - origin) / step) * step; t < end; t += step)
     if (t > start) times.push(t);
   times.push(end);
-  const around = mean ? meanOf(readings, finest) : null;
+  const around =
+    rule === 'mean'
+      ? meanOf(readings, finest)
+      : rule === 'last'
+        ? null
+        : extremeOf(readings, finest, rule);
   return {
     values: times.map((t) =>
       inGap(readings, t, finest)
@@ -269,6 +299,11 @@ export interface TimeLineOptions<S extends LineStyle> {
   readonly hass: HomeAssistant | undefined;
   /** The finest the readings come (ms): a statistic's bucket, where a gap in the recorder breaks the line; none for a sensor's own history. */
   readonly finest?: number;
+  /**
+   * What each point reads where the card says (a series' `stat`): its stretch's lowest, its highest, or the reading in
+   * force at its time; none: the style's — their mean where its points are automatic, else the reading at its time.
+   */
+  readonly rule?: Exclude<LineRule, 'mean'>;
 }
 
 /**
@@ -283,7 +318,14 @@ export function timeLine<S extends LineStyle>(o: TimeLineOptions<S>): TimeLine<S
   const origin = midnightOf(o.hass, o.end);
   const grain = grainOf(length, o.width, o.finest);
   return {
-    ...layLine(o.readings, window, step, origin, o.style.every === 'auto', o.finest),
+    ...layLine(
+      o.readings,
+      window,
+      step,
+      origin,
+      o.rule ?? (o.style.every === 'auto' ? 'mean' : 'last'),
+      o.finest,
+    ),
     style: {
       ...o.style,
       line: strokeFor(o.style.line, (o.width * step) / Math.max(1, length), blurred),

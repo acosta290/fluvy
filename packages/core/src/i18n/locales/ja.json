@@ -3249,7 +3249,8 @@
     "editor.color_helper": "空のときはカードの色、複数のときはパレットの系列の色。パレットの色はパレットに連動し、色名や#hexは入力したまま使われます",
     "editor.highlight_hours": "ハイライトする時間",
     "editor.show_legend": "凡例を表示",
-    "editor.show_head": "現在の値を表示"
+    "editor.show_head": "現在の値を表示",
+    "editor.stat_last": "最後の値"
   },
   "slider": {
     "mute": "ミュート",
