@@ -10,7 +10,7 @@ import {
   type HomeAssistant,
   type LovelaceGridOptions,
 } from '@fluvy/core';
-import { head, icon, toggle, type Tone } from '@fluvy/ui';
+import { head, ico, icon, pressCover, toggle, type Tone } from '@fluvy/ui';
 import {
   css,
   html,
@@ -26,6 +26,7 @@ import { scheduleHeight } from '../schedule-family.js';
 import { Card, type CardEditor, type HeadConfig } from '../shared/base.js';
 import { toneOf } from '../shared/colour.js';
 import { firstWeekday, WEEKDAYS, type FirstWeekday, type Weekday } from '../shared/dates.js';
+import type { Segment } from '../shared/fit.js';
 import { Ticker } from '../shared/ticker.js';
 import { degrees, doing } from '../thermostat/doing.js';
 import {
@@ -35,21 +36,24 @@ import {
   type Heating,
   type Preset,
 } from './automation.js';
-import { blockWords, dayWord, hours, lineStyles, toneClass, track } from './lines.js';
-import { DAYS, sameWeek, type HelperItem, type Week } from './plan.js';
+import { blockWords, clockOf, dayWord, hours, lineStyles, toneClass, track } from './lines.js';
+import { DAYS, nextChange, sameWeek, type HelperItem, type Week } from './plan.js';
 import { presetLooks, type PresetConfig, type PresetLook } from './presets.js';
 import type { FluvyHeatingSheet, HeatingDraft, HeatingRequest } from './sheet/heating-sheet.js';
 import { PlanStore } from './store.js';
 
 const s = strings('schedule');
 
-export const SCHEDULE_VARIANTS = ['week', 'today'] as const;
+export const SCHEDULE_VARIANTS = ['week', 'today', 'row'] as const;
 export type ScheduleVariant = (typeof SCHEDULE_VARIANTS)[number];
 
 export interface ScheduleCardConfig extends FluvyCardConfig, HeadConfig {
   /** The schedule helper (`schedule.*`); found by the automation that ties it to the thermostat when left out. */
   schedule?: string;
-  /** `week` (default): a line a day. `today`: today's alone, taller, its blocks saying their times. */
+  /**
+   * `week` (default): a line a day. `today`: today's alone, taller, its blocks saying their times. `row`: one 76 row,
+   * the room over the preset in force, its target and the next change, the switch at its end.
+   */
   variant?: ScheduleVariant;
   /** The head: the room, what the thermostat is doing, the preset in force and the schedule's switch (default). */
   show_head?: boolean;
@@ -108,9 +112,10 @@ const presetsNamed = (week: Week): Preset[] => {
  * A room's heating week on Home Assistant's own schedule helper (#229): its head says what the thermostat is doing, the
  * preset in force and its target, how warm the room is now, and switches the schedule on and off (its automation);
  * under it a line a day (or today's alone) of the blocks in their presets' colours, the gaps the base preset's, a
- * marker at the time it is now, the hours under them and the presets with their temperatures. A tap opens the sheet
- * that edits it (an administrator's; anyone else's reads it). The week runs in Home Assistant, every browser closed:
- * the helper holds the times, an automation Fluvy writes (`automation.ts`) sets the thermostat by them.
+ * marker at the time it is now, the hours under them and the presets with their temperatures; or one row that says
+ * the preset in force, its target and the next change, its switch at its end. A tap opens the sheet that edits it (an
+ * administrator's; anyone else's reads it). The week runs in Home Assistant, every browser closed: the helper holds
+ * the times, an automation Fluvy writes (`automation.ts`) sets the thermostat by them.
  */
 export class FluvyScheduleCard extends Card<ScheduleCardConfig> {
   static override layoutHeight(config: ScheduleCardConfig): number {
@@ -234,6 +239,32 @@ export class FluvyScheduleCard extends Card<ScheduleCardConfig> {
       .is-off .sc-swatch {
         opacity: 0.5;
       }
+      /* the row: the house's (76, 16 in, half a section; the printer's, the compass's), the room's circle, its name
+         over its line, the switch at its end; the row is the card's button (a cover over it), its circle and its
+         switch raised beside it */
+      .sc-row {
+        position: relative;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        height: 76px;
+        padding: 16px;
+      }
+      /* held by another card's surface (the Expander's), the row stands out by its own padding */
+      :host:has(> .sc-row) {
+        --fv-pad: 16px;
+      }
+      .sc-row .fv-row__text {
+        flex: 1 1 auto;
+        min-width: 0;
+      }
+      .sc-row > :is(.fv-ico--tap, .fv-hit) {
+        position: relative;
+        z-index: 1;
+      }
+      .sc-row > .fv-tile__tap {
+        border-radius: inherit;
+      }
     `,
   ];
 
@@ -268,8 +299,9 @@ export class FluvyScheduleCard extends Card<ScheduleCardConfig> {
     return Math.ceil(scheduleHeight(this.config ?? { type: '' }) / 50);
   }
 
+  /** The week and today's line take a section, half a section their floor; the row half a section, as the house's rows. */
   override getGridOptions(): LovelaceGridOptions {
-    return { columns: 12, rows: 'auto', min_columns: 6 };
+    return { columns: this.config?.variant === 'row' ? 6 : 12, rows: 'auto', min_columns: 6 };
   }
 
   /* ---------- the house ---------- */
@@ -651,6 +683,36 @@ export class FluvyScheduleCard extends Card<ScheduleCardConfig> {
     return tie.heating?.base;
   }
 
+  /** What the thermostat is set to, as the legend writes the presets: a tenth only where one of them has one. */
+  private target(view: EntityView): string {
+    const set = numberAttr(view, 'temperature') ?? numberAttr(view, 'target_temp_low');
+    return degrees(this.hass, set, set !== null && (set % 1 !== 0 || this.tenths) ? 0.5 : 1);
+  }
+
+  /** The room's circle: the preset in force's glyph and tone while the schedule is on, else the calendar's neutral. */
+  private circle(
+    usable: boolean,
+    on: boolean,
+    active: PresetLook | undefined,
+  ): { readonly icon: string; readonly tone: Tone } {
+    const config = this.config as ScheduleCardConfig;
+    return {
+      icon: config.icon ?? (on && active ? active.icon : 'calendar'),
+      tone: !usable ? 'off' : (config.tone ?? (on && active ? active.tone : 'neutral')),
+    };
+  }
+
+  /** The schedule's switch (its automation's): anyone may switch it; out of reach, it stands disabled. */
+  private renderSwitch(automation: EntityView | undefined, on: boolean): TemplateResult {
+    return toggle(
+      on,
+      toneOf(this.config, 'accent'),
+      (next) => this.flip(automation?.id ?? '', next),
+      s(this.hass, 'card'),
+      !automation || !isUsable(automation),
+    );
+  }
+
   private renderHead(view: EntityView, tie: Tie, active: PresetLook | undefined): TemplateResult {
     const hass = this.hass;
     const config = this.config as ScheduleCardConfig;
@@ -660,9 +722,7 @@ export class FluvyScheduleCard extends Card<ScheduleCardConfig> {
     const switchable = Boolean(automation) && config.show_switch !== false;
     const title = this.room(view);
     const said = doing({ hass, rawHass: this.rawHass }, view, this.stateOf(view), 'neutral');
-    // the target as the legend writes the presets: a tenth only where one of them has one
-    const set = numberAttr(view, 'temperature') ?? numberAttr(view, 'target_temp_low');
-    const target = degrees(hass, set, set !== null && (set % 1 !== 0 || this.tenths) ? 0.5 : 1);
+    const target = this.target(view);
     const current = numberAttr(view, 'current_temperature');
     const segments = usable
       ? [
@@ -679,28 +739,134 @@ export class FluvyScheduleCard extends Card<ScheduleCardConfig> {
       shorter: [...(said.short ? [said.short] : []), ''],
       trailing: switchable ? SWITCH_SLOT : 0,
     });
-    const tone: Tone = !usable ? 'off' : (config.tone ?? (on && active ? active.tone : 'neutral'));
+    const circle = this.circle(usable, on, active);
     return head({
-      icon: fitted.icon ? (config.icon ?? (on && active ? active.icon : 'calendar')) : null,
+      icon: fitted.icon ? circle.icon : null,
       small: fitted.small,
-      tone,
+      tone: circle.tone,
       title,
       name: true,
       sub: fitted.line,
       cut: fitted.cut,
-      trailing: switchable
-        ? toggle(
-            on,
-            toneOf(config, 'accent'),
-            (next) => this.flip(automation?.id ?? '', next),
-            s(hass, 'card'),
-            !automation || !isUsable(automation),
-          )
-        : nothing,
+      trailing: switchable ? this.renderSwitch(automation, on) : nothing,
       // a tap opens the sheet where the config says nothing; a hold, the thermostat's details
       ...this.pressOf(config, config.entity, () => void this.openSheet()),
       ...this.iconActions(config.entity),
     });
+  }
+
+  /**
+   * The row (`variant: row`): the house's (76, 16 in, half a section; the printer's, the compass's), the room's circle,
+   * its name over the preset in force, its target and the next change ("Comfort · 21° · Eco at 22:30"), the schedule's
+   * switch at its end. Narrow, it gives way in order: the next change, then the preset's name — the figure stays whole
+   * — then the circle, where the name would end before it had begun (under 96, or under the name itself) or what the
+   * line keeps (the figure, a state's word) would not hold beside it, then the switch, the circle back where that holds
+   * it; the name takes an ellipsis, as names may. The row is the card's button: a tap opens the sheet (to read it, for anyone but an
+   * administrator), a hold the thermostat's details.
+   */
+  private renderRow(
+    view: EntityView,
+    tie: Tie,
+    week: Week | undefined,
+    waiting: boolean,
+    looks: ReadonlyMap<string, PresetLook>,
+    active: PresetLook | undefined,
+  ): TemplateResult {
+    const hass = this.hass;
+    const config = this.config as ScheduleCardConfig;
+    const usable = isUsable(view);
+    const automation = tie.automation ? this.entity(tie.automation) : undefined;
+    const on = automation ? this.stateOf(automation) === 'on' : false;
+    const name = this.room(view);
+    const target = this.target(view);
+    const said = doing({ hass, rawHass: this.rawHass }, view, this.stateOf(view), 'neutral');
+    // each with the shorter words a half section's row takes, where they would not hold it ("Schedule off", "Off")
+    const segments: Segment[] = !usable
+      ? [{ text: said.text, ...(said.short ? { short: said.short } : {}) }]
+      : waiting
+        ? []
+        : !week
+          ? [{ text: s(hass, tie.schedule ? 'not_found' : 'empty'), short: s(hass, 'none') }]
+          : automation && !on
+            ? [
+                { text: s(hass, 'paused'), short: s(hass, 'paused_short') },
+                { text: target, optional: true },
+              ]
+            : [
+                { text: active?.name ?? '', optional: true },
+                { text: target },
+                { text: on ? this.nextWords(week, tie, looks, active?.key) : '', optional: true },
+              ];
+    const words = segments.filter((segment) => segment.text);
+    // what the line keeps whole: its first words that are not to leave (their shorter form, where one has one)
+    const firm = this.headFit.ruler.width(
+      'fv-row__sub',
+      words
+        .filter((segment) => !segment.optional)
+        .map((segment) => segment.short ?? segment.text)
+        .join(' · '),
+    );
+    const needs = Math.max(this.headFit.rowNameRoom(name), firm);
+    // the row's words: its column less its 16 sides (the card's are 20), the circle's 56 and the switch's while drawn
+    const width = this.contentWidth + 8;
+    let withCircle = true;
+    let withSwitch = Boolean(automation) && config.show_switch !== false;
+    const room = (): number => width - (withCircle ? 56 : 0) - (withSwitch ? SWITCH_SLOT + 12 : 0);
+    if (room() < needs) withCircle = false;
+    if (room() < needs) {
+      withSwitch = false;
+      withCircle = room() - 56 >= needs;
+    }
+    const line = this.headFit.fitRowSegments(words, room());
+    const look = this.circle(usable, on, active);
+    const icons = this.iconActions(config.entity);
+    // a tap opens the sheet where the config says nothing; a hold, the thermostat's details
+    const { onTap, onHold } = this.pressOf(config, config.entity, () => void this.openSheet());
+    return html`<article class="fv-card sc-row ${usable ? '' : 'is-unavailable is-off'}" data-card>
+      ${
+        withCircle
+          ? ico(look.icon, look.tone, {
+              onTap: icons.onIconTap,
+              onHold: icons.onIconHold,
+              label: icons.iconLabel?.(name),
+            })
+          : nothing
+      }
+      <span class="fv-row__text"
+        ><span class="fv-row__title" data-name>${name}</span
+        ><span class="fv-row__sub">${line}</span></span
+      >
+      ${withSwitch ? this.renderSwitch(automation, on) : nothing}
+      ${onTap || onHold ? pressCover(`${name} · ${line}`, onTap, onHold) : nothing}
+      ${this.renderSheet()}
+    </article>`;
+  }
+
+  /**
+   * The next change in words ("Eco at 22:30", another day's with its weekday: "Comfort Mon at 06:30"): when the
+   * preset in force changes and to what, as the plan reads its blocks (a preset it has not is the base's); none where
+   * the week never changes it, or where it changes to the gaps' and the base is not known (a guest's).
+   */
+  private nextWords(
+    week: Week,
+    tie: Tie,
+    looks: ReadonlyMap<string, PresetLook>,
+    active: string | undefined,
+  ): string {
+    const hass = this.hass;
+    const heating = tie.heating;
+    const known = new Set(heating?.presets.map((preset) => preset.key));
+    const now = this.clock();
+    const change = nextChange(week, now.day, now.minute, (preset) =>
+      !heating ? preset : preset !== undefined && known.has(preset) ? preset : heating.base,
+    );
+    const to = change?.preset === undefined ? undefined : looks.get(change.preset);
+    // none where Home Assistant still says the preset it changes to (the helper a moment behind the clock)
+    if (!change || !to || to.key === active) return '';
+    const time = clockOf(hass, change.minute);
+    if (!change.days) return s(hass, 'next', { preset: to.name, time });
+    const day = DAYS[(DAYS.indexOf(now.day) + change.days) % 7] as Weekday;
+    return s(hass, 'next_on', { preset: to.name, day: dayWord(hass, day), time });
   }
 
   /** A day's line: its blocks in their presets' tones, their times where they hold, the time it is now on today's. */
@@ -876,6 +1042,7 @@ export class FluvyScheduleCard extends Card<ScheduleCardConfig> {
     const byKey = new Map(looks.map((look) => [look.key, look]));
     const activeKey = this.active(tie, on);
     const active = activeKey === undefined ? undefined : byKey.get(activeKey);
+    if (config.variant === 'row') return this.renderRow(view, tie, week, waiting, byKey, active);
     const base = tie.heating ? byKey.get(tie.heating.base) : undefined;
     const today = this.clock();
     const tall = config.variant === 'today';
@@ -951,16 +1118,19 @@ export class FluvyScheduleCard extends Card<ScheduleCardConfig> {
     return html`<article class="fv-card ${usable ? '' : 'is-unavailable is-off'}" data-card>
       ${showHead ? this.renderHead(view, tie, active) : html`<div class="sc-head-off"></div>`}
       <div class="sc-body">${body}</div>
-      ${
-        this.sheetReady_
-          ? html`<fluvy-heating-sheet
-              ?dark=${this.dark}
-              ?no-theme=${this.noTheme}
-              .hass=${this.hass}
-            ></fluvy-heating-sheet>`
-          : nothing
-      }
+      ${this.renderSheet()}
     </article>`;
+  }
+
+  /** The sheet, in the card once its chunk has landed. */
+  private renderSheet(): TemplateResult | typeof nothing {
+    return this.sheetReady_
+      ? html`<fluvy-heating-sheet
+          ?dark=${this.dark}
+          ?no-theme=${this.noTheme}
+          .hass=${this.hass}
+        ></fluvy-heating-sheet>`
+      : nothing;
   }
 
   /** A tap on the week opens the sheet on the day under it (its line, by the pointer's height); Enter on today's. */

@@ -25,7 +25,8 @@ import type { WsTable } from '../ws.js';
  * The Heating schedule card (#229): Marta's bedroom on Home Assistant's own schedule helper, as the issue drew it —
  * Comfort on workday mornings and evenings and all of the weekend, Eco between, Away for when the house is empty; the
  * living room's week of four presets, one of them its own; the kids' room with no schedule yet; the attic's
- * thermostat out of reach; the study's helper kept in YAML; the hall's automation edited by hand in Home Assistant.
+ * thermostat out of reach; the study's helper kept in YAML, its schedule switched off; the hall's automation edited by
+ * hand in Home Assistant; each also as the row.
  * Home Assistant is answered here, in memory: the helpers' collection (`schedule/subscribe`, `create`, `update`,
  * `delete`), the registry's tie of a helper to its entity, a YAML schedule's week (`schedule.get_schedule`), what an
  * entity and an automation relate to (`search/related`) and the automations' config API, so a plan saved from the
@@ -481,7 +482,8 @@ export const sheet: SheetSpec = {
     automation(BEDROOM),
     automation(LIVING),
     automation(ATTIC),
-    automation(STUDY),
+    // the study's schedule switched off for the holidays
+    automation(STUDY, 'off'),
     automation(HALL),
   ],
   registry: {
@@ -537,6 +539,35 @@ export const sheet: SheetSpec = {
         { type: CARD, entity: 'climate.bedroom_radiator', cols: 6, ...frozen },
         { type: CARD, entity: 'climate.living_room', show_head: false, cols: 6, ...frozen },
       ],
+    },
+    {
+      title: 'Row',
+      cards: [
+        { type: CARD, entity: 'climate.bedroom_radiator', variant: 'row', ...frozen },
+        { type: CARD, entity: 'climate.living_room', variant: 'row', ...frozen },
+        { type: CARD, entity: 'climate.study', variant: 'row', ...frozen },
+      ],
+    },
+    {
+      title: 'Row · half',
+      heights: [152, 172, 211, 266],
+      cards: [
+        { type: CARD, entity: 'climate.bedroom_radiator', variant: 'row', cols: 6, ...frozen },
+        { type: CARD, entity: 'climate.living_room', variant: 'row', cols: 6, ...frozen },
+        { type: CARD, entity: 'climate.study', variant: 'row', cols: 6, ...frozen },
+        { type: CARD, entity: 'climate.kids_room', variant: 'row', cols: 6, ...frozen },
+        { type: CARD, entity: 'climate.hall', variant: 'row', cols: 6, ...frozen },
+        { type: CARD, entity: 'climate.attic', variant: 'row', cols: 6, ...frozen },
+      ],
+    },
+    {
+      title: 'Row · guest',
+      heights: [152, 172, 211, 266],
+      cards: [
+        { type: CARD, entity: 'climate.bedroom_radiator', variant: 'row', cols: 6, ...frozen },
+        { type: CARD, entity: 'climate.living_room', variant: 'row', cols: 6, ...frozen },
+      ],
+      hass: guest,
     },
     { title: 'No schedule yet', cards: [{ type: CARD, entity: 'climate.kids_room', ...frozen }] },
     {

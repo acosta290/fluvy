@@ -3688,7 +3688,11 @@
     "editor.first_weekday": "Ugens første dag",
     "editor.presets": "Forindstillinger",
     "editor.preset": "Forindstilling",
-    "editor.preset_helper": "comfort, eco, away, home, sleep, boost, activity eller navnet på en af dine egne"
+    "editor.preset_helper": "comfort, eco, away, home, sleep, boost, activity eller navnet på en af dine egne",
+    "next": "{preset} kl. {time}",
+    "next_on": "{preset} {day} kl. {time}",
+    "paused_short": "Slået fra",
+    "none": "Ingen plan"
   },
   "rounds": {
     "rounds": "Runde knapper",

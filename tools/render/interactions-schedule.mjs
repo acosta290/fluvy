@@ -12,6 +12,9 @@
  * words and Save stays disabled; the switch turns the automation off, and on again with a run; a guest's sheet reads
  * the week and writes nothing; "Create a schedule" makes a helper named after the room and its automation, and the
  * card then draws the new week; Escape closes the sheet and the focus returns to the card; no interval is left behind.
+ * The row: 76 as it declares, its line the preset in force, its target and the next change (or why it cannot say
+ * them), its switch acting alone, a tap opening the sheet on today, a guest's saying no change into a preset it
+ * cannot know and opening the plan to read.
  */
 import { apiCalls, calls, frame, PAGE_INTERVALS, reset, settle, startSuite } from './lib/suite.mjs';
 
@@ -340,6 +343,100 @@ const canonical = (value) =>
 
   const intervals = await page.evaluate(() => window.__intervals());
   check('the cards leave no interval behind', intervals <= PAGE_INTERVALS, String(intervals));
+  await page.close();
+}
+
+/* ---------- the row ---------- */
+{
+  const page = await suite.sheet('schedule', { width: 1400 });
+  const rows = frame(page, 'Row · half').locator('fluvy-schedule-card');
+  const seen = await rows.evaluateAll((cards) =>
+    cards.map((el) => {
+      const root = el.shadowRoot;
+      return {
+        title: root.querySelector('.fv-row__title')?.textContent.trim(),
+        line: root.querySelector('.fv-row__sub')?.textContent.trim(),
+        height: Math.round(root.querySelector('[data-card]').getBoundingClientRect().height),
+        declared: el.constructor.layoutHeight(el.config),
+        switch: Boolean(root.querySelector('.fv-switch')),
+      };
+    }),
+  );
+  check(
+    'each row is the house’s 76, as it declares',
+    seen.length === 6 && seen.every((row) => row.height === 76 && row.declared === 76),
+    JSON.stringify(seen.map((row) => [row.height, row.declared])),
+  );
+  check(
+    'a row says the preset in force, its target and the next change, or why it cannot',
+    seen.map((row) => row.line).join(' | ') ===
+      [
+        'Comfort · 21° · Eco at 22:00',
+        'Comfort · 21.0° · Sleep at 22:30',
+        'Schedule off · 18°',
+        'No heating schedule yet',
+        '18° · Comfort Fri at 07:00',
+        'Unavailable',
+      ].join(' | '),
+    seen.map((row) => row.line).join(' | '),
+  );
+  // a guest's row: the gaps' preset unknown, no change said into it
+  const guest = frame(page, 'Row · guest').locator('fluvy-schedule-card').first();
+  const line = await guest.evaluate((el) =>
+    el.shadowRoot.querySelector('.fv-row__sub')?.textContent.trim(),
+  );
+  check(
+    'a guest’s row says no change into a preset it cannot know',
+    line === 'Comfort · 21°',
+    line,
+  );
+  check(
+    'the switch stands at the end of a row with a schedule, none where there is none',
+    seen.map((row) => row.switch).join() === 'true,true,true,false,true,true',
+    seen.map((row) => row.switch).join(),
+  );
+
+  // the switch acts on its own: the schedule off, no sheet opened
+  const bedroom = rows.first();
+  const dialog = bedroom.locator('fluvy-heating-sheet dialog');
+  await reset(page);
+  await bedroom.locator('.fv-hit').click();
+  await settle(page, 300);
+  const c = await calls(page);
+  check(
+    'the row’s switch turns the schedule’s automation off, and opens nothing',
+    c.length === 1 && c[0].s === 'automation.turn_off' && !(await dialog.isVisible()),
+    JSON.stringify(c),
+  );
+  // a tap anywhere else (the cover over the row) opens the sheet on today
+  await bedroom.locator('.sc-row > .fv-tile__tap').click();
+  await settle(page, 500);
+  const pressed = await dialog
+    .locator('.hs-days')
+    .first()
+    .locator('.is-active')
+    .getAttribute('aria-label');
+  check(
+    'a tap on the row opens the sheet on today',
+    (await dialog.isVisible()) && pressed === 'Thursday',
+    pressed,
+  );
+  await page.keyboard.press('Escape');
+  await settle(page, 400);
+
+  // a guest's row reads the plan on a tap
+  await guest.locator('.sc-row > .fv-tile__tap').click();
+  await settle(page, 500);
+  const note = await guest
+    .locator('fluvy-heating-sheet dialog .hs-note')
+    .first()
+    .textContent()
+    .catch(() => '');
+  check(
+    'a guest’s tap on the row opens the plan to read',
+    note?.trim() === 'Only an administrator can change the schedule',
+    note,
+  );
   await page.close();
 }
 

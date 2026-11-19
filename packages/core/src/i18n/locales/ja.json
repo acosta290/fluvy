@@ -3688,7 +3688,11 @@
     "editor.first_weekday": "週の始まり",
     "editor.presets": "プリセット",
     "editor.preset": "プリセット",
-    "editor.preset_helper": "comfort、eco、away、home、sleep、boost、activity、または独自のプリセット名"
+    "editor.preset_helper": "comfort、eco、away、home、sleep、boost、activity、または独自のプリセット名",
+    "next": "{time}から{preset}",
+    "next_on": "{day} {time}から{preset}",
+    "paused_short": "オフ",
+    "none": "スケジュールなし"
   },
   "rounds": {
     "rounds": "丸ボタン",

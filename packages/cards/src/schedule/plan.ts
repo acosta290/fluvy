@@ -269,6 +269,47 @@ export function startWeek(preset: string): Week {
 export const blockAt = (week: Week, day: Weekday, minute: number): Block | undefined =>
   week[day].find((block) => block.from <= minute && minute < block.to);
 
+/** A change of the preset in force: the preset it changes to (none: the gaps'), how many days on, at what minute. */
+export interface Change {
+  readonly preset: string | undefined;
+  readonly days: number;
+  readonly minute: number;
+}
+
+/**
+ * The next time the preset in force changes after `minute` of `day`: the first start or end of a block, today's
+ * still to come and then each day's of the week ahead, where what is on after it is not what is on now — a block's
+ * preset as `inForce` reads it (the plan's: a block naming none, or one the plan has not, is the base's), the gaps'
+ * as it reads none. A block ending at midnight that the next day's carries on is no change. None where the week never
+ * changes it.
+ */
+export function nextChange(
+  week: Week,
+  day: Weekday,
+  minute: number,
+  inForce: (preset: string | undefined) => string | undefined = (preset) => preset,
+): Change | undefined {
+  const first = DAYS.indexOf(day);
+  const at = (offset: number, edge: number): string | undefined => {
+    const later = offset + Math.floor(edge / DAY_END);
+    return inForce(blockAt(week, DAYS[(first + later) % 7] as Weekday, edge % DAY_END)?.preset);
+  };
+  const now = at(0, minute);
+  // a week on, today's edges before the minute come round again
+  for (let offset = 0; offset <= 7; offset++) {
+    const edges = week[DAYS[(first + offset) % 7] as Weekday]
+      .flatMap((block) => [block.from, block.to])
+      .filter((edge) => offset > 0 || edge > minute)
+      .sort((a, b) => a - b);
+    for (const edge of edges) {
+      const preset = at(offset, edge);
+      if (preset !== now)
+        return { preset, days: offset + Math.floor(edge / DAY_END), minute: edge % DAY_END };
+    }
+  }
+  return undefined;
+}
+
 /* ---------- writing ---------- */
 
 /** One block as the helper is written: its times with their seconds, its data with its preset. */

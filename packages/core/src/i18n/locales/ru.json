@@ -3814,7 +3814,11 @@
     "editor.first_weekday": "Первый день недели",
     "editor.presets": "Предустановки",
     "editor.preset": "Предустановка",
-    "editor.preset_helper": "comfort, eco, away, home, sleep, boost, activity или название своей"
+    "editor.preset_helper": "comfort, eco, away, home, sleep, boost, activity или название своей",
+    "next": "{preset} в {time}",
+    "next_on": "{preset}: {day}, {time}",
+    "paused_short": "Выключен",
+    "none": "Нет графика"
   },
   "rounds": {
     "rounds": "Круглые кнопки",

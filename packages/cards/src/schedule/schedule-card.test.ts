@@ -3,6 +3,7 @@ import type { HassEntity, HomeAssistant } from '@fluvy/core';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { familiesDefined } from '../index.js';
 import { scheduleHeight } from '../schedule-family.js';
+import { TextRuler } from '../shared/fit.js';
 import { cardForm, drawEditor, shownNames } from '../shared/fixtures/editor.js';
 import { buildHeating, parseHeating, type Heating } from './automation.js';
 import { helperDays, startWeek, withDay, type Week } from './plan.js';
@@ -344,8 +345,105 @@ describe('the Heating schedule card', () => {
     expect(height({ show_head: false })).toBe(316);
     expect(height({ show_presets: false })).toBe(340);
     expect(height({ variant: 'today', show_head: false, show_presets: false })).toBe(96);
+    // the row is the house's, whatever it shows
+    expect(height({ variant: 'row' })).toBe(76);
+    expect(height({ variant: 'row', show_head: false, show_presets: false })).toBe(76);
     for (const config of [{}, { variant: 'today' }, { show_head: false }])
       expect(height(config) % 4).toBe(0);
+  });
+
+  describe('as a row', () => {
+    const line = (card: FluvyScheduleCard): string => text(card, '.sc-row .fv-row__sub')[0] ?? '';
+
+    it('says the preset in force, its target and the next change beside the room’s circle, the switch at its end', async () => {
+      const card = await mount({ variant: 'row' });
+      expect(root(card).querySelector('.sc-row')).not.toBeNull();
+      expect(root(card).querySelector('.fv-card__head')).toBeNull();
+      expect(root(card).querySelector('.sc-track')).toBeNull();
+      expect(text(card, '.sc-row .fv-row__title')).toEqual(['Bedroom']);
+      // Thursday 21:47, Comfort until 22:30 and the gaps' Eco after it
+      expect(line(card)).toBe('Comfort · 21° · Eco at 22:30');
+      expect(root(card).querySelector('.sc-row > .fv-ico.fv-ico--heat')).not.toBeNull();
+      expect(root(card).querySelector('.sc-row > .fv-hit .fv-switch.is-on')).not.toBeNull();
+      expect(card.getGridOptions()).toMatchObject({ columns: 6, min_columns: 6 });
+    });
+
+    it('says another day’s change with its weekday, and none a guest cannot know (the gaps’ preset)', async () => {
+      // Thursday 23:00 in a gap, the helper off: the base's Eco, Comfort on Friday morning
+      const gap = {
+        ...STATES,
+        'schedule.bedroom_heating': entity('schedule.bedroom_heating', 'off', { editable: true }),
+      };
+      const late = await mount(
+        { variant: 'row', _now: '2026-09-17T21:00:00Z' },
+        house({ states: gap }),
+      );
+      expect(line(late)).toBe('Eco · 21° · Comfort Fri at 06:30');
+      const guest = await mount({ variant: 'row' }, house({ admin: false }));
+      expect(line(guest)).toBe('Comfort · 21°');
+    });
+
+    it('says the schedule is off where its automation is, and keeps its anatomy out of reach', async () => {
+      const off = {
+        ...STATES,
+        'automation.heating_bedroom': entity('automation.heating_bedroom', 'off', {
+          friendly_name: BEDROOM.alias,
+          id: BEDROOM.id,
+        }),
+      };
+      const paused = await mount({ variant: 'row' }, house({ states: off }));
+      expect(line(paused)).toBe('Schedule off · 21°');
+      expect(root(paused).querySelector('.sc-row > .fv-ico.fv-ico--neutral')).not.toBeNull();
+      const fixture = house();
+      fixture.configs.set(BEDROOM.id, buildHeating({ ...BEDROOM, climate: 'climate.attic' }));
+      const attic = await mount({ variant: 'row', entity: 'climate.attic' }, fixture);
+      expect(root(attic).querySelector('.sc-row.is-unavailable')).not.toBeNull();
+      expect(line(attic)).toBe('Unavailable');
+      expect(root(attic).querySelector('.sc-row .fv-switch')).not.toBeNull();
+      // no schedule yet: said so, and no switch
+      const kids = await mount({ variant: 'row', entity: 'climate.kids' });
+      expect(line(kids)).toBe('No heating schedule yet');
+      expect(root(kids).querySelector('.fv-switch')).toBeNull();
+    });
+
+    it('opens the sheet on a tap, for reading only to anyone but an administrator', async () => {
+      const card = await mount({ variant: 'row' }, house({ admin: false }));
+      root(card).querySelector<HTMLElement>('.sc-row > .fv-tile__tap')?.click();
+      await settle(card);
+      const sheet = await sheetOf(card);
+      expect(sheet.isOpen).toBe(true);
+      expect(sheet.shadowRoot!.querySelector('.hs-note')?.textContent?.trim()).toBe(
+        'Only an administrator can change the schedule',
+      );
+    });
+
+    it('gives way narrow: the next change, the circle, then the switch with the circle back; the figure never', async () => {
+      // every class's letters 8 wide: "Bedroom" needs its 56, "21°" its 24
+      const ruler = vi
+        .spyOn(TextRuler.prototype, 'width')
+        .mockImplementation((_cls: string, text: string) => text.length * 8);
+      try {
+        const card = await mount({ variant: 'row' });
+        const at = async (width: number): Promise<[boolean, boolean, string]> => {
+          (card as unknown as { width: number }).width = width;
+          await settle(card);
+          return [
+            root(card).querySelector('.sc-row > .fv-ico') !== null,
+            root(card).querySelector('.sc-row > .fv-hit') !== null,
+            line(card),
+          ];
+        };
+        // 266: the row's 234 less the circle's 56 and the switch's 68 holds the name; the next change leaves
+        expect(await at(266)).toEqual([true, true, 'Comfort · 21°']);
+        // 211: 55 would cut the name: the circle gives way, the switch stays
+        expect(await at(211)).toEqual([false, true, 'Comfort · 21°']);
+        // 152: 52 beside the switch would cut it still: the switch gives way, the circle back, the figure alone
+        expect(await at(152)).toEqual([true, false, '21°']);
+        expect(await at(400)).toEqual([true, true, 'Comfort · 21° · Eco at 22:30']);
+      } finally {
+        ruler.mockRestore();
+      }
+    });
   });
 
   it('asks Home Assistant once where two views of one house differ in their automations (a twin out of reach)', async () => {
@@ -499,5 +597,14 @@ describe('the Heating schedule card’s editor', () => {
     expect(headless).not.toContain('show_switch');
     expect(headless).not.toContain('show_icon');
     expect(headless).toContain('show_presets');
+  });
+
+  it('offers a row its switch and what it draws, never a head’s options or a legend', async () => {
+    const row = await shown({ variant: 'row', show_head: false });
+    expect(row).toEqual(
+      expect.arrayContaining(['variant', 'first_weekday', 'show_switch', 'icon', 'tone']),
+    );
+    for (const name of ['show_head', 'show_presets', 'show_icon', 'name_lines'])
+      expect(row).not.toContain(name);
   });
 });

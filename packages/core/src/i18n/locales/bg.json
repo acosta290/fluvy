@@ -3688,7 +3688,11 @@
     "editor.first_weekday": "Първи ден от седмицата",
     "editor.presets": "Готови режими",
     "editor.preset": "Готов режим",
-    "editor.preset_helper": "comfort, eco, away, home, sleep, boost, activity или името на собствен режим"
+    "editor.preset_helper": "comfort, eco, away, home, sleep, boost, activity или името на собствен режим",
+    "next": "{preset} в {time}",
+    "next_on": "{preset}: {day}, {time}",
+    "paused_short": "Изключен",
+    "none": "Няма график"
   },
   "rounds": {
     "rounds": "Кръгли бутони",

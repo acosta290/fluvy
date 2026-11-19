@@ -10,6 +10,7 @@ import {
   helperOf,
   minutesOf,
   newBlock,
+  nextChange,
   renamePreset,
   sameWeek,
   startWeek,
@@ -149,6 +150,57 @@ describe('a day’s blocks', () => {
     expect(blockAt(week, 'thursday', at('17:00'))?.preset).toBe('comfort');
     expect(blockAt(week, 'thursday', at('22:30'))).toBeUndefined();
     expect(blockAt(week, 'saturday', at('22:59'))?.from).toBe(at('08:00'));
+  });
+
+  it('says when the preset in force next changes: today, a later day, never across a midnight it carries on over', () => {
+    const week = startWeek('comfort');
+    // Thursday 21:47 in Comfort: the gaps' at 22:30; in the gap, Comfort the next morning
+    expect(nextChange(week, 'thursday', at('21:47'))).toEqual({
+      preset: undefined,
+      days: 0,
+      minute: at('22:30'),
+    });
+    expect(nextChange(week, 'thursday', at('23:00'))).toEqual({
+      preset: 'comfort',
+      days: 1,
+      minute: at('06:30'),
+    });
+    // Friday night to Saturday's late start
+    expect(nextChange(week, 'friday', at('22:45'))).toEqual({
+      preset: 'comfort',
+      days: 1,
+      minute: at('08:00'),
+    });
+    // a night in Sleep to midnight, the next day's carrying it on: the change is its end the next morning
+    const nights = withDay(
+      withDay(EMPTY_WEEK, 'monday', [block('22:00', '24:00', 'sleep')]),
+      'tuesday',
+      [block('00:00', '06:00', 'sleep'), block('06:00', '08:00')],
+    );
+    expect(nextChange(nights, 'monday', at('23:00'))).toEqual({
+      preset: 'comfort',
+      days: 1,
+      minute: at('06:00'),
+    });
+    // the plan's reading: a preset it has not is the base's, so a block of it next to a gap is no change
+    const odd = withDay(EMPTY_WEEK, 'monday', [
+      block('06:00', '07:00', 'old'),
+      block('07:00', '08:00'),
+    ]);
+    const plan = (preset: string | undefined): string => (preset === 'comfort' ? 'comfort' : 'eco');
+    expect(nextChange(odd, 'monday', at('05:00'), plan)).toEqual({
+      preset: 'comfort',
+      days: 0,
+      minute: at('07:00'),
+    });
+    // one block a week: a week on, the same day's earlier start; a week of one preset never changes
+    const once = withDay(EMPTY_WEEK, 'monday', [block('06:00', '08:00')]);
+    expect(nextChange(once, 'monday', at('09:00'))).toEqual({
+      preset: 'comfort',
+      days: 7,
+      minute: at('06:00'),
+    });
+    expect(nextChange(EMPTY_WEEK, 'monday', at('09:00'))).toBeUndefined();
   });
 
   it('renames a preset in every block that names it, and says whether one is used', () => {

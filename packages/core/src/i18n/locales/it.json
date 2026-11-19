@@ -3688,7 +3688,11 @@
     "editor.first_weekday": "Primo giorno della settimana",
     "editor.presets": "Preset",
     "editor.preset": "Preset",
-    "editor.preset_helper": "comfort, eco, away, home, sleep, boost, activity o il nome di uno tuo"
+    "editor.preset_helper": "comfort, eco, away, home, sleep, boost, activity o il nome di uno tuo",
+    "next": "{preset} alle {time}",
+    "next_on": "{preset} {day} alle {time}",
+    "paused_short": "Spento",
+    "none": "Non impostato"
   },
   "rounds": {
     "rounds": "Pulsanti tondi",

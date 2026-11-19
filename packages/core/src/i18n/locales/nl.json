@@ -3688,7 +3688,11 @@
     "editor.first_weekday": "Eerste dag van de week",
     "editor.presets": "Voorinstellingen",
     "editor.preset": "Voorinstelling",
-    "editor.preset_helper": "comfort, eco, away, home, sleep, boost, activity of de naam van een eigen"
+    "editor.preset_helper": "comfort, eco, away, home, sleep, boost, activity of de naam van een eigen",
+    "next": "{preset} om {time}",
+    "next_on": "{preset} {day} om {time}",
+    "paused_short": "Uit",
+    "none": "Geen schema"
   },
   "rounds": {
     "rounds": "Ronde knoppen",

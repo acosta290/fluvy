@@ -3688,7 +3688,11 @@
     "editor.first_weekday": "A hét első napja",
     "editor.presets": "Előbeállítások",
     "editor.preset": "Előbeállítás",
-    "editor.preset_helper": "comfort, eco, away, home, sleep, boost, activity vagy egy saját előbeállítás neve"
+    "editor.preset_helper": "comfort, eco, away, home, sleep, boost, activity vagy egy saját előbeállítás neve",
+    "next": "{preset} ekkor: {time}",
+    "next_on": "{preset}: {day}, {time}",
+    "paused_short": "Kikapcsolva",
+    "none": "Nincs ütemterv"
   },
   "rounds": {
     "rounds": "Kerek gombok",

@@ -24,7 +24,7 @@ The picture above, on the demo house: put your own entities in place of its.
 <table>
 <tbody><tr>
 <td align="center" valign="top" width="50%"><code>variant: today</code><br><a href="https://acosta290.github.io/fluvy/?card=schedule&amp;layout=today"><picture><source media="(prefers-color-scheme: dark)" srcset="../images/cards/schedule.today-dark.webp"><img src="../images/cards/schedule.today-light.webp" width="392" alt="The Heating schedule card in its today layout"></picture></a></td>
-<td align="center" valign="top" width="50%"></td>
+<td align="center" valign="top" width="50%"><code>variant: row</code><br><a href="https://acosta290.github.io/fluvy/?card=schedule&amp;layout=row"><picture><source media="(prefers-color-scheme: dark)" srcset="../images/cards/schedule.row-dark.webp"><img src="../images/cards/schedule.row-light.webp" width="392" alt="The Heating schedule card in its row layout"></picture></a></td>
 </tr></tbody>
 </table>
 
@@ -71,7 +71,7 @@ name_lines: 1
 | `schedule` |  | The schedule helper the card draws and writes; left out, the one its automation follows. A `schedule`. |
 | `name` |  | The name the card shows, in place of the entity’s own. |
 | `icon` |  | The card’s icon, in place of the entity’s own. |
-| `variant` | `week` | The week, a line a day, or today’s line alone. `week` · `today`. |
+| `variant` | `week` | The week, a line a day; today’s line alone; or a row: the room, the preset in force, its target and the next change. `week` · `today` · `row`. |
 | `first_weekday` | `language` | The day the weeks and the months start on. `language` (As the language does) · `sunday` · `monday` · `tuesday` · `wednesday` · `thursday` · `friday` · `saturday`. |
 | `show_head` | `true` | Shows the head: the room, what the thermostat is doing, the preset in force and the schedule’s switch. |
 | `show_presets` | `true` | Shows the presets and their temperatures under the hours. |

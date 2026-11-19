@@ -2855,7 +2855,15 @@ swatch, its name and its temperature (a tenth where any preset has one), the pre
 as many as the line holds, the rest said by their count ("+2"), never a word cut. **Now** is a 2 line of the text's
 ink across today's well, over its times. The lines are a drawing (`data-measure="drawn"`): the times' places are the
 plan's minutes. **Today** (`variant: today`): today's line alone, 32 tall (12/600 times), no day column — for half a
-section.
+section. **Row** (`variant: row`): the house's row (76, 16 in, half a section; the printer's, the compass's): the
+room's circle as the head's, its name over the preset in force, its target and the next change ("Comfort · 21° · Eco
+at 22:30", another day's with its weekday, "Comfort Fri at 06:30"; "Schedule off · 18°" while it is off; why there is
+no week where there is none), the schedule's switch at its end. Narrow, it gives way in order: the next change, then
+the preset's name, the figure kept whole; then the circle, where the name would end before it had begun (under 96, or
+under the name itself) or the line's first words would not hold beside it; then the switch, the circle back where that
+leaves it room; the name takes an ellipsis, as names may. A change into the gaps' preset a guest cannot know is not
+said. The row is the card's button (a tap opens the sheet on today, a hold the thermostat's details), its circle and
+its switch buttons of their own; it draws no head, no lines and no legend, and its editor offers none of theirs.
 
 **The sheet** (`fluvy-heating-sheet`, a chunk of its own fetched on the first tap; the schedule sheet's modal, scrim,
 insets, grabber and pair): a tap on a day's line opens it on that day, a tap on the head or Enter on today's. Its
@@ -2891,7 +2899,7 @@ hint "It runs in Home Assistant, every browser closed", and for an administrator
 blank. Out of reach (the thermostat), the card keeps its anatomy in the off skin: the week, the legend, the switch.
 
 **Heights** at a 360 column, from the config alone: 40 + the head (60, `show_head`) + the week (216) or today (32) + the
-hours (24) + the legend (36, `show_presets`): 376 by default, 192 for today.
+hours (24) + the legend (36, `show_presets`): 376 by default, 192 for today; the row 76, whatever it shows.
 
 ## Alerts (1.9)
 

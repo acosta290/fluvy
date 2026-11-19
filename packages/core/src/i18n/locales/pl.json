@@ -3813,7 +3813,11 @@
     "editor.first_weekday": "Pierwszy dzień tygodnia",
     "editor.presets": "Ustawienia",
     "editor.preset": "Ustawienie",
-    "editor.preset_helper": "comfort, eco, away, home, sleep, boost, activity lub nazwa własnego ustawienia"
+    "editor.preset_helper": "comfort, eco, away, home, sleep, boost, activity lub nazwa własnego ustawienia",
+    "next": "{preset} o {time}",
+    "next_on": "{preset} {day} o {time}",
+    "paused_short": "Wyłączony",
+    "none": "Brak planu"
   },
   "rounds": {
     "rounds": "Okrągłe przyciski",

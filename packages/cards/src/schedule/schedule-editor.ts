@@ -65,8 +65,17 @@ export const defaults: EditorDefaults = () => ({
 
 type Data = Readonly<Record<string, unknown>>;
 
+/** The row: a line of its own, its circle and its switch; no head, no week's lines, no legend. */
+const row = (data: Data): boolean => data['variant'] === 'row';
+
+/** The week or today's line: what a head and a legend go with. */
+const lined = (data: Data): boolean => !row(data);
+
 /** The head shows: what its own options act on. */
-const headed = (data: Data): boolean => data['show_head'] !== false;
+const headed = (data: Data): boolean => lined(data) && data['show_head'] !== false;
+
+/** The switch is drawn: in the head, or at the row's end. */
+const switched = (data: Data): boolean => row(data) || headed(data);
 
 export function getConfigForm(): LovelaceConfigForm {
   const schema: HaFormSchemaItem[] = [
@@ -77,8 +86,9 @@ export function getConfigForm(): LovelaceConfigForm {
       selectField('variant', SCHEDULE_VARIANTS),
       selectField('first_weekday', ['language', ...WEEKDAYS]),
     ),
-    fieldRow(boolField('show_head'), boolField('show_presets')),
-    onlyWhen(headed, fieldRow(boolField('show_switch'))),
+    onlyWhen(lined, fieldRow(boolField('show_head'), boolField('show_presets'))),
+    onlyWhen(switched, fieldRow(boolField('show_switch'))),
+    // a row's circle gives way by its own rule, its name on one line
     onlyWhen(headed, headFields()),
     ...colourFields(),
     actionFields({ icon: true, tap: null }),

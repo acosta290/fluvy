@@ -550,7 +550,8 @@ export const MEANINGS: Readonly<Record<string, string>> = {
     'Shows the head: the room, what the thermostat is doing, the preset in force and the schedule’s switch.',
   'schedule.show_presets': 'Shows the presets and their temperatures under the hours.',
   'schedule.show_switch': 'Shows the switch that turns the schedule on and off.',
-  'schedule.variant': 'The week, a line a day, or today’s line alone.',
+  'schedule.variant':
+    'The week, a line a day; today’s line alone; or a row: the room, the preset in force, its target and the next change.',
   'sensor.chart': 'The chart’s style.',
   'sensor.entity': 'The sensor the card charts and reads out.',
   'sensor.tint':

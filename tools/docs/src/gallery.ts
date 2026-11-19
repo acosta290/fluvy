@@ -141,7 +141,7 @@ export const GALLERY: Readonly<Record<string, Example>> = {
   },
   'fluvy-schedule-card': {
     config: { type: 'custom:fluvy-schedule-card', entity: 'climate.bedroom_radiator' },
-    variants: { today: {} },
+    variants: { today: {}, row: {} },
   },
   'fluvy-entities-card': {
     config: {

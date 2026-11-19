@@ -3688,7 +3688,11 @@
     "editor.first_weekday": "Primer día de la semana",
     "editor.presets": "Preajustes",
     "editor.preset": "Preajuste",
-    "editor.preset_helper": "comfort, eco, away, home, sleep, boost, activity o el nombre de uno propio"
+    "editor.preset_helper": "comfort, eco, away, home, sleep, boost, activity o el nombre de uno propio",
+    "next": "{preset} a las {time}",
+    "next_on": "{preset} el {day} a las {time}",
+    "paused_short": "Apagado",
+    "none": "Sin horario"
   },
   "rounds": {
     "rounds": "Botones redondos",

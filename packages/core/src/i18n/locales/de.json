@@ -3688,7 +3688,11 @@
     "editor.first_weekday": "Erster Wochentag",
     "editor.presets": "Voreinstellungen",
     "editor.preset": "Voreinstellung",
-    "editor.preset_helper": "comfort, eco, away, home, sleep, boost, activity oder der Name einer eigenen"
+    "editor.preset_helper": "comfort, eco, away, home, sleep, boost, activity oder der Name einer eigenen",
+    "next": "{preset} um {time}",
+    "next_on": "{preset} am {day} um {time}",
+    "paused_short": "Aus",
+    "none": "Kein Plan"
   },
   "rounds": {
     "rounds": "Runde Tasten",

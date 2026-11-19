@@ -20,12 +20,16 @@ const AXIS = 24;
 /** The presets' legend: one line of 20, 16 under the hours. */
 const LEGEND = 36;
 
+/** The row: the house's, 16 in round its 44 circle. */
+const ROW = 76;
+
 /**
  * The card at a 360 column, by its layout and what it shows, never by the plan it draws (a day with no block keeps its
  * line; a legend of more presets than its line holds says how many more): the head (`show_head`), the week's seven
- * lines or today's one, the hours under them and the legend (`show_presets`).
+ * lines or today's one, the hours under them and the legend (`show_presets`); the row, whatever it shows.
  */
 export function scheduleHeight(config: LovelaceCardConfig): number {
+  if (config['variant'] === 'row') return ROW;
   const head = config['show_head'] === false ? 0 : HEAD;
   const lines = config['variant'] === 'today' ? TODAY : WEEK;
   const legend = config['show_presets'] === false ? 0 : LEGEND;

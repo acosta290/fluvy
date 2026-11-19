@@ -3748,7 +3748,11 @@
     "editor.first_weekday": "Prvý deň týždňa",
     "editor.presets": "Predvoľby",
     "editor.preset": "Predvoľba",
-    "editor.preset_helper": "comfort, eco, away, home, sleep, boost, activity alebo názov vlastnej predvoľby"
+    "editor.preset_helper": "comfort, eco, away, home, sleep, boost, activity alebo názov vlastnej predvoľby",
+    "next": "{preset} o {time}",
+    "next_on": "{preset} {day} o {time}",
+    "paused_short": "Vypnutý",
+    "none": "Žiadny plán"
   },
   "rounds": {
     "rounds": "Okrúhle tlačidlá",

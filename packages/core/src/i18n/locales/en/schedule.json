@@ -58,6 +58,10 @@
     "editor.first_weekday": "First day of the week",
     "editor.presets": "Presets",
     "editor.preset": "Preset",
-    "editor.preset_helper": "comfort, eco, away, home, sleep, boost, activity, or the name of one of your own"
+    "editor.preset_helper": "comfort, eco, away, home, sleep, boost, activity, or the name of one of your own",
+    "next": "{preset} at {time}",
+    "next_on": "{preset} {day} at {time}",
+    "paused_short": "Off",
+    "none": "No schedule"
   }
 }

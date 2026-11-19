@@ -119,6 +119,11 @@
     "width": 784,
     "height": 448
   },
+  "schedule.row": {
+    "example": "713c7c79164c",
+    "width": 784,
+    "height": 216
+  },
   "entities": {
     "example": "5ea67b5f5984",
     "width": 784,

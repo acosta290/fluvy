@@ -3688,7 +3688,11 @@
     "editor.first_weekday": "每周第一天",
     "editor.presets": "预设",
     "editor.preset": "预设",
-    "editor.preset_helper": "comfort、eco、away、home、sleep、boost、activity 或自定义预设名称"
+    "editor.preset_helper": "comfort、eco、away、home、sleep、boost、activity 或自定义预设名称",
+    "next": "{time} 起{preset}",
+    "next_on": "{day} {time} 起{preset}",
+    "paused_short": "已关闭",
+    "none": "无计划"
   },
   "rounds": {
     "rounds": "圆形按钮",

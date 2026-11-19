@@ -3293,7 +3293,8 @@
         "key": "variant",
         "values": [
           "week",
-          "today"
+          "today",
+          "row"
         ],
         "default": "week"
       },
@@ -3302,6 +3303,11 @@
           "type": "custom:fluvy-schedule-card",
           "entity": "climate.bedroom_radiator",
           "variant": "today"
+        },
+        "row": {
+          "type": "custom:fluvy-schedule-card",
+          "entity": "climate.bedroom_radiator",
+          "variant": "row"
         }
       },
       "layout_pictures": {
@@ -3310,6 +3316,12 @@
           "dark": "images/cards/schedule.today-dark.webp",
           "width": 784,
           "height": 448
+        },
+        "row": {
+          "light": "images/cards/schedule.row-light.webp",
+          "dark": "images/cards/schedule.row-dark.webp",
+          "width": 784,
+          "height": 216
         }
       },
       "keys": [
@@ -3342,12 +3354,13 @@
         {
           "key": "variant",
           "label": "Style",
-          "does": "The week, a line a day, or today’s line alone.",
+          "does": "The week, a line a day; today’s line alone; or a row: the room, the preset in force, its target and the next change.",
           "type": "choice",
           "default": "week",
           "values": {
             "week": "Week",
-            "today": "Today"
+            "today": "Today",
+            "row": "Row"
           }
         },
         {

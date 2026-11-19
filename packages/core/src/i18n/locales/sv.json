@@ -3688,7 +3688,11 @@
     "editor.first_weekday": "Veckans första dag",
     "editor.presets": "Förinställningar",
     "editor.preset": "Förinställning",
-    "editor.preset_helper": "comfort, eco, away, home, sleep, boost, activity eller namnet på en egen"
+    "editor.preset_helper": "comfort, eco, away, home, sleep, boost, activity eller namnet på en egen",
+    "next": "{preset} kl. {time}",
+    "next_on": "{preset} {day} kl. {time}",
+    "paused_short": "Av",
+    "none": "Inget schema"
   },
   "rounds": {
     "rounds": "Runda knappar",

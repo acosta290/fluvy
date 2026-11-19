@@ -3688,7 +3688,11 @@
     "editor.first_weekday": "Haftanın ilk günü",
     "editor.presets": "Ön ayarlar",
     "editor.preset": "Ön ayar",
-    "editor.preset_helper": "comfort, eco, away, home, sleep, boost, activity ya da kendi ayarının adı"
+    "editor.preset_helper": "comfort, eco, away, home, sleep, boost, activity ya da kendi ayarının adı",
+    "next": "{time} itibarıyla {preset}",
+    "next_on": "{day} {time} itibarıyla {preset}",
+    "paused_short": "Kapalı",
+    "none": "Plan yok"
   },
   "rounds": {
     "rounds": "Yuvarlak düğmeler",
