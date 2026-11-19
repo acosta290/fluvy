@@ -233,6 +233,9 @@ describe('heights: a tile as the tile card draws it', () => {
     [{ variant: 'mini', name_lines: '2' }, 124],
     [{ layout: 'vertical', name_lines: 2 }, 124],
     [{ variant: 'large', name_lines: 2 }, 168],
+    // the card look (#220): a card's 20 round the compact tile's 44
+    [{ variant: 'card' }, 84],
+    [{ variant: 'card', name_lines: 2 }, 96],
   ])('%j: %i', (config, height) => {
     const full = { type: 'custom:fluvy-template-card', ...config };
     expect(templateHeight(full)).toBe(height);
@@ -243,6 +246,40 @@ describe('heights: a tile as the tile card draws it', () => {
     const { tile } = await drawn({ entity: 'light.desk', variant });
     expect(tile().classList.contains('fv-tile--compact')).toBe(variant === 'compact');
     expect(tile().classList.contains('fv-tile--mini')).toBe(variant === 'mini');
+  });
+});
+
+describe('the card look (#220)', () => {
+  it('is the compact tile, its host marked so its sheet gives it a card’s padding, corners and height', async () => {
+    const card = await drawn({ entity: 'light.desk', variant: 'card' });
+    expect(card.card.hasAttribute('card-look')).toBe(true);
+    const ours = card.tile().outerHTML.replace(/<!--[^>]*-->/g, '');
+    document.body.replaceChildren();
+    const compact = await drawn({ entity: 'light.desk', variant: 'compact' });
+    expect(compact.card.hasAttribute('card-look')).toBe(false);
+    expect(compact.tile().outerHTML.replace(/<!--[^>]*-->/g, '')).toBe(ours);
+  });
+
+  it('leaves the look when it is another variant again', async () => {
+    const { card } = await drawn({ entity: 'light.desk', variant: 'card' });
+    card.setConfig({ type: 'custom:fluvy-template-card', entity: 'light.desk', variant: 'mini' });
+    await card.updateComplete;
+    expect(card.hasAttribute('card-look')).toBe(false);
+  });
+
+  it('keeps the live one’s anatomy out of reach', async () => {
+    const config = { entity: 'switch.washer', variant: 'card', secondary: 'Laundry' };
+    const live = anatomy((await drawn(config)).tile());
+    document.body.replaceChildren();
+    const dead = await drawn(config, DEAD);
+    expect(anatomy(dead.tile())).toEqual(live);
+    expect(dead.card.hasAttribute('card-look')).toBe(true);
+  });
+
+  it('is held by another card’s surface as a card is: none of its own at rest, its 20 turned out', () => {
+    const sheet = (FluvyTemplateCard.styles as unknown[]).flat(Infinity).join('');
+    expect(sheet).toContain('background: var(--fv-held, var(--fluvy-card))');
+    expect(sheet).toContain('margin: calc(var(--fv-held-bleed, 0) * 20px)');
   });
 });
 

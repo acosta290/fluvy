@@ -2263,7 +2263,8 @@
     "floor": "Piano",
     "wash": "Velatura",
     "edge": "Bordo",
-    "control": "Controllo"
+    "control": "Controllo",
+    "card": "Scheda"
   },
   "tone": {
     "accent": "Accento",

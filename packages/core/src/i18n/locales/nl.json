@@ -2263,7 +2263,8 @@
     "floor": "Verdieping",
     "wash": "Waas",
     "edge": "Rand",
-    "control": "Bediening"
+    "control": "Bediening",
+    "card": "Kaart"
   },
   "tone": {
     "accent": "Accent",

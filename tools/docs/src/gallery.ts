@@ -117,7 +117,7 @@ export const GALLERY: Readonly<Record<string, Example>> = {
       secondary: "{{ states('sensor.tp_temperature') }} °C here",
     },
     cols: 6,
-    variants: { mini: {}, large: {} },
+    variants: { mini: {}, large: {}, card: { cols: 12 } },
   },
   'fluvy-light-card': {
     config: { type: 'custom:fluvy-light-card', entity: 'light.ceiling' },

@@ -2263,7 +2263,8 @@
     "floor": "Étage",
     "wash": "Teinte",
     "edge": "Bordure",
-    "control": "Commande"
+    "control": "Commande",
+    "card": "Carte"
   },
   "tone": {
     "accent": "Accent",

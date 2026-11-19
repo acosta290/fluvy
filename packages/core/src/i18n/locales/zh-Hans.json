@@ -1504,7 +1504,8 @@
     "floor": "楼层",
     "wash": "底色",
     "edge": "边框",
-    "control": "控件"
+    "control": "控件",
+    "card": "卡片"
   },
   "tone": {
     "accent": "强调色",

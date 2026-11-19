@@ -101,6 +101,61 @@ export const sheet: SheetSpec = {
         },
       ],
     },
+    // the card look (#220): the compact tile at a card's 20 and corners, 84 tall, its circle where a head card's
+    // stands — over a compact tile (16, 76) and an Entities card's head, at a phone's column
+    {
+      title: 'Card look',
+      cards: [
+        {
+          type: TEMPLATE,
+          entity: 'light.tp_desk',
+          variant: 'card',
+          secondary: "{{ states('sensor.tp_temperature') }} °C here",
+        },
+        {
+          type: TEMPLATE,
+          entity: 'binary_sensor.tp_door',
+          variant: 'card',
+          secondary: "{{ 'Open' if is_state(entity, 'on') else 'Shut' }} · the porch",
+        },
+        { type: TEMPLATE, entity: 'light.tp_hall', variant: 'card', name_lines: 2 },
+        { type: TEMPLATE, entity: 'switch.tp_pump', variant: 'card' },
+        { type: TEMPLATE, entity: 'light.tp_desk' },
+        {
+          type: 'custom:fluvy-entities-card',
+          title: 'Study',
+          icon: 'mdi:desk',
+          entities: ['light.tp_desk', 'light.tp_hall'],
+        },
+      ],
+    },
+    // across a desktop: each in its column, a head card's padding beside a head card's
+    {
+      title: 'Card look · 1400',
+      width: 1400,
+      cards: [
+        { type: TEMPLATE, entity: 'light.tp_desk', variant: 'card', cols: 3 },
+        { type: TEMPLATE, entity: 'switch.tp_washer', variant: 'card', cols: 3 },
+        {
+          type: TEMPLATE,
+          entity: 'sensor.tp_power',
+          name: 'Washer',
+          icon: 'mdi:washing-machine',
+          variant: 'card',
+          active: '{{ states(entity) | float }}',
+          cols: 3,
+        },
+        { type: TEMPLATE, entity: 'light.tp_hall', cols: 3 },
+        {
+          type: 'custom:fluvy-entities-card',
+          title: 'Study',
+          icon: 'mdi:desk',
+          entities: ['light.tp_desk', 'light.tp_hall'],
+          cols: 6,
+        },
+        { type: TEMPLATE, entity: 'binary_sensor.tp_door', variant: 'card', cols: 6 },
+      ],
+    },
     // a large tile keeps its switch and its readouts; a sensor's reading stays in the head, the line its own words
     {
       title: 'Large',

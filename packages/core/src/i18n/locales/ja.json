@@ -1078,7 +1078,8 @@
     "floor": "フロア",
     "wash": "全体を淡く",
     "edge": "枠線",
-    "control": "操作部"
+    "control": "操作部",
+    "card": "カード"
   },
   "tone": {
     "accent": "アクセント",

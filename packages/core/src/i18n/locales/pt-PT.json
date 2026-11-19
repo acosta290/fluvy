@@ -2263,7 +2263,8 @@
     "floor": "Piso",
     "wash": "Matiz",
     "edge": "Contorno",
-    "control": "Controlo"
+    "control": "Controlo",
+    "card": "Cartão"
   },
   "tone": {
     "accent": "Destaque",

@@ -44,6 +44,11 @@
     "width": 408,
     "height": 400
   },
+  "template.card": {
+    "example": "4b61235a7827",
+    "width": 784,
+    "height": 232
+  },
   "light": {
     "example": "571b080950eb",
     "width": 784,

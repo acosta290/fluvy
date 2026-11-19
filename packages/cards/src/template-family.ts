@@ -10,7 +10,8 @@ import { NAME_LINE, twoLines } from './shared/heights.js';
 
 /**
  * A tile as the tile card draws it: compact (76, the default), mini (108; Mushroom's `layout: vertical` or
- * `vertical: true`) or large (168); a small one a line taller with its name in two lines (`name_lines: 2`).
+ * `vertical: true`) or large (168), or the compact tile in a card's look (84, #220); a small one a line taller with
+ * its name in two lines (`name_lines: 2`).
  */
 export const templateHeight = (config: LovelaceCardConfig): number => {
   const variant =
@@ -20,7 +21,7 @@ export const templateHeight = (config: LovelaceCardConfig): number => {
     ? 108 + (lines ? NAME_LINE.mini : 0)
     : variant === 'large'
       ? 168
-      : 76 + (lines ? NAME_LINE.compact : 0);
+      : (variant === 'card' ? 84 : 76) + (lines ? NAME_LINE.compact : 0);
 };
 
 export const TEMPLATE_FAMILY: readonly FamilyEntry[] = [['fluvy-template-card', templateHeight]];

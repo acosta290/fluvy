@@ -18,6 +18,7 @@ if (!customElements.get('fluvy-template-card'))
 defineCardWrapper();
 
 const EXPANDER = 'custom:fluvy-expander-card';
+const TEMPLATE = 'custom:fluvy-template-card';
 
 type Attributes = Record<string, unknown>;
 /** A lamp that dims, lit at `level` % (or off). */
@@ -519,7 +520,7 @@ export const sheet: SheetSpec = {
       title: 'Opened from another card',
       cards: [
         {
-          type: 'custom:fluvy-template-card',
+          type: TEMPLATE,
           name: 'Forecast',
           secondary: 'Open it under the clock',
           icon: 'cloudSun',
@@ -538,7 +539,7 @@ export const sheet: SheetSpec = {
       title: 'Opened inside a folded one',
       cards: [
         {
-          type: 'custom:fluvy-template-card',
+          type: TEMPLATE,
           name: 'Charger',
           secondary: 'Open it inside the garage',
           icon: 'plug',
@@ -608,6 +609,53 @@ export const sheet: SheetSpec = {
           card_opacity: 60,
           cards: GARDEN_CARDS.map((card) => ({ ...card, card_opacity: 60 })),
         }),
+      ],
+    },
+    // the Template card in a card's look (#220): held as a card is, its circle under the head's and its words in the
+    // column, where a tile keeps its own surface and its 16 inside it; and for a head, its circle where the head's
+    // own would stand
+    {
+      title: 'A Template card in its column',
+      cards: [
+        garden({
+          expanded: true,
+          cards: [
+            {
+              type: 'custom:fluvy-entities-card',
+              title: 'Watering',
+              icon: 'drop',
+              entities: ['switch.ex_lawn', 'switch.ex_beds'],
+            },
+            {
+              type: TEMPLATE,
+              entity: 'binary_sensor.ex_garden_door',
+              name: 'Side gate',
+              variant: 'card',
+            },
+            SOIL,
+          ],
+        }),
+      ],
+    },
+    {
+      title: 'A Template card for a head',
+      cards: [
+        {
+          type: EXPANDER,
+          title: 'Garden',
+          remember: 'off',
+          head_cards: [
+            {
+              type: TEMPLATE,
+              entity: 'binary_sensor.ex_garden_door',
+              name: 'Garden',
+              icon: 'leaf',
+              secondary: "{{ 'Gate open' if is_state(entity, 'on') else 'Gate shut' }}",
+              variant: 'card',
+            },
+          ],
+          cards: [SPRINKLERS],
+        },
       ],
     },
   ],

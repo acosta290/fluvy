@@ -2263,7 +2263,8 @@
     "floor": "Andar",
     "wash": "Matiz",
     "edge": "Borda",
-    "control": "Controle"
+    "control": "Controle",
+    "card": "Cartão"
   },
   "tone": {
     "accent": "Destaque",

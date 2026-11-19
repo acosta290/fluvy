@@ -6,7 +6,7 @@ import {
   type FluvyCardConfig,
   type LovelaceCardConfig,
 } from '@fluvy/core';
-import type { TemplateResult } from 'lit';
+import { css, type CSSResultGroup, type PropertyValues, type TemplateResult } from 'lit';
 
 import {
   FluvyTileCard,
@@ -33,6 +33,9 @@ const s = strings('template');
 /** When the tile shows as on: as its entity is (`auto`, the default), always, never, or as a template answers. */
 export type Active = 'auto' | 'always' | 'never' | (string & {});
 
+/** A tile's size, or the compact tile in a card's look (`card`, #220). */
+export type TemplateVariant = TileSize | 'card';
+
 export interface TemplateCardConfig extends FluvyCardConfig {
   /**
    * The line under the name: the entity's state (the default, with one), its area, when it last changed, none (the
@@ -44,8 +47,11 @@ export interface TemplateCardConfig extends FluvyCardConfig {
   active?: Active;
   /** `always`: the card's colour shows at rest too, a wash of it and its hairline (`on`, the default: only when on). */
   tint?: Tint;
-  /** `compact` (the default): one 76 row. `mini`: 108, its icon over its name. `large`: 168, a switch and a foot. */
-  variant?: TileSize;
+  /**
+   * `compact` (the default): one 76 row. `mini`: 108, its icon over its name. `large`: 168, a switch and a foot.
+   * `card` (#220): the compact tile at a card's 20 and corners, 84 tall, as the other cards' heads stand.
+   */
+  variant?: TemplateVariant;
   /** A compact or mini tile's name in two lines where one would cut it (`2`), the tile a line taller. */
   name_lines?: NameLines;
   /** A large tile's switch (#160): hidden (`false`) or its level's figure in its place (`value`), its circle the switch. */
@@ -56,7 +62,7 @@ export interface TemplateCardConfig extends FluvyCardConfig {
   readouts?: NonNullable<TileItem['readouts']>;
 }
 
-export const VARIANTS: readonly TileSize[] = ['compact', 'mini', 'large'];
+export const VARIANTS: readonly TemplateVariant[] = ['compact', 'mini', 'large', 'card'];
 /** What `secondary` takes as a keyword; any other text is the person's own words. */
 export const KEYWORDS = [
   'state',
@@ -95,6 +101,40 @@ type Field = 'name' | 'icon' | 'secondary' | 'active' | 'color';
  * drawn.
  */
 export class FluvyTemplateCard extends FluvyTileCard {
+  /**
+   * The card look (`variant: card`, #220, the host marked `card-look`): the compact tile at a card's 20, its corners
+   * and its height (84, 96 with its name in two lines), so it stands as the other cards' heads stand. Held by another
+   * card's surface (an Expander's, a Swipe's, the sidebar's) it draws none of its own at rest and turns its 20 out as
+   * a card does, its circle in the holder's column; lit, tinted or out of reach it wears the tile's skin from edge to
+   * edge there, as a lit light card does.
+   */
+  static override styles: CSSResultGroup = [
+    ...(FluvyTileCard.styles as CSSResultGroup[]),
+    css`
+      :host([card-look]) .fv-tile--compact {
+        height: 84px;
+        padding: 20px;
+        border-radius: var(--fluvy-radius-card);
+      }
+      :host([card-look]) .fv-tile--compact.fv-tile--lines {
+        height: 96px;
+      }
+      :host([card-look]) .fv-tile--compact:not(.is-on, .is-tinted, .fv-tile--off) {
+        background: var(--fv-held, var(--fluvy-card));
+        box-shadow: var(
+          --fv-held,
+          var(--fv-hover-edge, inset 0 0 0 1px var(--fluvy-edge, var(--fluvy-border)))
+        );
+      }
+      :host([card-look][borderless]) .fv-tile--compact:not(.is-on, .is-tinted, .fv-tile--off) {
+        box-shadow: var(--fv-held, var(--fv-hover-edge, none));
+      }
+      :host([card-look]) {
+        margin: calc(var(--fv-held-bleed, 0) * 20px);
+      }
+    `,
+  ];
+
   /** The card's height at a 360 column, for the automatic dashboard's columns. */
   static override layoutHeight(config: LovelaceCardConfig): number {
     return templateHeight(config);
@@ -157,7 +197,25 @@ export class FluvyTemplateCard extends FluvyTileCard {
 
   protected override size(): TileSize {
     const variant = this.own.variant;
-    return variant && VARIANTS.includes(variant) ? variant : 'compact';
+    return variant && variant !== 'card' && VARIANTS.includes(variant) ? variant : 'compact';
+  }
+
+  /** Whether it is drawn in the card look (`variant: card`). */
+  private get carded(): boolean {
+    return this.own.variant === 'card';
+  }
+
+  protected override willUpdate(changed: PropertyValues): void {
+    super.willUpdate(changed);
+    this.toggleAttribute('card-look', this.carded);
+  }
+
+  /**
+   * The card look's sides are the compact tile's 16 and 4 more: its words, its circle and its rocker give way as a
+   * compact tile 8 narrower does (what its sheet's container rules read of its content box too).
+   */
+  protected override tileWidth(): number {
+    return this.carded ? super.tileWidth() - 8 : super.tileWidth();
   }
 
   protected override renderCard(): TemplateResult {

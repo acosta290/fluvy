@@ -1808,7 +1808,8 @@
     "floor": "Poschodie",
     "wash": "Nádych",
     "edge": "Okraj",
-    "control": "Ovládací prvok"
+    "control": "Ovládací prvok",
+    "card": "Karta"
   },
   "tone": {
     "accent": "Zvýraznenie",

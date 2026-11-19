@@ -736,7 +736,8 @@
     "floor": "Floor",
     "wash": "Wash",
     "edge": "Edge",
-    "control": "Control"
+    "control": "Control",
+    "card": "Card"
   },
   "tone": {
     "accent": "Accent",

@@ -28,6 +28,10 @@ The picture above, on the demo house: put your own entities in place of its.
 <td align="center" valign="top" width="50%"><code>variant: mini</code><br><a href="https://acosta290.github.io/fluvy/?card=template&amp;layout=mini"><picture><source media="(prefers-color-scheme: dark)" srcset="../images/cards/template.mini-dark.webp"><img src="../images/cards/template.mini-light.webp" width="204" alt="The Template card in its mini layout"></picture></a></td>
 <td align="center" valign="top" width="50%"><code>variant: large</code><br><a href="https://acosta290.github.io/fluvy/?card=template&amp;layout=large"><picture><source media="(prefers-color-scheme: dark)" srcset="../images/cards/template.large-dark.webp"><img src="../images/cards/template.large-light.webp" width="204" alt="The Template card in its large layout"></picture></a></td>
 </tr></tbody>
+<tbody><tr>
+<td align="center" valign="top" width="50%"><code>variant: card</code><br><a href="https://acosta290.github.io/fluvy/?card=template&amp;layout=card"><picture><source media="(prefers-color-scheme: dark)" srcset="../images/cards/template.card-dark.webp"><img src="../images/cards/template.card-light.webp" width="392" alt="The Template card in its card layout"></picture></a></td>
+<td align="center" valign="top" width="50%"></td>
+</tr></tbody>
 </table>
 
 ## All options
@@ -71,7 +75,7 @@ switch_style: toggle
 | `icon` |  | The card’s icon, in place of the entity’s own. |
 | `secondary` | `none` | The line under the name: a keyword, your own words, or a template. `state` · `area` · `last-changed` · `none`, or your own. |
 | `since` | none | Where the time of the last change is read from, in place of Home Assistant’s own. |
-| `variant` | `compact` | The card’s layout. `compact` · `mini` · `large`. |
+| `variant` | `compact` | The card’s layout. `compact` · `mini` · `large` · `card`. |
 | `active` | `auto` | Decides when the card looks on: its colour and its switch follow it. `auto` · `always` · `never`, or your own. |
 | `show_switch` | `true` | Shows the switch. `true` (Shown) · `false` (Hidden) · `value` (Its value instead). |
 | `switch_style` | `toggle` | Draws the switch as a toggle, or as a wall rocker that only switches. `toggle` · `rocker` (Wall rocker). |
@@ -134,6 +138,9 @@ active: "{{ states(entity) | float > 10 }}" # when the tile looks on
 - `active`: `auto` (as its entity), `always`, `never`, or a template (on unless it gives `off`, `false`, `no`, `0`).
 - `color` takes a colour or a tone (`warning`, `heat`); `tint: always` keeps it at rest. A template colour goes in YAML.
 - Without an entity, a tap runs only an action that needs none: `navigate`, `url`, `perform-action`, `assist`.
+- `variant: card`: the compact tile at a card's padding, as tall as a card's head (84), so it lines up with the cards
+  beside it; in an [Expander](expander.md)'s column, or for its head, it stands in the column as the other cards do,
+  where a compact tile keeps its own surface.
 
 ### From Mushroom
 

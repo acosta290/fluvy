@@ -736,7 +736,8 @@
     "floor": "Våning",
     "wash": "Toning",
     "edge": "Kant",
-    "control": "Kontroll"
+    "control": "Kontroll",
+    "card": "Kort"
   },
   "tone": {
     "accent": "Accent",

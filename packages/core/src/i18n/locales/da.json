@@ -736,7 +736,8 @@
     "floor": "Etage",
     "wash": "Toning",
     "edge": "Kant",
-    "control": "Betjening"
+    "control": "Betjening",
+    "card": "Kort"
   },
   "tone": {
     "accent": "Accent",

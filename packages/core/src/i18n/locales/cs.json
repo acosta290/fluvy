@@ -1808,7 +1808,8 @@
     "floor": "Podlaží",
     "wash": "Nádech",
     "edge": "Okraj",
-    "control": "Ovládací prvek"
+    "control": "Ovládací prvek",
+    "card": "Karta"
   },
   "tone": {
     "accent": "Akcent",

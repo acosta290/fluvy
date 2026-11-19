@@ -2862,6 +2862,14 @@ the tile card's tile of the same entity, byte for byte.
 - **Editor:** entity (not required), name and icon, the line (a keyword or a template), style and *Shows as on* on one
   row, tone and colour, the card's colour, *Show its colour* only with a colour, readouts only for a large tile, the
   actions; helpers under the name, the line, the icon, *Shows as on* and the colour (a colour template goes in YAML).
+- **The card look (1.23, #220): `variant: card`.** The compact tile at a card's 20, its corners and its height (84,
+  96 with its name in two lines): its circle stands where a head card's does, and in a section it lines up with the
+  cards beside it as they do with each other. A compact tile keeps the tile's 16 and 76 (the rows' too), and on the
+  surface of an Expander, a Swipe or the sidebar it stands on the card as a tile, with its surface and its 16 inside
+  the column; the card look is held there as a card is: at rest it draws no surface of its own and turns its 20 out, so
+  its circle stands under the head's (for a head, where the head's own would) and its words in the column. Lit, tinted
+  or out of reach it wears the tile's skin, from the surface's edge to edge where it is held, as a lit light card does.
+  Its words give way as a compact tile 8 narrower (its sides are 4 wider), what its sheet's container rules read too.
 - Its chunk is its own (`template`, 2.1 KB of 8): every page carries only its tag and height (`template-family.ts`).
 - **Chips (1.13, #87).** A chip of the chips card takes the same templates for its words, its icon and its colour (the
   chip's `entity` is `entity` in them; never JavaScript: `[[[ ]]]` is words), one subscription a template, let go when

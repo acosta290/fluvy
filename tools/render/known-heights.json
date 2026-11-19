@@ -234,6 +234,13 @@
       "reason": "a water meter among the energy rows is a plain 60 row (its kind is live): a bar row is declared"
     },
     {
+      "frame": "expander/A Template card in its column",
+      "tag": "fluvy-expander-card",
+      "declared": 84,
+      "drawn": 468,
+      "reason": "open: it declares its head, as the dashboard plans it folded; what it holds is the person’s to open"
+    },
+    {
       "frame": "expander/A card it cannot build · a hidden one",
       "tag": "fluvy-expander-card",
       "declared": 84,

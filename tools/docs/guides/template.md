@@ -14,6 +14,9 @@ active: "{{ states(entity) | float > 10 }}" # when the tile looks on
 - `active`: `auto` (as its entity), `always`, `never`, or a template (on unless it gives `off`, `false`, `no`, `0`).
 - `color` takes a colour or a tone (`warning`, `heat`); `tint: always` keeps it at rest. A template colour goes in YAML.
 - Without an entity, a tap runs only an action that needs none: `navigate`, `url`, `perform-action`, `assist`.
+- `variant: card`: the compact tile at a card's padding, as tall as a card's head (84), so it lines up with the cards
+  beside it; in an [Expander](expander.md)'s column, or for its head, it stands in the column as the other cards do,
+  where a compact tile keeps its own surface.
 
 ### From Mushroom
 

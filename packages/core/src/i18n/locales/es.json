@@ -2263,7 +2263,8 @@
     "floor": "Planta",
     "wash": "Tinte",
     "edge": "Borde",
-    "control": "Control"
+    "control": "Control",
+    "card": "Tarjeta"
   },
   "tone": {
     "accent": "Acento",

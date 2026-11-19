@@ -2263,7 +2263,8 @@
     "floor": "Kat",
     "wash": "Dolgu",
     "edge": "Kenarlık",
-    "control": "Denetim"
+    "control": "Denetim",
+    "card": "Kart"
   },
   "tone": {
     "accent": "Vurgu",
