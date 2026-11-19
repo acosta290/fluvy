@@ -594,3 +594,266 @@ describe('a row in a narrow column', () => {
     expect(FluvyEntitiesCard.layoutHeight({ ...config, variant: 'compact' })).toBe(92 + 6 * 48);
   });
 });
+
+/*
+ * #218: a number's row (an `input_number`, a `number`, a `counter`) set in place — its value between − and +
+ * (`number_control: stepper`), or a button that opens a field on the decimal keypad (`entry`) — as the card asks or the
+ * row; laid out for its widest figure, the controls of a list at one width, and every one of them giving way to the
+ * plain value together where one would leave its name under its room.
+ */
+describe('a number set in its row (#218)', () => {
+  afterEach(() => document.body.replaceChildren());
+
+  const number = (entity_id: string, value: string, attributes: Record<string, unknown>) => ({
+    [entity_id]: {
+      entity_id,
+      state: value,
+      attributes: { friendly_name: entity_id.split('.')[1], ...attributes },
+      last_changed: '',
+      last_updated: '',
+    },
+  });
+  const PRESET = { min: 5, max: 30, step: 0.5, unit_of_measurement: '°C', mode: 'box' };
+  const house = () => {
+    const callService = vi.fn(() => Promise.resolve());
+    return {
+      callService,
+      hass: {
+        ...hass,
+        states: {
+          ...hass.states,
+          ...number('input_number.comfort', '21.5', PRESET),
+          ...number('input_number.frost', '7', PRESET),
+          ...number('input_number.top', '30', PRESET),
+          ...number('input_number.gone', 'unavailable', {}),
+          ...number('number.delay', '3', { min: 0, max: 24, step: 1, unit_of_measurement: 'h' }),
+          ...number('counter.pods', '12', { minimum: 0, maximum: 60, step: 1 }),
+        },
+        callService,
+      } as unknown as HomeAssistant,
+    };
+  };
+  async function draw(
+    config: Omit<EntitiesCardConfig, 'type'>,
+    house_: HomeAssistant,
+    width = 360,
+  ): Promise<ShadowRoot> {
+    const card = document.createElement('fluvy-entities-card') as FluvyEntitiesCard;
+    vi.spyOn((card as unknown as { head: HeadFit }).head.ruler, 'width').mockImplementation(
+      (_cls, text, _unitCls, unit = '') => (text.length + unit.length) * 8,
+    );
+    card.width = width;
+    card.setConfig({ type: 'custom:fluvy-entities-card', ...config });
+    card.hass = house_;
+    document.body.append(card);
+    await card.updateComplete;
+    return card.shadowRoot as ShadowRoot;
+  }
+  const rowsOf = (root: ShadowRoot) => [
+    ...root.querySelectorAll<HTMLElement>('.fv-rows > .fv-row'),
+  ];
+  const words = (element: Element | null | undefined) =>
+    element?.textContent?.replace(/\s/g, '') ?? '';
+
+  it('says a number’s value as before where nothing asks', async () => {
+    const root = await draw({ rows: ['input_number.comfort'] }, house().hass);
+    expect(root.querySelector('.fv-stepper, .nm-figure')).toBeNull();
+    expect(rowsOf(root)[0]?.querySelector('.fv-row__value')?.textContent).toBe('21.5 °C');
+  });
+
+  it('draws the value between − and +, one step a press, on its grid and inside its range', async () => {
+    const { hass: house_, callService } = house();
+    const root = await draw(
+      { number_control: 'stepper', rows: ['input_number.comfort', 'input_number.top'] },
+      house_,
+    );
+    const [comfort, top] = rowsOf(root);
+    const pill = comfort!.querySelector<HTMLElement>('.fv-stepper--value')!;
+    expect(words(pill.querySelector('.fv-stepper__value'))).toBe('21.5°C');
+    // the row is no button of its own: its control is
+    expect(comfort!.getAttribute('role')).toBeNull();
+    // laid out for the figures it can show (5.0 and 30.0 °C), every figure of the list one room
+    const room = (row: HTMLElement) =>
+      row.querySelector<HTMLElement>('.fv-stepper__value')!.style.width;
+    expect(room(comfort!)).not.toBe('');
+    expect(room(comfort!)).toBe(room(top!));
+    const half = (row: HTMLElement, at: number) =>
+      row.querySelectorAll<HTMLButtonElement>('.fv-stepper__half')[at]!;
+    half(comfort!, 1).click();
+    expect(callService).toHaveBeenLastCalledWith(
+      'input_number',
+      'set_value',
+      { value: 22 },
+      { entity_id: 'input_number.comfort' },
+    );
+    // at the top of its range, + does nothing; − steps down
+    callService.mockClear();
+    half(top!, 1).click();
+    expect(callService).not.toHaveBeenCalled();
+    half(top!, 0).click();
+    expect(callService).toHaveBeenLastCalledWith(
+      'input_number',
+      'set_value',
+      { value: 29.5 },
+      { entity_id: 'input_number.top' },
+    );
+  });
+
+  it('steps a counter with its own increment and decrement, and never types one', async () => {
+    const { hass: house_, callService } = house();
+    const stepped = await draw({ number_control: 'stepper', rows: ['counter.pods'] }, house_);
+    stepped.querySelectorAll<HTMLButtonElement>('.fv-stepper__half')[0]!.click();
+    expect(callService).toHaveBeenLastCalledWith(
+      'counter',
+      'decrement',
+      {},
+      { entity_id: 'counter.pods' },
+    );
+    const typed = await draw({ number_control: 'entry', rows: ['counter.pods'] }, house_);
+    expect(typed.querySelector('.nm-figure, .fv-stepper')).toBeNull();
+    expect(typed.querySelector('.fv-row__value')?.textContent).toBe('12');
+  });
+
+  it('opens a field on the decimal keypad from the value, sends a figure held to its range and step, lets go of the rest', async () => {
+    const { hass: house_, callService } = house();
+    const root = await draw({ number_control: 'entry', rows: ['input_number.comfort'] }, house_);
+    const card = root.host as FluvyEntitiesCard;
+    const button = root.querySelector<HTMLButtonElement>('.nm-figure')!;
+    expect(words(button)).toBe('21.5°C');
+    const width = button.style.width;
+    button.click();
+    await card.updateComplete;
+    const input = root.querySelector<HTMLInputElement>('.nm-entry > input')!;
+    expect(input.getAttribute('inputmode')).toBe('decimal');
+    expect(input.value).toBe('21.5');
+    // the field takes the button's place at its width, its unit beside it
+    expect(root.querySelector<HTMLElement>('.nm-entry')!.style.width).toBe(width);
+    expect(root.querySelector('.nm-entry > .fv-unit')?.textContent).toBe('°C');
+    const key = (name: string) =>
+      input.dispatchEvent(new KeyboardEvent('keydown', { key: name, bubbles: true }));
+    // off the step's grid: refused, the field stays
+    input.value = '19.7';
+    input.dispatchEvent(new Event('input'));
+    expect(input.validity.valid).toBe(false);
+    key('Enter');
+    expect(callService).not.toHaveBeenCalled();
+    // a comma as the decimal mark, as a German keypad gives it
+    input.value = '19,5';
+    input.dispatchEvent(new Event('input'));
+    key('Enter');
+    await card.updateComplete;
+    expect(callService).toHaveBeenLastCalledWith(
+      'input_number',
+      'set_value',
+      { value: 19.5 },
+      { entity_id: 'input_number.comfort' },
+    );
+    expect(root.querySelector('.nm-entry')).toBeNull();
+    expect(words(root.querySelector('.nm-figure'))).toBe('19.5°C');
+    // Escape lets it go, nothing sent
+    callService.mockClear();
+    root.querySelector<HTMLButtonElement>('.nm-figure')!.click();
+    await card.updateComplete;
+    const again = root.querySelector<HTMLInputElement>('.nm-entry > input')!;
+    again.value = '25';
+    again.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    await card.updateComplete;
+    expect(callService).not.toHaveBeenCalled();
+    expect(root.querySelector('.nm-entry')).toBeNull();
+    // leaving the field sends what it holds, once
+    root.querySelector<HTMLButtonElement>('.nm-figure')!.click();
+    await card.updateComplete;
+    const left = root.querySelector<HTMLInputElement>('.nm-entry > input')!;
+    left.value = '20';
+    left.blur();
+    left.dispatchEvent(new FocusEvent('blur'));
+    await card.updateComplete;
+    expect(callService).toHaveBeenCalledTimes(1);
+    expect(callService).toHaveBeenLastCalledWith(
+      'input_number',
+      'set_value',
+      { value: 20 },
+      { entity_id: 'input_number.comfort' },
+    );
+  });
+
+  it('takes a row’s own say before the card’s', async () => {
+    const root = await draw(
+      {
+        number_control: 'stepper',
+        rows: [
+          'input_number.comfort',
+          { entity: 'number.delay', number_control: 'entry' },
+          { entity: 'input_number.frost', number_control: 'value' },
+        ],
+      },
+      house().hass,
+    );
+    const [comfort, delay, frost] = rowsOf(root);
+    expect(comfort!.querySelector('.fv-stepper')).not.toBeNull();
+    expect(delay!.querySelector('.nm-figure')).not.toBeNull();
+    expect(frost!.querySelector('.fv-stepper, .nm-figure')).toBeNull();
+    expect(frost!.getAttribute('role')).toBe('button');
+  });
+
+  it('keeps its control in place out of reach, still, its value a dash, the row opening its details', async () => {
+    const root = await draw(
+      {
+        rows: [
+          { entity: 'input_number.gone', number_control: 'stepper' },
+          { entity: 'input_number.gone', number_control: 'entry' },
+        ],
+      },
+      house().hass,
+    );
+    const [stepped, typed] = rowsOf(root);
+    expect(stepped!.querySelector('.fv-stepper__value')?.textContent).toBe('—');
+    expect(
+      [...stepped!.querySelectorAll<HTMLButtonElement>('.fv-stepper__half')].every(
+        (half) => half.disabled,
+      ),
+    ).toBe(true);
+    expect(typed!.querySelector<HTMLButtonElement>('.nm-figure')?.disabled).toBe(true);
+    expect(stepped!.getAttribute('role')).toBe('button');
+  });
+
+  it('gives every control of the list to the plain values together where one would leave its name under its room', async () => {
+    const config = {
+      number_control: 'stepper' as const,
+      rows: [
+        { entity: 'input_number.comfort', name: 'Comfort' },
+        { entity: 'input_number.frost', name: 'A long name for frost' },
+      ],
+    };
+    expect((await draw(config, house().hass, 360)).querySelectorAll('.fv-stepper')).toHaveLength(2);
+    // half a section: the long name's row would not hold its pill, and neither row draws one
+    const narrow = await draw(config, house().hass, 152);
+    expect(narrow.querySelectorAll('.fv-stepper')).toHaveLength(0);
+    expect(rowsOf(narrow).map((row) => row.querySelector('.fv-row__value')?.textContent)).toEqual([
+      '21.5 °C',
+      '7 °C',
+    ]);
+    // its rows stay 60
+    expect(FluvyEntitiesCard.layoutHeight({ type: 'custom:fluvy-entities-card', ...config })).toBe(
+      24 + 2 * 60,
+    );
+  });
+
+  it('offers how a number ends in the editor while its rows hold one, and on a number’s row its own say', async () => {
+    const { getConfigForm, lists } = await import('./entities-editor.js');
+    const field = getConfigForm()
+      .schema.flatMap((item) => item.schema ?? [item])
+      .find((item) => item.name === 'number_control')!;
+    expect(field.when?.({ rows: ['lock.front_door'] })).toBe(false);
+    expect(field.when?.({ rows: ['lock.front_door', 'counter.pods'] })).toBe(true);
+    expect(field.when?.({ entities: ['input_number.comfort'] })).toBe(true);
+    const rows = lists[0]!;
+    const named = (item: Record<string, unknown>) =>
+      rows.schemaOf!(item)
+        .flatMap((one) => (one.schema ? one.schema : [one]))
+        .map((one) => one.name);
+    expect(rows.keys).toContain('number_control');
+    expect(named({ entity: 'number.delay' })).toContain('number_control');
+    expect(named({ entity: 'lock.front_door' })).not.toContain('number_control');
+  });
+});

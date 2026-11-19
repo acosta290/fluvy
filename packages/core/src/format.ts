@@ -27,6 +27,8 @@ export interface NumberOptions {
   readonly minDigits?: number;
   /** In the language's short words for its size, rounded as it rounds them (no `digits`): "5.1M", "421K", "511万". */
   readonly compact?: boolean;
+  /** `false`: no thousands' marks, its decimal mark alone (a figure to be typed over: "1500,5"). */
+  readonly grouping?: boolean;
 }
 
 /** A number as the user's locale writes it; anything that is not a finite number reads as "—", never "NaN". */
@@ -45,7 +47,8 @@ export function formatNumber(
   const opts: Intl.NumberFormatOptions = options.compact
     ? { notation: 'compact' }
     : { maximumFractionDigits: digits, minimumFractionDigits: minDigits };
-  if (hass?.locale?.number_format === 'none') opts.useGrouping = false;
+  if (hass?.locale?.number_format === 'none' || options.grouping === false)
+    opts.useGrouping = false;
   try {
     return numberFormat(numberLocale(hass?.locale, hass?.language ?? 'en'), opts).format(value);
   } catch {

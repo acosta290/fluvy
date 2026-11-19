@@ -1,14 +1,8 @@
-import {
-  formatNumber,
-  localize,
-  numberAttr,
-  sliderStill,
-  strings,
-  type EntityView,
-} from '@fluvy/core';
+import { localize, sliderStill, strings, type EntityView } from '@fluvy/core';
 import { ico, stepper, type RulerChangeDetail } from '@fluvy/ui';
 import { html, nothing, type TemplateResult } from 'lit';
 import { iconOf } from '../shared/domain.js';
+import { numberModel, numberText, nudge, type NumberModel as Model } from '../shared/number.js';
 import {
   contextOf,
   field,
@@ -24,48 +18,19 @@ const s = strings('helpers');
 /** Past this many stops a scale stops being a slider (Home Assistant's own rule for `mode: auto`). */
 const MAX_STOPS = 256;
 
-interface NumberModel {
-  readonly counter: boolean;
-  /** Null = unbounded (a counter without a minimum or a maximum). */
-  readonly min: number | null;
-  readonly max: number | null;
-  readonly step: number;
-  readonly digits: number;
-  /** The value to draw: under the finger, else expected, else reported. Null when there is none. */
-  readonly value: number | null;
-  readonly unusable: boolean;
+interface NumberModel extends Model {
   /** Value and stepper only: a counter, `mode: box`, or a range a ruler cannot resolve. */
   readonly boxed: boolean;
 }
 
-const decimals = (step: number): number => {
-  if (Number.isInteger(step)) return 0;
-  const text = String(step);
-  const dot = text.indexOf('.');
-  return dot < 0 ? 0 : Math.min(3, text.length - dot - 1);
-};
-
 function model(host: HelperHost, view: EntityView): NumberModel {
-  const counter = view.domain === 'counter';
-  const min = numberAttr(view, counter ? 'minimum' : 'min') ?? (counter ? null : 0);
-  const max = numberAttr(view, counter ? 'maximum' : 'max') ?? (counter ? null : 100);
-  const step = Math.abs(numberAttr(view, 'step') ?? 1) || 1;
-  const unusable = isUnusable(view);
-  const expected = Number(host.state(view));
-  const value = unusable
-    ? null
-    : (host.preview(view.id) ?? (Number.isFinite(expected) ? expected : view.number));
-  const span = min !== null && max !== null ? max - min : 0;
+  const m = numberModel(view, host.state(view), isUnusable(view), host.preview(view.id));
+  const span = m.min !== null && m.max !== null ? m.max - m.min : 0;
   const mode = view.attr<string>('mode');
   return {
-    counter,
-    min,
-    max,
-    step,
-    value,
-    unusable,
-    digits: decimals(step),
-    boxed: counter || mode === 'box' || span <= 0 || (mode !== 'slider' && span / step > MAX_STOPS),
+    ...m,
+    boxed:
+      m.counter || mode === 'box' || span <= 0 || (mode !== 'slider' && span / m.step > MAX_STOPS),
   };
 }
 
@@ -74,20 +39,42 @@ export const isBoxedNumber = (host: HelperHost, view: EntityView): boolean =>
   model(host, view).boxed;
 
 const text = (host: HelperHost, m: NumberModel, value: number | null = m.value): string =>
-  value === null ? '—' : formatNumber(host.hass, value, { digits: m.digits, minDigits: m.digits });
+  numberText(host.hass, m, value);
 
-/** One step from the value on screen, on the helper's own grid and inside its range. */
-function nudge(host: HelperHost, view: EntityView, m: NumberModel, direction: 1 | -1): void {
-  const from = m.value ?? m.min ?? 0;
-  const origin = m.min ?? 0;
-  const stepped = Math.round((from + direction * m.step - origin) / m.step) * m.step + origin;
-  const next = Number(
-    Math.min(m.max ?? Infinity, Math.max(m.min ?? -Infinity, stepped)).toFixed(m.digits),
-  );
-  if (next === m.value) return; // already at the end of the range
-  host.expect(view.id, String(next)); // a held stepper keeps counting from here, not from the last report
-  if (m.counter) host.call('counter', direction > 0 ? 'increment' : 'decrement', {}, view.id);
-  else host.call(view.domain, 'set_value', { value: next }, view.id);
+/**
+ * The figure as it reads beside the stepper: its value and unit, or, where the card asks for figures typed
+ * (`number_entry`, #218) and they hold beside the stepper, a button of its words that opens a field in its place
+ * (`typedFigure`); a counter's stays words.
+ */
+function figure(
+  host: HelperHost,
+  view: EntityView,
+  m: NumberModel,
+  name: string,
+  valueClass: string,
+): TemplateResult {
+  const typed =
+    m.counter || !host.typed
+      ? null
+      : host.typed.typedFigure({
+          root: host.root,
+          ruler: host.ruler,
+          room: host.contentWidth,
+          host,
+          hass: host.hass,
+          view,
+          m,
+          name,
+          typing: host.typing === view.id,
+          onOpen: () => host.setTyping(view.id),
+          onClose: () => host.setTyping(null),
+        });
+  if (typed) return typed;
+  const key = `n-${view.id}`;
+  return html`<span class=${valueClass}
+    ><span data-baseline=${key}>${text(host, m)}</span
+    >${view.unit && m.value !== null ? html`<span class="fv-unit" data-baseline=${key}>${view.unit}</span>` : nothing}</span
+  >`;
 }
 
 function valueAndStepper(
@@ -97,12 +84,8 @@ function valueAndStepper(
   name: string,
   valueClass: string,
 ): TemplateResult {
-  const key = `n-${view.id}`;
   return html`<div class="in-field__control">
-    <span class=${valueClass}
-      ><span data-baseline=${key}>${text(host, m)}</span
-      >${view.unit && m.value !== null ? html`<span class="fv-unit" data-baseline=${key}>${view.unit}</span>` : nothing}</span
-    >
+    ${figure(host, view, m, name, valueClass)}
     ${stepper((direction) => nudge(host, view, m, direction), {
       disabled: m.unusable,
       decrease: `${name} · ${localize(host.hass, 'common.decrease')}`,

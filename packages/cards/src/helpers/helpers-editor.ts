@@ -2,6 +2,7 @@ import type { HaFormSchemaItem, LovelaceConfigForm } from '@fluvy/core';
 import { ACTIONS_BASE, ICON_ACTIONS_BASE, type BaseKey } from '../shared/base.js';
 import {
   actionFields,
+  boolField,
   colourFields,
   emptyFields,
   entitiesField,
@@ -9,6 +10,7 @@ import {
   fieldRow,
   formLabels,
   holdsDevice,
+  holdsDomain,
   iconField,
   isSelectRow,
   nameIconFields,
@@ -56,6 +58,7 @@ export const keys = configKeys<HelpersCardConfig>()([
   'subtitle',
   'rows',
   'options_style',
+  'number_entry',
   ...EMPTY_KEYS,
 ]);
 
@@ -100,7 +103,7 @@ export const lists: readonly RowsListSpec[] = [
 export const choices: EditorChoices = sinceChoices;
 
 /** What the editor shows where the config says nothing: what the card does then. */
-export const defaults: EditorDefaults = () => ({ options_style: 'full' });
+export const defaults: EditorDefaults = () => ({ options_style: 'full', number_entry: false });
 
 export function getConfigForm(): LovelaceConfigForm {
   return {
@@ -110,6 +113,11 @@ export function getConfigForm(): LovelaceConfigForm {
       headFields(),
       // its numbers' rulers in a style
       ...sliderFields(),
+      // a number's figure typed (#218): while the rows hold one that takes a figure (a counter is stepped)
+      onlyWhen(holdsDomain(['input_number', 'number'], 'rows', 'entities'), {
+        ...boolField('number_entry'),
+        helper: 'editor.number_entry_helper',
+      }),
       ...colourFields(),
       entitiesField('entities', undefined, true),
       onlyWhen(holdsDevice('rows', 'entities'), namesField()),

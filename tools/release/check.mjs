@@ -228,6 +228,9 @@ const BUDGETS = {
   // what reads a card's thresholds (1.22, #204): their values, the band a reading is in, the stretches a chart colours;
   // fetched by the first card that names one
   thresholds: 2048,
+  // the controls that set a number in place (1.23, #218): a row's value between − and +, a figure typed, their sheet;
+  // fetched by the first card that asks for one
+  'number-controls': 4096,
   // the slider styles (1.18, #144): the bar, the liquid and a tile's fill the ruler draws when asked, and their sheet
   'slider-styles': 4096,
   // the switch styles (1.20, #177): the wall rocker a tile draws in its switch's place when asked, what a tile's

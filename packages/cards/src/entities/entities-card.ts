@@ -16,7 +16,14 @@ import {
 
 import { head, listRow, wordsClass } from '@fluvy/ui';
 
-import { css, html, nothing, type CSSResultGroup, type TemplateResult } from 'lit';
+import {
+  css,
+  html,
+  nothing,
+  type CSSResultGroup,
+  type PropertyValues,
+  type TemplateResult,
+} from 'lit';
 
 import { Card, type CardEditor } from '../shared/base.js';
 
@@ -52,9 +59,20 @@ import {
   type SectionEntry,
 } from '../shared/lists.js';
 import { HeadFit, SWITCH_SLOT } from '../energy/head.js';
+import { numberControls, numbersLanding, numberText } from '../shared/number.js';
+import type { NumberEnd } from '../shared/number-controls.js';
 
-/** A row of the card: the rows every list shares (`RowConfig`), shown while its condition holds (`show_when`, #157). */
-export type EntityRowConfig = RowConfig & ConditionalRow;
+/**
+ * How a number (an `input_number`, a `number`, a `counter`) ends its row (#218): its value, as any row's (the default),
+ * its value between − and +, or its value as a button that opens a field to type one (never a counter's).
+ */
+export type NumberControl = 'value' | 'stepper' | 'entry';
+
+/**
+ * A row of the card: the rows every list shares (`RowConfig`), shown while its condition holds (`show_when`, #157),
+ * a number's as it asks (`number_control`, the card's where it says none).
+ */
+export type EntityRowConfig = RowConfig & ConditionalRow & { number_control?: NumberControl };
 
 /** `show_rows_when`: one condition for every row that names none. */
 export interface EntitiesCardConfig
@@ -67,6 +85,8 @@ export interface EntitiesCardConfig
   show_count?: boolean;
   /** `rows` (default): 60 px rows with a second line. `compact`: 48 px rows, the name alone. */
   variant?: 'rows' | 'compact';
+  /** How the numbers' rows end (#218): `value` (the default), `stepper` or `entry`; a row's own wins. */
+  number_control?: NumberControl;
   /**
    * How many more the list has elsewhere: a last row, "{count} more", that opens `more_path` (the automatic
    * dashboards end a capped list with it, #78). Both or none.
@@ -81,6 +101,10 @@ const moreOf = (config: EntitiesCardConfig | undefined): { count: number; path: 
   const path = config?.more_path;
   return count >= 1 && typeof path === 'string' && path ? { count, path } : null;
 };
+
+/** Whether a row (or the card, for the rows that say none) sets its number in place (#218). */
+const setsNumber = (own: NumberControl | undefined): boolean =>
+  own === 'stepper' || own === 'entry';
 
 /**
  * A card of 60 px rows: icon circle, title / sub, and ONE trailing element chosen by the entity —
@@ -167,6 +191,16 @@ export class FluvyEntitiesCard extends Card<EntitiesCardConfig> {
     `,
   ];
 
+  static override properties = { ...Card.properties, typing_: { state: true } };
+
+  /** The row (by its place) whose number's figure is being typed (`number_control: entry`, #218). */
+  declare typing_: number | null;
+
+  constructor() {
+    super();
+    this.typing_ = null;
+  }
+
   static override editor(): Promise<CardEditor> {
     return import('./entities-editor.js');
   }
@@ -215,6 +249,54 @@ export class FluvyEntitiesCard extends Card<EntitiesCardConfig> {
   override getCardSize(): number {
     return 1 + this.rows().length + (moreOf(this.config) ? 1 : 0);
   }
+
+  /** A card whose numbers are set in their rows (#218) draws its first frame once their controls are here. */
+  protected override wearing(): Promise<void> | undefined {
+    return super.wearing() ?? (this.setsNumbers() ? numbersLanding() : undefined);
+  }
+
+  protected override updated(changed: PropertyValues): void {
+    super.updated(changed);
+    // a figure's field just opened: the keypad comes up on the figure, chosen whole
+    if (changed.has('typing_') && this.typing_ !== null)
+      numberControls(this)?.focusEntry(this.renderRoot);
+  }
+
+  /** Whether the card or a row asks for a number set in place (#218). */
+  private setsNumbers(): boolean {
+    return (
+      setsNumber(this.config?.number_control) ||
+      this.rows().some((row) => setsNumber(row.number_control))
+    );
+  }
+
+  /**
+   * The numbers' controls at their rows' ends (#218), by the rows' places (`rowEnds`): none where nothing asks for one,
+   * or while their chunk is on its way.
+   */
+  private numberEnds(
+    rows: readonly EntityRowConfig[],
+    views: readonly EntityView[],
+  ): readonly (NumberEnd | null)[] {
+    const controls = this.setsNumbers() ? numberControls(this) : null;
+    return controls
+      ? controls.rowEnds(
+          this.head.ruler,
+          this.contentWidth,
+          this.hass,
+          rows.map((row, i) => {
+            const view = views[i] as EntityView;
+            return {
+              view,
+              asked: row.number_control ?? this.config?.number_control,
+              name: this.nameFor(view, row.name),
+              shown: this.stateOf(view),
+            };
+          }),
+        )
+      : [];
+  }
+
   override getGridOptions(): LovelaceGridOptions {
     return { columns: 12, rows: 'auto', min_columns: 6 };
   }
@@ -227,7 +309,7 @@ export class FluvyEntitiesCard extends Card<EntitiesCardConfig> {
    */
   private fit(
     row: {
-      readonly trailing: 'switch' | 'value' | 'chevron' | 'menu';
+      readonly trailing: 'switch' | 'value' | 'chevron' | 'menu' | 'number';
       readonly title: string;
       readonly value: string;
       readonly end: number | undefined;
@@ -307,8 +389,10 @@ export class FluvyEntitiesCard extends Card<EntitiesCardConfig> {
           })
         : nothing;
 
-    // what ends each row (its switch, its value's words, its chevron, a select's dropdown) is decided before the rows
-    // are drawn: a column too narrow for a name beside its end gives every row's circle to the names, as every list does
+    // what ends each row (its switch, its value's words, its chevron, a select's dropdown, a number's control) is
+    // decided before the rows are drawn: a column too narrow for a name beside its end gives every row's circle to the
+    // names, as every list does
+    const numbers = this.numberEnds(rows, views);
     const laid = rows.map((row, i) => {
       const view = views[i] as EntityView;
       const usable = isUsable(view);
@@ -317,34 +401,42 @@ export class FluvyEntitiesCard extends Card<EntitiesCardConfig> {
       // a row switch is for what is safe to flip by accident: never a lock, and not the things that are not on/off
       const canToggle = usable && SAFE_TOGGLE.has(view.domain);
       const measured = view.domain === 'sensor' || view.number !== null;
-      const trailing: 'switch' | 'value' | 'chevron' | 'menu' = menu
+      const title = this.nameFor(view, row.name);
+      // a number set in the row (#218)
+      const number = numbers[i] ?? null;
+      const trailing: 'switch' | 'value' | 'chevron' | 'menu' | 'number' = menu
         ? 'menu'
-        : canToggle
-          ? 'switch'
-          : usable &&
-              (measured ||
-                view.domain === 'binary_sensor' ||
-                view.domain === 'person' ||
-                view.domain === 'sun' ||
-                view.domain === 'weather' ||
-                view.domain === 'input_select' ||
-                view.domain === 'select' ||
-                view.domain === 'lock' ||
-                view.domain === 'vacuum' ||
-                view.domain === 'media_player')
-            ? 'value'
-            : 'chevron';
+        : number
+          ? 'number'
+          : canToggle
+            ? 'switch'
+            : usable &&
+                (measured ||
+                  view.domain === 'binary_sensor' ||
+                  view.domain === 'person' ||
+                  view.domain === 'sun' ||
+                  view.domain === 'weather' ||
+                  view.domain === 'input_select' ||
+                  view.domain === 'select' ||
+                  view.domain === 'lock' ||
+                  view.domain === 'vacuum' ||
+                  view.domain === 'media_player')
+              ? 'value'
+              : 'chevron';
       const parts = valueParts(this.hass, view);
-      // a select says its option in the row's words (`labels`)
+      // a select says its option in the row's words (`labels`); a number set in the row, its figure
       const value =
         trailing === 'switch' || trailing === 'chevron'
           ? ''
-          : SELECTS.has(view.domain)
-            ? chosenLabel(this.hass, view, row, this.stateOf(view))
-            : view.number !== null
-              ? `${parts.value}${parts.unit ? ` ${parts.unit}` : ''}`
-              : stateText(this.hass, view);
-      // the end's own width where it is not a value's words: a switch's 56, a chevron's 44, a dropdown's button
+          : number
+            ? `${numberText(this.hass, number.m)}${view.unit ? ` ${view.unit}` : ''}`
+            : SELECTS.has(view.domain)
+              ? chosenLabel(this.hass, view, row, this.stateOf(view))
+              : view.number !== null
+                ? `${parts.value}${parts.unit ? ` ${parts.unit}` : ''}`
+                : stateText(this.hass, view);
+      // the end's own width where it is not a value's words: a switch's 56, a chevron's 44, a dropdown's button, a
+      // number's control
       const end =
         trailing === 'switch'
           ? SWITCH_SLOT
@@ -352,7 +444,7 @@ export class FluvyEntitiesCard extends Card<EntitiesCardConfig> {
             ? 44
             : menu
               ? buttonWidth(this.head.ruler, value, true)
-              : undefined;
+              : number?.width;
       // the row's line in its forms: whole, short, and the least it says
       const lines = rowLine(
         this.hass,
@@ -362,7 +454,7 @@ export class FluvyEntitiesCard extends Card<EntitiesCardConfig> {
         this.texts,
         row.since,
       );
-      return { view, usable, trailing, title: this.nameFor(view, row.name), value, end, lines };
+      return { view, usable, trailing, title, value, end, lines, number };
     });
     // the "N more" row says it in words where they hold beside its chevron, else as "+N"
     const moreWords = more ? this.t('common.more_count', { count: more.count }) : '';
@@ -426,7 +518,7 @@ export class FluvyEntitiesCard extends Card<EntitiesCardConfig> {
       <div class="fv-rows ${this.config?.title ? '' : 'fv-rows--bare'}">
         ${panel}
         ${withSections(drawn, (row, i) => {
-          const { view, usable, trailing, title, value } = laid[i]!;
+          const { view, usable, trailing, title, value, number } = laid[i]!;
           const state = this.stateOf(view);
           const on =
             state === view.state ? isActive(view) : !['off', 'closed', 'locked'].includes(state);
@@ -445,6 +537,8 @@ export class FluvyEntitiesCard extends Card<EntitiesCardConfig> {
           const sub = line(i);
           const whole = laid[i]!.lines.forms[0];
           const menu = trailing === 'menu';
+          // a row whose end sets its entity (a dropdown, a number's control) is no button of its own: its end is
+          const control = menu || number !== null;
           return listRow({
             icon: keep ? iconOf(view, row.icon) : null,
             tone: currentTone(view, on ? rowTone : 'neutral'),
@@ -460,19 +554,36 @@ export class FluvyEntitiesCard extends Card<EntitiesCardConfig> {
               : {}),
             valueWidth: fit.width,
             valueSize: fit.size,
-            trailing: menu
-              ? dropdown({
-                  host: this.controlHost,
-                  hass: this.hass,
-                  view,
-                  row,
-                  name: title,
-                  value,
-                  stack: fit.stack,
-                  ruler: this.head.ruler,
-                  width,
-                })
-              : trailing,
+            trailing:
+              trailing === 'number'
+                ? numberControls(this)!.rowEnd({
+                    root: this.renderRoot,
+                    host: this.controlHost,
+                    hass: this.hass,
+                    view,
+                    name: title,
+                    end: number!,
+                    typing: this.typing_ === i,
+                    onOpen: () => {
+                      this.typing_ = i;
+                    },
+                    onClose: () => {
+                      this.typing_ = null;
+                    },
+                  })
+                : menu
+                  ? dropdown({
+                      host: this.controlHost,
+                      hass: this.hass,
+                      view,
+                      row,
+                      name: title,
+                      value,
+                      stack: fit.stack,
+                      ruler: this.head.ruler,
+                      width,
+                    })
+                  : trailing,
             on,
             compact,
             accent: this.accents.item(colour),
@@ -480,8 +591,8 @@ export class FluvyEntitiesCard extends Card<EntitiesCardConfig> {
             value,
             valueTone: warn ? 'warning' : '',
             unavailable: !usable,
-            // a dropdown's row is no button of its own: its value is; out of reach, the row opens its details
-            ...(menu && usable ? {} : this.pressOf(row, view.id)),
+            // out of reach, a row whose end sets its entity opens its details
+            ...(control && usable ? {} : this.pressOf(row, view.id)),
             onToggle: (next) => {
               if (!this.hass) return;
               this.expect(

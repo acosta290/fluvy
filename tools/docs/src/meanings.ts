@@ -449,6 +449,8 @@ export const MEANINGS: Readonly<Record<string, string>> = {
   'energy-usage.kind': 'What the card charts: energy, water, or gas.',
   'energy-usage.mode': 'Shows what the house used from each source, or every flow between them.',
   'energy-usage.period': 'The span the columns show.',
+  'entities.number_control':
+    'How a number’s row ends: its value, its value between − and +, or a value you tap to type.',
   'entities.show_count': 'Says on the head’s line how many are on.',
   'ev-charger.entity': 'The charger’s power sensor, positive while it charges the car.',
   'ev-charger.invert':
@@ -660,6 +662,7 @@ export const MEANINGS: Readonly<Record<string, string>> = {
   'energy-flow.consumers[]': 'Where the house’s power goes: devices drawn under the house.',
   'energy-sankey.devices[]': 'The devices drawn by name; left out, the Energy dashboard’s.',
   'energy-usage.meters[]': 'The water or gas meters charted; left out, the Energy dashboard’s.',
+  'helpers.number_entry': 'Makes a number’s value a button that opens the keypad to type one.',
   'helpers.rows[]': 'The helpers the card sets, a row each.',
   'history-bars.entities[]': 'Sensors added up bar by bar, such as several arrays.',
   'history-bars.facts[]': 'The facts under the chart, in this order.',
@@ -844,6 +847,7 @@ export const MEANINGS: Readonly<Record<string, string>> = {
   'energy-sankey.devices[].parent': 'Another device’s meter this device is part of.',
   'energy-usage.meters[].entity': 'The meter’s statistic.',
   'energy-usage.sources[].show': 'Draws this source.',
+  'entities.rows[].number_control': 'How this number’s row ends, whatever the card says.',
   'history-bars.facts[].kind': 'What the fact says.',
   'history-bars.facts[].name': 'The fact’s name.',
   'history-bars.head[].kind': 'What the figure says.',

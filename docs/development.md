@@ -42,7 +42,7 @@ pnpm build
 ```
 
 The bundle is one ES module, `fluvy.js`, that imports `chunks/core-<hash>.js` (everything a page needs) and fetches
-`chunks/{activity,history,details-history,panel,customise,sidebar-editor,pages,words,strategy,house-heights,wall,weather,calendar,media,chart,chart-card,energy-period,energy,history-bars-readings,devices,cameras-sheet,appliances,appliance-art,automations,automations-sheet,alerts,alerts-sheet,template,web,rounds,about,expander,expander-editor,swipe,sidebar,slider,cover,vacuum,ring,vacuum-drive,climate,remote,app-logos,vehicle,details,items,items-sheet,lights-colour,light-colour,quick-actions,editor,fields,forms,view-icons,glass,quiet,thresholds,slider-styles,switch-styles,background,dock,groups,icons,icons-appliances,icons-levels,icons-energy,icons-devices,icons-climate,icons-safety,icons-outdoor,icons-home,icons-rooms,levels,shared,lang-*}-<hash>.js`
+`chunks/{activity,history,details-history,panel,customise,sidebar-editor,pages,words,strategy,house-heights,wall,weather,calendar,media,chart,chart-card,energy-period,energy,history-bars-readings,devices,cameras-sheet,appliances,appliance-art,automations,automations-sheet,alerts,alerts-sheet,template,web,rounds,about,expander,expander-editor,swipe,sidebar,slider,cover,vacuum,ring,vacuum-drive,climate,remote,app-logos,vehicle,details,items,items-sheet,lights-colour,light-colour,quick-actions,editor,fields,forms,view-icons,glass,quiet,thresholds,number-controls,slider-styles,switch-styles,background,dock,groups,icons,icons-appliances,icons-levels,icons-energy,icons-devices,icons-climate,icons-safety,icons-outdoor,icons-home,icons-rooms,levels,shared,lang-*}-<hash>.js`
 on demand — the Activity page, the History page, our history in Home Assistant's details dialog (the first time a dialog
 shows it), the settings panel (and Customise, the first time one of its dashboards is customised; a dashboard's
 sidebar, the first time its section is opened), what they
@@ -65,7 +65,7 @@ fetch), the schedule sheet, the alerts' sheet, the cameras' sheet and an item's 
 own details sheets (the first time a card opens one), the
 light card's colour controls (the first colour bulb), the cards' visual editor, the fields every editor is built of
 (with the families too) and the forms of the cards every page carries (when a card is edited), what a see-through card wears (the first card under 100 %, or a house whose cards
-are see-through), what reads a card's thresholds (the first card that names one), the slider styles (the first ruler asked for a bar, a liquid or a tile's fill, or a house that chose
+are see-through), what reads a card's thresholds (the first card that names one), what sets a number in place (the first card that asks for one), the slider styles (the first ruler asked for a bar, a liquid or a tile's fill, or a house that chose
 one), the page's background (the first dashboard that wears one), a dashboard's own sidebar (the first dashboard whose
 configuration holds `fluvy_sidebar:`), the icon set's other parts (the index and each part, the first time Home
 Assistant asks for one of its icons), the levels in Fluvy's icons (a house that turns them on),
@@ -138,6 +138,7 @@ budget (`BUDGETS`; the facts guard in `tools/docs` holds this table to it):
 | `glass` | 4 KB | what a see-through card wears: its sheet's writer (every fill at its opacity) and its rules (its solid overlays, its blur) |
 | `quiet` | 4 KB | what a card quiet out of reach wears: the rules that give the unavailable skin's paint back, one sheet every such card adopts |
 | `thresholds` | 2 KB | what reads a card's thresholds (1.22, #204): their values (a figure, an entity's reading, a template's answer), the band a reading is in and the stretches a chart colours; fetched by the first card that names one, its first frame waiting for it |
+| `number-controls` | 4 KB | what sets a number in place (1.23, #218): a row's value between − and + on the Entities card, a figure typed there and on the Helpers card, and their sheet; fetched by the first card that asks for one, its first frame waiting for it |
 | `slider-styles` | 4 KB | the slider styles (1.18, #144): the bar, the liquid and a tile's fill the ruler draws when asked, and their sheet; fetched by the first ruler asked for one, or as the house asks |
 | `switch-styles` | 4 KB | the switch styles (1.20, #177): the wall rocker a tile draws in its switch's place when asked, what a cover makes of it, and their sheet; fetched by the first tile asked for one |
 | `background` | 4 KB | the page's background (1.19, #155): the layer under a dashboard's view, its marks and its sheet; fetched by the first dashboard that wears one, or with the settings panel |

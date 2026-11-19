@@ -3494,6 +3494,19 @@
           "default": false
         },
         {
+          "key": "number_control",
+          "label": "Numbers",
+          "does": "How a number’s row ends: its value, its value between − and +, or a value you tap to type.",
+          "helper": "Typed: a tap on the value opens the keypad; a counter is stepped",
+          "type": "choice",
+          "default": "value",
+          "values": {
+            "value": "As a value",
+            "stepper": "With − and +",
+            "entry": "Typed"
+          }
+        },
+        {
           "key": "light_colors",
           "label": "Each light on in its bulb’s colour",
           "does": "Shows each light that is on in its bulb’s own colour.",
@@ -3628,6 +3641,18 @@
               "does": "Where the time of the last change is read from.",
               "helper": "A timestamp sensor, or attribute:name",
               "type": "choice or text"
+            },
+            {
+              "key": "number_control",
+              "label": "Numbers",
+              "does": "How this number’s row ends, whatever the card says.",
+              "helper": "Empty: the card’s",
+              "type": "choice",
+              "values": {
+                "value": "As a value",
+                "stepper": "With − and +",
+                "entry": "Typed"
+              }
             },
             {
               "key": "options",
@@ -18460,6 +18485,14 @@
             "ends": "Ends and middle",
             "none": "None"
           }
+        },
+        {
+          "key": "number_entry",
+          "label": "Type the values",
+          "does": "Makes a number’s value a button that opens the keypad to type one.",
+          "helper": "A tap on a value opens the keypad; a counter keeps its − and +",
+          "type": "boolean",
+          "default": false
         },
         {
           "key": "tone",

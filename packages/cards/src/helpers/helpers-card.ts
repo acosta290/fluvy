@@ -25,6 +25,7 @@ import { toneOf } from '../shared/colour.js';
 import { chipRows, EMPTY, HEAD, ROW } from '../shared/heights.js';
 import { emptyPanel, itemsOf, listOf, type EmptyList } from '../shared/lists.js';
 import { TemplateTexts } from '../shared/templates.js';
+import { numberControls, numbersLanding, NUMBERS } from '../shared/number.js';
 
 const s = strings('helpers');
 
@@ -37,9 +38,10 @@ export interface HelpersCardConfig extends FluvyCardConfig, EmptyList {
   rows?: ReadonlyArray<string | HelperRowConfig>;
   /** A select's options: chips that fill the row (`full`, the default) or content-sized ones (`chips`). */
   options_style?: RowStyle;
+  /** A number's figure opens a field to type one, on the decimal keypad (#218); a counter's stays stepped. */
+  number_entry?: boolean;
 }
 
-const NUMBERS = new Set(['input_number', 'number', 'counter']);
 const TEXTS = new Set(['input_text', 'text']);
 const SWITCHES = new Set(['input_boolean', 'switch']);
 const MOMENTS = new Set(['input_datetime', 'date', 'time', 'datetime']);
@@ -181,10 +183,16 @@ export class FluvyHelpersCard extends Card<HelpersCardConfig> {
     `,
   ];
 
-  static override properties = { ...Card.properties, preview_: { state: true } };
+  static override properties = {
+    ...Card.properties,
+    preview_: { state: true },
+    typing_: { state: true },
+  };
 
   /** Value under the finger while a ruler drag is in flight, per entity. */
   declare preview_: Readonly<Record<string, number>>;
+  /** The number whose figure is being typed (`number_entry`, #218). */
+  declare typing_: string | null;
 
   /** The head's fitting; its ruler lays widths out in the card's own classes (a select's filled chips, the rows' ends). */
   private readonly head = new HeadFit(this);
@@ -195,6 +203,7 @@ export class FluvyHelpersCard extends Card<HelpersCardConfig> {
   constructor() {
     super();
     this.preview_ = {};
+    this.typing_ = null;
   }
 
   /**
@@ -242,6 +251,12 @@ export class FluvyHelpersCard extends Card<HelpersCardConfig> {
       editing: (id) =>
         (this.renderRoot as ShadowRoot).activeElement?.getAttribute('data-field') === id,
       refresh: () => this.requestUpdate(),
+      root: this.renderRoot,
+      typed: this.config?.number_entry === true ? numberControls(this) : null,
+      typing: this.typing_,
+      setTyping: (id) => {
+        this.typing_ = id;
+      },
     };
     return { ...host, bare: !this.rowsKeepIcon(host) };
   }
@@ -301,6 +316,13 @@ export class FluvyHelpersCard extends Card<HelpersCardConfig> {
   protected override updated(changed: PropertyValues): void {
     super.updated(changed);
     this.fitFields();
+    // a figure's field just opened: the keypad comes up on the figure, chosen whole
+    if (changed.has('typing_') && this.typing_) numberControls(this)?.focusEntry(this.renderRoot);
+  }
+
+  /** A card whose figures are typed (#218) draws its first frame once what types them is here. */
+  protected override wearing(): Promise<void> | undefined {
+    return super.wearing() ?? (this.config?.number_entry === true ? numbersLanding() : undefined);
   }
 
   override getCardSize(): number {

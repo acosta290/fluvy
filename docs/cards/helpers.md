@@ -42,6 +42,7 @@ options_style: full
 show_icon: auto
 name_lines: 1
 slider_style: house
+number_entry: false
 # tone:
 # color:
 # card_color:
@@ -86,6 +87,7 @@ tap_action:
 | `options_style` | `full` | Draws a select’s options as chips that fill the row, or as content-sized chips. `full` · `chips`. |
 | `slider_style` | `house` | The slider’s style; left out, the style set for every slider. `house` · `ruler` · `bar` · `liquid`. |
 | `slider_words` | `ends` | Writes the words at the slider’s ends, or none. `ends` · `none`. |
+| `number_entry` | `false` | Makes a number’s value a button that opens the keypad to type one. |
 | `names` | `full` | How a row is named where it has no name of its own: the entity’s full name, its own, or its device’s. `full` · `entity` · `device`. |
 | `empty_text` |  | What the card says while it has nothing to show. |
 | `hide_empty` | `false` | Hides the whole card while it has nothing to show. |
@@ -170,6 +172,27 @@ rows:
 ```
 
 A row with a `tap_action` of its own keeps it, and still shows its value in its `labels`.
+
+A number's value can be typed too (1.23): `number_entry: true` makes it a button that opens the keypad, and the figure
+typed is sent once it is on the helper's grid and inside its range (Enter or leaving the field; Escape lets it go). A
+counter keeps its − and +.
+
+On the Entities card, a number's row (an `input_number`, a `number`, a `counter`) can end in its value between − and +
+or in a value to type, for every number of the card or for one row:
+
+```yaml
+type: custom:fluvy-entities-card
+title: Heating presets
+number_control: stepper # value (the default), stepper or entry
+rows:
+  - input_number.heating_comfort
+  - input_number.heating_eco
+  - entity: input_number.heating_away
+    number_control: entry # this row typed
+```
+
+The controls of a card stand at one width, laid out for the widest figure each can show; where one of them would leave
+its name too little room (half a section, a long name), every row says its plain value instead.
 
 <details>
 <summary>Older names the card still reads</summary>

@@ -95,6 +95,7 @@ hide_empty: false
 | `show_rows_when` |  | A condition for the rows: while it holds they show, else only the rows that ask to. |
 | `names` | `full` | How a row is named where it has no name of its own: the entity’s full name, its own, or its device’s. `full` · `entity` · `device`. |
 | `show_count` | `false` | Says on the head’s line how many are on. |
+| `number_control` | `value` | How a number’s row ends: its value, its value between − and +, or a value you tap to type. `value` (As a value) · `stepper` (With − and +) · `entry` (Typed). |
 | `light_colors` | `false` | Shows each light that is on in its bulb’s own colour. |
 | `light_whites` | `temperature` | Draws a lit white by its colour temperature, or as the palette’s light. `palette` (The theme’s light) · `temperature` (The bulb’s white). |
 | `more` |  | How many more entities the "More" row says there are. 1 to 999. |
@@ -142,6 +143,7 @@ An item is an entity id, or a map with `entity` and any of these fields. Between
 | `icon` | The item’s own icon, in place of the one the card would give it. |
 | `secondary` | The line under the item’s name. `area` · `last-changed` · `state` · `none`, or your own. |
 | `since` | Where the time of the last change is read from. |
+| `number_control` | How this number’s row ends, whatever the card says. `value` (As a value) · `stepper` (With − and +) · `entry` (Typed). |
 | `options` | The select’s options offered, in this order. A list. |
 | `labels` | Names of your own for the options. |
 | `tone` | The item’s colour from the palette’s tones. `accent` · `light` · `heat` · `cool` · `dry` · `fan` · `water` · `solar` · `grid` · `media` · `presence` · `armed` · `battery` · `house` · `gas` · `vehicle` (Car) · `neutral` · `ok` (Good) · `warning` · `danger`. |

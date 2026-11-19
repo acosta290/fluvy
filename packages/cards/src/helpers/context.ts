@@ -9,6 +9,7 @@ import { html, nothing, type TemplateResult } from 'lit';
 import type { ControlHost } from '../shared/base.js';
 import type { SelectRowConfig } from '../shared/dropdown.js';
 import { type TextRuler } from '../shared/fit.js';
+import type { NumberControls } from '../shared/number.js';
 import type { TemplateTexts } from '../shared/templates.js';
 
 export interface HelperRowConfig extends SelectRowConfig {
@@ -50,6 +51,16 @@ export interface HelperHost extends ControlHost {
   /** Whether the text field of this entity has the focus (its value is the user's, not the state's). */
   editing(entityId: string): boolean;
   refresh(): void;
+  /** The card's root, where what draws a figure typed wears its sheet. */
+  readonly root: Node;
+  /**
+   * What types a number's figure (`number_entry`, #218: a button that opens a field), where the card asks and it has
+   * landed.
+   */
+  readonly typed: NumberControls | null | undefined;
+  /** The number whose figure is being typed, none while every one shows its figure. */
+  readonly typing: string | null;
+  setTyping(entityId: string | null): void;
 }
 
 export const isUnusable = (view: EntityView): boolean =>

@@ -459,6 +459,12 @@ export const holdsLight =
   (data: Readonly<Record<string, unknown>>): boolean =>
     idsOf(listed(data, key, alias)).some((id) => id.startsWith('light.'));
 
+/** Whether a card's list names an entity of one of these domains (a number a row steps or types, #218). */
+export const holdsDomain =
+  (domains: readonly string[], key: string, alias?: string) =>
+  (data: Readonly<Record<string, unknown>>): boolean =>
+    idsOf(listed(data, key, alias)).some((id) => domains.includes(domainOf(id)));
+
 /** Whether an entity is one a tile switches: what a large tile's switch acts on (`showSwitchField`). */
 export const switches = (entity: unknown): boolean =>
   typeof entity === 'string' && TOGGLE_DOMAINS.has(domainOf(entity));

@@ -3852,6 +3852,25 @@ or unavailable move nothing (the control stays, disabled), and two cards of one 
   words and 24 between, the 24 closes to 16, then the ruler's Open/Closed give way — its knob and the position say
   where the cover is, the commands under them which way it opens (fr at 211: 171 of content, the side 111).
 
+## A number set in its row (1.23, #218)
+
+- **The pill with its figure:** a number's row on the Entities card may end in its value between − and +
+  (`number_control: stepper`): the house's stepper with the figure it sets between its halves (`stepper({ value })`,
+  "− 21.5 °C +", the Thermostat card's own: the halves at 44, the figure 20/600 in the accent's ink, its unit 13 in
+  the secondary ink). A counter steps by its own increment and decrement.
+- **The figure to type** (`entry`, and the Helpers card's `number_entry`): the figure on the link-button shape, 44
+  tall, which opens the house's field in its place, as wide, on the decimal keypad, the figure chosen whole and its
+  unit beside it. Enter or leaving it sends a figure on the number's grid and inside its range (a point or a comma as
+  the decimal mark); one that is not stays in the warning's words and is not sent; Escape lets it go. Never a
+  counter's: it keeps its − and +.
+- **Laid out once:** each control is as wide as the widest figure it can show (its ends; a figure now where an end is
+  open), the controls of a list one width a kind, so a step never moves them and they stand in one column. Where one
+  of them would leave its row's name under its room even without the circle, every number of the list says its plain
+  value instead: rows stay 60 (48 compact), and nothing is cut. Out of reach, the control stays in its place, still,
+  its figure a dash, and the row opens its details; usable, the row is no button of its own, its control is.
+- **Paid for where asked:** the controls and their sheet are a chunk of their own (`number-controls`), fetched by the
+  first card that asks for one, its first frame waiting for them; a dashboard that asks for none never loads them.
+
 ## Narrow columns (1.7, the 1.6.1 list)
 
 **Where a card must hold.** A half-section card holds at **152** (a 320 section with Fluvy's 16 gap; 156 under Home
