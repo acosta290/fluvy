@@ -283,9 +283,9 @@ const headValue = (value: string, unit: string): TemplateResult =>
 const onLine = ({ own, value, unit }: Reading): string =>
   [own, value, unit].filter(Boolean).join(' ');
 
-/** A readout under its label, as a large tile's foot and a compact one's end draw it. */
-const cell = ({ label, value, unit, named }: Reading): TemplateResult =>
-  readout({ label, value, unit, size: 'xs', name: named });
+/** A readout under its label, as a large tile's foot and a compact one's end draw it (`untracked`: see `readout`). */
+const cell = ({ label, value, unit, named }: Reading, untracked = false): TemplateResult =>
+  readout({ label, value, unit, size: 'xs', name: named, untracked });
 
 /** What a large tile's foot ruler sets (`level`): where the entity stands on its scale, and the call that sets it. */
 export interface TileLevel {
@@ -1038,7 +1038,7 @@ export class FluvyTileCard extends Card<TileCardConfig> {
           <h3 class="fv-tile__name">${name}</h3>
           <p class="fv-tile__state" data-name=${words ? '' : nothing}>${line}</p>
         </div>
-        ${ends?.count ? html`<div class="fv-tile__end">${readings.slice(0, ends.count).map(cell)}</div>` : nothing}
+        ${ends?.count ? html`<div class="fv-tile__end">${readings.slice(0, ends.count).map((reading) => cell(reading))}</div>` : nothing}
         ${plated ? this.plate(view, lit, tone, label, usable) : nothing}
         ${tapNow || holdNow ? pressCover(label, tapNow, holdNow) : nothing}
       </article>`;
@@ -1162,10 +1162,17 @@ export class FluvyTileCard extends Card<TileCardConfig> {
         stats.length,
         inner >= THREE_READOUTS && holds(3) ? 3 : inner >= TWO_READOUTS && holds(2) ? 2 : 1,
       );
+      // the first alone, its label wider than the whole foot (hu's "TELJESÍTMÉNY" in a large tile at 266): untracked
+      const [first] = stats;
+      const untracked =
+        shown === 1 &&
+        first !== undefined &&
+        !first.named &&
+        this.ruler.width('fv-readout__label', first.label) > inner;
       foot = html`<div
         class="fv-tile__foot ${shown === 1 ? 'fv-tile__foot--one' : shown === 3 ? 'fv-tile__foot--three' : ''}"
       >
-        ${stats.slice(0, shown).map(cell)}
+        ${stats.slice(0, shown).map((stat) => cell(stat, untracked))}
       </div>`;
     }
 

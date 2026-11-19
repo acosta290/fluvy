@@ -1128,6 +1128,9 @@ export class FluvyApplianceCard extends Card<ApplianceCardConfig> {
         font-variant-numeric: tabular-nums;
         white-space: nowrap;
       }
+      .ap-figures__value--s {
+        font-size: 28px;
+      }
       /* the bar: 12, its share in the tone's soft ink, the percentage at its end */
       .ap-progress {
         display: flex;
@@ -2592,9 +2595,11 @@ export class FluvyApplianceCard extends Card<ApplianceCardConfig> {
             : '';
     }
     const notice = this.renderNotice(view, [label, value, sub]);
+    // a figure wider than the card's column at 32 (zh-Hans "0 小时 42 分" at 211) is drawn at 28, on the same line
+    const step = this.head.ruler.width('ap-figures__value', value) > this.contentWidth;
     return html`<div class="ap-figures">
       <p class="ap-figures__label">${label}</p>
-      <p class="ap-figures__value">${value}</p>
+      <p class="ap-figures__value ${step ? 'ap-figures__value--s' : ''}">${value}</p>
       <p class="ap-figures__sub">${sub}</p>
       ${notice}
     </div>`;
@@ -3571,8 +3576,9 @@ export class FluvyApplianceCard extends Card<ApplianceCardConfig> {
       style === 'plain' || !item.value || (item.phrase && style !== 'end')
         ? ruler.width('ap-item__text', phrase(item))
         : style === 'end'
-          ? ruler.width('ap-item__text', item.label) +
-            12 +
+          ? // the row's 16 between the words and the value at its end
+            ruler.width('ap-item__text', item.label) +
+            16 +
             ruler.width('ap-item__text > ap-item__value', said(item))
           : ruler.width('ap-item__text', item.label) +
             8 +

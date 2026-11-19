@@ -248,6 +248,10 @@ export const customiseStyles = css`
     gap: var(--pn-gap, 8px);
     justify-content: start;
   }
+  /* one over the other, each the sheet's width, where the longer words would not hold a half (pairOf) */
+  .cz-pair.cz-pair--stacked {
+    grid-template-columns: minmax(0, 1fr);
+  }
 
   /* ---------- the options' sheet ---------- */
   dialog.cz-dialog {

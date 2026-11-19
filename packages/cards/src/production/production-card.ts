@@ -301,9 +301,9 @@ export class FluvyProductionCard extends Card<ProductionCardConfig> {
         height: 80px;
         margin-top: 16px;
       }
-      .so-cols .fv-readout__label {
+      .so-cols .fv-readout__label:not(.fv-readout__label--untracked) {
         white-space: nowrap;
-      } /* a label never drops onto its value */
+      } /* a label never drops onto its value (one wider than the column takes its own second line) */
       .fv-axis span {
         white-space: nowrap;
       } /* "12 AM" on a 12-hour clock is one label */
@@ -1403,11 +1403,15 @@ export class FluvyProductionCard extends Card<ProductionCardConfig> {
    */
   private renderRow(stats: readonly StatText[]): TemplateResult {
     const row = statsRow(this.head.ruler, this.contentWidth, stats);
+    // a label wider than the card's whole column (German "Sonnenstunden" at 152) is untracked, the row's with it
+    const untracked = stats.some(
+      ({ label }) => this.head.ruler.width('fv-readout__label', label) > this.contentWidth,
+    );
     return html`<div
       class="so-cols fv-cols ${row.odd ? 'fv-cols--odd' : ''}"
       style="grid-template-columns:repeat(${row.columns}, minmax(0, 1fr))"
     >
-      ${stats.map((stat) => readout({ ...stat, size: row.size }))}
+      ${stats.map((stat) => readout({ ...stat, size: row.size, untracked }))}
     </div>`;
   }
 

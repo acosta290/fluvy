@@ -722,6 +722,11 @@ export const panelStyles = css`
       row-gap: 8px;
     }
   }
+  /* a pair measured to stack (pairStacks): its longer words would not hold its half */
+  .pn-pair.pn-pair--stacked:has(> :nth-child(2)) {
+    grid-template-columns: minmax(0, 1fr);
+    row-gap: 8px;
+  }
   .pn-file {
     position: relative;
     overflow: hidden;

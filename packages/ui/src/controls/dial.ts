@@ -618,7 +618,7 @@ export class FluvyDial extends LitElement {
           ${held && this.waiting ? holdRing(knobSize, this.waiting) : nothing}
         </span>`;
       })}
-      ${this.minLabel ? html`<span class="fv-dial__label fv-dial__label--min" style="top:${labelTop}px;left:${Math.round(cx - (R + tick) * Math.SQRT1_2 - 8)}px">${this.minLabel}</span>` : nothing}
+      ${this.minLabel ? html`<span class="fv-dial__label fv-dial__label--min" style="top:${labelTop}px;right:${w - Math.round(cx - (R + tick) * Math.SQRT1_2 + 32)}px">${this.minLabel}</span>` : nothing}
       ${this.maxLabel ? html`<span class="fv-dial__label fv-dial__label--max" style="top:${labelTop}px;left:${Math.round(cx + (R + tick) * Math.SQRT1_2 - 32)}px">${this.maxLabel}</span>` : nothing}
       ${
         showStepper

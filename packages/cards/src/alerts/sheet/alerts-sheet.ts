@@ -243,7 +243,8 @@ export class FluvyAlertsSheet extends LitElement {
         text-align: center;
         color: var(--fluvy-text-secondary);
       }
-      /* the footer: buttons sharing one width, two a row (one a row where a label would not hold half) */
+      /* the footer: buttons sharing one width, two a row (one a row where a label would not hold half, on two lines
+         where it would not hold the whole: fv-btn--wraps) */
       .as-actions {
         display: grid;
         grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -257,7 +258,6 @@ export class FluvyAlertsSheet extends LitElement {
         width: 100%;
         min-width: 0;
         padding-inline: 8px;
-        white-space: nowrap;
       }
       .as-actions > .as-wide {
         grid-column: 1 / -1;
@@ -704,7 +704,12 @@ export class FluvyAlertsSheet extends LitElement {
     const close = localize(hass, 'keypad.close');
     if (!result || !result.rows.length)
       return html`<div class="as-actions as-actions--one">
-        <button class="fv-btn fv-btn--quiet" data-control data-target @click=${() => this.close()}>
+        <button
+          class="fv-btn fv-btn--quiet fv-btn--wraps"
+          data-control
+          data-target
+          @click=${() => this.close()}
+        >
           ${close}
         </button>
       </div>`;
@@ -755,7 +760,7 @@ export class FluvyAlertsSheet extends LitElement {
         ${ordered.map(
           ({ text, accent, armed, tap }, i) =>
             html`<button
-              class="fv-btn ${armed ? 'fv-btn--armed' : accent ? 'fv-btn--accent' : 'fv-btn--quiet'} ${
+              class="fv-btn fv-btn--wraps ${armed ? 'fv-btn--armed' : accent ? 'fv-btn--accent' : 'fv-btn--quiet'} ${
                 !one && i === ordered.length - 1 && ordered.length % 2 ? 'as-wide' : ''
               }"
               data-control
@@ -789,7 +794,7 @@ export class FluvyAlertsSheet extends LitElement {
       )}
       <div class="as-actions as-actions--one">
         <button
-          class="fv-btn fv-btn--quiet"
+          class="fv-btn fv-btn--quiet fv-btn--wraps"
           data-control
           data-target
           @click=${() => {
@@ -977,7 +982,12 @@ export class FluvyAlertsSheet extends LitElement {
       </div>
       ${this.error_ ? html`<p class="as-note" role="alert">${this.error_}</p>` : nothing}
       <div class="as-actions as-actions--one">
-        <button class="fv-btn fv-btn--quiet" data-control data-target @click=${() => this.close()}>
+        <button
+          class="fv-btn fv-btn--quiet fv-btn--wraps"
+          data-control
+          data-target
+          @click=${() => this.close()}
+        >
           ${localize(hass, 'keypad.close')}
         </button>
       </div>`;

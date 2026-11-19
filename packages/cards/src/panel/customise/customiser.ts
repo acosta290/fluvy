@@ -22,12 +22,13 @@ import { keyed } from 'lit/directives/keyed.js';
 import { repeat } from 'lit/directives/repeat.js';
 import type { Card as CardClass } from '../../shared/base.js';
 import { loadChartEngine } from '../../shared/chart-load.js';
+import type { ChipFit } from '../../shared/chips.js';
 import { COMMON_ALIASES, normaliseConfig } from '../../shared/config.js';
 import { edited, editOf, hiddenBy, pinned, withOptions } from '../../strategy/edit.js';
 import { generateWith } from '../../strategy/generate.js';
 import type { Card, DashboardEdit, FluvyStrategyConfig, ListEdit } from '../../strategy/types.js';
 import type { DashboardInfo, PanelContext } from '../model.js';
-import { choice } from '../sections.js';
+import { choice, gap, pairStacks } from '../sections.js';
 import {
   alsoOf,
   leading,
@@ -152,6 +153,12 @@ const LEAVE_MS = 200;
 const PREVIEW_MS = 160;
 /** The sheet's width at most, as its style draws it: its rows of chips are fitted to it. */
 const SHEET_WIDTH = 480;
+/** The sheet's own column (its 16 sides off), not the panel's: what its chips and its pairs are laid out by. */
+const sheetFit = (ctx: PanelContext): ChipFit | undefined =>
+  ctx.fit && { ...ctx.fit, width: Math.min(SHEET_WIDTH, window.innerWidth) - 32 };
+/** A sheet's pair of buttons: one over the other where its longer words would not hold a half (`pairStacks`). */
+const pairOf = (ctx: PanelContext, words: readonly string[]): string =>
+  `cz-pair${pairStacks(sheetFit(ctx), gap(ctx), words) ? ' cz-pair--stacked' : ''}`;
 /** The rows a view shows before it is searched: what a phone holds on one screen. */
 const MANY = 8;
 
@@ -590,7 +597,10 @@ export class Customiser {
           }),
         ),
       foot: (ctx) =>
-        html`<div class="cz-pair" data-fill-row>
+        html`<div
+          class=${pairOf(ctx, [ctx.t('about.reset_btn'), localize(ctx.hass, 'page.done')])}
+          data-fill-row
+        >
           ${button(
             ctx.t('about.reset_btn'),
             'quiet',
@@ -647,7 +657,10 @@ export class Customiser {
         this.host.requestUpdate();
       },
       foot: (ctx) =>
-        html`<div class="cz-pair" data-fill-row>
+        html`<div
+          class=${pairOf(ctx, [ctx.t('charts.cancel'), say(ctx.hass, 'add')])}
+          data-fill-row
+        >
           ${button(ctx.t('charts.cancel'), 'quiet', () => this.closeSheet(), true)}
           ${button(
             say(ctx.hass, 'add'),
@@ -798,10 +811,8 @@ export class Customiser {
       Object.assign(sheet, patch);
       this.host.requestUpdate();
     };
-    // the chips are fitted to the sheet's own column, not to the panel's
-    const fit = ctx.fit && { ...ctx.fit, width: Math.min(SHEET_WIDTH, window.innerWidth) - 32 };
     const ways = choice(
-      { ...ctx, fit },
+      { ...ctx, fit: sheetFit(ctx) },
       WAYS.map((way) => ({
         key: way,
         label: way === 'yaml' ? 'YAML' : say(ctx.hass, `way_${way}`),
@@ -870,7 +881,10 @@ export class Customiser {
               : none
           }
         </div>
-        <div class="cz-pair" data-fill-row>
+        <div
+          class=${pairOf(ctx, [say(ctx.hass, 'move_here'), say(ctx.hass, 'show_too')])}
+          data-fill-row
+        >
           ${button(
             say(ctx.hass, 'move_here'),
             'quiet',
@@ -922,7 +936,7 @@ export class Customiser {
         <p class="pn-hint cz-sheet__hint">${say(ctx.hass, 'add_card_hint')}</p>
         ${this.yaml(ctx, sheet.yaml, (value) => set({ yaml: value ?? { type: '' } }))}
       </div>
-      <div class="cz-pair" data-fill-row>
+      <div class=${pairOf(ctx, [ctx.t('charts.cancel'), say(ctx.hass, 'add')])} data-fill-row>
         ${button(ctx.t('charts.cancel'), 'quiet', () => this.closeSheet(), true)}
         ${button(
           say(ctx.hass, 'add'),

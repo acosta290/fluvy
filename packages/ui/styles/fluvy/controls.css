@@ -413,10 +413,12 @@
   font-size: 12px;
 }
 
+/* the scale's ends, each as wide as its words and held by the edge under the arc's end: a long one ("100,000 lx")
+   grows away from the dial's middle, never over it */
 .fv-dial__label {
   position: absolute;
-  width: 40px;
   height: 16px;
+  white-space: nowrap;
   font-size: 12px;
   font-weight: 500;
   line-height: 16px;

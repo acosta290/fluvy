@@ -340,7 +340,7 @@ key hold.
 | Filters / presets | chips: 36 pill in a 44 hit, text only, **content-sized**: 14 px sides → width = laid-out text + 28 rounded up to 4 (a post-render `fit()` pass measures the text in layout; the sheets render only once Inter is in use); same label → same width everywhere | gap 8; **a chip row fills its row** (revised 2026-09-18, quality bar #5): equal cells in as many rows as the labels need (`chipColumns`, measured where the card can: three short words on one line, three long ones as two and one, four as 2 × 2, a shorter last row split among its own chips — never a label cut to make a row); content-sized chips only on request (`*_style: chips`); tab rows (phone rooms, view tabs) use the 14 px face with 16 px sides (text + 32 → 4-grid), ink-filled active, and fill their line when they fit (they scroll — finger, trackpad, wheel or mouse drag — when they do not) |
 | Commands | 44 rounds, one filled primary, quiet siblings, 8 gaps, left-aligned row | vacuum, blinds open/stop/close, timer |
 | Transport | five equal rounds, `space-between` (5 × 48 in 320, 5 × 56 in 360 → 20 gaps) | shuffle · prev · play/pause · next · repeat |
-| Buttons | `.fv-btn` 48 high, radius 12: quiet (page), accent, link (page + accent text) | paired actions always share one width (172/172 in a sheet; keypad pair 124/124); single actions are content-sized (text + 32) |
+| Buttons | `.fv-btn` 48 high, radius 12: quiet (page), accent, link (page + accent text) | paired actions always share one width (172/172 in a sheet; keypad pair 124/124); single actions are content-sized (text + 32); a button its row sizes (the row's whole width, an equal cell) takes `fv-btn--wraps`: words its one line cannot hold go onto a second, balanced, inside its 44 or 48 (two 20 lines), never past its sides (Bulgarian "Отваряне на врата" in a 211 lock card) |
 | Button family | one sheet (`fluvy/buttons.css`): **round** `.fv-round` 44 circle, 20 glyph — quiet, accent, **on-page** (the card's fill and hairline, for a button on the page's ground; the strong hairline on hover), **bare** (no fill, the colour of its words; a 6 % wash on hover); **action** `.fv-action` (a command row's cell); **button** `.fv-btn` (above) and its **pill** (44, the pill radius, 14/600, width = its measured words); **link** `.fv-link` (13/600 accent text, its 44 target reaching 14 past the words so they end on the column) | **switched on** (`is-on`): in a card the round's glyph takes the accent (shuffle, repeat); on the page's ground the button takes the accent's fill, as an active chip (sources narrowing, Today from another day). One disabled look (40 %, no pointer) and one press (0.94) for every button, from the interaction layer; no card declares its own button |
 | Keys | 72 × 56, radius 12, page fill; backspace = quiet key with a glyph | keypad 3 × 72 + 2 × 24 |
 | Slide to unlock | 44 pill track, knob at the true start (no halo: nothing to cut), destination ring (the knob's 36 + 2 px geometry in text-secondary ink) with the unlock glyph at the right, hint centred | no ticks — it is not a dimmer |
@@ -4097,10 +4097,25 @@ What a card does at those widths, beyond the rules above — never a word cut, n
   flipped. A count's line has its short forms ("3/4 encendidos", "3/4"); a lock's "32 days ago by Marta" lets who did it
   go, then says "32 d ago".
 - **A sheet's title** wraps at its words; a word wider than its line steps the title down to a card's 16; where not even
-  that holds, its short form, at the size it holds at (it "Programma"). A link row's word too wide for the bare row
-  takes its short form (de "Ablauf"); a keypad's prompt its own ("Code eingeben").
+  that holds, its short form, at the size it holds at (it "Programma", a new schedule's too). A link row's word too
+  wide for the bare row takes its short form (de "Ablauf"); a keypad's prompt its own ("Code eingeben").
+- **An uppercase label wider than its whole column** (one column left: a 152 card's statistics, a compact
+  thermostat's Preset, a large tile's one readout) drops its tracking, and where that is not enough takes a second line
+  at its words (`fv-label--untracked`, `fv-readout__label--untracked`, 1.23): da "Forudindstilling", it "Media
+  giornaliera", never painted past its box.
+- **Words between two arrows** take the longest form whose every word holds the room the arrows leave: the date
+  picker's month long, short, then in figures ("Sep 2026" at 211); the energy period's span, and its Compare beside the
+  switch, at 13 where a word would not hold at 15 (fr "Aujourd'hui", hu "Összehasonlítás", 1.23).
+- **The cover ruler's words** take the column the house's words need, 56 at the least (de "Geschlossen", bg
+  "Затворено"); the side column beside them counts it. **A dial's scale ends** are as wide as their words, held by the
+  edge under the arc's end, so a long one ("100,000 lx") grows away from the dial's middle (1.23).
+- **The panel's option tiles** stand in fewer columns where a value's word would not hold its tile (de
+  "Sonnenuntergang", bg "Заоблени" on a phone): a value wraps at its words, never inside one (1.23).
+- **An appliance's figure** steps from 32 to 28, on its 40 line, where it would not hold the card's column (zh-Hans
+  "0 小时 42 分" at 211, 1.23).
 - **A pair of equal buttons** stands one over the other, each as wide as its bar, where the longer label would not hold
-  its half (the panel's apply pair in French on a phone).
+  its half (the panel's apply pair in French on a phone; measured by `pairStacks` in the Charts tab's set editor and
+  Customise's sheets, 1.23: de "Satz speichern", bg "Преместване тук").
 - **A speed ruler's words** are the ones that stand 12 apart, measured: all, else the ends and the middle, else the ends
   (`axisHolds`, as the energy axis); no width threshold.
 - **A room's head line** is fitted in the head's own class and room (the circle, the gap, the chevron's 44); a scene

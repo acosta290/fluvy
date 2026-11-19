@@ -369,6 +369,11 @@ export class FluvyEnergyPeriodCard extends Card<EnergyPeriodCardConfig> {
         flex: 1 1 auto;
         min-width: 0;
       }
+      /* a word of the row's that its room would not hold at 15 (renderSheet) */
+      .ep-turn__span.ep-small,
+      .ep-compare-row.ep-small {
+        font-size: 13px;
+      }
       .ep-close {
         display: grid;
         margin-top: 24px;
@@ -988,6 +993,15 @@ export class FluvyEnergyPeriodCard extends Card<EnergyPeriodCardConfig> {
       active: this.custom_ ? preset === 'custom' : preset === (chosen ?? 'custom'),
       tone,
     }));
+    // a row's words at 15, at 13 where one of them would not hold its room (fr's "Aujourd'hui" between the arrows at
+    // 211, hu's "Összehasonlítás" beside the switch): a word is never cut, nor painted past its row
+    const small = (words: string, cls: string, room: number): boolean =>
+      words.split(' ').some((word) => this.ruler.width(cls, word) > room);
+    const said = rangeWords(hass, span, now);
+    const compare = p(hass, 'compare_help');
+    // between the arrows: two 44 rounds and the 8 beside each; beside the switch: its 56 and the 12 before it
+    const turnSmall = small(said, 'ep-turn__span', this.sheetRoom - 2 * (44 + 8));
+    const compareSmall = small(compare, 'ep-compare-row', this.sheetRoom - 56 - 12);
     return html`<div class="fv-sheet__head">
         <div class="fv-card__titles">
           <h2 class="fv-sheet__title" id="ep-title">${p(hass, 'name')}</h2>
@@ -1002,7 +1016,7 @@ export class FluvyEnergyPeriodCard extends Card<EnergyPeriodCardConfig> {
         >
           ${glyph('chevronLeft')}
         </button>
-        <p class="ep-turn__span" aria-live="polite">${rangeWords(hass, span, now)}</p>
+        <p class="ep-turn__span ${turnSmall ? 'ep-small' : ''}" aria-live="polite">${said}</p>
         <button
           class="fv-round fv-round--quiet"
           aria-label=${p(hass, 'next')}
@@ -1043,12 +1057,12 @@ export class FluvyEnergyPeriodCard extends Card<EnergyPeriodCardConfig> {
       }
       ${
         this.config?.show_compare === true
-          ? html`<div class="ep-compare-row">
-              <span aria-hidden="true">${p(hass, 'compare_help')}</span>${toggle(
+          ? html`<div class="ep-compare-row ${compareSmall ? 'ep-small' : ''}">
+              <span aria-hidden="true">${compare}</span>${toggle(
                 this.comparing(),
                 tone,
                 (on) => this.setCompare(on),
-                p(hass, 'compare_help'),
+                compare,
               )}
             </div>`
           : nothing

@@ -57,9 +57,11 @@ import {
   head,
   icon,
   listRow,
+  optionColumns,
   options,
   round,
   rulerLabels,
+  type OptionItem,
   type RulerChangeDetail,
   stepper,
 } from '@fluvy/ui';
@@ -96,7 +98,7 @@ import {
 } from '@fluvy/tokens/runtime';
 import { html, nothing, svg, type TemplateResult } from 'lit';
 import { repeat } from 'lit/directives/repeat.js';
-import { defaultColumns, fittedColumns, inForce } from '../shared/chips.js';
+import { defaultColumns, fittedColumns, inForce, type ChipFit } from '../shared/chips.js';
 import { STEPPER } from '../shared/value-row.js';
 import { capsOf } from '../strategy/caps.js';
 import {
@@ -164,6 +166,52 @@ export function choice(
         )
       : columns,
   );
+}
+
+/**
+ * Whether a pair of equal buttons stands one over the other, each the row's width: where the longer of its words, with
+ * a button's 16 on each side, would not hold its half (German "Satz speichern" on a phone); side by side before the
+ * row is laid out.
+ */
+export const pairStacks = (
+  fit: ChipFit | undefined,
+  gap: number,
+  words: readonly string[],
+): boolean =>
+  fit !== undefined &&
+  words.some((text) => fit.ruler.width('fv-btn', text) + 32 > (fit.width - gap) / 2);
+
+/** An option tile's 12 on each side of its words. */
+const TILE_SIDES = 24;
+
+/**
+ * Option tiles laid out by measure: as many a row as `options()` gives them (up to three, four in a 2 × 2) while every
+ * value's longest word holds a tile's line, else fewer, down to one a row. A value wraps between its words, never
+ * inside one, so a word wider than its tile would be painted past it (German "Sonnenuntergang", Bulgarian
+ * "Заоблени" in a phone's column).
+ */
+function optionTiles(
+  ctx: PanelContext,
+  items: readonly OptionItem[],
+  onSelect: ((key: string) => void) | null,
+): TemplateResult {
+  let columns = optionColumns(items.length);
+  if (ctx.fit) {
+    const { ruler, width } = ctx.fit;
+    const widest = Math.max(
+      0,
+      ...items.flatMap((item) =>
+        (item.value ?? '')
+          .split(' ')
+          .map((word) =>
+            ruler.width(`fv-option__value${item.word ? ' fv-option__value--word' : ''}`, word),
+          ),
+      ),
+    );
+    while (columns > 1 && (width - gap(ctx) * (columns - 1)) / columns - TILE_SIDES < widest)
+      columns -= 1;
+  }
+  return options(items, onSelect, gap(ctx), undefined, columns);
 }
 
 /* ---------- appearance ---------- */
@@ -605,7 +653,8 @@ function tabsCard(ctx: PanelContext): TemplateResult {
   return html`<section class="fv-card pn-card">
     ${head({ icon: TAB_GLYPH[tabs.style], title: ctx.t('tabs.title'), sub: ctx.t('tabs.sub') })}
     ${tabsMock(ctx, tabs, chromeOf(ctx.draft))}
-    ${options(
+    ${optionTiles(
+      ctx,
       TAB_STYLES.map((style) => ({
         key: style,
         glyph: TAB_GLYPH[style],
@@ -614,7 +663,6 @@ function tabsCard(ctx: PanelContext): TemplateResult {
         active: tabs.style === style,
       })),
       (key) => set({ style: key as TabStyle }),
-      gap(ctx),
     )}
     ${
       // what each tab shows is Fluvy's to draw: its own styles only
@@ -954,7 +1002,8 @@ function backgroundChoice(
               })}
             </div>`
         : nothing;
-  return html`${options(
+  return html`${optionTiles(
+    ctx,
     BACKGROUND_TYPES.map((type) => ({
       key: type,
       glyph: BACKGROUND_GLYPH[type],
@@ -963,7 +1012,6 @@ function backgroundChoice(
       active: background.type === type,
     })),
     edit && ((key) => edit({ type: key as BackgroundType })),
-    gap(ctx),
   )}
   ${rows}`;
 }
@@ -1131,7 +1179,8 @@ function slidersCard(ctx: PanelContext): TemplateResult {
     ctx.editHouse({ sliders: { ...sliders, ...patch } });
   return html`<section class="fv-card pn-card">
     ${head({ icon: SLIDER_GLYPH[sliders.style], title: ctx.t('sliders.title'), sub: ctx.t(admin ? 'cards.sub' : 'scope.admin_only') })}
-    ${options(
+    ${optionTiles(
+      ctx,
       SLIDER_STYLES.map((style) => ({
         key: style,
         glyph: SLIDER_GLYPH[style],
@@ -1140,7 +1189,6 @@ function slidersCard(ctx: PanelContext): TemplateResult {
         active: sliders.style === style,
       })),
       admin ? (key) => set({ style: key as SliderStyle }) : null,
-      gap(ctx),
     )}
     <p class="pn-hint pn-hint--after">${ctx.t('sliders.fill_note')}</p>
     ${
@@ -1379,7 +1427,8 @@ export function appearance(ctx: PanelContext, share: ShareActions): TemplateResu
     ${isCustom(palette) ? shareCard(palette, ctx, share) : nothing}
     <section class="fv-card pn-card">
       ${head({ icon: SHAPE_GLYPH[ctx.draft.shape], title: ctx.t('shape.title'), sub: ctx.t('shape.sub') })}
-      ${options(
+      ${optionTiles(
+        ctx,
         SHAPE_NAMES.map((shape) => ({
           key: shape,
           glyph: SHAPE_GLYPH[shape],
@@ -1388,12 +1437,12 @@ export function appearance(ctx: PanelContext, share: ShareActions): TemplateResu
           active: ctx.draft.shape === shape,
         })),
         (key) => ctx.setDraft({ shape: key as ShapeName }),
-        gap(ctx),
       )}
     </section>
     <section class="fv-card pn-card">
       ${head({ icon: PILL_GLYPH[ctx.draft.pills], title: ctx.t('pills.title'), sub: ctx.t('pills.sub') })}
-      ${options(
+      ${optionTiles(
+        ctx,
         PILL_NAMES.map((pills) => ({
           key: pills,
           glyph: PILL_GLYPH[pills],
@@ -1402,7 +1451,6 @@ export function appearance(ctx: PanelContext, share: ShareActions): TemplateResu
           active: ctx.draft.pills === pills,
         })),
         (key) => ctx.setDraft({ pills: key as PillName }),
-        gap(ctx),
       )}
     </section>
     ${tabsCard(ctx)} ${cornerCard(ctx)} ${separatorsCard(ctx)} ${backgroundCard(ctx)}
@@ -1508,7 +1556,8 @@ export function scope(ctx: PanelContext, theme: ThemeInUse | null): TemplateResu
   };
   return html`<section class="fv-card pn-card">
       ${head({ icon: 'globe', title: ctx.t('scope.title'), ...(admin ? {} : { sub: ctx.t('scope.admin_only') }) })}
-      ${options(
+      ${optionTiles(
+        ctx,
         [
           {
             key: 'dashboards',
@@ -1526,7 +1575,6 @@ export function scope(ctx: PanelContext, theme: ThemeInUse | null): TemplateResu
           },
         ],
         pick,
-        gap(ctx),
       )}
       ${
         // the frame, the menus' icons, the Activity and History pages and the details dialog's history belong to the
@@ -2334,7 +2382,8 @@ export function wall(ctx: PanelContext): TemplateResult {
     </section>
     <section class="fv-card pn-card">
       ${head({ icon: 'sun', title: ctx.t('wall.day_night'), ...(admin ? {} : { sub: ctx.t('scope.admin_only') }) })}
-      ${options(
+      ${optionTiles(
+        ctx,
         (['dark', 'follow', 'sun', 'hours'] as const).map((theme) => ({
           key: theme,
           glyph:
@@ -2350,7 +2399,6 @@ export function wall(ctx: PanelContext): TemplateResult {
           active: settings.theme === theme,
         })),
         admin ? (key: string) => edit({ theme: key as WallSettings['theme'] }) : null,
-        gap(ctx),
       )}
       ${
         settings.theme === 'hours'

@@ -255,7 +255,9 @@ export function head(o: HeadOptions): TemplateResult {
   </div>`;
 }
 
-export const label = (text: string): TemplateResult => html`<p class="fv-label">${text}</p>`;
+/** A section's label; `untracked` where its words are wider than its whole column (`fv-label--untracked`). */
+export const label = (text: string, untracked = false): TemplateResult =>
+  html`<p class="fv-label${untracked ? ' fv-label--untracked' : ''}">${text}</p>`;
 
 /** Badges size to their text: 14 px sides, rounded up to the 4 grid by `fitPills()` after render. */
 export const badge = (text: string, tone: Tone = 'accent'): TemplateResult =>
@@ -280,6 +282,8 @@ export interface ReadoutOptions {
   readonly tight?: boolean | undefined;
   /** Its figure's `data-ink`: said in the colour of the band its reading is in (1.22, #204), its unit as it is. */
   readonly ink?: string | undefined;
+  /** Its label's words are wider than its whole column, one column left (`fv-readout__label--untracked`). */
+  readonly untracked?: boolean | undefined;
 }
 
 /** A unit written in kana or kanji (時間, 分, 本): Japanese attaches a counter to its figure, where English keeps a space. */
@@ -321,9 +325,10 @@ const said = (label: string | TemplateResult): TemplateResult =>
   html`<span class="fv-sr" data-measure="skip">${label}</span>`;
 
 export function readout(o: ReadoutOptions): TemplateResult {
+  const words = `fv-readout__label${o.untracked ? ' fv-readout__label--untracked' : ''}`;
   const label =
     o.glyph === undefined
-      ? html`<p class="fv-readout__label" data-name=${o.name ? '' : nothing}>${o.label}</p>`
+      ? html`<p class=${words} data-name=${o.name ? '' : nothing}>${o.label}</p>`
       : o.glyph === null
         ? said(o.label)
         : html`<p class="fv-readout__label fv-readout__label--icon">
@@ -702,7 +707,7 @@ export function button(
   disabled = false,
 ): TemplateResult {
   return html`<button
-    class="fv-btn fv-btn--${kind}"
+    class="fv-btn fv-btn--${kind}${fill ? ' fv-btn--wraps' : ''}"
     data-control
     data-target
     style=${fill ? 'width:100%' : nothing}

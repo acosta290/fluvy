@@ -1290,13 +1290,13 @@ export class FluvyScheduleSheet extends LitElement {
           )
         : round('close', 'quiet', localize(hass, 'keypad.close'), () => this.close());
     // a title wraps at its words; a word wider than its line steps the title down to a card's 16 first; where not even
-    // that holds, its short form, at the size it holds at (it "Programmazione" → "Programma" beside the switch at 211)
+    // that holds, its short form, at the size it holds at (it "Programmazione" → "Programma" beside the switch at 211,
+    // and a new one's "Nuova programmazione" beside the close)
     const room = this.fit.width - (existing && request.entity && request.toggle ? 56 : 44) - 12;
     const holds = (text: string, cls: string): boolean =>
       text.split(' ').every((word) => this.ruler.width(cls, word) <= room);
     const full = s(hass, existing ? 'schedule' : 'new');
-    const title =
-      existing && !holds(full, 'fv-sheet__title ss-title--s') ? s(hass, 'schedule_short') : full;
+    const title = holds(full, 'fv-sheet__title ss-title--s') ? full : s(hass, 'schedule_short');
     const step = !holds(title, 'fv-sheet__title');
     return html`<div class="fv-sheet__head">
         <div class="fv-card__titles">

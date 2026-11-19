@@ -127,7 +127,7 @@ export class FluvyKeypad extends LitElement {
         grid-template-columns: repeat(2, minmax(0, var(--kp-pair, 124px)));
       }
       /* a pair whose words would not stand side by side in the sheet ("Abwesend aktivieren") stands one above the
-         other, still one width */
+         other, still one width; words the sheet's whole width cannot hold go onto two lines (fv-btn--wraps) */
       .dv-actions--stacked {
         grid-template-columns: minmax(0, var(--kp-pair, 124px));
       }
@@ -135,7 +135,6 @@ export class FluvyKeypad extends LitElement {
         width: 100%;
         min-width: 0;
         padding-inline: 8px;
-        white-space: nowrap;
       }
       .is-busy .dv-keys,
       .is-busy .dv-code {
@@ -473,7 +472,7 @@ export class FluvyKeypad extends LitElement {
         ${
           secondary
             ? html`<button
-                class="fv-btn fv-btn--quiet"
+                class="fv-btn fv-btn--quiet fv-btn--wraps"
                 data-control
                 data-target
                 ?disabled=${!this.canRun(request, secondary)}
@@ -482,7 +481,7 @@ export class FluvyKeypad extends LitElement {
                 ${secondary.label}
               </button>`
             : html`<button
-                class="fv-btn fv-btn--quiet"
+                class="fv-btn fv-btn--quiet fv-btn--wraps"
                 data-control
                 data-target
                 @click=${() => this.close()}
@@ -491,7 +490,7 @@ export class FluvyKeypad extends LitElement {
               </button>`
         }
         <button
-          class="fv-btn fv-btn--accent"
+          class="fv-btn fv-btn--accent fv-btn--wraps"
           data-control
           data-target
           ?disabled=${!this.canRun(request, request.primary)}

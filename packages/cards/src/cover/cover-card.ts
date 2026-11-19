@@ -21,6 +21,7 @@ import {
   rulerLabels,
   sheetStyles,
   stepper,
+  textWidth,
   unitSpan,
   type ActionItem,
   type ChipItem,
@@ -120,9 +121,13 @@ export interface CoverCardConfig extends FluvyCardConfig, StateTintConfig {
   closed_label?: string;
 }
 
-/** The ruler's band, and its words (56) with the 8 before the band: what the side column beside them does not get. */
+/**
+ * The ruler's band, and its words' column with the 8 before the band (`wordsColumn`): what the side column beside them
+ * does not get. The words' column is 56 at the least, in the words' face (`.dv-vlabels span`).
+ */
 const RULER_BAND = 44;
-const RULER_WORDS = 64;
+const WORDS = 56;
+const WORDS_FACE = { size: 12, weight: 500 } as const;
 /** The side column's room, best first: 24 from the ruler and its words, 16 from them, 16 from the band alone. */
 const SIDE_ROOM = [
   { gap: 24, words: true },
@@ -456,6 +461,17 @@ export class FluvyCoverCard extends Card<CoverCardConfig> {
   }
 
   /**
+   * The ruler's words' column: 56, or as wide as the house's words for its ends need, on the 4 grid (German
+   * "Geschlossen", Bulgarian "Затворено": a word of the house's is never cut); a person's own end in an ellipsis at
+   * the column's width, as a name does.
+   */
+  private wordsColumn(): number {
+    const { open, closed, own } = this.ends();
+    const house = [own.open ? '' : open, own.closed ? '' : closed];
+    return Math.max(WORDS, ...house.map((word) => Math.ceil(textWidth(word, WORDS_FACE) / 4) * 4));
+  }
+
+  /**
    * "Morning · 60 %", "Night · closed", "Shade · tilt 30 %", or just "60 %" when the favourite has no name; `bare`,
    * an angle's figure without the tilt's word ("Shade · 30 %"), what its chip says where its words hold no row.
    */
@@ -532,8 +548,9 @@ export class FluvyCoverCard extends Card<CoverCardConfig> {
       value: formatNumber(this.hass, 100, { digits: 0 }),
       unit: '%',
     });
+    const words = this.wordsColumn() + 8;
     const column = (room: SideRoom): number =>
-      this.contentWidth - RULER_BAND - room.gap - (room.words ? RULER_WORDS : 0);
+      this.contentWidth - RULER_BAND - room.gap - (room.words ? words : 0);
     const roomFor = (need: number): SideRoom | undefined =>
       SIDE_ROOM.find((room) => column(room) >= need);
     // the position's readout alone in the column, the tilt under the commands
@@ -961,7 +978,7 @@ export class FluvyCoverCard extends Card<CoverCardConfig> {
               class="dv-cover ${side.tilt === 'stack' || side.tilt === 'halves' ? 'dv-cover--tight' : ''} ${side.gap === 16 ? 'dv-cover--narrow' : ''} ${side.words ? '' : 'dv-cover--bare'} ${slatsAt ? 'cv-cover--slats' : ''}"
             >
               <div class="dv-cover__ruler">
-                <div class="dv-vlabels" style="height:${length}px">
+                <div class="dv-vlabels" style="height:${length}px;width:${this.wordsColumn()}px">
                   <span class=${ends.own.open && !fine ? 'is-own' : nothing} style="top:0"
                     >${fine ? this.percent(figureOf(fine.max)) : ends.open}</span
                   ><span

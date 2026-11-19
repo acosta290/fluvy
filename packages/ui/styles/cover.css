@@ -11,6 +11,7 @@
   gap: 8px;
 }
 
+/* the ruler's words: a column 56 wide, or as wide as the house's words need (the card sets it) */
 .dv-vlabels {
   position: relative;
   width: 56px;
@@ -19,7 +20,7 @@
 .dv-vlabels span {
   position: absolute;
   right: 0;
-  width: 56px;
+  width: 100%;
   margin-top: -8px;
   text-align: right;
   font-size: 12px;
@@ -46,8 +47,8 @@
   margin-bottom: 0;
 }
 
-/* the position ruler's ends in the person's own words (`open_label`, `closed_label`, #203): their column's 56, a word
-   longer than that ending in an ellipsis, as a name does */
+/* the position ruler's ends in the person's own words (`open_label`, `closed_label`, #203): their column's width, a
+   word longer than that ending in an ellipsis, as a name does */
 .dv-vlabels span.is-own {
   overflow: hidden;
   white-space: nowrap;

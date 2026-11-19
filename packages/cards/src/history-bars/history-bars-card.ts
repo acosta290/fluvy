@@ -475,7 +475,7 @@ export class FluvyHistoryBarsCard extends Card<HistoryBarsCardConfig> {
         position: relative;
         min-width: 0;
       }
-      .hb-readout .fv-readout__label,
+      .hb-readout .fv-readout__label:not(.fv-readout__label--untracked),
       .hb-readout .fv-readout__value {
         white-space: nowrap;
       }
@@ -492,7 +492,7 @@ export class FluvyHistoryBarsCard extends Card<HistoryBarsCardConfig> {
         column-gap: 16px;
         margin-top: 16px;
       }
-      .hb-cols .fv-readout__label {
+      .hb-cols .fv-readout__label:not(.fv-readout__label--untracked) {
         white-space: nowrap;
       }
       .hb-cols--odd > :last-child {
@@ -1635,6 +1635,10 @@ export class FluvyHistoryBarsCard extends Card<HistoryBarsCardConfig> {
     const columns = line ? resting.length : statsColumns(this.ruler, width, resting);
     // folded into columns, the readouts take the size the widest figure fits at (the sensor card's rule)
     const size = line ? 's' : statsSize(this.ruler, width, resting, columns);
+    // in one column, a label wider than the card's whole column ("Media giornaliera" at 152) is untracked (`readout`)
+    const untracked =
+      columns === 1 &&
+      resting.some(({ label }) => this.ruler.width('fv-readout__label', label) > width);
     const cells = shown.map((text, i) => {
       // a readout answers only what it says (#179): nothing by default
       const { onTap, onHold } = this.pressOf(resting[i]?.item, resting[i]?.entity, null, null);
@@ -1651,7 +1655,7 @@ export class FluvyHistoryBarsCard extends Card<HistoryBarsCardConfig> {
         @contextmenu=${onHold ? preventMenu : nothing}
         @keydown=${activateKey(onTap, onHold)}
       >
-        ${readout({ label: text.label, value: text.value, unit: text.unit ?? '', size })}
+        ${readout({ label: text.label, value: text.value, unit: text.unit ?? '', size, untracked })}
       </div>`;
     });
     if (line)

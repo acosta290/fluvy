@@ -387,6 +387,17 @@
   color: var(--fluvy-text-secondary);
 }
 
+/* an uppercase label wider than its whole column, where nothing else can give way (one column left, a 152 card),
+   drops its tracking (Danish "Forudindstilling"), and where that is not enough takes a second line at its words
+   (Italian "Media giornaliera"): never cut, never painted past its box */
+.fv-label--untracked,
+.fv-readout__label--untracked {
+  height: auto;
+  letter-spacing: 0;
+  white-space: normal;
+  text-wrap: balance;
+}
+
 /* a label as an icon where its words give way (a room's readouts on one row): 16 in the label's own line and ink,
    over its figure as the words were (centred where the row centres its readouts), its words read out and not shown */
 .fv-readout__label--icon {

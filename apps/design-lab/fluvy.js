@@ -854,7 +854,7 @@
       (sub ? `<p class="fv-dial__sub">${sub}</p>` : '') +
       `</div>`;
     const labels =
-      `<span class="fv-dial__label fv-dial__label--min" style="top:${labelTop}px;left:${(cx - (R + tick) * Math.SQRT1_2 - 8).toFixed(0)}px">${minLabel}</span>` +
+      `<span class="fv-dial__label fv-dial__label--min" style="top:${labelTop}px;right:${(w - (cx - (R + tick) * Math.SQRT1_2 + 32)).toFixed(0)}px">${minLabel}</span>` +
       `<span class="fv-dial__label fv-dial__label--max" style="top:${labelTop}px;left:${(cx + (R + tick) * Math.SQRT1_2 - 32).toFixed(0)}px">${maxLabel}</span>`;
     const step = stepper
       ? `<div class="fv-stepper fv-dial__stepper" data-control style="left:${cx - 48}px;top:${stepTop}px">${stepperInner(disabled)}</div>`

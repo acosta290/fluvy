@@ -72,6 +72,15 @@
   padding-inline: 0;
 }
 
+/* a button its row sizes (the row's whole width, an equal cell): words one line cannot hold go onto a second,
+   balanced, inside its height (two 20 lines in its 44 or 48), never past its sides */
+.fv-btn--wraps {
+  white-space: normal;
+  text-wrap: balance;
+  line-height: 20px;
+  text-align: center;
+}
+
 .fv-btn--quiet {
   background: var(--fluvy-inset, var(--fluvy-page));
   color: var(--fluvy-text);

@@ -1058,6 +1058,11 @@ export class FluvyThermostatCard extends Card<ThermostatCardConfig> {
     </div>`;
   }
 
+  /** A row's label (Mode, Preset, Fan), untracked where it is wider than the card's column ("Forudindstilling"). */
+  private rowLabel(text: string): TemplateResult {
+    return label(text, this.head.ruler.width('fv-label', text) > this.contentWidth);
+  }
+
   /** The modes the config asks for (`modesDrawn`); none where it hides the row. */
   private shownModes(m: ThermostatModel): readonly OptionItem[] {
     return this.config?.show_modes === false ? [] : modesDrawn(m, this.config?.modes);
@@ -1232,10 +1237,10 @@ export class FluvyThermostatCard extends Card<ThermostatCardConfig> {
             </div>`
       }
       ${this.renderReadings(name)}
-      ${modes.length ? html`${label(this.t('climate.mode'))}${this.renderModes(view, m, modes)}` : nothing}
+      ${modes.length ? html`${this.rowLabel(this.t('climate.mode'))}${this.renderModes(view, m, modes)}` : nothing}
       ${
         m.presets.length && !essentials && this.config?.show_presets !== false
-          ? html`${label(this.t('climate.preset'))}${chipRow(
+          ? html`${this.rowLabel(this.t('climate.preset'))}${chipRow(
               inForce(m.presets.map(preset), unusable ? undefined : m.preset, preset),
               (key) => this.call('climate', 'set_preset_mode', { preset_mode: key }),
               this.config?.preset_style,
@@ -1245,7 +1250,7 @@ export class FluvyThermostatCard extends Card<ThermostatCardConfig> {
       }
       ${
         m.fans.length && !essentials && this.config?.show_fan !== false
-          ? html`${label(this.t('climate.fan'))}${chipRow(
+          ? html`${this.rowLabel(this.t('climate.fan'))}${chipRow(
               inForce(m.fans.map(fan), unusable ? undefined : m.fan, fan),
               (key) => this.call('climate', 'set_fan_mode', { fan_mode: key }),
               this.config?.fan_style,

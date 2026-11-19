@@ -32,7 +32,7 @@ import {
 } from '../chart/engine/preview.js';
 import { FINE_ROWS, TIME_ROWS, type FineRow } from './chart-words.js';
 import type { PanelContext, StringKey } from './model.js';
-import { choice, gap, hexField, inkOn, swatches } from './sections.js';
+import { choice, gap, hexField, inkOn, pairStacks, swatches } from './sections.js';
 import { chosenSet, roomForSet, SET_NAME_MAX, type SeriesDraft } from './series.js';
 
 /*
@@ -535,7 +535,10 @@ function setEditor(ctx: PanelContext, draft: SeriesDraft, actions: ChartActions)
       }),
     )}
     ${room ? nothing : html`<p class="pn-hint pn-hint--after">${ctx.t('charts.full')}</p>`}
-    <div class="pn-pair" data-fill-row>
+    <div
+      class="pn-pair ${pairStacks(ctx.fit, gap(ctx), [ctx.t('charts.cancel'), ctx.t('charts.save')]) ? 'pn-pair--stacked' : ''}"
+      data-fill-row
+    >
       <button
         class="fv-btn fv-btn--quiet"
         data-target

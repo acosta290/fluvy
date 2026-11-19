@@ -1,6 +1,6 @@
 import { css, html, LitElement, nothing, type PropertyValues, type TemplateResult } from 'lit';
 import { clock12, dateFormat, dayPeriods, type HomeAssistant, type KeyOf } from '@fluvy/core';
-import { baseStyles, glyph } from '@fluvy/ui';
+import { baseStyles, glyph, textWidth } from '@fluvy/ui';
 import '@fluvy/ui/time-field';
 import type { TimeFieldDetail } from '@fluvy/ui/time-field';
 import {
@@ -13,6 +13,7 @@ import {
   startOfDay,
 } from './dates.js';
 import { monthGrid } from './days.js';
+import { LaidWidth } from './laid.js';
 import { dayRange, sameRange, shiftRange, type ActivityRange } from './range.js';
 
 /**
@@ -28,6 +29,16 @@ export interface DatesDetail {
 
 /** The end of a day, in minutes: the time fields read it "24:00". */
 const DAY_END = 24 * 60;
+
+/** The month's name over its grid, longest first: the first whose every word holds the room between its arrows. */
+const MONTH_FORMS: readonly Intl.DateTimeFormatOptions[] = [
+  { month: 'long', year: 'numeric' },
+  { month: 'short', year: 'numeric' },
+  { month: 'numeric', year: 'numeric' },
+];
+/** The name's face (`.ad-month__name`), and what its arrows take of the row: a 44 round and the 8 beside it, each. */
+const MONTH_FACE = { size: 15, weight: 600 } as const;
+const ARROWS = 2 * (44 + 8);
 
 /** A moment's time of day, in minutes. */
 const minutesOf = (ms: number): number => {
@@ -186,6 +197,12 @@ export class FluvyDates extends LitElement {
     this.toTime = DAY_END;
     this.turn = 0;
     this.focusDay = new Date();
+    // the month's name is chosen for the width the picker is laid out at (`shownMonth`)
+    new LaidWidth(
+      this,
+      () => this,
+      () => this.clientWidth,
+    );
   }
 
   protected override willUpdate(changed: PropertyValues<this>): void {
@@ -285,6 +302,22 @@ export class FluvyDates extends LitElement {
     return dateFormat(this.language, options).format(date);
   }
 
+  /**
+   * The month's name as it stands between its arrows: the first of `MONTH_FORMS` whose every word holds the room they
+   * leave, its lines breaking between words, never inside one ("September" is wider than the 75 a 211 card leaves it:
+   * "Sep 2026" there), the long one before the picker is laid out.
+   */
+  private shownMonth(): string {
+    const room = this.clientWidth - ARROWS;
+    let name = '';
+    for (const form of MONTH_FORMS) {
+      name = this.format(form, this.month);
+      if (!this.clientWidth || name.split(' ').every((word) => textWidth(word, MONTH_FACE) <= room))
+        break;
+    }
+    return name;
+  }
+
   private renderPresets(): TemplateResult {
     const today = dayRange(new Date(this.now));
     const week = new Date(today.start);
@@ -331,7 +364,7 @@ export class FluvyDates extends LitElement {
         >
           ${glyph('chevronLeft')}
         </button>
-        <p class="ad-month__name">${monthName}</p>
+        <p class="ad-month__name">${this.shownMonth()}</p>
         <button
           class="fv-round fv-round--quiet"
           aria-label=${this.t('month_next')}
