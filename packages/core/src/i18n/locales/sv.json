@@ -2106,6 +2106,7 @@
     "below": "Under värdet",
     "below_helper": "Av: från värdet och uppåt",
     "past_threshold": "Passerat tröskelvärde",
+    "show_mixed": "Visa när bara några är tända",
     "focus": "Stort värde",
     "card_blur": "Gör det som syns igenom oskarpt",
     "card_blur_helper": "Orört: som alla kort, från Fluvys inställningar; ingen oskärpa vid 0 %"

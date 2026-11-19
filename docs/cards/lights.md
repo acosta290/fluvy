@@ -85,6 +85,7 @@ lights:
 | `show_brightness` | `false` | Shows one brightness ruler for the whole room. |
 | `show_count` | `true` | Says on the head’s line how many lights are on. |
 | `show_level` | `true` | Shows the lights’ brightness: the average, and a ring round each round. |
+| `show_mixed` | `false` | Gives the room’s switch a look of its own while only some lights are on: its thumb in the middle. |
 | `show_color` | `false` | Shows a colour round in the head for the room’s colours. |
 | `color_action` | `sheet` | What a tap on the colour round opens: Fluvy’s sheet for the room, or Home Assistant’s details. `sheet` (Fluvy’s colour sheet) · `more-info` (Home Assistant’s details). |
 | `color_control` | `ruler` | How the colour sheet picks a hue: a ruler, or a wheel. `ruler` · `wheel`. |

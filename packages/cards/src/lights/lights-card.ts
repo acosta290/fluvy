@@ -106,6 +106,11 @@ export interface LightsCardConfig extends FluvyCardConfig, EmptyList {
   show_level?: boolean;
   /** One brightness ruler for the room, under the head (chips and tiles). */
   show_brightness?: boolean;
+  /**
+   * The room's switch (chips and tiles) says when only some lights are on (1.23, #219): its thumb in the middle, the
+   * tone's fill under it; off by default, the switch on while any is.
+   */
+  show_mixed?: boolean;
   /** A light that is on wears its bulb's own colour when it has one (default); off: the palette's light. */
   light_colors?: boolean;
   /** A lit white in its bulb's colour: by its temperature (the default, 1.10), or as the palette's light (`palette`). */
@@ -471,8 +476,10 @@ export class FluvyLightsCard extends FluvyTileCard {
       shorter: this.short(lamps),
       trailing: SWITCH_SLOT + (roundInHead ? ROUND_SLOT : 0),
     });
+    // where asked, a room some of whose lights are on says so: its switch neither on nor off
+    const some = this.room?.show_mixed === true && lamps.some((lamp) => lamp.usable && !lamp.on);
     const roomSwitch = toggle(
-      any,
+      any && some ? 'mixed' : any,
       toneOf(this.config, 'light'),
       () => this.flipRoom(lamps),
       name,

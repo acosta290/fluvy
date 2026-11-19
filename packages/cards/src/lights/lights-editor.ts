@@ -72,6 +72,7 @@ export const keys = configKeys<LightsCardConfig>()([
   'show_count',
   'show_level',
   'show_brightness',
+  'show_mixed',
   'show_color',
   'color_action',
   'color_control',
@@ -140,6 +141,7 @@ export const defaults: EditorDefaults = (config, hass) => ({
   show_count: true,
   show_level: true,
   show_brightness: false,
+  show_mixed: false,
   show_color: false,
   color_action: 'sheet',
   color_control: 'ruler',
@@ -159,6 +161,11 @@ export function getConfigForm(): LovelaceConfigForm {
       showIconField(),
       fieldRow(selectField('variant', LIGHTS_VARIANTS), boolField('show_brightness')),
       fieldRow(boolField('show_count'), boolField('show_level')),
+      // the room's switch says when only some are on: the switch is the head's, which the row has none of
+      onlyWhen(
+        ({ variant }) => variant === 'chips' || variant === 'tiles',
+        boolField('show_mixed'),
+      ),
       // the colour round (#137), where a light of the room takes a colour; while it is on, what it opens — the
       // details only where the card is one light (a group counts as one) — and the sheet's control
       onlyWhen(
@@ -200,6 +207,7 @@ export function getConfigForm(): LovelaceConfigForm {
     ...formLabels({
       show_level: 'lights.editor_show_level',
       show_brightness: 'lights.editor_show_brightness',
+      show_mixed: 'editor.show_mixed',
       show_color: 'editor.color_round',
       color_action: 'editor.color_action',
       color_control: 'editor.color_control',

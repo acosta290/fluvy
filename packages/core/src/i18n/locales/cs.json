@@ -1411,6 +1411,7 @@
     "below": "Pod hodnotou",
     "below_helper": "Vypnuto: od hodnoty výš",
     "past_threshold": "Po překročení prahu",
+    "show_mixed": "Zobrazit, když jsou zapnutá jen některá",
     "focus": "Velká hodnota",
     "card_blur": "Rozostřit to, co prosvítá",
     "card_blur_helper": "Beze změny: podle nastavení Fluvy pro všechny karty; při 0 % bez rozostření"

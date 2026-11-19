@@ -337,6 +337,29 @@ describe('the colour round (#137)', () => {
   });
 });
 
+describe('the room’s switch, where only some lights are on (1.23, #219)', () => {
+  const roomSwitch = (root: ShadowRoot): HTMLElement =>
+    root.querySelector<HTMLElement>('.fv-card__head [role="switch"]')!;
+
+  it('is off by default: the switch is on while any light is, as before', async () => {
+    for (const variant of ['chips', 'tiles']) {
+      const root = await mount({ variant });
+      expect(roomSwitch(root).getAttribute('aria-checked'), variant).toBe('true');
+      expect(roomSwitch(root).classList.contains('is-mixed')).toBe(false);
+    }
+  });
+
+  it('asked, says so: neither on nor off while some are, on while every one is, off while none is', async () => {
+    const root = await mount({ variant: 'chips', show_mixed: true });
+    expect(roomSwitch(root).getAttribute('aria-checked')).toBe('mixed');
+    expect(roomSwitch(root).classList.contains('is-mixed')).toBe(true);
+    const all = await mount({ variant: 'tiles', show_mixed: true, lights: LIGHTS.slice(0, 3) });
+    expect(roomSwitch(all).getAttribute('aria-checked')).toBe('true');
+    const none = await mount({ variant: 'tiles', show_mixed: true, lights: ['light.sconce'] });
+    expect(roomSwitch(none).getAttribute('aria-checked')).toBe('false');
+  });
+});
+
 describe('the room lights card’s editor (#58)', () => {
   const shown = async (config: Record<string, unknown>): Promise<string[]> => {
     // the editor reads the house: which lights take a colour (#137)

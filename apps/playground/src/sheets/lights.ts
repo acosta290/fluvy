@@ -204,6 +204,20 @@ export const sheet: SheetSpec = {
         }),
       ],
     },
+    // #219: asked, the room's switch says when only some of its lights are on, its thumb in the middle; every one on,
+    // it is on, as it always was
+    {
+      title: 'Some on · the room’s switch (#219)',
+      cards: [
+        lights({ name: 'Living room', variant: 'chips', show_mixed: true, lights: LIVING }),
+        lights({
+          name: 'Bedroom',
+          variant: 'chips',
+          show_mixed: true,
+          lights: ['light.lt_ceiling', 'light.lt_floor'],
+        }),
+      ],
+    },
     {
       title: 'Tiles · one brightness',
       cards: [

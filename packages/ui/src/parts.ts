@@ -340,10 +340,12 @@ export function readout(o: ReadoutOptions): TemplateResult {
 
 /**
  * 48×28 switch inside a 56×44 hit area. `disabled`: it cannot be moved here — out of reach (`true`, drawn disabled, as a
- * disabled stepper or round is), or shown to someone who may only look (`'readonly'`, at full strength).
+ * disabled stepper or round is), or shown to someone who may only look (`'readonly'`, at full strength). `mixed` (1.23,
+ * #219): a group some of which is on, its thumb in the middle (`aria-checked="mixed"`); a tap turns it off, as a room's
+ * switch turns off what is on.
  */
 export function toggle(
-  on: boolean,
+  on: boolean | 'mixed',
   tone: Tone,
   onToggle: (next: boolean) => void,
   ariaLabel = '',
@@ -351,7 +353,7 @@ export function toggle(
 ): TemplateResult {
   const flip = (event: Event): void => {
     event.stopPropagation();
-    if (!disabled) onToggle(!on);
+    if (!disabled) onToggle(on === false);
   };
   const key = (event: KeyboardEvent): void => {
     if (event.key === ' ' || event.key === 'Enter') {
@@ -362,10 +364,10 @@ export function toggle(
   return html`<span class="fv-hit ${disabled ? 'is-fixed' : ''}" data-target @click=${flip}
     ><span
       data-control
-      class="fv-switch fv-switch--${tone} ${on ? 'is-on' : ''}"
+      class="fv-switch fv-switch--${tone} ${on === 'mixed' ? 'is-mixed' : on ? 'is-on' : ''}"
       role="switch"
       tabindex=${disabled ? -1 : 0}
-      aria-checked=${on ? 'true' : 'false'}
+      aria-checked=${String(on)}
       aria-disabled=${disabled === true ? 'true' : 'false'}
       aria-readonly=${disabled === 'readonly' ? 'true' : nothing}
       aria-label=${ariaLabel || nothing}

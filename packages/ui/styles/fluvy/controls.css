@@ -782,13 +782,26 @@
   box-shadow: none;
 }
 
+/* some of a group on (1.23, #219): the tone's fill in its hairline, neither the off track nor the lit one, its thumb
+   the card's colour in the middle */
+.fv-switch.is-mixed {
+  background: var(--tone-fill, var(--fluvy-accent-fill));
+  box-shadow: inset 0 0 0 1px var(--tone-border, var(--fluvy-accent-fill-border));
+}
+
 /* dark: the off track sits a clear step above the card and the thumb is the light element (on: dark thumb on the tone track) */
-[data-mode='dark'] .fv-switch:not(.is-on) {
+[data-mode='dark'] .fv-switch:not(.is-on, .is-mixed) {
   background: var(--fluvy-border-strong);
   box-shadow: none;
 }
 
-[data-mode='dark'] .fv-switch:not(.is-on) .fv-switch__thumb {
+/* …and dark, its thumb the tone's ink, the light element on the fill */
+[data-mode='dark'] .fv-switch.is-mixed .fv-switch__thumb {
+  background: var(--tone-ink, var(--fluvy-accent));
+  box-shadow: none;
+}
+
+[data-mode='dark'] .fv-switch:not(.is-on, .is-mixed) .fv-switch__thumb {
   background: var(--fluvy-text-secondary);
   box-shadow: none;
 }

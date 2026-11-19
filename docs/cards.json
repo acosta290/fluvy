@@ -2310,6 +2310,13 @@
           "default": true
         },
         {
+          "key": "show_mixed",
+          "label": "Show when only some are on",
+          "does": "Gives the room’s switch a look of its own while only some lights are on: its thumb in the middle.",
+          "type": "boolean",
+          "default": false
+        },
+        {
           "key": "show_color",
           "label": "Colour round for the room",
           "does": "Shows a colour round in the head for the room’s colours.",

@@ -665,6 +665,7 @@
     "below": "Sous la valeur",
     "below_helper": "Désactivé, à partir de la valeur et au-dessus",
     "past_threshold": "Au-delà d’un seuil",
+    "show_mixed": "Indiquer quand seules certaines sont allumées",
     "focus": "Grand chiffre",
     "card_blur": "Flouter ce qui transparaît",
     "card_blur_helper": "Inchangé, celui de toutes les cartes dans les réglages de Fluvy ; pas de flou à 0 %"

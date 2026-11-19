@@ -394,8 +394,17 @@
   transform: translateX(16px);
 }
 
+/* some of a group on: the thumb halfway, a step back toward off under the finger */
+.fv-switch.is-mixed .fv-switch__thumb {
+  transform: translateX(10px);
+}
+
+.fv-hit:active .fv-switch.is-mixed .fv-switch__thumb {
+  transform: translateX(8px);
+}
+
 @media (hover: hover) {
-  .fv-hit:hover .fv-switch:not(.is-on) {
+  .fv-hit:hover .fv-switch:not(.is-on, .is-mixed) {
     box-shadow: inset 0 0 0 1px var(--fluvy-text-secondary);
   }
 }

@@ -665,6 +665,7 @@
     "below": "Unter dem Wert",
     "below_helper": "Aus: ab dem Wert aufwärts",
     "past_threshold": "Jenseits eines Schwellenwerts",
+    "show_mixed": "Anzeigen, wenn nur einige an sind",
     "focus": "Großer Wert",
     "card_blur": "Durchscheinendes weichzeichnen",
     "card_blur_helper": "Unverändert: wie in den Fluvy-Einstellungen für alle Karten; bei 0 % keine Unschärfe"

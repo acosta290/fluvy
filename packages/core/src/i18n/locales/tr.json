@@ -665,6 +665,7 @@
     "below": "Değerin altında",
     "below_helper": "Kapalıysa, değerden yukarısı",
     "past_threshold": "Bir eşik geçildiğinde",
+    "show_mixed": "Yalnızca bazıları açıkken göster",
     "focus": "Büyük değer",
     "card_blur": "Arkada görüneni bulanıklaştır",
     "card_blur_helper": "Dokunulmazsa, Fluvy ayarlarındaki tüm kartlarınki; %0’da bulanıklık yok"

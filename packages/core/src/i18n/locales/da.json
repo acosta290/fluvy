@@ -2106,6 +2106,7 @@
     "below": "Under værdien",
     "below_helper": "Fra: fra værdien og op",
     "past_threshold": "Forbi en tærskel",
+    "show_mixed": "Vis, når kun nogle er tændt",
     "focus": "Stort tal",
     "card_blur": "Slør det, der skinner igennem",
     "card_blur_helper": "Uberørt: alle korts, fra Fluvys indstillinger; ingen sløring ved 0 %"

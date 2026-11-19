@@ -665,6 +665,7 @@
     "below": "Abaixo do valor",
     "below_helper": "Desligado, do valor para cima",
     "past_threshold": "Ao passar de um limite",
+    "show_mixed": "Mostrar quando só algumas estão acesas",
     "focus": "Valor em destaque",
     "card_blur": "Desfocar o que aparece por trás",
     "card_blur_helper": "Sem mexer, o de todos os cartões nas configurações do Fluvy; sem desfoque em 0 %"

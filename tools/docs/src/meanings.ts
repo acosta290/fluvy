@@ -492,6 +492,8 @@ export const MEANINGS: Readonly<Record<string, string>> = {
   'lights.show_brightness': 'Shows one brightness ruler for the whole room.',
   'lights.show_color': 'Shows a colour round in the head for the room’s colours.',
   'lights.show_count': 'Says on the head’s line how many lights are on.',
+  'lights.show_mixed':
+    'Gives the room’s switch a look of its own while only some lights are on: its thumb in the middle.',
   'lights.tint': 'When each light’s tile shows its colour.',
   'map.entities': 'The people and trackers the map shows.',
   'media.controls': 'The rounds of the mini layout’s row, in this order.',
