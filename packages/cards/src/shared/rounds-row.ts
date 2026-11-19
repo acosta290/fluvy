@@ -1,8 +1,8 @@
-import { listRow, type IconRef, type Tone } from '@fluvy/ui';
+import { glyph, listRow, type IconRef, type Tone } from '@fluvy/ui';
 import { html, nothing, type TemplateResult } from 'lit';
 import { ROW_NAME_MIN } from '../energy/head.js';
 import { fitLine } from './fit.js';
-import { roundsIn, type RoundSpec, type RoundsHost } from './rounds.js';
+import { roundsHeld, roundsIn, type RoundSpec, type RoundsHost } from './rounds.js';
 
 /*
  * A list row with rounds at its end (1.23): a room's lights and blinds beside its name, a thermostat's own rounds, an
@@ -33,6 +33,10 @@ export interface RoundsRowSpec {
   readonly onHold?: (() => void) | undefined;
   /** What a reader hears for the row where its words leave something out. */
   readonly label?: string | undefined;
+  /** What its rounds read where they are its own (a room's: its lights, its blinds), the list's where it says none. */
+  readonly host?: RoundsHost | undefined;
+  /** It opens a page: a chevron ends it, after its rounds, where its list draws them (`roundsRows`). */
+  readonly opens?: boolean | undefined;
 }
 
 /** A control at a row's end in its value's place: what the card draws, and its width. */
@@ -46,6 +50,8 @@ const CIRCLE = 44 + 12;
 const CIRCLE_COMPACT = 40 + 12;
 /** The gap between the row's words and its value (`.fv-row`'s). */
 const GAP = 12;
+/** A row's chevron: its 44 and the 12 before it, less the 8 its ink stands past the column edge. */
+const ARROW = 48;
 
 /**
  * What a row's words must keep before anything beside them stays: its name, 96 of it (`ROW_NAME_MIN`, all of a
@@ -106,23 +112,30 @@ export const roundsRoom = (
   width - before(row, compact, icon) - valueSlot(host, row.value) - wordsNeed(host, row, compact);
 
 /**
- * A row in `width`, its circle where the list keeps it (`roundsRowsKeepIcon`), what does not hold beside its words
- * giving way in order: its rounds from the end (`roundsIn`: as many as hold, and the states they say in what they
- * leave), then its value, then — the list's — its circle; its line's segments after the first from the end, then.
+ * A row in `width`, its circle where the list keeps it (`roundsRowsKeepIcon`) and its chevron where the list draws
+ * them (`arrow`: an empty one's room where it opens nothing, so the rounds of every row end on one line), what does
+ * not hold beside its words giving way in order: its rounds from the end (`roundsIn`: as many as hold, and the states
+ * they say in what they leave), then its value, then — the list's — its circle; its line's segments after the first
+ * from the end, then.
  */
 export function roundsRow(
   host: RoundsHost,
   width: number,
   row: RoundsRowSpec,
-  { compact = false, icon = true }: { readonly compact?: boolean; readonly icon?: boolean } = {},
+  {
+    compact = false,
+    icon = true,
+    arrow = false,
+  }: { readonly compact?: boolean; readonly icon?: boolean; readonly arrow?: boolean } = {},
 ): TemplateResult {
+  const line = width - (arrow ? ARROW : 0);
   // the rounds and the value are laid out beside the circle whether it stands or not (`before`); the rounds in what
   // the words and the value leave (`roundsRoom`), none there, the value going where the words would not hold
-  const left = roundsRoom(host, width, row, compact, icon);
-  const block = roundsIn(host, row.rounds, left, false);
+  const left = roundsRoom(host, line, row, compact, icon);
+  const block = roundsIn(row.host ?? host, row.rounds, left, false);
   const value = block.taken || left >= 0 ? row.value : undefined;
   const room =
-    width - (icon ? before(row, compact, icon) : 0) - valueSlot(host, value) - block.taken;
+    line - (icon ? before(row, compact, icon) : 0) - valueSlot(host, value) - block.taken;
   const sub =
     row.sub && !compact
       ? fitLine(
@@ -144,19 +157,36 @@ export function roundsRow(
       typeof value === 'string'
         ? html`<span class="fv-row__value">${value}</span>`
         : (value?.drawn ?? nothing)
-    }${block.template}`,
+    }${block.template}${
+      arrow
+        ? html`<span class="fv-row__chevron" aria-hidden="true"
+            >${row.opens ? glyph('chevron') : nothing}</span
+          >`
+        : nothing
+    }`,
     onTap: row.onTap,
     onHold: row.onHold,
   });
 }
 
-/** A list of rows with their rounds, the circles kept or given away by every row together. */
+/**
+ * A list of rows with their rounds, the circles kept or given away by every row together; and, where it asks
+ * (`arrows`), a chevron at the end of each row that opens a page, where every row keeps all its rounds beside one —
+ * else none: a chevron gives way before a round, every row's together.
+ */
 export const roundsRows = (
   host: RoundsHost,
   width: number,
   rows: readonly RoundsRowSpec[],
   compact = false,
+  { arrows = false }: { readonly arrows?: boolean } = {},
 ): TemplateResult[] => {
   const icon = roundsRowsKeepIcon(host, width, rows, compact);
-  return rows.map((row) => roundsRow(host, width, row, { compact, icon }));
+  const arrow =
+    arrows &&
+    rows.some((row) => row.opens) &&
+    rows.every(
+      (row) => roundsHeld(roundsRoom(host, width - ARROW, row, compact, icon)) >= row.rounds.length,
+    );
+  return rows.map((row) => roundsRow(host, width, row, { compact, icon, arrow }));
 };

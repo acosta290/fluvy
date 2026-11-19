@@ -154,6 +154,56 @@ describe('a row with rounds at its end (1.23)', () => {
     expect(row.querySelectorAll('.lt-bulb')).toHaveLength(3);
   });
 
+  it('ends a row that opens a page in a chevron where every row keeps its rounds beside one (#225)', () => {
+    const box = document.createElement('div');
+    const rows = (width: number): Element[] => {
+      render(
+        roundsRows(
+          host,
+          width,
+          [
+            { ...LOUNGE, opens: true },
+            { ...LOUNGE, title: 'Hall' },
+          ],
+          false,
+          { arrows: true },
+        ),
+        box,
+      );
+      return [...box.querySelectorAll('.fv-row')];
+    };
+    // 56 + 48 (the name) + 52 (the value) + 160 (three rounds) + 48 (the chevron) = 364: each row its chevron's room,
+    // the one that opens nothing an empty one, so every row's rounds end on one line
+    const [lounge, hall] = rows(364);
+    expect(lounge!.querySelectorAll('.lt-bulb')).toHaveLength(3);
+    expect(lounge!.querySelector('.fv-row__chevron svg')).not.toBeNull();
+    expect(hall!.querySelector('.fv-row__chevron')).not.toBeNull();
+    expect(hall!.querySelector('.fv-row__chevron svg')).toBeNull();
+    // a chevron gives way before a round, every row's together
+    for (const row of rows(360)) {
+      expect(row.querySelectorAll('.lt-bulb')).toHaveLength(3);
+      expect(row.querySelector('.fv-row__chevron')).toBeNull();
+    }
+    // none asked for: none drawn, whatever the room
+    render(roundsRows(host, 600, [{ ...LOUNGE, opens: true }]), box);
+    expect(box.querySelector('.fv-row__chevron')).toBeNull();
+  });
+
+  it('draws its rounds from its own house where it has one: a room’s set its own lights (#225)', () => {
+    const box = document.createElement('div');
+    const lights = { ...LOUNGE, value: undefined, rounds: [{ group: 'lights' as const }] };
+    render(
+      roundsRows(host, 320, [
+        { ...lights, host: { ...host, lights: ['light.lounge_ceiling'] } },
+        lights,
+      ]),
+      box,
+    );
+    const [own, bare] = [...box.querySelectorAll('.lt-bulb')];
+    expect(own!.classList.contains('is-on')).toBe(true);
+    expect(bare!.classList.contains('is-on')).toBe(false);
+  });
+
   it('says its rounds’ states beside their glyphs where they hold, as tall as a round', () => {
     const box = document.createElement('div');
     const said = {
