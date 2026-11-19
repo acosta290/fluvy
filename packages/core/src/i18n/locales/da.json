@@ -738,6 +738,8 @@
     "edge": "Kant",
     "control": "Betjening",
     "icons": "Ikoner",
+    "target": "Målet",
+    "room": "Rummet",
     "card": "Kort"
   },
   "tone": {
@@ -2100,6 +2102,7 @@
     "below": "Under værdien",
     "below_helper": "Fra: fra værdien og op",
     "past_threshold": "Forbi en tærskel",
+    "focus": "Stort tal",
     "card_blur": "Slør det, der skinner igennem",
     "card_blur_helper": "Uberørt: alle korts, fra Fluvys indstillinger; ingen sløring ved 0 %"
   },
@@ -3603,5 +3606,8 @@
     "indicator_arrow_in": "Pil indad",
     "indicator_arrow_out": "Pil udad",
     "indicator_circle": "Cirkel"
+  },
+  "thermostat": {
+    "room": "Rum"
   }
 }

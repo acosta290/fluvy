@@ -273,12 +273,12 @@ const VACUUM =
 /**
  * The Thermostat card (the climate's, the water heater's and the humidifier's card and its rules, what says what a
  * thermostat is doing and what it reads of its valve, its window and its battery, #185; its editor goes with the
- * forms, its words are core's: the gauge and the schedules say some of them): fetched as the bundle starts and
- * defined as it lands, as the Vacuum card is (`climate-family.ts` stays in core: the tag, the height, and the way to
- * that reading for a tile and a room's row asked to say it). It left core in 1.21.
+ * forms, its words are core's — the gauge and the schedules say some of them — but for its own, #215's room): fetched
+ * as the bundle starts and defined as it lands, as the Vacuum card is (`climate-family.ts` stays in core: the tag,
+ * the height, and the way to that reading for a tile and a room's row asked to say it). It left core in 1.21.
  */
 const CLIMATE =
-  /\/packages\/(cards\/src\/(climate-cards\.ts|thermostat\/)|ui\/src\/styles\/(generated\/)?climate\.ts)/;
+  /\/packages\/(cards\/src\/(climate-cards\.ts|thermostat\/)|ui\/src\/styles\/(generated\/)?climate\.ts|core\/src\/i18n\/locales\/en\/thermostat\.json)/;
 
 /**
  * The platforms' logos (1.18, #143): the marks of Simple Icons and Material Design Icons adapted to the grid, and

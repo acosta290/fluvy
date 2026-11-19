@@ -1408,6 +1408,7 @@
     "below": "Pod hodnotou",
     "below_helper": "Vypnuté: od hodnoty nahor",
     "past_threshold": "Po prekročení prahu",
+    "focus": "Veľká hodnota",
     "card_blur": "Rozmazať to, čo presvitá",
     "card_blur_helper": "Bez zmeny: ako pri všetkých kartách v nastaveniach Fluvy; pri 0 % bez rozmazania"
   },
@@ -1810,6 +1811,8 @@
     "edge": "Okraj",
     "control": "Ovládací prvok",
     "icons": "Ikony",
+    "target": "Cieľ",
+    "room": "Miestnosť",
     "card": "Karta"
   },
   "tone": {
@@ -3662,5 +3665,8 @@
     "indicator_arrow_in": "Šípka dnu",
     "indicator_arrow_out": "Šípka von",
     "indicator_circle": "Kruh"
+  },
+  "thermostat": {
+    "room": "Miestnosť"
   }
 }

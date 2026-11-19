@@ -665,6 +665,7 @@
     "below": "Abaixo do valor",
     "below_helper": "Desligado: do valor para cima",
     "past_threshold": "Ao passar um limiar",
+    "focus": "Valor em destaque",
     "card_blur": "Desfocar o que se vê através",
     "card_blur_helper": "Sem alterar: o de todos os cartões, nas definições do Fluvy; sem desfocagem a 0 %"
   },
@@ -2265,6 +2266,8 @@
     "edge": "Contorno",
     "control": "Controlo",
     "icons": "Ícones",
+    "target": "O alvo",
+    "room": "A divisão",
     "card": "Cartão"
   },
   "tone": {
@@ -3603,5 +3606,8 @@
     "indicator_arrow_in": "Seta para dentro",
     "indicator_arrow_out": "Seta para fora",
     "indicator_circle": "Círculo"
+  },
+  "thermostat": {
+    "room": "Divisão"
   }
 }

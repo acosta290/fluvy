@@ -615,6 +615,7 @@
     "below": "値より下",
     "below_helper": "オフのときは値から上",
     "past_threshold": "しきい値を超えたとき",
+    "focus": "大きく表示する値",
     "card_blur": "透けて見える背景をぼかす",
     "card_blur_helper": "変更しないときは Fluvy の設定のすべてのカードの値（0% ではぼかさない）"
   },
@@ -1080,6 +1081,8 @@
     "edge": "枠線",
     "control": "操作部",
     "icons": "アイコン",
+    "target": "設定値",
+    "room": "室内",
     "card": "カード"
   },
   "tone": {
@@ -3603,5 +3606,8 @@
     "indicator_arrow_in": "内向き矢印",
     "indicator_arrow_out": "外向き矢印",
     "indicator_circle": "サークル"
+  },
+  "thermostat": {
+    "room": "室内"
   }
 }

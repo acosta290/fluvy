@@ -1408,6 +1408,7 @@
     "below": "Pod hodnotou",
     "below_helper": "Vypnuto: od hodnoty výš",
     "past_threshold": "Po překročení prahu",
+    "focus": "Velká hodnota",
     "card_blur": "Rozostřit to, co prosvítá",
     "card_blur_helper": "Beze změny: podle nastavení Fluvy pro všechny karty; při 0 % bez rozostření"
   },
@@ -1810,6 +1811,8 @@
     "edge": "Okraj",
     "control": "Ovládací prvek",
     "icons": "Ikony",
+    "target": "Cíl",
+    "room": "Místnost",
     "card": "Karta"
   },
   "tone": {
@@ -3662,5 +3665,8 @@
     "indicator_arrow_in": "Šipka dovnitř",
     "indicator_arrow_out": "Šipka ven",
     "indicator_circle": "Kruh"
+  },
+  "thermostat": {
+    "room": "Místnost"
   }
 }

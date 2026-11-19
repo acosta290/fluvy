@@ -665,6 +665,7 @@
     "below": "Por debajo del valor",
     "below_helper": "Apagado, desde el valor hacia arriba",
     "past_threshold": "Al pasar un umbral",
+    "focus": "Cifra grande",
     "card_blur": "Desenfocar lo que se ve a través",
     "card_blur_helper": "Sin tocar, el de todas las tarjetas en los ajustes de Fluvy; sin desenfoque al 0 %"
   },
@@ -2265,6 +2266,8 @@
     "edge": "Borde",
     "control": "Control",
     "icons": "Iconos",
+    "target": "El objetivo",
+    "room": "La habitación",
     "card": "Tarjeta"
   },
   "tone": {
@@ -3603,5 +3606,8 @@
     "indicator_arrow_in": "Flecha hacia dentro",
     "indicator_arrow_out": "Flecha hacia fuera",
     "indicator_circle": "Círculo"
+  },
+  "thermostat": {
+    "room": "Habitación"
   }
 }

@@ -818,3 +818,145 @@ describe('the modes as one row of icons (#215)', () => {
     card.remove();
   });
 });
+
+describe('the room as the large figure (#215)', () => {
+  /** The row's large figure, its label and the target between the pill's halves. */
+  const row = (card: FluvyThermostatCard) => {
+    const at = card.renderRoot.querySelector('.cl-value')!;
+    return {
+      room: at.classList.contains('is-room'),
+      label: at.querySelector('.fv-readout__label')?.textContent?.trim(),
+      figure: at.querySelector('.fv-readout__value > span')?.textContent?.trim(),
+      caption: at.querySelector('.cl-target > .fv-readout__label')?.textContent?.trim(),
+      target: at.querySelector('.fv-stepper__value')?.textContent?.replace(/\s+/g, ' ').trim(),
+    };
+  };
+
+  it('declares the same height whichever figure it makes large', () => {
+    for (const variant of ['compact', 'ruler'] as const)
+      expect(declared({ variant, focus: 'current' })).toBe(declared({ variant }));
+  });
+
+  it('makes the room its large figure, and the target the control beside it: − 19.5° +', async () => {
+    const card = await draw(homematic, 360, { variant: 'compact', focus: 'current' });
+    expect(row(card)).toEqual({
+      room: true,
+      label: 'Room',
+      figure: '20.6',
+      caption: 'Target',
+      target: '19.5°',
+    });
+    // the pill laid out by every figure it can show (30.5°, Off), never by the one it shows: 40 and its sides
+    const value = card.renderRoot.querySelector<HTMLElement>(
+      '.fv-stepper--value .fv-stepper__value',
+    );
+    expect(value?.style.width).toBe('48px');
+    const halves = [...card.renderRoot.querySelectorAll('.fv-stepper--value .fv-stepper__half')];
+    expect(halves.map((half) => half.getAttribute('aria-label'))).toEqual([
+      'Garderobe · Target · Decrease',
+      'Garderobe · Target · Increase',
+    ]);
+    card.remove();
+  });
+
+  it('steps the target from its pill: shown at once, sent once the taps settle', async () => {
+    vi.useFakeTimers();
+    const card = await draw(homematic, 360, { variant: 'compact', focus: 'current' });
+    const plus = card.renderRoot.querySelectorAll<HTMLButtonElement>('.fv-stepper__half')[1]!;
+    plus.dispatchEvent(new MouseEvent('click', { detail: 0, bubbles: true }));
+    await card.updateComplete;
+    expect(row(card).target).toBe('20.0°');
+    expect(card.hass?.callService).not.toHaveBeenCalled();
+    vi.advanceTimersByTime(700);
+    expect(card.hass?.callService).toHaveBeenCalledWith(
+      'climate',
+      'set_temperature',
+      { temperature: 20 },
+      { entity_id: 'climate.garderobe' },
+    );
+    card.remove();
+    vi.useRealTimers();
+  });
+
+  it('says a range’s two ends between the halves, the end it steps in the accent', async () => {
+    const card = await draw(range, 360, { variant: 'compact', focus: 'current' });
+    expect(row(card).target?.replace(/\s/g, '')).toBe('20.0–24.0°');
+    const ends = [...card.renderRoot.querySelectorAll('.cl-target .cl-end')];
+    expect(ends.map((end) => end.classList.contains('is-on'))).toEqual([true, false]);
+    card.remove();
+  });
+
+  it('keeps its anatomy off and out of reach: the pill in place and still, a dash where nothing reads', async () => {
+    const off = await draw({ ...homematic, state: 'off' }, 360, {
+      variant: 'compact',
+      focus: 'current',
+    });
+    expect(row(off)).toMatchObject({ room: true, figure: '20.6', target: 'Off' });
+    expect(
+      [...off.renderRoot.querySelectorAll<HTMLButtonElement>('.fv-stepper__half')].every(
+        (h) => h.disabled,
+      ),
+    ).toBe(true);
+    off.remove();
+    const gone = await draw({ ...homematic, state: 'unavailable' }, 360, {
+      variant: 'compact',
+      focus: 'current',
+    });
+    expect(row(gone)).toMatchObject({ room: true, figure: '—', target: '—' });
+    gone.remove();
+  });
+
+  it('stands the target alone without its stepper, the row then the card’s tap', async () => {
+    const card = await draw(homematic, 360, {
+      variant: 'compact',
+      focus: 'current',
+      show_stepper: false,
+    });
+    expect(card.renderRoot.querySelector('.fv-stepper')).toBeNull();
+    expect(row(card).target).toBe('19.5°');
+    const tap = card.renderRoot.querySelector('.cl-value > .fv-tile__tap');
+    expect(tap?.getAttribute('aria-label')).toBe('Garderobe · Room 20.6 °C · Target 19.5°');
+    card.remove();
+  });
+
+  it('gives the row back to the target where the column cannot hold the pill, the room in its label', async () => {
+    // a pill wider than the column: the target's row, saying the room whatever `show_current` says
+    const card = await draw(homematic, 360, {
+      variant: 'compact',
+      focus: 'current',
+      show_current: false,
+    });
+    const wide = {
+      ...RULER,
+      width: (cls: string, text: string) =>
+        cls.includes('fv-stepper__value') ? 400 : text.length * 8,
+    };
+    Object.assign((card as unknown as { head: object }).head, { ruler: wide });
+    card.requestUpdate();
+    await card.updateComplete;
+    expect(row(card)).toMatchObject({ room: false, label: 'Target · Now 20.6°', figure: '19.5' });
+    expect(card.renderRoot.querySelector('.fv-stepper--value')).toBeNull();
+    card.remove();
+  });
+
+  it('leaves the dial as it is: it draws the room and the target already', async () => {
+    const card = await draw(homematic, 360, { focus: 'current' });
+    expect(card.renderRoot.querySelector('fluvy-dial')?.sub).toBe('Now 20.6°');
+    expect(card.renderRoot.querySelector('.cl-target')).toBeNull();
+    card.remove();
+  });
+
+  it('offers the large figure where the layout has a value row, the room’s line while the target is it', () => {
+    const hass = house(homematic);
+    const fields = (data: Record<string, unknown>) =>
+      shownNames(visibleFields(thermostatEditor.getConfigForm().schema, data, hass));
+    const entity = homematic.entity_id;
+    expect(fields({ entity })).not.toContain('focus');
+    expect(fields({ entity })).toContain('show_current');
+    expect(fields({ entity, variant: 'compact' })).toEqual(
+      expect.arrayContaining(['focus', 'show_current']),
+    );
+    expect(fields({ entity, variant: 'ruler', focus: 'current' })).not.toContain('show_current');
+    expect(thermostatEditor.defaults(config(), hass)).toMatchObject({ focus: 'target' });
+  });
+});

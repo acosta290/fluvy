@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
-import { render, type TemplateResult } from 'lit';
+import { html, render, type TemplateResult } from 'lit';
 import { afterEach, describe, expect, it } from 'vitest';
-import { options, type OptionItem } from '../parts.js';
+import { options, stepper, type OptionItem } from '../parts.js';
 
 /** A template drawn into the document. */
 function drawn(template: TemplateResult): HTMLElement {
@@ -12,6 +12,32 @@ function drawn(template: TemplateResult): HTMLElement {
 }
 
 afterEach(() => document.body.replaceChildren());
+
+describe('a stepper', () => {
+  it('is its two halves alone, as it always was, where it is told no value', () => {
+    const pill = drawn(stepper(() => undefined)).querySelector('.fv-stepper')!;
+    expect(pill.classList.contains('fv-stepper--value')).toBe(false);
+    expect([...pill.children].map((child) => child.className)).toEqual([
+      'fv-stepper__half',
+      'fv-stepper__half',
+    ]);
+  });
+
+  it('says the value it sets between its halves, on the room it was given (#215)', () => {
+    const pill = drawn(
+      stepper(() => undefined, { value: html`21.5°`, width: 56, disabled: true }),
+    ).querySelector('.fv-stepper')!;
+    expect(pill.classList.contains('fv-stepper--value')).toBe(true);
+    const [minus, value, plus] = [...pill.children] as HTMLElement[];
+    expect([minus?.className, plus?.className]).toEqual(['fv-stepper__half', 'fv-stepper__half']);
+    expect(value?.className).toBe('fv-stepper__value');
+    expect(value?.textContent).toBe('21.5°');
+    expect(value?.style.width).toBe('56px');
+    // a reader hears the value it moves to
+    expect(value?.getAttribute('aria-live')).toBe('polite');
+    expect((minus as HTMLButtonElement).disabled).toBe(true);
+  });
+});
 
 describe('option tiles in their icon form (#215)', () => {
   const MODES: readonly OptionItem[] = [

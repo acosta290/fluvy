@@ -665,6 +665,7 @@
     "below": "Değerin altında",
     "below_helper": "Kapalıysa, değerden yukarısı",
     "past_threshold": "Bir eşik geçildiğinde",
+    "focus": "Büyük değer",
     "card_blur": "Arkada görüneni bulanıklaştır",
     "card_blur_helper": "Dokunulmazsa, Fluvy ayarlarındaki tüm kartlarınki; %0’da bulanıklık yok"
   },
@@ -2265,6 +2266,8 @@
     "edge": "Kenarlık",
     "control": "Denetim",
     "icons": "Simgeler",
+    "target": "Hedef",
+    "room": "Oda",
     "card": "Kart"
   },
   "tone": {
@@ -3603,5 +3606,8 @@
     "indicator_arrow_in": "İçe doğru ok",
     "indicator_arrow_out": "Dışa doğru ok",
     "indicator_circle": "Daire"
+  },
+  "thermostat": {
+    "room": "Oda"
   }
 }

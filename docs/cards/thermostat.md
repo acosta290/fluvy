@@ -42,10 +42,10 @@ show_badge: true
 name_lines: 1
 variant: dial
 show_stepper: true
+show_current: true
 show_modes: true
 modes_style: tiles
 # modes:
-show_current: true
 show_presets: true
 preset_style: full
 show_fan: true
@@ -93,10 +93,11 @@ show_battery: false
 | `subtitle` |  | The line under the title: your own words, an entity’s state or a template. |
 | `variant` | `dial` | The card’s layout. `dial` · `compact` · `ruler`. |
 | `show_stepper` | `true` | Shows the − and + buttons. |
+| `focus` | `target` | The large figure of the compact and ruler layouts: the target, or the room’s temperature with the target as − and + beside it. `target` (The target) · `current` (The room). |
+| `show_current` | `true` | Shows the room’s temperature beside the target. |
 | `show_modes` | `true` | Shows the modes to choose from. |
 | `modes_style` | `tiles` | How the modes are drawn. `tiles` · `chips` · `full` · `icons`. |
 | `modes` | what the device offers | The modes the card offers, in this order; left out, every mode the device has. Any of `off` · `heat` · `cool` · `heat_cool` (Auto) · `auto` · `dry` · `fan_only` (Fan). |
-| `show_current` | `true` | Shows the room’s temperature beside the target. |
 | `show_presets` | `true` | Shows the presets. |
 | `preset_style` | `full` | Draws the presets as chips that fill the row, or as content-sized chips. `full` · `chips`. |
 | `show_fan` | `true` | Shows the fan speeds. |

@@ -257,6 +257,7 @@
     "below": "Under the value",
     "below_helper": "Off: from the value up",
     "past_threshold": "Past a threshold",
+    "focus": "Large figure",
     "card_blur": "Blur what shows through",
     "card_blur_helper": "Untouched: every card’s, from Fluvy’s settings; none at 0 %"
   }

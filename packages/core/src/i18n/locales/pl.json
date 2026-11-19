@@ -1347,6 +1347,7 @@
     "below": "Poniżej wartości",
     "below_helper": "Wyłączone: od wartości w górę",
     "past_threshold": "Po przekroczeniu progu",
+    "focus": "Duża wartość",
     "card_blur": "Rozmyj to, co prześwituje",
     "card_blur_helper": "Nieustawione: wspólne dla wszystkich kart, z ustawień Fluvy; przy 0 % bez rozmycia"
   },
@@ -2198,6 +2199,8 @@
     "edge": "Obramowanie",
     "control": "Element sterujący",
     "icons": "Ikony",
+    "target": "Cel",
+    "room": "Pokój",
     "card": "Karta"
   },
   "page": {
@@ -3726,5 +3729,8 @@
     "indicator_arrow_in": "Strzałka do środka",
     "indicator_arrow_out": "Strzałka na zewnątrz",
     "indicator_circle": "Kropka"
+  },
+  "thermostat": {
+    "room": "Pokój"
   }
 }

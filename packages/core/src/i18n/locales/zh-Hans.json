@@ -1506,6 +1506,8 @@
     "edge": "边框",
     "control": "控件",
     "icons": "图标",
+    "target": "目标",
+    "room": "室内",
     "card": "卡片"
   },
   "tone": {
@@ -1996,6 +1998,7 @@
     "below": "低于该值",
     "below_helper": "关闭：从该值起向上",
     "past_threshold": "越过阈值时",
+    "focus": "大字显示",
     "card_blur": "模糊透出的背景",
     "card_blur_helper": "未设置：沿用 Fluvy 设置中所有卡片的值；0% 时不模糊"
   },
@@ -3603,5 +3606,8 @@
     "indicator_arrow_in": "向内箭头",
     "indicator_arrow_out": "向外箭头",
     "indicator_circle": "圆点"
+  },
+  "thermostat": {
+    "room": "室内"
   }
 }

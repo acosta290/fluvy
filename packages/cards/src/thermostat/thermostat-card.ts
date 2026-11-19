@@ -1,3 +1,5 @@
+// the card's own words first: here before it speaks, wherever its module is loaded
+import './english.js';
 import {
   formatNumber,
   isUsable,
@@ -47,7 +49,13 @@ import { chipRow, inForce, type Choice } from '../shared/chips.js';
 import { haWord, modeWord, pretty } from '../shared/mode-words.js';
 import { stateLook, tintOf, type StateTintConfig } from '../shared/state-tint.js';
 import { ICON_GAP, iconColumns } from '../shared/heights.js';
-import { fitValueRow, STEPPER, STEPPER_HALVES, valueRowClass } from '../shared/value-row.js';
+import {
+  fitValueRow,
+  STEPPER,
+  STEPPER_HALVES,
+  valueRowClass,
+  type Reading,
+} from '../shared/value-row.js';
 import { degrees, doing, setpoint, type Doing } from './doing.js';
 import { batteryLevel, humidityOf, valveOf, windowBy, type ReadingsAsk } from './readings.js';
 
@@ -84,12 +92,35 @@ export interface ThermostatCardConfig extends FluvyCardConfig, ReadingsAsk, Stat
   fan_style?: RowStyle;
   /** While the device is off: everything (default), or `essentials` — the head, the value and the modes; presets and fan speeds wait for a mode. */
   when_off?: WhenOff;
+  /**
+   * The figure the compact and ruler layouts make large (#215): the target (default), or the room's reading
+   * (`current`), the target then the control beside it — the stepper with the target between its halves.
+   */
+  focus?: ThermostatFocus;
 }
 
 export type ModesStyle = 'tiles' | 'icons' | RowStyle;
+export type ThermostatFocus = 'target' | 'current';
 
+/** The target between the stepper's halves (`focus: current`): measured in its own class, 4 a side. */
+const TARGET_VALUE = 'fv-stepper fv-stepper--value > fv-stepper__value';
+const TARGET_SIDES = 8;
 /** An icon tile's sides (`modes_style: icons`), 4 each, which its word sits between. */
 const ICON_SIDES = 8;
+
+/** The target as the value row says it, whichever figure the row makes large. */
+interface TargetRead {
+  /** What it reads ("21.5", "20.0 – 24.0", Off, a dash) and its unit, none while it reads no figure. */
+  readonly text: string;
+  readonly unit: string;
+  /** What it draws: a range's ends as the buttons that give the stepper its end, where it is stepped. */
+  readonly drawn: (stepped: boolean) => string | TemplateResult;
+  /** Every figure it can show, which the row is laid out by: its ends, a range, the word for off. */
+  readonly figures: readonly Reading[];
+  /** Nothing to set: the device off or out of reach, or no target to step. */
+  readonly still: boolean;
+  readonly step: (direction: 1 | -1) => void;
+}
 
 /** A thermostat as its card and its details sheet draw it. */
 export interface ThermostatModel {
@@ -734,13 +765,17 @@ export class FluvyThermostatCard extends Card<ThermostatCardConfig> {
     return v === 'compact' || v === 'ruler' ? v : 'dial';
   }
 
+  /** Whether the value row makes the room its large figure (`focus: current`): where asked, on a layout that has the row. */
+  private roomFirst(): boolean {
+    return this.config?.focus === 'current' && this.variant() !== 'dial';
+  }
+
   /**
-   * The value row of the compact and ruler variants: the target as a large readout ("Target · Now 20.8°" over it) and
-   * its stepper, laid out once from the width, the config and every figure the entity can show (`fitValueRow`), never
-   * from its state: stepping 9.5 → 10.0, a mode, the device going off move nothing — the stepper stays, still, while
-   * there is nothing to set. A range's ends are buttons: the one pressed is the end the stepper drives. Without a
-   * stepper (or in a column too narrow for even its halves) the readout is the card's tap. The ruler variant adds the
-   * ruler(s).
+   * The value row of the compact and ruler variants, laid out once from the width, the config and every figure the
+   * entity can show (`fitValueRow`), never from its state: stepping 9.5 → 10.0, a mode, the device going off move
+   * nothing — the stepper stays, still, while there is nothing to set. The target is its large readout ("Target · Now
+   * 20.8°" over it, `targetRow`), or the room is (`focus: current`, `roomRow`) and the target the control beside it. A
+   * range's ends are buttons: the one pressed is the end the stepper drives. The ruler variant adds the ruler(s).
    */
   private renderValueRow(
     view: EntityView,
@@ -761,22 +796,8 @@ export class FluvyThermostatCard extends Card<ThermostatCardConfig> {
     const high = this.held?.high ?? m.high;
     const idle = unusable || m.off;
     const off = this.t('climate.mode.off');
-    const target = this.t('climate.target');
     const ends = [figure(m.min), figure(m.max)];
     const widest = ends.reduce((a, b) => (b.length > a.length ? b : a));
-    const fit = fitValueRow(this.head.ruler, {
-      width: this.contentWidth,
-      control: this.config?.show_stepper === false ? 0 : STEPPER,
-      narrow: STEPPER_HALVES,
-      labels: now ? [`${target} · ${now}`, target] : [target],
-      figures: [
-        ...ends.map((value) => ({ value, unit: m.unit })),
-        ...(m.canRange ? [{ value: `${widest} – ${widest}`, unit: m.unit }] : []),
-        ...(m.canOff ? [{ value: off }] : []),
-      ],
-    });
-    const stepped = fit.layout !== 'alone';
-    const unit = idle || (shown === undefined && !range) ? '' : m.unit;
     const text = unusable
       ? '—'
       : m.off
@@ -801,10 +822,21 @@ export class FluvyThermostatCard extends Card<ThermostatCardConfig> {
       >
         ${figure(value)}
       </button>`;
-    const value =
-      range && stepped && !idle
-        ? html`${endButton(0, low as number)} – ${endButton(1, high as number)}`
-        : text;
+    const read: TargetRead = {
+      text,
+      unit: idle || (shown === undefined && !range) ? '' : m.unit,
+      drawn: (stepped) =>
+        range && stepped && !idle
+          ? html`${endButton(0, low as number)} – ${endButton(1, high as number)}`
+          : text,
+      figures: [
+        ...ends.map((value) => ({ value, unit: m.unit })),
+        ...(m.canRange ? [{ value: `${widest} – ${widest}`, unit: m.unit }] : []),
+        ...(m.canOff ? [{ value: off }] : []),
+      ],
+      still: idle || (!range && shown === undefined),
+      step: (direction) => this.nudge(view, m, direction),
+    };
     const w = this.contentWidth;
     const tone: Tone = idle ? 'neutral' : mode;
     const ruler = (value: number, ariaLabel: string, commit: (v: number) => void): TemplateResult =>
@@ -826,32 +858,121 @@ export class FluvyThermostatCard extends Card<ThermostatCardConfig> {
           [0, edge(m.min)],
           [1, edge(m.max)],
         ])}`;
+    return html`${(this.roomFirst() && this.roomRow(view, m, name, unusable, read)) || this.targetRow(view, name, now, read)}
+    ${
+      this.variant() === 'ruler'
+        ? range
+          ? html`<div class="cl-range">
+              ${label(this.t('climate.low'))}${ruler(low as number, `${name} · ${this.t('climate.low')}`, (v) => this.setTarget(view, m, { low: v, high: Math.max(v, high as number) }))}
+              ${label(this.t('climate.high'))}${ruler(high as number, `${name} · ${this.t('climate.high')}`, (v) => this.setTarget(view, m, { low: Math.min(v, low as number), high: v }))}
+            </div>`
+          : html`<div class="cl-bubble-row"></div>
+              ${ruler(shown ?? m.min, `${name} · ${this.t('climate.target')}`, (v) => {
+                this.held = { value: v };
+                this.setTarget(view, m, { value: v });
+              })}`
+        : nothing
+    }`;
+  }
+
+  /**
+   * The target as its large readout ("Target · Now 20.8°" over it) and its stepper beside it, else under it, else its
+   * halves at 44; without a stepper (or in a column too narrow for even its halves) the readout is the card's tap.
+   */
+  private targetRow(view: EntityView, name: string, now: string, read: TargetRead): TemplateResult {
+    const target = this.t('climate.target');
+    const fit = fitValueRow(this.head.ruler, {
+      width: this.contentWidth,
+      control: this.config?.show_stepper === false ? 0 : STEPPER,
+      narrow: STEPPER_HALVES,
+      labels: now ? [`${target} · ${now}`, target] : [target],
+      figures: read.figures,
+    });
+    const stepped = fit.layout !== 'alone';
     return html`<div class="cl-value ${valueRowClass(fit.layout)}">
-        ${readout({ label: fit.label, value, unit, size: fit.size })}
+      ${readout({ label: fit.label, value: read.drawn(stepped), unit: read.unit, size: fit.size })}
+      ${
+        stepped
+          ? stepper(read.step, {
+              disabled: read.still,
+              decrease: `${name} · ${this.t('common.decrease')}`,
+              increase: `${name} · ${this.t('common.increase')}`,
+            })
+          : this.readoutTap(view.id, `${name} · ${fit.label} ${read.text} ${read.unit}`)
+      }
+    </div>`;
+  }
+
+  /**
+   * The room as the row's large readout (`focus: current`, #215): what it measures in plain ink under its caption,
+   * and the target beside it as the control that sets it — the stepper with the target between its halves, in the
+   * accent, under its own caption ("− 21.5° +"); without a stepper the target alone, the readout then the card's tap.
+   * Laid out as the target's row is, from every figure either can show: beside, else the target centred under the
+   * room; none where the column cannot hold the control (half a section), which gives the row back to the target
+   * (`targetRow`), the room in its label.
+   */
+  private roomRow(
+    view: EntityView,
+    m: ThermostatModel,
+    name: string,
+    unusable: boolean,
+    read: TargetRead,
+  ): TemplateResult | undefined {
+    const ruler = this.head.ruler;
+    const percent = m.unit === '%';
+    const reading = (v: number): string =>
+      formatNumber(this.hass, v, percent ? { digits: 0 } : { digits: 1, minDigits: 1 });
+    // the target's figure with its mark ("21.5°", "50 %"); a word (Off, a dash) as it is
+    const mark = percent ? ' %' : '°';
+    const marked = ({ value, unit }: Reading): string => (unit ? `${value}${mark}` : value);
+    const stepped = this.config?.show_stepper !== false;
+    const widest = Math.max(
+      ...[...read.figures.map(marked), '—'].map((text) => ruler.width(TARGET_VALUE, text)),
+    );
+    // on the 4 grid, so the pill centred under the room stands on whole pixels
+    const room = Math.ceil((widest + TARGET_SIDES) / 4) * 4;
+    const word = this.t('thermostat.room');
+    const target = this.t('climate.target');
+    const fit = fitValueRow(ruler, {
+      width: this.contentWidth,
+      control: Math.max(
+        ruler.width('fv-readout__label', target),
+        stepped ? STEPPER_HALVES + room : room,
+      ),
+      labels: [word],
+      figures: [m.min, m.max].map((v) => ({ value: reading(v), unit: m.unit })),
+    });
+    if (fit.layout === 'alone') return undefined;
+    const current = unusable || m.current === undefined ? '—' : reading(m.current);
+    const unit = current === '—' ? '' : m.unit;
+    const value = html`${read.drawn(stepped)}${read.unit ? mark : ''}`;
+    return html`<div class="cl-value is-room ${valueRowClass(fit.layout)}">
+      ${readout({ label: fit.label, value: current, unit, size: fit.size })}
+      <div class="cl-target ${read.still ? 'is-idle' : ''}">
+        <p class="fv-readout__label">${target}</p>
         ${
           stepped
-            ? stepper((direction) => this.nudge(view, m, direction), {
-                disabled: idle || (!range && shown === undefined),
-                decrease: `${name} · ${this.t('common.decrease')}`,
-                increase: `${name} · ${this.t('common.increase')}`,
+            ? stepper(read.step, {
+                disabled: read.still,
+                decrease: `${name} · ${target} · ${this.t('common.decrease')}`,
+                increase: `${name} · ${target} · ${this.t('common.increase')}`,
+                value,
+                width: room,
               })
-            : this.readoutTap(view.id, `${name} · ${fit.label} ${text} ${unit}`)
+            : html`<span class="fv-stepper__value" style="width:${room}px"
+                ><span>${value}</span></span
+              >`
         }
       </div>
       ${
-        this.variant() === 'ruler'
-          ? range
-            ? html`<div class="cl-range">
-                ${label(this.t('climate.low'))}${ruler(low as number, `${name} · ${this.t('climate.low')}`, (v) => this.setTarget(view, m, { low: v, high: Math.max(v, high as number) }))}
-                ${label(this.t('climate.high'))}${ruler(high as number, `${name} · ${this.t('climate.high')}`, (v) => this.setTarget(view, m, { low: Math.min(v, low as number), high: v }))}
-              </div>`
-            : html`<div class="cl-bubble-row"></div>
-                ${ruler(shown ?? m.min, `${name} · ${this.t('climate.target')}`, (v) => {
-                  this.held = { value: v };
-                  this.setTarget(view, m, { value: v });
-                })}`
-          : nothing
-      }`;
+        stepped
+          ? nothing
+          : this.readoutTap(
+              view.id,
+              `${name} · ${word} ${current} ${unit} · ${target} ${marked({ value: read.text, unit: read.unit })}`,
+            )
+      }
+    </div>`;
   }
 
   /** The modes the config asks for (`modesDrawn`); none where it hides the row. */
@@ -950,8 +1071,9 @@ export class FluvyThermostatCard extends Card<ThermostatCardConfig> {
     const isPct = m.unit === '%';
     const figure = (v: number): string =>
       formatNumber(this.hass, v, { digits: m.step < 1 ? 1 : 0, minDigits: m.step < 1 ? 1 : 0 });
+    // the room in the target's label: shown where asked, and wherever a room asked to be the figure gives the row back
     const now =
-      m.current !== undefined && this.config?.show_current !== false
+      m.current !== undefined && (this.config?.show_current !== false || this.roomFirst())
         ? this.t('climate.current', {
             value: isPct
               ? `${formatNumber(this.hass, m.current, { digits: 0 })} %`

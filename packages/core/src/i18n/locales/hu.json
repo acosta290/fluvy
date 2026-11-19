@@ -615,6 +615,7 @@
     "below": "Az érték alatt",
     "below_helper": "Kikapcsolva: az értéktől felfelé",
     "past_threshold": "Küszöbérték átlépésekor",
+    "focus": "Nagy érték",
     "card_blur": "Az átlátszó háttér elmosása",
     "card_blur_helper": "Érintetlenül: az összes kártyáé, a Fluvy beállításaiból; 0 %-nál nincs elmosás"
   },
@@ -1080,6 +1081,8 @@
     "edge": "Keret",
     "control": "Vezérlő",
     "icons": "Ikonok",
+    "target": "A cél",
+    "room": "A szoba",
     "card": "Kártya"
   },
   "tone": {
@@ -3603,5 +3606,8 @@
     "indicator_arrow_in": "Befelé mutató nyíl",
     "indicator_arrow_out": "Kifelé mutató nyíl",
     "indicator_circle": "Kör"
+  },
+  "thermostat": {
+    "room": "Szoba"
   }
 }

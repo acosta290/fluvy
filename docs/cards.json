@@ -2794,6 +2794,24 @@
           "default": true
         },
         {
+          "key": "focus",
+          "label": "Large figure",
+          "does": "The large figure of the compact and ruler layouts: the target, or the room’s temperature with the target as − and + beside it.",
+          "type": "choice",
+          "default": "target",
+          "values": {
+            "target": "The target",
+            "current": "The room"
+          }
+        },
+        {
+          "key": "show_current",
+          "label": "Show the current value",
+          "does": "Shows the room’s temperature beside the target.",
+          "type": "boolean",
+          "default": true
+        },
+        {
           "key": "show_modes",
           "label": "Show the modes",
           "does": "Shows the modes to choose from.",
@@ -2828,13 +2846,6 @@
             "dry": "Dry",
             "fan_only": "Fan"
           }
-        },
-        {
-          "key": "show_current",
-          "label": "Show the current value",
-          "does": "Shows the room’s temperature beside the target.",
-          "type": "boolean",
-          "default": true
         },
         {
           "key": "show_presets",

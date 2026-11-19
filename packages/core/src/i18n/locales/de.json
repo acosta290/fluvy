@@ -665,6 +665,7 @@
     "below": "Unter dem Wert",
     "below_helper": "Aus: ab dem Wert aufwärts",
     "past_threshold": "Jenseits eines Schwellenwerts",
+    "focus": "Großer Wert",
     "card_blur": "Durchscheinendes weichzeichnen",
     "card_blur_helper": "Unverändert: wie in den Fluvy-Einstellungen für alle Karten; bei 0 % keine Unschärfe"
   },
@@ -2265,6 +2266,8 @@
     "edge": "Rand",
     "control": "Bedienelement",
     "icons": "Symbole",
+    "target": "Das Ziel",
+    "room": "Der Raum",
     "card": "Karte"
   },
   "tone": {
@@ -3603,5 +3606,8 @@
     "indicator_arrow_in": "Pfeil nach innen",
     "indicator_arrow_out": "Pfeil nach außen",
     "indicator_circle": "Kreis"
+  },
+  "thermostat": {
+    "room": "Raum"
   }
 }

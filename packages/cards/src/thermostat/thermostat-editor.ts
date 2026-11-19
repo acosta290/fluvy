@@ -67,6 +67,7 @@ export const defaults: EditorDefaults = (config, hass) => {
   };
   return {
     variant: 'dial',
+    focus: 'target',
     show_stepper: true,
     show_current: true,
     show_modes: true,
@@ -108,6 +109,7 @@ export const keys = configKeys<ThermostatCardConfig>()([
   'preset_style',
   'fan_style',
   'when_off',
+  'focus',
   'state_entity',
   'show_valve',
   'valve_entity',
@@ -121,6 +123,12 @@ export const keys = configKeys<ThermostatCardConfig>()([
 ]);
 
 type Data = Readonly<Record<string, unknown>>;
+
+/** The layout has a value row, which may make the room its large figure (`focus`): the dial draws both already. */
+const valueRow = (data: Data): boolean =>
+  data['variant'] === 'compact' || data['variant'] === 'ruler';
+/** The room's reading is said beside the target: in the dial, and in a row whose figure is the target. */
+const saysNow = (data: Data): boolean => !valueRow(data) || data['focus'] !== 'current';
 
 /** The card says what the thermostat is doing (its badge, `show_badge`): what the word's own options act on. */
 const said = (data: Data): boolean => data['show_badge'] !== false;
@@ -175,6 +183,14 @@ export function getConfigForm(): LovelaceConfigForm {
       ownTextField('subtitle'),
       headFields({ badge: true }),
       fieldRow(selectField('variant', ['dial', 'compact', 'ruler']), boolField('show_stepper')),
+      // the figure the value row makes large (the dial draws both), and the room's reading beside the target
+      fieldRow(
+        onlyWhen(
+          valueRow,
+          selectField('focus', ['target', 'current'], { words: { current: 'room' } }),
+        ),
+        onlyWhen(saysNow, boolField('show_current')),
+      ),
       fieldRow(
         boolField('show_modes'),
         selectField('modes_style', ['tiles', 'chips', 'full', 'icons']),
@@ -187,7 +203,6 @@ export function getConfigForm(): LovelaceConfigForm {
           label: editorWord(`climate.mode.${value}` as MessageKey),
         })),
       ),
-      boolField('show_current'),
       fieldRow(boolField('show_presets'), selectField('preset_style', ['full', 'chips'])),
       fieldRow(boolField('show_fan'), selectField('fan_style', ['full', 'chips'])),
       whenOffField(),

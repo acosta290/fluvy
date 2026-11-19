@@ -665,6 +665,7 @@
     "below": "Onder de waarde",
     "below_helper": "Uit: vanaf de waarde omhoog",
     "past_threshold": "Voorbij een drempel",
+    "focus": "Groot getal",
     "card_blur": "Wat doorschijnt vervagen",
     "card_blur_helper": "Onaangeroerd: die van alle kaarten, uit de instellingen van Fluvy; geen vervaging bij 0 %"
   },
@@ -2265,6 +2266,8 @@
     "edge": "Rand",
     "control": "Bediening",
     "icons": "Iconen",
+    "target": "Het doel",
+    "room": "De kamer",
     "card": "Kaart"
   },
   "tone": {
@@ -3603,5 +3606,8 @@
     "indicator_arrow_in": "Pijl naar binnen",
     "indicator_arrow_out": "Pijl naar buiten",
     "indicator_circle": "Cirkel"
+  },
+  "thermostat": {
+    "room": "Kamer"
   }
 }

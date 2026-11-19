@@ -551,6 +551,8 @@ export const MEANINGS: Readonly<Record<string, string>> = {
   'swipe.columns': 'How many of its cards stand side by side, as many as the width holds.',
   'swipe.remember': 'Where the page it was left on is kept: this tab while it is open, or nowhere.',
   'template.secondary': 'The line under the name: a keyword, your own words, or a template.',
+  'thermostat.focus':
+    'The large figure of the compact and ruler layouts: the target, or the room’s temperature with the target as − and + beside it.',
   'thermostat.image':
     'A picture of your own in the dial’s circle: an address, or an entity whose picture it is.',
   'thermostat.modes':

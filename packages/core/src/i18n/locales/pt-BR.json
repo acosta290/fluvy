@@ -665,6 +665,7 @@
     "below": "Abaixo do valor",
     "below_helper": "Desligado, do valor para cima",
     "past_threshold": "Ao passar de um limite",
+    "focus": "Valor em destaque",
     "card_blur": "Desfocar o que aparece por trás",
     "card_blur_helper": "Sem mexer, o de todos os cartões nas configurações do Fluvy; sem desfoque em 0 %"
   },
@@ -2265,6 +2266,8 @@
     "edge": "Borda",
     "control": "Controle",
     "icons": "Ícones",
+    "target": "O alvo",
+    "room": "O cômodo",
     "card": "Cartão"
   },
   "tone": {
@@ -3603,5 +3606,8 @@
     "indicator_arrow_in": "Seta para dentro",
     "indicator_arrow_out": "Seta para fora",
     "indicator_circle": "Círculo"
+  },
+  "thermostat": {
+    "room": "Cômodo"
   }
 }

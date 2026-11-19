@@ -665,6 +665,7 @@
     "below": "Sotto il valore",
     "below_helper": "Spento, dal valore in su",
     "past_threshold": "Oltre una soglia",
+    "focus": "Cifra grande",
     "card_blur": "Sfoca ciò che si vede attraverso",
     "card_blur_helper": "Invariato, quello di tutte le schede nelle impostazioni di Fluvy; niente sfocatura allo 0 %"
   },
@@ -2265,6 +2266,8 @@
     "edge": "Bordo",
     "control": "Controllo",
     "icons": "Icone",
+    "target": "L’obiettivo",
+    "room": "La stanza",
     "card": "Scheda"
   },
   "tone": {
@@ -3603,5 +3606,8 @@
     "indicator_arrow_in": "Freccia verso l’interno",
     "indicator_arrow_out": "Freccia verso l’esterno",
     "indicator_circle": "Cerchio"
+  },
+  "thermostat": {
+    "room": "Stanza"
   }
 }

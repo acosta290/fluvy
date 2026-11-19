@@ -363,10 +363,25 @@ export function toggle(
   ></span>`;
 }
 
-/** − | + pill (96 × 44). Holding a half repeats the step, always through the latest `onStep`. */
+/** What a stepper is told beside its step: whether it can step, its halves' names, and the value it sets, if it says it. */
+export interface StepperOptions {
+  readonly disabled?: boolean;
+  readonly className?: string;
+  readonly decrease?: string;
+  readonly increase?: string;
+  /** The value it sets, between its halves (− 21.5° +): the pill is then its halves at 44 and the value. */
+  readonly value?: string | TemplateResult;
+  /** The value's room, laid out by the caller from every figure it can show: a step never resizes the pill. */
+  readonly width?: number;
+}
+
+/**
+ * − | + pill (96 × 44); with its value, − 21.5° + (its halves at 44, the value's room between them). Holding a half
+ * repeats the step, always through the latest `onStep`.
+ */
 export function stepper(
   onStep: (direction: 1 | -1) => void,
-  options: { disabled?: boolean; className?: string; decrease?: string; increase?: string } = {},
+  options: StepperOptions = {},
 ): TemplateResult {
   const keyClick =
     (direction: 1 | -1) =>
@@ -388,8 +403,21 @@ export function stepper(
     >
       ${glyph(icon)}
     </button>`;
-  return html`<div class="fv-stepper ${options.className ?? ''}" data-control>
-    ${half(-1, options.decrease ?? '−', 'minus')}${half(1, options.increase ?? '+', 'plus')}
+  const valued = options.value !== undefined;
+  return html`<div
+    class="fv-stepper ${valued ? 'fv-stepper--value' : ''} ${options.className ?? ''}"
+    data-control
+  >
+    ${half(-1, options.decrease ?? '−', 'minus')}${
+      valued
+        ? html`<span
+            class="fv-stepper__value"
+            aria-live="polite"
+            style=${options.width ? `width:${options.width}px` : nothing}
+            ><span>${options.value}</span></span
+          >`
+        : nothing
+    }${half(1, options.increase ?? '+', 'plus')}
   </div>`;
 }
 

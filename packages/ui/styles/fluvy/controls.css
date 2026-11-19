@@ -477,6 +477,39 @@
   color: var(--fluvy-text-disabled);
 }
 
+/* the stepper with its value between its halves (− 21.5° +, #215): the halves at 44, the value on the room its caller
+   laid out from every figure it can show (a step never resizes the pill), 20/600 in the accent's ink — in the disabled
+   ink while its halves are */
+.fv-stepper--value {
+  flex: none;
+  width: auto;
+}
+
+.fv-stepper--value .fv-stepper__half {
+  width: 44px;
+}
+
+.fv-stepper__value {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  height: 44px;
+  padding-inline: 4px;
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 24px;
+  letter-spacing: -0.015em;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  color: var(--fluvy-accent);
+}
+
+.fv-stepper--value:has(> [disabled]) .fv-stepper__value {
+  color: var(--fluvy-text-disabled);
+}
+
 /* ---------- option cards ---------- */
 .fv-options {
   display: grid;
