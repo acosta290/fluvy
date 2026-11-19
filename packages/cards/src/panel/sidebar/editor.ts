@@ -333,7 +333,7 @@ export class SidebarEditor {
 
   /**
    * What it holds: the menu of pages on or off, and its three lists of cards, a list at a time, under the open list's
-   * rule (the head and the foot stay in sight while they leave the middle room, the middle scrolls between them).
+   * rule (the head and the foot stay in sight while they fit the screen, the middle scrolls between them).
    */
   private contents(ctx: PanelContext, raw: Raw): TemplateResult {
     const { hass } = ctx;

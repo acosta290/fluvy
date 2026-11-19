@@ -41,8 +41,6 @@ export interface MenuEntry {
 
 /** Folded to its icons, a sidebar is its circles between 8 a side. */
 const RAIL = 60;
-/** A row of the menu: the room the middle keeps between the head and the foot, its padding with it. */
-const ROW = 44;
 /** How long the drawer takes to leave. */
 const LEAVE = 200;
 
@@ -112,7 +110,7 @@ export class FluvySidebar extends FluvyCard {
   declare leaving_: boolean;
   /** The lists whose every card is hidden, by name (`vacate`). */
   declare vacant_: string;
-  /** The head and the foot leave the middle no row: the whole column scrolls as one (`fit`). */
+  /** The head and the foot do not fit the column: the whole column scrolls as one (`fit`). */
   declare whole_: boolean;
 
   /** The cards built, list by list, and the configs they were built from. */
@@ -441,9 +439,11 @@ export class FluvySidebar extends FluvyCard {
   }
 
   /**
-   * Whether the head and the foot keep their places: while they leave the middle a row's room (none where it holds
-   * nothing). Past that the whole column scrolls as one inside its surface, never the page (#195); either way the fade
-   * follows what it holds now (an Expander opened in the middle).
+   * Whether the head and the foot keep their places: while they fit the column with the middle's own padding, all of
+   * the middle that cannot shrink (none where it holds nothing), however little of it is left to scroll (#211). Only a
+   * head and a foot that would spill past the surface so (an Expander opened in them) make the whole column scroll as
+   * one inside its surface, never the page (#195); either way the fade follows what it holds now (an Expander opened
+   * in the middle).
    */
   private fit(): void {
     const column = this.renderRoot.querySelector<HTMLElement>('.sb-column');
@@ -454,7 +454,7 @@ export class FluvySidebar extends FluvyCard {
     const { paddingTop, paddingBottom } = getComputedStyle(body);
     const floor = body.classList.contains('is-empty')
       ? 0
-      : ROW + parseFloat(paddingTop) + parseFloat(paddingBottom);
+      : parseFloat(paddingTop) + parseFloat(paddingBottom);
     const whole = tall('.sb-head') + tall('.sb-foot') + floor > column.clientHeight;
     if (whole !== this.whole_) this.whole_ = whole;
     else this.fade();
@@ -484,7 +484,7 @@ export class FluvySidebar extends FluvyCard {
 
   /**
    * The head, the middle and the foot on their surface: the sidebar beside the views, and the drawer's. The middle
-   * scrolls between the head and the foot, or the whole column does where they leave it no row (`fit`).
+   * scrolls between the head and the foot, or the whole column does where they do not fit it (`fit`).
    */
   private column(spec: SidebarSpec, foot: TemplateResult | typeof nothing): TemplateResult {
     const rail = this.rail;

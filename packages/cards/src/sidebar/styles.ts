@@ -36,7 +36,7 @@ const inset = (side: Parameters<typeof screenInset>[0]): CSSResult =>
 /**
  * The sidebar's own rules, on the language's card, circle and round. Its surface is the card's (`panel`: from edge to
  * edge, square, a hairline at its inner edge alone; `card`: one card, the view's gaps round it; `plain`: none), its
- * head and its foot stay while they leave its middle a row and the middle scrolls between them, else the whole column
+ * head and its foot stay while they fit its column and the middle scrolls between them, else the whole column
  * scrolls. On a surface the cards it holds wear none and stand in its column, 40 apart with a hairline between, as the
  * Expander's do; with none they keep their own, a section's 16 apart. Tokens only; the screen's insets as a sheet
  * takes them (`screenInset`), in its own pixels (it is drawn at the device's size).
@@ -100,9 +100,9 @@ export const sidebarStyles = css`
   }
 
   /* ---------- the head, the middle, the foot ---------- */
-  /* the column on its surface: the head and the foot stay while they leave the middle a row (one row and its
-     padding), and the middle scrolls between them; past that (is-whole) the whole column scrolls as one, inside its
-     surface and never the page (#195), the middle at its own height in it */
+  /* the column on its surface: the head and the foot stay while they fit it with the middle's padding (#211), and the
+     middle scrolls between them; past that (is-whole) the whole column scrolls as one, inside its surface and never
+     the page (#195), the middle at its own height in it */
   .sb-column {
     display: flex;
     flex-direction: column;

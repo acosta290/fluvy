@@ -13,9 +13,10 @@
  * chosen; a fold is remembered by the device; at the end, in a right-to-left page, at another size, on a wall, in the
  * floating frame, in the edit mode and in a subview it stands as it should; the header's tabs give way when asked; a
  * card of Fluvy's it holds stands in its column with no surface of its own; a dashboard without the key fetches
- * nothing. Taller than its surface (#195), with a wheel and a finger: a head or a foot that leave the middle no row
- * (an Expander open in them, a pinned menu on a short tablet, a phone's drawer) scroll with the whole column inside
- * its surface, the page and the sidebar never moving and the foot always reached; the middle fades once a card it
+ * nothing. Taller than its surface (#195), with a wheel and a finger: a head and a foot that do not fit it (an
+ * Expander open in them, a pinned menu on a short tablet, a phone's drawer) scroll with the whole column inside its
+ * surface, the page and the sidebar never moving and the foot always reached, while a head and a foot that fit it
+ * stay however little room they leave the middle (#211); the middle fades once a card it
  * holds opens; a wall that comes after the sidebar drew takes the header's room with it; the drawer and its round
  * keep clear of the insets the Companion app hands Home Assistant.
  */
@@ -502,6 +503,30 @@ if (ENGINE === 'chromium') {
       ended.foot.bottom <= 600 &&
       ended.page === 0,
     JSON.stringify({ before: before.foot, ended: ended.foot, page: ended.page }),
+  );
+  await page.close();
+}
+{
+  // a clock and the weather at the head, the player and the alerts at the foot, on a wall's 1024 × 600 (#211): they
+  // leave the middle less than a row and fit the screen, so they stay and the middle alone scrolls between them
+  const page = await open('side=short&wall=1', { width: 1024, height: 600 });
+  const before = await column(page);
+  await wheel(page, 140, 360);
+  const turned = await column(page);
+  check(
+    'a head and a foot that leave the middle less than a row on a 1024 × 600 wall: they stay in the window, and a wheel over the middle scrolls the middle alone (#211)',
+    !before.whole &&
+      before.scroller === 'sb-body' &&
+      before.over &&
+      before.head.y === 0 &&
+      before.foot.bottom <= 600 &&
+      // the middle less than a row and its padding (44 and 20 above and below): where 1.22.0 scrolled it all
+      before.foot.y - before.head.bottom < 44 + 2 * 20 &&
+      turned.top > 0 &&
+      turned.page === 0 &&
+      near(turned.head.y, before.head.y) &&
+      near(turned.foot.y, before.foot.y),
+    JSON.stringify({ before, turned: turned.top }),
   );
   await page.close();
 }

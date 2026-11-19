@@ -432,7 +432,7 @@ describe('a dashboard’s own sidebar in Home Assistant’s page', () => {
     expect(calls).toEqual([['light', 'turn_off', {}, undefined]]);
   });
 
-  it('keeps its head and its foot while they leave the middle a row, and past that scrolls the whole column inside its surface (#195)', async () => {
+  it('keeps its head and its foot while they fit its column, and past that scrolls the whole column inside its surface (#195, #211)', async () => {
     vi.stubGlobal('ResizeObserver', Sizes);
     const { root, side, settle } = mount({
       header: { cards: [CLOCK] },
@@ -452,21 +452,29 @@ describe('a dashboard’s own sidebar in Home Assistant’s page', () => {
     );
     const scrolls = (): string[] =>
       [...sr.querySelectorAll('.sb-scroll')].map((one) => one.classList[0]!);
-    // 744 tall: a head of 300 and a foot of 100 leave the middle more than its row (44, its 20 above and below)
+    // 744 tall: a head of 300 and a foot of 100 leave the middle room to scroll in
     sized(column!, { clientHeight: 744 });
     sized(head!, { offsetHeight: 300 });
     sized(foot!, { offsetHeight: 100 });
     Sizes.change(head!);
     await settle();
     expect(scrolls()).toEqual(['sb-body']);
-    // an Expander opened in the head: 640 and 100 leave it 4, so all of it scrolls and the middle no longer does
+    // a clock and the weather over a menu on a short tablet (#211): 600 and 100 leave the middle 44, less than a row
+    // and its padding, and still the head and the foot stay, the middle scrolling between them
+    sized(head!, { offsetHeight: 600 });
+    Sizes.change(head!);
+    await settle();
+    expect(column!.classList.contains('is-whole')).toBe(false);
+    expect(scrolls()).toEqual(['sb-body']);
+    // an Expander opened in the head: 640 and 100 leave the middle 4, less than its own padding (20 above and below),
+    // so the head and the foot would spill past the surface: all of it scrolls and the middle no longer does
     sized(head!, { offsetHeight: 640 });
     Sizes.change(head!);
     await settle();
     expect(column!.classList.contains('is-whole')).toBe(true);
     expect(scrolls()).toEqual(['sb-column']);
-    // folded again to exactly a row's room: the head and the foot stay
-    sized(head!, { offsetHeight: 560 });
+    // folded again to exactly the middle's padding: the head and the foot stay
+    sized(head!, { offsetHeight: 604 });
     Sizes.change(head!);
     await settle();
     expect(column!.classList.contains('is-whole')).toBe(false);

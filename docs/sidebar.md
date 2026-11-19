@@ -108,7 +108,7 @@ fluvy_sidebar:
 | `phone` | What a phone gets while its width is 0: `none`; `top`, the head's cards and the menu as a row of pills above the view; `drawer`, the whole sidebar in a drawer over the view, opened by a round at the foot of its side and closed by a tap beside it, by Escape or by choosing a page. |
 | `style` | `panel`: from edge to edge on the card's fill, a hairline at its inner edge, under the header as Home Assistant's own sidebar is beside it. `card`: one card, with the view's gap round it. `plain`: no surface, each card on its own. On a surface (`panel`, `card`) the cards draw none of their own and stand in one column, a hairline between them, as in the [Expander](cards/expander.md#guide). |
 | `collapsible` | A round at its foot folds it to a rail of the menu's icons, and unfolds it; each device remembers how it left each dashboard. |
-| `header`, `cards`, `footer` | Lists of cards, any card: Fluvy's, Home Assistant's own, a custom one. The head and the foot stay in sight while they leave the middle room for a row; taller, the whole sidebar scrolls as one (below, *How it behaves*). |
+| `header`, `cards`, `footer` | Lists of cards, any card: Fluvy's, Home Assistant's own, a custom one. The head and the foot stay in sight while they fit the screen together; taller, the whole sidebar scrolls as one (below, *How it behaves*). |
 | `menu` | `items: views` lists the dashboard's own views: not its subviews, and not a view Home Assistant hides from the person (`visible`). The open view is marked, and inside a subview the view it goes back to. A view without an icon takes the one its name says. |
 | `views`, `subviews` | Where it shows: only beside the views named by their paths, and not in subviews when `subviews: false`. |
 | `users` | The people it is drawn for, by their user id (Settings › People › Users). |
@@ -140,11 +140,11 @@ one `/`) or one of this dashboard's views by its path; anything else is left out
 
 ## How it behaves
 
-- **Taller than the screen.** The head and the foot stay in sight for as long as they leave the middle room for one
-  row. A head or a foot taller than that (an Expander opened in it, a long pinned menu on a short tablet, a phone's
-  drawer) scrolls with the rest: the whole sidebar then scrolls as one inside its own surface, with a wheel or a
-  finger, down to the foot's last card, and the page under it never moves. The middle fades where it goes on as soon
-  as a card in it grows, an Expander opened by a tap among them.
+- **Taller than the screen.** The head and the foot stay in sight for as long as they fit the screen together, the
+  middle scrolling between them however little room it has. A head and a foot that would not fit (an Expander opened
+  in one, a long pinned menu on a short tablet, a phone's drawer) scroll with the rest: the whole sidebar then scrolls
+  as one inside its own surface, with a wheel or a finger, down to the foot's last card, and the page under it never
+  moves. The middle fades where it goes on as soon as a card in it grows, an Expander opened by a tap among them.
 - **The edit mode** hides it: a dashboard is edited at its whole width.
 - **A wall** (see [Wall mode](wall.md)) draws it from the top of the screen, as it has no header, also when the wall
   comes on after the dashboard has opened. A kiosk that hides the header by another means is followed too: the

@@ -11,6 +11,9 @@
  *                  inside its surface, never the page (#195; `&sidephone=drawer` the same in a phone's drawer)
  *   &side=tallfoot the same at the foot, over the alerts
  *   &side=folded   `menu` with the house folded in the middle, under the menu: a tap opens it, and the middle fades
+ *   &side=short    pinned head and foot on a short tablet (#211; a wall's 1024 × 600): the clock and the weather at
+ *                  the head, the player and the alerts at the foot, leaving the middle less than a row and still the
+ *                  middle alone scrolls
  *   &side=pages    a menu of pages written by hand: an address, a view by its path, an action
  *   &sidepos=end  &sidestyle=card|plain  &sidephone=top|drawer  &sidefold=1 (collapsible)  &sidetabs=0 (hide_tabs)
  *   &sidepinned=1 (the menu stays under the head)  &sidewidth=24%  &sideviews=home,rooms  &sidesub=0  &sideusers=…
@@ -51,6 +54,9 @@ const LIGHTS = {
 };
 
 const PLAYER = { type: 'custom:fluvy-media-card', entity: 'media_player.living', variant: 'mini' };
+
+/** The weather beside the clock: today's line and the next two days. */
+const WEATHER = { type: 'custom:fluvy-weather-card', entity: 'weather.home', variant: 'compact' };
 
 /** One of Home Assistant's own cards, as its wrapper builds it. */
 const ENTITIES = {
@@ -106,6 +112,12 @@ const SIDES: Readonly<Record<string, Readonly<Record<string, unknown>>>> = {
     menu: MENU,
     cards: [FOLDED],
     footer: { cards: [ALERTS] },
+  },
+  short: {
+    header: { cards: [CLOCK, WEATHER] },
+    menu: MENU,
+    cards: [FOLDED],
+    footer: { cards: [PLAYER, ALERTS] },
   },
   pages: {
     menu: {
