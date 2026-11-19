@@ -53,6 +53,29 @@ export function numberModel(
   };
 }
 
+/** Past this many stops a scale stops being a slider (Home Assistant's own rule for `mode: auto`). */
+const MAX_STOPS = 256;
+
+/** What says whether a number draws its ruler: its domain's kind, the mode it asks for, its range and its step. */
+export interface RulerShape {
+  readonly counter: boolean;
+  readonly mode: unknown;
+  readonly min: number | null;
+  readonly max: number | null;
+  readonly step: number;
+}
+
+/**
+ * Whether a number draws its ruler under its figure and stepper: never a counter (a figure stepped), nor one that asks
+ * for a box, nor a range a ruler cannot resolve (none, or past 256 stops unless it asks for a slider). The Helpers card
+ * draws by it and the house's heights count by it.
+ */
+export const drawsRuler = ({ counter, mode, min, max, step }: RulerShape): boolean => {
+  if (counter || mode === 'box' || min === null || max === null) return false;
+  const span = max - min;
+  return span > 0 && (mode === 'slider' || span / step <= MAX_STOPS);
+};
+
 /** A figure in the number's own digits (its step's), "—" for none. */
 export const numberText = (
   hass: HomeAssistant | undefined,

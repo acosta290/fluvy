@@ -418,6 +418,10 @@ describe('rooms, helpers, updates, tiles and readouts', () => {
       entity('input_number.n', '5', { min: 0, max: 10, step: 1 }),
       entity('number.boxed', '5', { min: 0, max: 10, step: 1, mode: 'box' }),
       entity('counter.k', '3', {}),
+      // a counter with both its ends, and a range of a thousand stops a ruler cannot resolve: a figure and its stepper
+      entity('counter.bounded', '3', { minimum: 0, maximum: 10, step: 1 }),
+      entity('input_number.fine', '500', { min: 0, max: 1000, step: 1 }),
+      entity('input_number.slid', '500', { min: 0, max: 1000, step: 1, mode: 'slider' }),
       entity('input_select.s', 'Home', { options: ['Home', 'Away', 'Night', 'Guests'] }),
       entity('input_select.long', 'A', { options: ['A', 'B', 'C', 'D', 'E', 'F', 'G'] }),
       entity('input_text.t', 'abc'),
@@ -478,6 +482,10 @@ describe('rooms, helpers, updates, tiles and readouts', () => {
     expect(helpers({ title: 'T', entities: ['input_number.n'] }, hass)).toBe(64 + 16 + 92 + 20);
     expect(helpers({ title: 'T', entities: ['number.boxed'] }, hass)).toBe(64 + 16 + 44 + 20);
     expect(helpers({ title: 'T', entities: ['counter.k'] }, hass)).toBe(64 + 16 + 44 + 20);
+    // what the card draws: a counter never takes a ruler, its ends or none; nor a range past 256 stops, unless asked
+    expect(helpers({ title: 'T', entities: ['counter.bounded'] }, hass)).toBe(64 + 16 + 44 + 20);
+    expect(helpers({ title: 'T', entities: ['input_number.fine'] }, hass)).toBe(64 + 16 + 44 + 20);
+    expect(helpers({ title: 'T', entities: ['input_number.slid'] }, hass)).toBe(64 + 16 + 92 + 20);
     expect(helpers({ title: 'T', entities: ['input_select.s'] }, hass)).toBe(64 + 16 + 72 + 20);
     expect(helpers({ title: 'T', entities: ['input_select.long'] }, hass)).toBe(64 + 16 + 60 + 20);
     expect(helpers({ title: 'T', entities: ['input_text.t'] }, hass)).toBe(64 + 16 + 76 + 20);

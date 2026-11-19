@@ -56,7 +56,11 @@ const STATES: readonly StateSeed[] = [
   preset('away', 'Heating away', '15'),
   preset('frost', 'Heating frost', '7'),
   ['input_number.nb_boiler', 'unavailable', { friendly_name: 'Boiler setpoint' }],
-  ['counter.nb_coffee_pods', '12', { friendly_name: 'Coffee pods', step: 1, minimum: 0 }],
+  [
+    'counter.nb_coffee_pods',
+    '12',
+    { friendly_name: 'Coffee pods', step: 1, minimum: 0, maximum: 60 },
+  ],
   [
     'number.nb_dishwasher_delay',
     '3',

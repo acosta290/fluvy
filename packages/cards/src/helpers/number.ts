@@ -2,7 +2,13 @@ import { localize, sliderStill, strings, type EntityView } from '@fluvy/core';
 import { ico, stepper, type RulerChangeDetail } from '@fluvy/ui';
 import { html, nothing, type TemplateResult } from 'lit';
 import { iconOf } from '../shared/domain.js';
-import { numberModel, numberText, nudge, type NumberModel as Model } from '../shared/number.js';
+import {
+  drawsRuler,
+  numberModel,
+  numberText,
+  nudge,
+  type NumberModel as Model,
+} from '../shared/number.js';
 import {
   contextOf,
   field,
@@ -15,9 +21,6 @@ import {
 
 const s = strings('helpers');
 
-/** Past this many stops a scale stops being a slider (Home Assistant's own rule for `mode: auto`). */
-const MAX_STOPS = 256;
-
 interface NumberModel extends Model {
   /** Value and stepper only: a counter, `mode: box`, or a range a ruler cannot resolve. */
   readonly boxed: boolean;
@@ -25,13 +28,7 @@ interface NumberModel extends Model {
 
 function model(host: HelperHost, view: EntityView): NumberModel {
   const m = numberModel(view, host.state(view), isUnusable(view), host.preview(view.id));
-  const span = m.min !== null && m.max !== null ? m.max - m.min : 0;
-  const mode = view.attr<string>('mode');
-  return {
-    ...m,
-    boxed:
-      m.counter || mode === 'box' || span <= 0 || (mode !== 'slider' && span / m.step > MAX_STOPS),
-  };
+  return { ...m, boxed: !drawsRuler({ ...m, mode: view.attr<string>('mode') }) };
 }
 
 /** Whether this helper is drawn as value + stepper only (what the sheet's compact card holds). */

@@ -27,6 +27,7 @@ import {
 } from './energy-family.js';
 import { fanHeight, type FanCardConfig } from './fan/fan-card.js';
 import { helpersHeight, type HelpersCardConfig } from './helpers/helpers-card.js';
+import { drawsRuler, numberModel } from './shared/number.js';
 import { lightHeight, type LightCardConfig } from './light/light-card.js';
 import { lightsHeight, type LightsCardConfig } from './lights/lights-card.js';
 import { mediaHeight } from './media-family.js';
@@ -217,20 +218,21 @@ function room(config: RoomCardConfig, hass: HomeAssistant): number {
   );
 }
 
+/** Whether a number draws its ruler, read as the Helpers card reads it (`numberModel`, `drawsRuler`). */
+const ruled = (hass: HomeAssistant, id: string): boolean => {
+  const view = resolveEntity(hass, id);
+  return drawsRuler({ ...numberModel(view, view.state, false), mode: view.attr('mode') });
+};
+
 /**
- * A number's range (a counter's minimum and maximum; any other unless boxed, or written with no bounds), a select's
- * options, a moment's date.
+ * A number's ruler as the card draws it (never a counter's, nor a box's, nor a range a ruler cannot resolve; a number
+ * not read yet a ruler's, a counter none), a select's options, a moment's date.
  */
 const helpers = (config: HelpersCardConfig, hass: HomeAssistant): number =>
   helpersHeight(config, (id, domain) => {
     const attr = (key: string): unknown => attrOf(hass, id, key);
-    const counter = domain === 'counter';
-    const min = attr(counter ? 'minimum' : 'min');
-    const max = attr(counter ? 'maximum' : 'max');
     return {
-      ranged: counter
-        ? typeof min === 'number' && typeof max === 'number'
-        : attr('mode') !== 'box' && !(known(hass, id) && (min === null || max === null)),
+      ranged: known(hass, id) ? ruled(hass, id) : domain !== 'counter',
       options: listAttr(hass, id, 'options'),
       dated: Boolean(attr('has_date')),
     };
