@@ -665,6 +665,10 @@
     "below": "Unter dem Wert",
     "below_helper": "Aus: ab dem Wert aufwärts",
     "past_threshold": "Jenseits eines Schwellenwerts",
+    "alert_classes": "Auch melden bei",
+    "alert_classes_helper": "Eingeschaltet zählen sie wie eine offene Tür: im Warnton und im Abzeichen",
+    "alert": "Meldung",
+    "alert_helper": "Leer: nach der Geräteklasse",
     "show_mixed": "Anzeigen, wenn nur einige an sind",
     "lamp_switches": "Lampen an Steckdosen mitzählen",
     "lamp_switches_help": "Ein Schalter, dessen Name sagt, dass er eine Lampe ist, etwa Werkstattlampe, zählt zu den Lichtern des Raums.",
@@ -1158,7 +1162,9 @@
     "dry": "Trocken",
     "problem": "Problem",
     "ok": "OK",
-    "editor.max_rows": "Zeilen vor „Alle Sensoren“"
+    "editor.max_rows": "Zeilen vor „Alle Sensoren“",
+    "detections_one": "1 erkannt",
+    "detections": "{count} erkannt"
   },
   "panel": {
     "title": "Fluvy",

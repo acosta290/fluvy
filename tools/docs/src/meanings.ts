@@ -502,6 +502,8 @@ export const MEANINGS: Readonly<Record<string, string>> = {
   'media.secondary':
     'The line under the title, in place of what is playing: your own words, an entity’s state or a template.',
   'now-playing.controls': 'The rounds of the strip, in this order.',
+  'openings.alert_classes':
+    'Binary sensor classes whose on is an alert too, as an open door’s is: motion, occupancy, presence.',
   'openings.max_rows': 'How many rows the card shows before "All sensors".',
   'openings.show_count': 'Says on the head’s line how many are open.',
   'people.show_battery': 'Shows each person’s phone battery.',
@@ -851,6 +853,8 @@ export const MEANINGS: Readonly<Record<string, string>> = {
   'lights.colors[].color': 'The quick colour: a named one, or any colour of your own.',
   'lights.colors[].name': 'What the round says.',
   'meters.meters[].kind': 'What the meter measures: water, or gas.',
+  'openings.rows[].alert':
+    'Makes the sensor’s on an alert whatever its class, or never one, before the card’s classes.',
   'openings.rows[].since': 'Where the time of the last change is read from.',
   'printer.roles[].role': 'What the entity is to the printer.',
   'remote.apps[].key': 'A key that opens the app.',

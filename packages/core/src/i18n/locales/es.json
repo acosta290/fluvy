@@ -665,6 +665,10 @@
     "below": "Por debajo del valor",
     "below_helper": "Apagado, desde el valor hacia arriba",
     "past_threshold": "Al pasar un umbral",
+    "alert_classes": "Alertar también por",
+    "alert_classes_helper": "Activados, cuentan como una puerta abierta: en el tono de aviso y en la insignia",
+    "alert": "Alerta",
+    "alert_helper": "Vacío, según su clase",
     "show_mixed": "Mostrar cuando solo algunas están encendidas",
     "lamp_switches": "Contar las lámparas en enchufes",
     "lamp_switches_help": "Un interruptor cuyo nombre dice que es una lámpara, como Lámpara del taller, cuenta entre las luces de la estancia.",
@@ -1158,7 +1162,9 @@
     "dry": "Seco",
     "problem": "Problema",
     "ok": "Normal",
-    "editor.max_rows": "Filas antes de «Todos los sensores»"
+    "editor.max_rows": "Filas antes de «Todos los sensores»",
+    "detections_one": "1 detectado",
+    "detections": "{count} detectados"
   },
   "panel": {
     "title": "Fluvy",

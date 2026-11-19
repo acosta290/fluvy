@@ -1411,6 +1411,10 @@
     "below": "Pod hodnotou",
     "below_helper": "Vypnuto: od hodnoty výš",
     "past_threshold": "Po překročení prahu",
+    "alert_classes": "Upozornit také na",
+    "alert_classes_helper": "Zapnuté se počítají jako otevřené dveře: v tónu varování a v odznaku",
+    "alert": "Upozornění",
+    "alert_helper": "Prázdné: podle třídy",
     "show_mixed": "Zobrazit, když jsou zapnutá jen některá",
     "lamp_switches": "Počítat lampy v zásuvkách",
     "lamp_switches_help": "Spínač, jehož název říká, že jde o lampu, například Lampa v dílně, se počítá mezi světla místnosti.",
@@ -1552,7 +1556,10 @@
     "dry": "Sucho",
     "problem": "Problém",
     "ok": "OK",
-    "editor.max_rows": "Řádků, než se zobrazí „Všechny“"
+    "editor.max_rows": "Řádků, než se zobrazí „Všechny“",
+    "detections_one": "1 detekce",
+    "detections_few": "{count} detekce",
+    "detections": "{count} detekcí"
   },
   "people": {
     "title": "Kdo je doma",

@@ -1250,7 +1250,9 @@
     "dry": "干燥",
     "problem": "异常",
     "ok": "正常",
-    "editor.max_rows": "归入“全部传感器”前的行数"
+    "editor.max_rows": "归入“全部传感器”前的行数",
+    "detections_one": "1 个已触发",
+    "detections": "{count} 个已触发"
   },
   "people": {
     "title": "谁在家",
@@ -2002,6 +2004,10 @@
     "below": "低于该值",
     "below_helper": "关闭：从该值起向上",
     "past_threshold": "越过阈值时",
+    "alert_classes": "也报警的类别",
+    "alert_classes_helper": "开启时与打开的门一样计入：使用警告色并计入徽章",
+    "alert": "报警",
+    "alert_helper": "留空：按其类别",
     "show_mixed": "仅部分开启时显示",
     "lamp_switches": "计入插座上的灯",
     "lamp_switches_help": "名称表明是灯的开关（例如“工作室 电灯”）会计入房间的灯光。",

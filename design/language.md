@@ -2205,6 +2205,13 @@ reads "—" there; a slot that knew part of its time reads that part.
   gives it the class's words, its icon open or shut as it stands, and whether its on needs acting on; its own words
   for a state (`states`) come before the class's, in the row, the tile and the label alike. The class decides what
   counts: words alone never make a sensor an alert (a tilt sensor reads "Tilted", calm), a borrowed window does.
+- **What is detected, as an alert (1.23, #223):** motion, occupancy, presence, a vibration or a sound is an event and
+  stays neutral, until the card counts its class (`alert_classes`, a multi-select of Home Assistant's classes that are
+  no alert by themselves, offered while a row is read as one) or a row says so (`alert: true`, or `false` to silence a
+  row whatever its class or the card says; the row first). It then alerts as an opening does: its circle and its
+  state in the card's tone (the warning's unless `tone` says), a tile filled, its time how long it has been on, and
+  the count — "2 detected" where every alert is something detected, "2 alerts" with an opening or a leak among them,
+  as the "All sensors" row says what it hides.
 - **The real last change (1.11, #67):** a row's time — the openings card's "2 h ago" or "14 min", a list row's *last
   change* line (entities, lock, camera, alarm), a tile's (a tiles group's, a room's), a template's, a person's, a
   helper row's — is Home

@@ -665,6 +665,10 @@
     "below": "Sous la valeur",
     "below_helper": "Désactivé, à partir de la valeur et au-dessus",
     "past_threshold": "Au-delà d’un seuil",
+    "alert_classes": "Alerter aussi pour",
+    "alert_classes_helper": "Actifs, ils comptent comme une porte ouverte : dans le ton d’alerte et dans le badge",
+    "alert": "Alerte",
+    "alert_helper": "Vide, selon sa classe",
     "show_mixed": "Indiquer quand seules certaines sont allumées",
     "lamp_switches": "Compter les lampes sur prise",
     "lamp_switches_help": "Un interrupteur dont le nom dit qu’il s’agit d’une lampe, comme Lampe de l’atelier, compte parmi les lumières de la pièce.",
@@ -1158,7 +1162,9 @@
     "dry": "Sec",
     "problem": "Problème",
     "ok": "OK",
-    "editor.max_rows": "Lignes avant « Tous les capteurs »"
+    "editor.max_rows": "Lignes avant « Tous les capteurs »",
+    "detections_one": "1 détecté",
+    "detections": "{count} détectés"
   },
   "panel": {
     "title": "Fluvy",

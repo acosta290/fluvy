@@ -13977,6 +13977,14 @@
           "default": true
         },
         {
+          "key": "alert_classes",
+          "label": "Also alerts for",
+          "does": "Binary sensor classes whose on is an alert too, as an open door’s is: motion, occupancy, presence.",
+          "helper": "On, these count as an open door does: in the warning tone and in the badge",
+          "type": "choices",
+          "default_in_words": "none"
+        },
+        {
           "key": "since_pattern",
           "label": "Last change from, for every row",
           "does": "Where every row’s last change is read from, as a pattern of sensor ids.",
@@ -14085,6 +14093,17 @@
               "label": "Words for the states",
               "does": "Words of your own for the sensor’s states.",
               "type": "object"
+            },
+            {
+              "key": "alert",
+              "label": "Alert",
+              "does": "Makes the sensor’s on an alert whatever its class, or never one, before the card’s classes.",
+              "helper": "Empty: by its class",
+              "type": "choice",
+              "values": {
+                "true": "Always",
+                "false": "Never"
+              }
             },
             {
               "key": "since",

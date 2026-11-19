@@ -665,6 +665,10 @@
     "below": "Onder de waarde",
     "below_helper": "Uit: vanaf de waarde omhoog",
     "past_threshold": "Voorbij een drempel",
+    "alert_classes": "Ook melden bij",
+    "alert_classes_helper": "Aan tellen ze als een open deur: in de waarschuwingstint en in de badge",
+    "alert": "Melding",
+    "alert_helper": "Leeg: volgens de klasse",
     "show_mixed": "Tonen wanneer er maar een paar aan zijn",
     "lamp_switches": "Lampen aan stekkers meetellen",
     "lamp_switches_help": "Een schakelaar waarvan de naam zegt dat het een lamp is, zoals Werkplaatslamp, telt mee als een van de lampen van de kamer.",
@@ -1158,7 +1162,9 @@
     "dry": "Droog",
     "problem": "Probleem",
     "ok": "OK",
-    "editor.max_rows": "Rijen vóór “Alle sensoren”"
+    "editor.max_rows": "Rijen vóór “Alle sensoren”",
+    "detections_one": "1 gedetecteerd",
+    "detections": "{count} gedetecteerd"
   },
   "panel": {
     "title": "Fluvy",

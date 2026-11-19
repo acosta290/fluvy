@@ -1350,6 +1350,10 @@
     "below": "Poniżej wartości",
     "below_helper": "Wyłączone: od wartości w górę",
     "past_threshold": "Po przekroczeniu progu",
+    "alert_classes": "Alarmuj także dla",
+    "alert_classes_helper": "Włączone liczą się jak otwarte drzwi: w odcieniu ostrzeżenia i w plakietce",
+    "alert": "Alarm",
+    "alert_helper": "Puste: według klasy",
     "show_mixed": "Pokaż, gdy włączone są tylko niektóre",
     "lamp_switches": "Licz lampy na gniazdkach",
     "lamp_switches_help": "Przełącznik, którego nazwa mówi, że to lampa, na przykład Lampa w warsztacie, liczy się jako jedno ze świateł pomieszczenia.",
@@ -2033,7 +2037,11 @@
     "dry": "Sucho",
     "problem": "Problem",
     "ok": "OK",
-    "editor.max_rows": "Wiersze przed „Wszystkie”"
+    "editor.max_rows": "Wiersze przed „Wszystkie”",
+    "detections_one": "1 wykrycie",
+    "detections_few": "{count} wykrycia",
+    "detections_many": "{count} wykryć",
+    "detections": "{count} wykryć"
   },
   "option": {
     "0": "0",

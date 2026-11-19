@@ -60,6 +60,8 @@ export interface OpeningItem {
   readonly device_class?: string;
   /** Its own words for a state (`on: Tilted`), before its class's. */
   readonly states?: Readonly<Record<string, string>>;
+  /** Whether its on is an alert (#223) whatever its class says: `true` makes it one, `false` never. */
+  readonly alert?: boolean;
 }
 
 export const OPENINGS_VARIANTS = ['rows', 'compact', 'tiles'] as const;
@@ -80,6 +82,11 @@ export interface OpeningsCardConfig extends FluvyCardConfig, EmptyList {
   show_count?: boolean;
   /** How long it has been open, or since it last was, under each name (rows only). */
   show_time?: boolean;
+  /**
+   * The binary sensor classes whose on is an alert too (#223), besides the openings, a lock, a leak, smoke, gas, a
+   * problem and a tamper: a motion that is detected, a presence, a vibration. None by default: motion is an event.
+   */
+  alert_classes?: readonly string[];
   /**
    * Where every row's last change is read from, unless the row says (#67): a sensor id with `{id}` for the row's
    * object id or `{entity}` for its whole id (`sensor.{id}_real_last_changed`); none by default.
@@ -124,7 +131,8 @@ const isOn = (view: EntityView): boolean =>
   (view.domain === 'cover' &&
     view.status === 'ok' &&
     (numberAttr(view, 'current_position') ?? 0) > 0);
-const ALERT = new Set([
+/** The classes whose on is an alert by itself: the openings, a lock, a leak, smoke, gas, a problem, a tamper. */
+export const ALERT: ReadonlySet<string> = new Set([
   ...OPENING,
   'lock',
   'moisture',
@@ -135,8 +143,20 @@ const ALERT = new Set([
   'carbon_monoxide',
   'tamper',
 ]);
+/** The classes of what is detected (an event, unless the card or the row says it is an alert: #223). */
 const MOTION = new Set(['motion', 'occupancy', 'presence', 'moving', 'vibration', 'sound']);
 const HAZARD = new Set(['smoke', 'gas', 'carbon_monoxide']);
+
+/**
+ * What is alerting, as its count says it: open where every one of them is an opening, detected where every one is of a
+ * class of what is detected (#223), else alerts (a leak, smoke, or the two kinds together).
+ */
+const alertKind = (views: readonly EntityView[]): 'open' | 'detections' | 'alerts' =>
+  views.every((view) => isOpening(view))
+    ? 'open'
+    : views.every((view) => MOTION.has(view.deviceClass))
+      ? 'detections'
+      : 'alerts';
 
 /** Rows before the "All sensors" row takes over: four, else the config's whole number from 1, as many as it asks. */
 const maxRowsOf = (config: Pick<OpeningsCardConfig, 'max_rows'>): number =>
@@ -236,13 +256,19 @@ export class FluvyOpeningsCard extends Card<OpeningsCardConfig> {
   }
 
   /**
-   * Open, wet, smoke, a problem: on AND of a class that is a warning, as a cover of any class is (#105). Motion is an
-   * event, not an alert.
+   * Open, wet, smoke, a problem: on AND of a class that is a warning, as a cover of any class is (#105), or of a class
+   * the card counts too (`alert_classes`, #223); the row's own say first (`alert`). Motion is an event, not an alert,
+   * until the card or the row says it is one.
    */
-  private alert(view: EntityView): boolean {
+  private alert(view: EntityView, item: OpeningItem): boolean {
+    if (!isOn(view)) return false;
+    if (typeof item.alert === 'boolean') return item.alert;
+    const dc = view.domain === 'lock' ? 'lock' : view.deviceClass;
+    const more = this.config?.alert_classes;
     return (
-      isOn(view) &&
-      (view.domain === 'cover' || ALERT.has(view.domain === 'lock' ? 'lock' : view.deviceClass))
+      view.domain === 'cover' ||
+      ALERT.has(dc) ||
+      (Array.isArray(more) && dc !== '' && more.includes(dc))
     );
   }
 
@@ -251,9 +277,9 @@ export class FluvyOpeningsCard extends Card<OpeningsCardConfig> {
     return plural(this.hass, `openings.${key}`, n, { count: n });
   }
 
-  /** What is alerting, counted: "2 open" when every one of them is an opening, else "2 alerts" (a leak, smoke). */
-  private alerts(n: number, openOnly: boolean): string {
-    return plural(this.hass, openOnly ? 'openings.open' : 'openings.alerts', n, { count: n });
+  /** What is alerting, counted in its kind's words (`alertKind`): "2 open", "2 detected", "2 alerts". */
+  private alerts(n: number, kind: ReturnType<typeof alertKind>): string {
+    return plural(this.hass, `openings.${kind}`, n, { count: n });
   }
 
   /** The state, said once: in the row's own words for it, else in those the device class deserves. */
@@ -319,7 +345,7 @@ export class FluvyOpeningsCard extends Card<OpeningsCardConfig> {
     const room = bare ? share : share - 56;
     return html`<div class="fv-tiles fv-tiles--${columns} op-tiles">
       ${rows.map(({ item, view }) => {
-        const warn = this.alert(view);
+        const warn = this.alert(view, item);
         const dead = !isUsable(view);
         const name = this.nameFor(view, item.name);
         const value = words(item, view);
@@ -372,7 +398,7 @@ export class FluvyOpeningsCard extends Card<OpeningsCardConfig> {
     compact: boolean,
     more: number,
     keep: boolean,
-    hidden: { readonly count: number; readonly openOnly: boolean },
+    hidden: { readonly count: number; readonly kind: ReturnType<typeof alertKind> },
   ): TemplateResult {
     const title = s(this.hass, 'all_sensors');
     const open = this.expanded_;
@@ -380,7 +406,7 @@ export class FluvyOpeningsCard extends Card<OpeningsCardConfig> {
       !keep ||
       this.headFit.ruler.width('fv-row__title', title) >
         this.contentWidth - (compact ? 52 : 56) - 12 - 44;
-    const alert = hidden.count === 0 ? '' : this.alerts(hidden.count, hidden.openOnly);
+    const alert = hidden.count === 0 ? '' : this.alerts(hidden.count, hidden.kind);
     const folded = s(this.hass, 'more', { count: more });
     // folded, the line says the alert it hides before anything else: "2 more · 1 alert", else "+2 · 1 alert", else the
     // alert alone — never the count without it
@@ -456,7 +482,7 @@ export class FluvyOpeningsCard extends Card<OpeningsCardConfig> {
       view: classed(this.entity(item.entity), item),
     }));
     const views = rows.map(({ view }) => view);
-    const alerts = views.filter((view) => this.alert(view));
+    const alerts = rows.filter(({ item, view }) => this.alert(view, item)).map(({ view }) => view);
     const tone = this.config?.tone ?? 'warning';
 
     // the rooms are counted where there are several: one says nothing a room's own page or card does not
@@ -464,10 +490,11 @@ export class FluvyOpeningsCard extends Card<OpeningsCardConfig> {
     const countText = this.count('sensors', views.length);
     const roomText = rooms.size > 1 ? this.count('rooms', rooms.size) : '';
 
-    // "1 open" when everything alerting is an opening; a leak or smoke makes it "1 alert"
-    const openOnly = alerts.every((view) => isOpening(view));
+    // "1 open" when everything alerting is an opening, "1 detected" when it is motion; a leak or smoke makes it "1 alert"
     const badgeText =
-      alerts.length === 0 ? s(this.hass, 'all_clear') : this.alerts(alerts.length, openOnly);
+      alerts.length === 0
+        ? s(this.hass, 'all_clear')
+        : this.alerts(alerts.length, alertKind(alerts));
 
     const max = this.maxRows();
     const collapsible = views.length > max + 1; // one extra sensor is a row, not a "1 more" row
@@ -519,13 +546,10 @@ export class FluvyOpeningsCard extends Card<OpeningsCardConfig> {
       collapsible && !this.expanded_
         ? rows
             .slice(max)
-            .filter(({ view }) => this.alert(view))
+            .filter(({ item, view }) => this.alert(view, item))
             .map(({ view }) => view)
         : [];
-    const hidden = {
-      count: hiddenAlerts.length,
-      openOnly: hiddenAlerts.every((view) => isOpening(view)),
-    };
+    const hidden = { count: hiddenAlerts.length, kind: alertKind(hiddenAlerts) };
     return html`<article class="fv-card am-card" data-card>
       ${head({
         icon: fitted.icon ? (this.config?.icon ?? 'door') : null,
@@ -543,13 +567,14 @@ export class FluvyOpeningsCard extends Card<OpeningsCardConfig> {
           ? html`<div class="am-rows">
               ${panel}
               ${(variant === 'tiles' ? [] : shown).map(({ item, view }) => {
-                const warn = this.alert(view);
+                const warn = this.alert(view, item);
                 const dead = !isUsable(view);
                 const title = this.nameFor(view, item.name);
                 return listRow({
                   icon: keep ? iconOf(view, item.icon) : null,
                   // what needs acting on is filled in the warning tone, circle and state alike; a row's own colour is who
-                  // it is, so its circle wears it the rest of the time; events (motion) and the rest stay neutral
+                  // it is, so its circle wears it the rest of the time; events (motion, unless the card or the row counts
+                  // it, #223) and the rest stay neutral
                   tone: dead ? 'off' : warn ? tone : item.color ? 'accent' : 'neutral',
                   accent: this.accents.item(item.color),
                   title,

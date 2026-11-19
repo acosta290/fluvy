@@ -67,6 +67,7 @@ variant: rows
 max_rows: 4
 show_count: true
 show_time: true
+# alert_classes:
 # since_pattern:
 # empty_text:
 hide_empty: false
@@ -96,6 +97,7 @@ hide_empty: false
 | `max_rows` | `4` | How many rows the card shows before "All sensors". 1 or more. |
 | `show_count` | `true` | Says on the head’s line how many are open. |
 | `show_time` | `true` | Says under each name how long it has been so. |
+| `alert_classes` | none | Binary sensor classes whose on is an alert too, as an open door’s is: motion, occupancy, presence. A list. |
 | `since_pattern` |  | Where every row’s last change is read from, as a pattern of sensor ids. |
 | `empty_text` |  | What the card says while it has nothing to show. |
 | `hide_empty` | `false` | Hides the whole card while it has nothing to show. |
@@ -141,6 +143,7 @@ An item is an entity id, or a map with `entity` and any of these fields.
 | `color` | The item’s colour, in place of the one the card gives it. |
 | `device_class` | Reads the entity as this kind of sensor: its words, its icon and when it counts as open. |
 | `states` | Words of your own for the sensor’s states. |
+| `alert` | Makes the sensor’s on an alert whatever its class, or never one, before the card’s classes. `true` (Always) · `false` (Never). |
 | `since` | Where the time of the last change is read from. |
 | **Interactions** |  |
 | `tap_action` | What a tap on the item does. |
@@ -172,6 +175,25 @@ rows:
 - `states` gives words of your own, by state (`on`, `off`; a cover's `open`, `closed`). The class still decides what
   counts: with `device_class: window`, a tilted window counts as open.
 - An unquoted `on:` or `off:` (read as true or false in YAML mode) works as written.
+
+What is detected (motion, occupancy, presence, a vibration) is an event and counts as nothing, until you say it is an
+alert (1.23):
+
+```yaml
+type: custom:fluvy-openings-card
+alert_classes: [motion, occupancy] # these count too while on
+rows:
+  - binary_sensor.hall_motion # detected: the warning tone, "1 detected"
+  - binary_sensor.front_door
+  - entity: binary_sensor.nursery_motion
+    alert: false # never an alert, whatever the card says
+  - entity: binary_sensor.shed_window_tilt
+    alert: true # an alert while on, though it has no class
+```
+
+- `alert_classes` adds binary sensor classes to those that alert. The head then says "2 detected" where everything
+  alerting is of them, "2 alerts" with an opening among them; a row shows how long it has been on.
+- A row's `alert` comes first: `true` makes its on an alert, `false` never. The card's `tone` is the alert's colour.
 - The real time of the last change: `since` and `since_pattern`
   ([templates in row text](../customising.md#templates-in-row-text)).
 

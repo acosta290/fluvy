@@ -479,7 +479,9 @@
     "dry": "Torr",
     "problem": "Problem",
     "ok": "OK",
-    "editor.max_rows": "Rader före ”Alla sensorer”"
+    "editor.max_rows": "Rader före ”Alla sensorer”",
+    "detections_one": "1 detekterad",
+    "detections": "{count} detekterade"
   },
   "people": {
     "title": "Vem är hemma",
@@ -2106,6 +2108,10 @@
     "below": "Under värdet",
     "below_helper": "Av: från värdet och uppåt",
     "past_threshold": "Passerat tröskelvärde",
+    "alert_classes": "Varna även för",
+    "alert_classes_helper": "När de är på räknas de som en öppen dörr: i varningens ton och i märket",
+    "alert": "Varning",
+    "alert_helper": "Tomt: efter klassen",
     "show_mixed": "Visa när bara några är tända",
     "lamp_switches": "Räkna lampor på uttag",
     "lamp_switches_help": "En brytare vars namn säger att den är en lampa, som Verkstadslampa, räknas som en av rummets lampor.",

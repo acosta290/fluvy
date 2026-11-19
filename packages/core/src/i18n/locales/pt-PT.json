@@ -665,6 +665,10 @@
     "below": "Abaixo do valor",
     "below_helper": "Desligado: do valor para cima",
     "past_threshold": "Ao passar um limiar",
+    "alert_classes": "Alertar também para",
+    "alert_classes_helper": "Ligados, contam como uma porta aberta: no tom de aviso e no distintivo",
+    "alert": "Alerta",
+    "alert_helper": "Vazio: conforme a classe",
     "show_mixed": "Mostrar quando só algumas estão acesas",
     "lamp_switches": "Contar candeeiros em tomadas",
     "lamp_switches_help": "Um interruptor cujo nome diz que é um candeeiro, como Candeeiro da oficina, conta como uma das luzes da divisão.",
@@ -1158,7 +1162,9 @@
     "dry": "Seco",
     "problem": "Problema",
     "ok": "OK",
-    "editor.max_rows": "Linhas antes de “Todos os sensores”"
+    "editor.max_rows": "Linhas antes de “Todos os sensores”",
+    "detections_one": "1 detetado",
+    "detections": "{count} detetados"
   },
   "panel": {
     "title": "Fluvy",

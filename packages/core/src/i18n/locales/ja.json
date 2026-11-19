@@ -615,6 +615,10 @@
     "below": "値より下",
     "below_helper": "オフのときは値から上",
     "past_threshold": "しきい値を超えたとき",
+    "alert_classes": "ほかにも警告するクラス",
+    "alert_classes_helper": "オンのとき、開いたドアと同じく警告色とバッジで知らせます",
+    "alert": "警告",
+    "alert_helper": "空のときはクラスに従う",
     "show_mixed": "一部だけ点灯しているときに表示",
     "lamp_switches": "プラグのランプも数える",
     "lamp_switches_help": "名前がランプを示すスイッチ（「作業場のランプ」など）を部屋の照明として数えます。",
@@ -799,7 +803,9 @@
     "dry": "乾燥",
     "problem": "異常",
     "ok": "正常",
-    "editor.max_rows": "「すべてのセンサー」までの行数"
+    "editor.max_rows": "「すべてのセンサー」までの行数",
+    "detections_one": "1件検知",
+    "detections": "{count}件検知"
   },
   "people": {
     "title": "在宅状況",

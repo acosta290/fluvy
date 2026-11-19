@@ -49,6 +49,10 @@ const STATES = [
   state('cover.garage', 'closed', { device_class: 'garage', current_position: 0 }),
   // #102: a Shelly BLU Door/Window's tilt on ZHA, of no class
   state('binary_sensor.window_tilt', 'on'),
+  // #223: a hall's motion, a landing's occupancy and a washer's vibration
+  state('binary_sensor.hall_motion', 'on', { device_class: 'motion' }),
+  state('binary_sensor.landing_occupancy', 'on', { device_class: 'occupancy' }),
+  state('binary_sensor.washer_vibration', 'off', { device_class: 'vibration' }),
 ];
 
 const hass = {
@@ -345,5 +349,149 @@ describe('a row’s own class and state words (#102)', () => {
       rows: [{ entity: 'binary_sensor.window_tilt', states: { on: 'Tilted' } }],
     });
     expect(card.shadowRoot!.querySelector('.fv-tile__state')?.textContent).toMatch(/^Tilted/);
+  });
+});
+
+/*
+ * #223: what is detected (motion, occupancy, presence, a vibration) is an event, until the card counts its class
+ * (`alert_classes`) or a row says it is an alert (`alert`): it then takes the warning tone, the badge's count — "2
+ * detected" where every alert is of them, "2 alerts" mixed — and its running time, as an open door does.
+ */
+describe('the openings card’s alerts for motion and the like (#223)', () => {
+  const read = (card: CardElement) => ({
+    badge: card.shadowRoot!.querySelector('.fv-card__head .fv-badge')?.textContent?.trim(),
+    rows: [...card.shadowRoot!.querySelectorAll('.am-rows .fv-row')].map((row) => [
+      row.querySelector('.fv-ico')?.className.match(/fv-ico--(\w+)/)?.[1],
+      row.querySelector('.fv-row__value')?.textContent?.trim(),
+    ]),
+  });
+  const ROWS = [
+    'binary_sensor.hall_motion',
+    'binary_sensor.landing_occupancy',
+    'binary_sensor.front_door',
+  ];
+
+  it('counts no motion by default: an event, as before', async () => {
+    expect(read(await draw({ rows: ROWS }))).toEqual({
+      badge: 'All clear',
+      rows: [
+        ['neutral', 'Detected'],
+        ['neutral', 'Detected'],
+        ['neutral', 'Closed'],
+      ],
+    });
+  });
+
+  it('counts the classes the card names, "N detected" where every alert is one of them', async () => {
+    const card = await draw({ rows: ROWS, alert_classes: ['motion', 'occupancy'] });
+    expect(read(card)).toEqual({
+      badge: '2 detected',
+      rows: [
+        ['warning', 'Detected'],
+        ['warning', 'Detected'],
+        ['neutral', 'Closed'],
+      ],
+    });
+    expect(card.shadowRoot!.querySelector('.fv-card__head .fv-ico--warning')).not.toBeNull();
+    // its time is how long it has been on, as an open door's
+    expect(lines(card)[0]).toBe('1 min');
+    // one class named: the other stays an event
+    expect(read(await draw({ rows: ROWS, alert_classes: ['occupancy'] })).badge).toBe('1 detected');
+  });
+
+  it('says "N alerts" where what is detected and an opening alert together', async () => {
+    const card = await draw({
+      rows: ['binary_sensor.hall_motion', 'binary_sensor.kitchen_window'],
+      alert_classes: ['motion'],
+    });
+    expect(read(card).badge).toBe('2 alerts');
+  });
+
+  it('takes a row’s own say first: an alert whatever its class, or never one', async () => {
+    const card = await draw({
+      rows: [
+        { entity: 'binary_sensor.window_tilt', alert: true },
+        { entity: 'binary_sensor.kitchen_window', alert: false },
+        { entity: 'binary_sensor.hall_motion', alert: false },
+        'binary_sensor.landing_occupancy',
+      ],
+      alert_classes: ['motion', 'occupancy'],
+    });
+    expect(read(card)).toEqual({
+      badge: '2 alerts',
+      rows: [
+        ['warning', 'On'],
+        ['neutral', 'Open'],
+        ['neutral', 'Detected'],
+        ['warning', 'Detected'],
+      ],
+    });
+    // a row that is off is no alert, whatever it says
+    const off = await draw({ rows: [{ entity: 'binary_sensor.washer_vibration', alert: true }] });
+    expect(read(off).badge).toBe('All clear');
+  });
+
+  it('says what the fold hides in its kind’s words, and fills a tile', async () => {
+    const folded = await draw({
+      rows: [
+        'binary_sensor.front_door',
+        'binary_sensor.shed',
+        'binary_sensor.washer_vibration',
+        'binary_sensor.hall_motion',
+      ],
+      alert_classes: ['motion'],
+      max_rows: 2,
+    });
+    expect(lines(folded).at(-1)).toBe('2 more · 1 detected');
+    const tiles = await draw({
+      variant: 'tiles',
+      rows: ['binary_sensor.hall_motion', 'binary_sensor.front_door'],
+      alert_classes: ['motion'],
+    });
+    const lit = [...tiles.shadowRoot!.querySelectorAll('.fv-tile')].map((tile) =>
+      tile.classList.contains('is-on'),
+    );
+    expect(lit).toEqual([true, false]);
+  });
+
+  describe('its editor', () => {
+    const form = openingsEditor.getConfigForm().schema.flatMap((item) => item.schema ?? [item]);
+    const classes = form.find((item) => item.name === 'alert_classes')!;
+
+    it('offers the classes while a row is read as one that is no alert by itself', () => {
+      const when = (rows: unknown[]) => classes.when!({ rows }, hass);
+      expect(classes.selector?.['select']).toMatchObject({ multiple: true });
+      expect(when(['binary_sensor.front_door', 'cover.bank'])).toBe(false);
+      expect(when(['binary_sensor.front_door', 'binary_sensor.hall_motion'])).toBe(true);
+      // a row's own class counts, and a class of none is none to count
+      expect(when([{ entity: 'binary_sensor.front_door', device_class: 'presence' }])).toBe(true);
+      expect(when(['binary_sensor.window_tilt'])).toBe(false);
+      expect(when([{ entity: 'binary_sensor.hall_motion', device_class: 'window' }])).toBe(false);
+      // the classes outside the alerts, in Home Assistant's words
+      const named = {
+        ...hass,
+        localize: (key: string) => (key.endsWith('.motion.name') ? 'Motion' : ''),
+      } as HomeAssistant;
+      const offered = openingsEditor.choices({ type: 'custom:fluvy-openings-card' }, named)[
+        'alert_classes'
+      ];
+      expect(offered?.[0]).toEqual({ value: 'motion', label: 'Motion' });
+      expect(offered?.find((option) => option.value === 'battery_charging')?.label).toBe(
+        'battery charging',
+      );
+      expect(offered?.map((option) => option.value)).not.toContain('window');
+    });
+
+    it('offers a row’s alert: empty until chosen, always or never', () => {
+      const list = openingsEditor.lists[0]!;
+      const alert = list.schema.find((item) => item.name === 'alert');
+      expect(list.keys).toContain('alert');
+      expect(alert?.helper).toBe('editor.alert_helper');
+      expect(
+        (alert?.selector?.['select'] as { options: { value: string }[] }).options.map(
+          (option) => option.value,
+        ),
+      ).toEqual(['true', 'false']);
+    });
   });
 });

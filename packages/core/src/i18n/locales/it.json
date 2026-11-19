@@ -665,6 +665,10 @@
     "below": "Sotto il valore",
     "below_helper": "Spento, dal valore in su",
     "past_threshold": "Oltre una soglia",
+    "alert_classes": "Avvisa anche per",
+    "alert_classes_helper": "Attivi, contano come una porta aperta: nel tono di avviso e nel badge",
+    "alert": "Avviso",
+    "alert_helper": "Vuoto, secondo la sua classe",
     "show_mixed": "Indica quando solo alcune sono accese",
     "lamp_switches": "Conta le lampade sulle prese",
     "lamp_switches_help": "Un interruttore il cui nome dice che è una lampada, come Lampada del laboratorio, conta tra le luci della stanza.",
@@ -1158,7 +1162,9 @@
     "dry": "Asciutto",
     "problem": "Problema",
     "ok": "OK",
-    "editor.max_rows": "Righe prima di “Tutti i sensori”"
+    "editor.max_rows": "Righe prima di “Tutti i sensori”",
+    "detections_one": "1 rilevato",
+    "detections": "{count} rilevati"
   },
   "panel": {
     "title": "Fluvy",

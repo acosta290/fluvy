@@ -665,6 +665,10 @@
     "below": "Değerin altında",
     "below_helper": "Kapalıysa, değerden yukarısı",
     "past_threshold": "Bir eşik geçildiğinde",
+    "alert_classes": "Şunlar için de uyar",
+    "alert_classes_helper": "Açıkken açık bir kapı gibi sayılır: uyarı tonunda ve rozette",
+    "alert": "Uyarı",
+    "alert_helper": "Boşsa, sınıfına göre",
     "show_mixed": "Yalnızca bazıları açıkken göster",
     "lamp_switches": "Prizdeki lambaları say",
     "lamp_switches_help": "Adı onun bir lamba olduğunu söyleyen bir anahtar, örneğin Atölye lambası, odanın ışıklarından biri sayılır.",
@@ -1158,7 +1162,9 @@
     "dry": "Kuru",
     "problem": "Sorun",
     "ok": "Tamam",
-    "editor.max_rows": "\"Tüm sensörler\" öncesindeki satır sayısı"
+    "editor.max_rows": "\"Tüm sensörler\" öncesindeki satır sayısı",
+    "detections_one": "1 algılandı",
+    "detections": "{count} algılandı"
   },
   "panel": {
     "title": "Fluvy",

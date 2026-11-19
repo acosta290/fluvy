@@ -665,6 +665,10 @@
     "below": "Abaixo do valor",
     "below_helper": "Desligado, do valor para cima",
     "past_threshold": "Ao passar de um limite",
+    "alert_classes": "Alertar também para",
+    "alert_classes_helper": "Ligados, contam como uma porta aberta: no tom de aviso e no selo",
+    "alert": "Alerta",
+    "alert_helper": "Vazio, conforme a classe",
     "show_mixed": "Mostrar quando só algumas estão acesas",
     "lamp_switches": "Contar luminárias em tomadas",
     "lamp_switches_help": "Um interruptor cujo nome diz que é uma luminária, como Luminária da oficina, conta como uma das luzes do cômodo.",
@@ -1158,7 +1162,9 @@
     "dry": "Seco",
     "problem": "Problema",
     "ok": "OK",
-    "editor.max_rows": "Linhas antes de “Todos os sensores”"
+    "editor.max_rows": "Linhas antes de “Todos os sensores”",
+    "detections_one": "1 detectado",
+    "detections": "{count} detectados"
   },
   "panel": {
     "title": "Fluvy",

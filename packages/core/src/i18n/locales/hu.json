@@ -615,6 +615,10 @@
     "below": "Az érték alatt",
     "below_helper": "Kikapcsolva: az értéktől felfelé",
     "past_threshold": "Küszöbérték átlépésekor",
+    "alert_classes": "Riasztás ezekre is",
+    "alert_classes_helper": "Bekapcsolva nyitott ajtóként számítanak: figyelmeztető színnel és a jelvényben",
+    "alert": "Riasztás",
+    "alert_helper": "Üresen: az osztálya szerint",
     "show_mixed": "Jelezze, ha csak néhány ég",
     "lamp_switches": "A konnektoros lámpák számolása",
     "lamp_switches_help": "Az a kapcsoló, amelynek a neve szerint lámpa, például Műhelylámpa, a szoba lámpái közé számít.",
@@ -799,7 +803,9 @@
     "dry": "Száraz",
     "problem": "Hiba",
     "ok": "OK",
-    "editor.max_rows": "Sorok száma az „Összes” előtt"
+    "editor.max_rows": "Sorok száma az „Összes” előtt",
+    "detections_one": "1 észlelés",
+    "detections": "{count} észlelés"
   },
   "people": {
     "title": "Kik vannak otthon",

@@ -479,7 +479,9 @@
     "dry": "Dry",
     "problem": "Problem",
     "ok": "OK",
-    "editor.max_rows": "Rows before \"All sensors\""
+    "editor.max_rows": "Rows before \"All sensors\"",
+    "detections_one": "1 detected",
+    "detections": "{count} detected"
   },
   "people": {
     "title": "Who is home",
