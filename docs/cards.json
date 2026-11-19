@@ -2809,7 +2809,8 @@
           "values": {
             "tiles": "Tiles",
             "chips": "Chips",
-            "full": "Full"
+            "full": "Full",
+            "icons": "Icons"
           }
         },
         {

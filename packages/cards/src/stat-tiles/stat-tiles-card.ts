@@ -419,7 +419,7 @@ export class FluvyStatTilesCard extends Card<StatTilesCardConfig> {
         // the rows alone sit where the tiles would; nothing at all, the panel does
         panel || items.length
           ? html`<div class="so-tiles">
-              ${panel ?? options(items, null, gap, compact ? TILE_COMPACT : TILE_HEIGHT, columns, compact)}
+              ${panel ?? options(items, null, gap, compact ? TILE_COMPACT : TILE_HEIGHT, columns, compact ? 'compact' : 'tile')}
             </div>`
           : nothing
       }

@@ -175,7 +175,10 @@ export function getConfigForm(): LovelaceConfigForm {
       ownTextField('subtitle'),
       headFields({ badge: true }),
       fieldRow(selectField('variant', ['dial', 'compact', 'ruler']), boolField('show_stepper')),
-      fieldRow(boolField('show_modes'), selectField('modes_style', ['tiles', 'chips', 'full'])),
+      fieldRow(
+        boolField('show_modes'),
+        selectField('modes_style', ['tiles', 'chips', 'full', 'icons']),
+      ),
       // a climate's seven until the entity is known: then its own (`choices`), dragged into the order they show in
       orderedField(
         'modes',

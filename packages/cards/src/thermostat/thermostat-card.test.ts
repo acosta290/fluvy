@@ -12,8 +12,10 @@ import { thermostatHeight } from '../climate-family.js';
 import { familiesDefined } from '../index.js';
 import { shownNames } from '../shared/fixtures/editor.js';
 import { visibleFields } from '../shared/form.js';
+import { iconColumns } from '../shared/heights.js';
 import {
   FluvyThermostatCard,
+  MODE_ORDER,
   modeLabel,
   modeOrder,
   stepTarget,
@@ -751,5 +753,68 @@ describe('a mode chip (#215)', () => {
     expect(thermostatHeight(config({ variant: 'compact', modes_style: 'full' }), four)).toBe(
       164 + 36 + 8 + 44,
     );
+  });
+});
+
+/** The card's height from its config alone, at a 360 column. */
+const declared = (more: Partial<ThermostatCardConfig>): number =>
+  FluvyThermostatCard.layoutHeight(config(more));
+
+describe('the modes as one row of icons (#215)', () => {
+  /** A thermostat with every mode Home Assistant knows. */
+  const office = entity('climate.office', 'cool', {
+    hvac_modes: MODE_ORDER,
+    min_temp: 16,
+    max_temp: 30,
+    target_temp_step: 0.5,
+    temperature: 22,
+    current_temperature: 24.6,
+    hvac_action: 'cooling',
+  });
+
+  it('declares its modes as icons by their count alone: one row of 44 for three, seven as four and three', () => {
+    expect(declared({ variant: 'compact', modes_style: 'icons' })).toBe(164 + 36 + 8 + 44);
+    expect(declared({ variant: 'compact', modes_style: 'icons', show_modes: false })).toBe(164);
+    const every = { modes: MODE_ORDER, presets: [], fans: [], range: false };
+    expect(thermostatHeight(config({ variant: 'compact', modes_style: 'icons' }), every)).toBe(
+      164 + 36 + 8 + 44 + 4 + 44,
+    );
+    expect(iconColumns(7)).toBe(4);
+    expect(iconColumns(6)).toBe(6);
+    // half a section: two a row keep a finger's 44
+    expect(iconColumns(4, 112)).toBe(2);
+  });
+
+  it('draws its modes as one row of icons, the one it runs in its own tone, their words where they hold', async () => {
+    const card = await draw(homematic, 360, { variant: 'compact', modes_style: 'icons' });
+    const tiles = [...card.renderRoot.querySelectorAll<HTMLElement>('.fv-option--icon')];
+    expect(tiles.map((tile) => tile.querySelector('.fv-option__label')?.textContent)).toEqual([
+      'Off',
+      'Heat',
+      'Auto',
+    ]);
+    expect(tiles[1]?.className).toContain('is-active fv-option--heat');
+    expect(tiles.every((tile) => tile.style.minHeight === '44px')).toBe(true);
+    // the value under the tile is the tiles' alone: the row says the mode
+    expect(card.renderRoot.querySelector('.fv-option--icon .fv-option__value')).toBeNull();
+    card.remove();
+  });
+
+  it('draws the glyphs alone where a cell cannot hold every word, each named for a reader', async () => {
+    const card = await draw(tank, 360, { modes_style: 'icons' });
+    const tiles = [...card.renderRoot.querySelectorAll<HTMLElement>('.fv-option--icon')];
+    expect(tiles).toHaveLength(6);
+    expect(tiles.some((tile) => tile.querySelector('.fv-option__label'))).toBe(false);
+    expect(tiles.map((tile) => tile.querySelector('.fv-sr')?.textContent)).toContain('Heat pump');
+    expect(tiles[0]?.getAttribute('title')).toBe('Eco');
+    card.remove();
+  });
+
+  it('wraps seven modes as four and three, every row full', async () => {
+    const card = await draw(office, 360, { variant: 'compact', modes_style: 'icons' });
+    const grid = card.renderRoot.querySelector<HTMLElement>('.fv-options');
+    expect(grid?.style.gridTemplateColumns).toBe('repeat(12, minmax(0, 1fr))');
+    expect(card.renderRoot.querySelectorAll('.fv-option--icon')).toHaveLength(7);
+    card.remove();
   });
 });

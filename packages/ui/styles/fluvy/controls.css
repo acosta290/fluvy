@@ -554,6 +554,23 @@
   margin-top: 4px;
 }
 
+/* the icon tile (44: a row of choices, a thermostat's modes, #215): its glyph over its label, centred, 2 apart — the
+   label 11/14 — or its glyph alone where the row's cells cannot hold their words */
+.fv-option--icon {
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  padding: 0 4px;
+}
+
+.fv-option--icon .fv-option__label {
+  max-width: 100%;
+  height: 14px;
+  margin-top: 0;
+  font-size: 11px;
+  line-height: 14px;
+}
+
 /* a tile whose entity cannot be read: the Unavailable surface — the dashed hairline on the page fill, the off ink;
    the hairline says it, so the tile is not faded as well (the general `.is-unavailable` fade would take its words
    under 3:1) */

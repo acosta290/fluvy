@@ -1237,7 +1237,7 @@ export class FluvyScheduleSheet extends LitElement {
                                     4,
                                     64,
                                     afterItems.length,
-                                    true,
+                                    'compact',
                                   )
                                 : chipRow(
                                     afterItems.map((item) => ({

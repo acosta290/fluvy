@@ -205,6 +205,23 @@ export function optionRows(labels: readonly string[], width = COLUMN, gap = 4): 
 export const optionBlock = (rows: number): number =>
   rows ? 36 + 8 + rows * 84 + (rows - 1) * 4 : 0;
 
+/** A row of icon tiles: a finger's 44 each way, 4 apart. */
+const ICON = 44;
+export const ICON_GAP = 4;
+
+/**
+ * The columns a row of icon tiles takes at `width` (the option tile's icon form: a thermostat's modes, #215): as many
+ * as keep each a finger's 44, 4 apart, the rows as even as they can be (seven in a 320 column: four and three).
+ */
+export function iconColumns(count: number, width = COLUMN): number {
+  const fit = Math.max(1, Math.floor((width + ICON_GAP) / (ICON + ICON_GAP)));
+  return Math.max(1, Math.ceil(count / Math.ceil(count / fit)));
+}
+
+/** Icon tiles under their label: 16 above, the 20 label, 8, then rows of 44 tiles 4 apart. */
+export const iconBlock = (rows: number): number =>
+  rows ? 36 + 8 + rows * ICON + (rows - 1) * ICON_GAP : 0;
+
 /**
  * The rows a set of readouts takes in equal columns 16 apart (`statsColumns`): one for each while every label holds
  * its column, else fewer — a shorter last row takes the whole row. Figures are short; the labels decide.

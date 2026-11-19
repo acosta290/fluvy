@@ -46,6 +46,7 @@ import type { AliasSpec, WhenOff } from '../shared/config.js';
 import { chipRow, inForce, type Choice } from '../shared/chips.js';
 import { haWord, modeWord, pretty } from '../shared/mode-words.js';
 import { stateLook, tintOf, type StateTintConfig } from '../shared/state-tint.js';
+import { ICON_GAP, iconColumns } from '../shared/heights.js';
 import { fitValueRow, STEPPER, STEPPER_HALVES, valueRowClass } from '../shared/value-row.js';
 import { degrees, doing, setpoint, type Doing } from './doing.js';
 import { batteryLevel, humidityOf, valveOf, windowBy, type ReadingsAsk } from './readings.js';
@@ -73,14 +74,22 @@ export interface ThermostatCardConfig extends FluvyCardConfig, ReadingsAsk, Stat
   show_modes?: boolean;
   /** The modes to show, in this order (`['off', 'heat', 'cool']`). Default: every mode the entity offers, in the card's order. */
   modes?: readonly string[];
-  /** Modes as option tiles (default), as content-sized chips, or as chips filling the row. */
-  modes_style?: 'tiles' | RowStyle;
+  /**
+   * Modes as option tiles (default), as content-sized chips, as chips filling the row, or as one row of icons over
+   * their words (`icons`, #215).
+   */
+  modes_style?: ModesStyle;
   /** Presets and fan speeds as content-sized chips (default) or as chips filling the row. */
   preset_style?: RowStyle;
   fan_style?: RowStyle;
   /** While the device is off: everything (default), or `essentials` — the head, the value and the modes; presets and fan speeds wait for a mode. */
   when_off?: WhenOff;
 }
+
+export type ModesStyle = 'tiles' | 'icons' | RowStyle;
+
+/** An icon tile's sides (`modes_style: icons`), 4 each, which its word sits between. */
+const ICON_SIDES = 8;
 
 /** A thermostat as its card and its details sheet draw it. */
 export interface ThermostatModel {
@@ -857,6 +866,7 @@ export class FluvyThermostatCard extends Card<ThermostatCardConfig> {
   ): TemplateResult {
     const style = this.config?.modes_style ?? 'tiles';
     const select = (key: string): void => this.setMode(view, m, key);
+    if (style === 'icons') return this.iconModes(modes, select);
     // tiles only while every mode's word holds its cell (a water heater's "Performance" in a 211 column does not):
     // else the chips, which give way in their order and never cut a word
     const measure = (text: string): number => this.head.ruler.width('fv-option__label', text);
@@ -885,6 +895,28 @@ export class FluvyThermostatCard extends Card<ThermostatCardConfig> {
       ruler: this.head.ruler,
       width: this.contentWidth,
     });
+  }
+
+  /**
+   * The modes as one row of icon tiles (`modes_style: icons`, #215): as many a row as keep each a finger's 44, by their
+   * count and the column alone (`iconColumns`, what the card declares), each its glyph over its word and chosen in its
+   * own tone; the glyphs alone, each named for a reader, where a cell cannot hold every word.
+   */
+  private iconModes(modes: readonly OptionItem[], select: (key: string) => void): TemplateResult {
+    const width = this.contentWidth;
+    const columns = iconColumns(modes.length, width);
+    const cell = (width - ICON_GAP * (columns - 1)) / columns - ICON_SIDES;
+    const worded = modes.every(
+      (o) => this.head.ruler.width('fv-option fv-option--icon > fv-option__label', o.label) <= cell,
+    );
+    return options(
+      worded ? modes : modes.map((o) => ({ ...o, short: true })),
+      select,
+      ICON_GAP,
+      44,
+      columns,
+      'icon',
+    );
   }
 
   protected renderCard(): TemplateResult {

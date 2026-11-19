@@ -94,7 +94,7 @@ show_battery: false
 | `variant` | `dial` | The card’s layout. `dial` · `compact` · `ruler`. |
 | `show_stepper` | `true` | Shows the − and + buttons. |
 | `show_modes` | `true` | Shows the modes to choose from. |
-| `modes_style` | `tiles` | How the modes are drawn. `tiles` · `chips` · `full`. |
+| `modes_style` | `tiles` | How the modes are drawn. `tiles` · `chips` · `full` · `icons`. |
 | `modes` | what the device offers | The modes the card offers, in this order; left out, every mode the device has. Any of `off` · `heat` · `cool` · `heat_cool` (Auto) · `auto` · `dry` · `fan_only` (Fan). |
 | `show_current` | `true` | Shows the room’s temperature beside the target. |
 | `show_presets` | `true` | Shows the presets. |

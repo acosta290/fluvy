@@ -439,7 +439,16 @@ export interface OptionItem {
   readonly ink?: string | undefined;
   readonly accent?: string | undefined;
   readonly band?: string | undefined;
+  /** An icon tile's glyph alone, its label read out and not shown: a row whose cells cannot hold its words. */
+  readonly short?: boolean;
 }
+
+/**
+ * How option tiles draw: `tile`, the glyph top-left over the label and the value; `compact`, the 64 tile without its
+ * glyph row — the label over the value; `icon`, the 44 tile of a row of choices — the glyph over its label, centred,
+ * no value (a thermostat's modes in one row, #215).
+ */
+export type OptionForm = 'tile' | 'compact' | 'icon';
 
 /** Up to three tiles share a row; four make a 2 × 2; more wrap in threes — a tile never gets too narrow for its value. */
 export const optionColumns = (count: number): number =>
@@ -470,7 +479,7 @@ export function optionGrid(
 
 /**
  * Option tiles: glyph top-left, label, value; active = tone fill only. They share the column in equal cells and
- * every row is full. `compact`: the 64 tile without its glyph row — the label over the value (`height` is then 64).
+ * every row is full. `form`: the tile, its compact form (`height` is then 64) or its icon form (44: `OptionForm`).
  * Without `onSelect` they are figures: still, or pressed as a tile is where one has a tap or a hold of its own.
  */
 export function options(
@@ -479,7 +488,7 @@ export function options(
   gap = 4,
   height = 84,
   columns = optionColumns(items.length),
-  compact = false,
+  form: OptionForm = 'tile',
 ): TemplateResult {
   const stat = onSelect === null;
   const grid = optionGrid(items.length, columns);
@@ -498,14 +507,17 @@ export function options(
               o.onHold,
             )
           : nothing;
-      const cls = `fv-option ${stat ? 'fv-option--stat ' : ''}${cover === nothing ? '' : 'fv-tile--tap '}${compact ? 'fv-option--compact ' : ''}${o.unavailable ? 'is-unavailable ' : ''}${o.active ? `is-active fv-option--${o.tone ?? 'accent'}` : ''}`;
-      const body = html`${compact ? nothing : html`<span class="fv-option__glyph">${icon(o.glyph)}</span>`}<span
-          class="fv-option__label"
-          data-name=${o.name ? '' : nothing}
-          >${banded(o.label, { label: o.band })}</span
-        ><span class="fv-option__value ${o.word ? 'fv-option__value--word' : ''}"
-          >${o.value ?? ''}</span
-        >`;
+      const cls = `fv-option ${stat ? 'fv-option--stat ' : ''}${cover === nothing ? '' : 'fv-tile--tap '}${form === 'tile' ? '' : `fv-option--${form} `}${o.unavailable ? 'is-unavailable ' : ''}${o.active ? `is-active fv-option--${o.tone ?? 'accent'}` : ''}`;
+      const glyphed =
+        form === 'compact' ? nothing : html`<span class="fv-option__glyph">${icon(o.glyph)}</span>`;
+      const body =
+        form === 'icon'
+          ? html`${glyphed}${o.short ? said(o.label) : html`<span class="fv-option__label">${o.label}</span>`}`
+          : html`${glyphed}<span class="fv-option__label" data-name=${o.name ? '' : nothing}
+                >${banded(o.label, { label: o.band })}</span
+              ><span class="fv-option__value ${o.word ? 'fv-option__value--word' : ''}"
+                >${o.value ?? ''}</span
+              >`;
       // a minimum, not a height: a tile whose value takes two lines grows, and its row grows with it
       const style = `min-height:${height}px${grid.spans[index] === 1 ? '' : `;grid-column:span ${grid.spans[index]}`}`;
       return stat
@@ -522,6 +534,7 @@ export function options(
             class=${cls}
             data-target
             style=${style}
+            title=${o.short ? o.label : nothing}
             aria-pressed=${o.active ? 'true' : 'false'}
             aria-disabled=${o.unavailable || o.inert ? 'true' : nothing}
             @click=${o.unavailable || o.inert ? nothing : () => onSelect(o.key)}

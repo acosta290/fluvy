@@ -112,6 +112,7 @@ Every card lets you choose what it shows:
 - `variant` (on a tile, `size`) picks another layout.
 - Chip rows fill their row; `preset_style: chips`, `fan_style: chips` or `suction_style: chips` makes them
   content-sized.
+- `modes_style: icons` draws a thermostat's modes as one row of 44 tiles, an icon over each word.
 - `when_off: essentials` keeps an off thermostat to its head, value and modes, and an off fan to its switch and ruler.
 - A bars row is low under its `low` and high over its `high` (a battery or a soil's moisture: under 20 %).
 
