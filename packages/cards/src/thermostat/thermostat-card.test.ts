@@ -8,6 +8,7 @@ import {
   type LovelaceCardConfig,
 } from '@fluvy/core';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
+import { thermostatHeight } from '../climate-family.js';
 import { familiesDefined } from '../index.js';
 import { shownNames } from '../shared/fixtures/editor.js';
 import { visibleFields } from '../shared/form.js';
@@ -728,5 +729,27 @@ describe('what it is asked to say with it (#185)', () => {
     const hidden = fields({ entity: valve.entity_id, show_badge: false });
     expect(hidden).not.toEqual(expect.arrayContaining(['state_entity']));
     expect(hidden).toEqual(expect.arrayContaining(['show_battery', 'humidity_entity']));
+  });
+});
+
+describe('a mode chip (#215)', () => {
+  it('chooses a mode chip in its own tone, as its tile and its details sheet do', async () => {
+    for (const modes_style of ['chips', 'full'] as const) {
+      const card = await draw(homematic, 360, { variant: 'compact', modes_style });
+      const chosen = card.renderRoot.querySelector('.fv-chip.is-active');
+      expect(chosen?.className).toContain('fv-chip--toned fv-tone--heat');
+      card.remove();
+    }
+  });
+
+  it('counts a row of content-sized mode chips with their glyphs: four wrap in a 360 column', () => {
+    const four = { modes: ['off', 'heat', 'cool', 'dry'], presets: [], fans: [], range: false };
+    expect(thermostatHeight(config({ variant: 'compact', modes_style: 'chips' }), four)).toBe(
+      164 + 36 + 8 + 44 + 8 + 44,
+    );
+    // a filled row keeps its one row
+    expect(thermostatHeight(config({ variant: 'compact', modes_style: 'full' }), four)).toBe(
+      164 + 36 + 8 + 44,
+    );
   });
 });

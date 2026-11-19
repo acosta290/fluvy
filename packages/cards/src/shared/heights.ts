@@ -146,7 +146,8 @@ export const CHIP_GLYPH = 24;
 
 /**
  * The rows a row of chips takes at `width`: filled (`full`, the default) as `fittedColumns` lays it out — every
- * chip, else three, else two a row, the widest label deciding — or content-sized (`chips`), wrapping as its pills run.
+ * chip, else three, else two a row, the widest label deciding — or content-sized (`chips`), wrapping as its pills run;
+ * each chip `glyph` wider where the row's chips carry one (`CHIP_GLYPH`).
  */
 export function chipRows(
   labels: readonly string[],
@@ -161,7 +162,7 @@ export function chipRows(
     let rows = 1;
     let used = 0;
     for (const label of labels) {
-      const pill = textWidth(label, 'chip') + PILL_SIDES;
+      const pill = textWidth(label, 'chip') + PILL_SIDES + glyph;
       if (used && used + CHIP_GAP + pill > width) {
         rows += 1;
         used = pill;

@@ -1,6 +1,13 @@
 import type { LovelaceCardConfig } from '@fluvy/core';
 import type { FamilyEntry } from './energy-family.js';
-import { chipBlock, chipRows, optionBlock, optionRows } from './shared/heights.js';
+import {
+  CHIP_GLYPH,
+  chipBlock,
+  chipRows,
+  COLUMN,
+  optionBlock,
+  optionRows,
+} from './shared/heights.js';
 import { pretty } from './shared/mode-words.js';
 
 /**
@@ -81,16 +88,22 @@ export function thermostatHeight(
         ? offers.modes
         : offers.modes.slice(0, SHOWN);
   const words = shown.map((m) => pretty(m.replace('_', '/')));
-  const chips = (items: readonly string[], asked: unknown): number => {
+  // a mode's chip carries its glyph, which a row of content-sized chips wraps by (a preset's and a fan speed's carry
+  // their words alone); a filled row's columns are its words', these English ones already wider than the card's own
+  const chips = (items: readonly string[], asked: unknown, glyph = 0): number => {
     const style = asked === 'chips' ? 'chips' : 'full';
-    return chipBlock(chipRows(items, style), style);
+    return chipBlock(
+      chipRows(items, style, COLUMN, undefined, style === 'chips' ? glyph : 0),
+      style,
+    );
   };
+  const style = config['modes_style'] ?? 'tiles';
   const modes =
     config['show_modes'] === false || !shown.length
       ? 0
-      : (config['modes_style'] ?? 'tiles') === 'tiles'
+      : style === 'tiles'
         ? optionBlock(optionRows(words))
-        : chips(words, config['modes_style']);
+        : chips(words, style, CHIP_GLYPH);
   const presets =
     config['show_presets'] === false
       ? 0

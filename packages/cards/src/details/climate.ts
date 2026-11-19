@@ -13,6 +13,7 @@ import {
 } from '../thermostat/readings.js';
 import {
   chooseMode,
+  modeChoice,
   modesDrawn,
   stepTarget,
   targetCall,
@@ -373,15 +374,7 @@ export class FluvyDetailsClimate extends DetailsSheet {
       ${
         modes.length
           ? html`${label(this.t('climate.mode'))}${chipRow(
-              modes.map((mode) => ({
-                key: mode.key,
-                label: mode.label,
-                active: mode.active ?? false,
-                unavailable: unusable,
-                inert: mode.inert ?? false,
-                ...(mode.glyph ? { glyph: mode.glyph } : {}),
-                ...(mode.tone ? { tone: mode.tone } : {}),
-              })),
+              modes.map((mode) => modeChoice({ ...mode, unavailable: unusable })),
               (key) => {
                 this.stepped.clear();
                 chooseMode(this.controlHost, view, m, key);

@@ -208,6 +208,17 @@ export function modesDrawn(m: ThermostatModel, asked?: readonly string[]): reado
   );
 }
 
+/** A mode as a chip says it (the chips of `modes_style`, the details sheet's row): chosen in its own tone, as its tile is. */
+export const modeChoice = (o: OptionItem): Choice => ({
+  key: o.key,
+  label: o.label,
+  active: o.active ?? false,
+  unavailable: o.unavailable ?? false,
+  inert: o.inert ?? false,
+  ...(o.glyph ? { glyph: o.glyph } : {}),
+  ...(o.tone ? { tone: o.tone } : {}),
+});
+
 /**
  * A mode's word, the same on the card and in its editor: Fluvy's for a climate's seven and for Off; else Home
  * Assistant's own where Fluvy speaks the page's language (a water heater's "eco", a humidifier's "sleep": `haWord`,
@@ -870,19 +881,10 @@ export class FluvyThermostatCard extends Card<ThermostatCardConfig> {
       );
       return options(held, select, 4, 84, columns);
     }
-    return chipRow(
-      modes.map((o) => ({
-        key: o.key,
-        label: o.label,
-        active: o.active ?? false,
-        unavailable: o.unavailable ?? false,
-        inert: o.inert ?? false,
-        ...(o.glyph ? { glyph: o.glyph } : {}),
-      })),
-      select,
-      style === 'tiles' ? 'full' : style,
-      { ruler: this.head.ruler, width: this.contentWidth },
-    );
+    return chipRow(modes.map(modeChoice), select, style === 'tiles' ? 'full' : style, {
+      ruler: this.head.ruler,
+      width: this.contentWidth,
+    });
   }
 
   protected renderCard(): TemplateResult {
