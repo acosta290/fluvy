@@ -1008,16 +1008,17 @@ export const sheet: SheetSpec = {
       ],
     })),
     // #202: a phone read larger gives the card less width (its width / the size − 32): a long name takes three lines
-    // where two leave no lane, the lanes still 56 long; at 280 they are 48, the last resort before the list (there a
-    // battery that says its charge, "电池 · 100 %", leaves 46 even on two lines: that house lists)
+    // where two leave no lane, the lanes still 56 long; at 280 they are 48, the last resort before the list. A battery
+    // that says its charge never leaves a character alone on a line: "电池" over "64 %", where it broke as
+    // "电 / 池 · 64 %" (1.23), and at 280 left the house no lane
     ...(
       [
-        [312, '430 px at 125 %', 'long_zh', true],
-        [298, '412 px at 125 %', 'unbroken', true],
-        [295, '360 px at 110 %', 'long_zh', true],
-        [280, '390 px at 125 %', 'long_zh', false],
+        [312, '430 px at 125 %', 'long_zh'],
+        [298, '412 px at 125 %', 'unbroken'],
+        [295, '360 px at 110 %', 'long_zh'],
+        [280, '390 px at 125 %', 'long_zh'],
       ] as const
-    ).map(([width, phone, house, charge]) => ({
+    ).map(([width, phone, house]) => ({
       title: `A long name on three lines · ${phone}`,
       width,
       cards: [
@@ -1027,11 +1028,7 @@ export const sheet: SheetSpec = {
             { type: 'solar', power: `sensor.fl_${house}_e1` },
             { type: 'solar', power: `sensor.fl_${house}_e2` },
             { type: 'grid', power: 'sensor.fl_long_grid' },
-            {
-              type: 'battery',
-              power: 'sensor.fl_long_battery',
-              ...(charge ? { level: 'sensor.fl_long_level' } : {}),
-            },
+            { type: 'battery', power: 'sensor.fl_long_battery', level: 'sensor.fl_long_level' },
           ],
           _now: NOW,
         },

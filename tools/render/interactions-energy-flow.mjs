@@ -7,7 +7,8 @@
  * card, faster for a bigger flow in px/s, retuned in place when a reading changes, paused off screen and in a hidden
  * tab, absent under reduced motion and `motion: off`; a flow below its threshold rests, a stale card says so, an
  * unreadable source is a hairline (quiet out of reach, its lanes rest); the cross bridges its crossing; narrow columns
- * list; the Energy dashboard's own sources and a day's totals are read; 1.3's YAML still draws.
+ * list; the Energy dashboard's own sources and a day's totals are read; a Chinese or Japanese name never leaves one
+ * character alone on a line; 1.3's YAML still draws.
  */
 import { contrastRatio, toHex } from './lib/colour.mjs';
 import { BASE, frame, startSuite } from './lib/suite.mjs';
@@ -905,6 +906,39 @@ const pulses = (flow) =>
     !missing.empty && missing.chart && missing.axis && missing.value === '—',
     JSON.stringify(missing),
   );
+  await page.close();
+}
+
+/* ---------- a Chinese or Japanese name never leaves one character alone on a line ---------- */
+for (const [lang, battery, broken] of [
+  ['zh-Hans', '电池|64 %', '电 / 池 · 64 %'],
+  ['ja', 'テリー|64 %', 'バッ / テ / リー · 64 %'],
+]) {
+  const page = await browser.newPage({ viewport: { width: 1400, height: 1000 } });
+  await page.goto(`${BASE}?sheet=flow&lang=${lang}`);
+  await page.waitForSelector('html[data-ready="1"]');
+  await page.waitForTimeout(1200);
+  for (const [title, width] of [
+    ['A long name on three lines · 412 px at 125 %', 298],
+    ['A long name on three lines · 360 px at 110 %', 295],
+    ['A long name on three lines · 390 px at 125 %', 280],
+  ]) {
+    const flow = card(page, title);
+    const drawn = Math.round((await flow.boundingBox()).width);
+    const labels = (await flow.locator('.en-stage .en-words__label').allTextContents()).map((t) =>
+      t.trim(),
+    );
+    check(
+      `${lang} ${width}: the battery's charge stands alone under its name, never "${broken}"; the diagram stays`,
+      drawn === width &&
+        (await flow.locator('.en-stage').count()) === 1 &&
+        labels.join('|').includes(battery) &&
+        !labels.some((label) =>
+          /^[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}]$/u.test(label),
+        ),
+      `${drawn} · ${labels.join(' | ')}`,
+    );
+  }
   await page.close();
 }
 

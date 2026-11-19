@@ -692,6 +692,27 @@ describe('a long name on two lines (#183)', () => {
     expect(brokenName('バッテリー', '', width)?.[1]).not.toMatch(/^[ッー]/);
   });
 
+  it('never leaves a Chinese or Japanese character alone on a line: a name that would stays whole, its charge under it', () => {
+    // a battery's "电 / 池 · 64 %" at 295 and 298: the name whole on the first line, its charge alone on the second
+    expect(brokenName('电池', ' · 100 %', width)).toEqual(['电池', '']);
+    expect(brokenName('储能柜', ' · 100 %', width)).toEqual(['储能柜', '']);
+    // a name that breaks elsewhere keeps each of its words whole there
+    expect(brokenName('家用电池', ' · 100 %', width)).toEqual(['家用', '电池']);
+    expect(brokenName('逆变器 E2 南 MPPT 累计发电量', '', width, 3)).not.toContainEqual('南');
+    // with no charge to take the second line it breaks nowhere, as a word of one script does not
+    expect(brokenName('电池', '', width)).toBeNull();
+    expect(brokenName('电池', ' · 100 %', width, 3)).toBeNull();
+    expect(brokenName('Battery', ' · 100 %', width)).toBeNull();
+    // on three lines, "バッ / テ / リー · 100 %": the name on two lines, its charge alone on the third
+    const three = brokenName('バッテリー', ' · 100 %', width, 3);
+    expect(three).toHaveLength(3);
+    expect(three?.[2]).toBe('');
+    expect(three?.slice(0, 2).join('')).toBe('バッテリー');
+    expect(three?.some((line) => [...line].length === 1)).toBe(false);
+    // a name of another script with no break of its own takes no third line for its charge
+    expect(brokenName('Wechselrichter Süddach', ' · 100 %', width, 3)).toBeNull();
+  });
+
   it('on three lines (#202) where its widest comes out the narrowest, by the same breaks, its charge ending the last', () => {
     expect(brokenName('逆变器 E2 南 MPPT 累计发电量', '', width, 3)).toEqual([
       '逆变器',

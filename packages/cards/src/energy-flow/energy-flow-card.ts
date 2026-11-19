@@ -875,7 +875,7 @@ export class FluvyEnergyFlowCard extends Card<EnergyFlowCardConfig> {
   private labelLines(n: Node, lines: 1 | 2 | 3): readonly string[] {
     const broken = lines === 1 ? null : this.brokenOf(n, lines);
     return broken
-      ? broken.map((line, k) => (k === broken.length - 1 ? line + chargeOf(n.level) : line))
+      ? broken.map((line, k) => (k === broken.length - 1 ? charged(line, n.level) : line))
       : [n.label];
   }
 
@@ -885,18 +885,22 @@ export class FluvyEnergyFlowCard extends Card<EnergyFlowCardConfig> {
    * take the first that leaves a lane, three lines only where none on one or two does.
    */
   private widths(n: Node, words: Words, period: boolean): WordsWidth[] {
-    const full = chargeOf(n.level === null ? null : 100);
+    const full = n.level === null ? null : 100;
     const label = (lines: 2 | 3, broken: readonly string[]) => {
       const head = broken.slice(0, -1).map((line) => this.labelWidth(line));
       const last = broken[broken.length - 1] ?? '';
       return {
         lines,
-        steady: Math.max(...head, this.labelWidth(last + full)),
-        now: Math.max(...head, this.labelWidth(last + chargeOf(n.level))),
+        steady: Math.max(...head, this.labelWidth(charged(last, full))),
+        now: Math.max(...head, this.labelWidth(charged(last, n.level))),
       };
     };
     const labels = [
-      { lines: 1 as const, steady: this.labelWidth(n.name + full), now: this.labelWidth(n.label) },
+      {
+        lines: 1 as const,
+        steady: this.labelWidth(n.name + chargeOf(full)),
+        now: this.labelWidth(n.label),
+      },
       ...([2, 3] as const).flatMap((lines) => {
         const broken = this.brokenOf(n, lines);
         return broken ? [label(lines, broken)] : [];
@@ -1616,17 +1620,30 @@ export class FluvyEnergyFlowCard extends Card<EnergyFlowCardConfig> {
 
 /* ---------- pieces ---------- */
 
+/** A source's charge in figures, where it has one: "62 %". */
+const chargeFigure = (level: number | null): string =>
+  level === null ? '' : `${Math.round(Math.min(100, Math.max(0, level)))} %`;
+
 /** What a source's name carries of its charge, where it has one: " · 62 %". */
 const chargeOf = (level: number | null): string =>
-  level === null ? '' : ` · ${Math.round(Math.min(100, Math.max(0, level)))} %`;
+  level === null ? '' : ` · ${chargeFigure(level)}`;
+
+/**
+ * A label's last line with its charge (`brokenName`): after the name's last words, or alone, where the name stands
+ * whole above it ("电池" over "64 %").
+ */
+const charged = (last: string, level: number | null): string =>
+  last ? last + chargeOf(level) : chargeFigure(level);
 
 /** Where a Japanese line may not begin: a small kana. */
 const NO_START = /[ぁぃぅぇぉっゃゅょゎゕゖァィゥェォッャュョヮヵヶ]/u;
 
 /**
  * A name on two lines (#183) or three (#202), broken where its widest line comes out the narrowest: at a space, or
- * between two Chinese or Japanese characters (never before a small kana), never inside a word of another script.
- * `tail` ends the last line (a charge, " · 100 %"). Null where the name has no such breaks.
+ * between two Chinese or Japanese characters (never before a small kana, never leaving one alone on a line), never
+ * inside a word of another script. `tail` ends the last line (a charge, " · 100 %"). Where every break would leave a
+ * character alone ("电 / 池", "バッ / テ / リー"), the tail takes the last line alone (an empty last line: `charged`),
+ * under the name whole or on its two lines. Null where the name has no such breaks.
  */
 export function brokenName(
   name: string,
@@ -1654,9 +1671,15 @@ export function brokenName(
   };
   let best: readonly string[] | null = null;
   let widest = Infinity;
+  /** A break was passed over for leaving a Chinese or Japanese character alone on its line. */
+  let alone = false;
   const consider = (at: readonly number[]): void => {
     const parts = linesAt(at);
     if (!parts) return;
+    if (parts.some((part) => UNSPACED.test(part) && [...part].length === 1)) {
+      alone = true;
+      return;
+    }
     const wide = Math.max(...parts.map((part, k) => width(k === at.length ? part + tail : part)));
     if (wide < widest) [best, widest] = [parts, wide];
   };
@@ -1664,7 +1687,10 @@ export function brokenName(
     if (lines === 2) consider([a]);
     else for (const b of breaks.slice(k + 1)) consider([a, b]);
   });
-  return best;
+  if (best || !alone || !tail) return best;
+  // every break left a character alone: the name whole over its tail, or on two lines over it
+  const whole = lines === 2 ? [name] : brokenName(name, '', width, 2);
+  return whole ? [...whole, ''] : null;
 }
 
 /** A words block's height: label 16, a value line 20 each. */

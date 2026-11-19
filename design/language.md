@@ -1379,12 +1379,14 @@ lanes' start only as far as each lane stays 56 px. Before the card lists, its wo
 its way on the free line under its figure, a pair, which has none, by its lane's own head beside each figure in the
 lane's ink, the head carrying the way's word for assistive technology; and in each of those ways a long name first
 tries its label on one line, then on two (1.20, #183): broken where the two lines come out the most even, at a space
-or between two Chinese or Japanese characters (never before a small kana), never inside a word of another script,
-its charge ending the second line; the column is the widest of the label's lines and the figures'; the block grows
-by 16 (8 above, 8 under, inside the stage), so a pair's 72 still keeps 8 to its neighbour at the 80 pitch. Only where
-a long name leaves no lane on one line or two in any of its ways does it take three (1.22, #202: a phone read at 110
-or 125 %), by the same breaks, its widest line the narrowest it can be, and only for a block that stays within 72
-(a node with no line under its figure: 36 + 32), so a card that draws today draws as it did; its lanes stay 56, or,
+or between two Chinese or Japanese characters (never before a small kana, never leaving one alone on a line: where
+every break would, the charge takes the last line alone, under the name whole, "电池" over "64 %", or on its two
+lines, "バッ / テリー / 64 %", 1.23), never inside a word of another script, its charge ending the second line; the
+column is the widest of the label's lines and the figures'; the block grows by 16 (8 above, 8 under, inside the
+stage), so a pair's 72 still keeps 8 to its neighbour at the 80 pitch. Only where a long name leaves no lane on one line or two in any of its ways does it take
+three (1.22, #202: a phone read at 110 or 125 %), by the same breaks, its widest line the narrowest it can be, and
+only for a block that stays within 72 (a node with no line under its figure: 36 + 32), so a card that draws today
+draws as it did; its lanes stay 56, or,
 the long name's last resort, 48 where its three lines leave less; each only where the stage the card declares holds
 the lanes and the house's words. Words that are no long name ("Battery · 62 %") never shorten the lanes under 56.
 A lane shorter than that even so is no lane: the card lists its nodes,
