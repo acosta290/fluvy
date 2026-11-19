@@ -1,4 +1,38 @@
+import { localize, type EntityView, type HomeAssistant } from '@fluvy/core';
 import type { TextRuler } from './fit.js';
+
+/** A sensor's readout as a card names it: its words, and whether they are a name (which may end in an ellipsis). */
+export interface ReadoutName {
+  readonly label: string;
+  readonly named: boolean;
+}
+
+/**
+ * What a sensor's readout is called where a card shows it (a tile's foot, a thermostat's readings): its own name
+ * (`own`), else its measure's word — a power's, an energy's of today, a cost's, so two plugs read alike — else its
+ * sensor's name (`said`) beyond the card's (`card`: "Living room humidity" on the living room's card is "humidity"),
+ * else its name. Its own name and its sensor's are names; a measure's word is not, and is never cut.
+ */
+export function readoutName(
+  hass: HomeAssistant | undefined,
+  view: EntityView,
+  own: string,
+  said: string,
+  card: string,
+): ReadoutName {
+  const measure =
+    view.deviceClass === 'power'
+      ? localize(hass, 'energy.power')
+      : view.deviceClass === 'energy'
+        ? localize(hass, 'energy.today')
+        : view.deviceClass === 'monetary'
+          ? localize(hass, 'energy.cost')
+          : '';
+  return {
+    label: own || measure || said.replace(card, '').trim() || said,
+    named: Boolean(own) || !measure,
+  };
+}
 
 /** A statistic as a card says it: its label, its number and its unit. */
 export interface StatText {

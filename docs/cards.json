@@ -3118,6 +3118,118 @@
           "default": "none"
         }
       ],
+      "lists": [
+        {
+          "key": "readouts",
+          "label": "Readouts",
+          "does": "Sensors read under the value, up to four on one row, in this order: the room’s humidity, the power, how long it ran.",
+          "id": "entity",
+          "item": [
+            {
+              "key": "entity",
+              "label": "Entity",
+              "does": "The entity the item shows.",
+              "type": "entity (sensor, binary_sensor)",
+              "required": true
+            },
+            {
+              "key": "name",
+              "label": "Name",
+              "does": "The item’s own name, in place of the one the card would give it.",
+              "type": "name"
+            },
+            {
+              "key": "icon",
+              "label": "Icon",
+              "does": "The item’s own icon, in place of the one the card would give it.",
+              "type": "icon"
+            },
+            {
+              "key": "tone",
+              "label": "Tone",
+              "does": "The item’s colour from the palette’s tones.",
+              "type": "choice",
+              "default_in_words": "the card’s own",
+              "values": {
+                "accent": "Accent",
+                "light": "Light",
+                "heat": "Heat",
+                "cool": "Cool",
+                "dry": "Dry",
+                "fan": "Fan",
+                "water": "Water",
+                "solar": "Solar",
+                "grid": "Grid",
+                "media": "Media",
+                "presence": "Presence",
+                "armed": "Armed",
+                "battery": "Battery",
+                "house": "House",
+                "gas": "Gas",
+                "vehicle": "Car",
+                "neutral": "Neutral",
+                "ok": "Good",
+                "warning": "Warning",
+                "danger": "Danger"
+              }
+            },
+            {
+              "key": "unit",
+              "label": "Unit",
+              "does": "The unit the figure is written in.",
+              "type": "choice or text",
+              "values": {
+                "auto": "Automatic",
+                "W": "W",
+                "kW": "kW",
+                "MW": "MW",
+                "Wh": "Wh",
+                "kWh": "kWh",
+                "MWh": "MWh",
+                "L": "L",
+                "m³": "m³",
+                "gal": "gal",
+                "ft³": "ft³"
+              }
+            },
+            {
+              "key": "decimals",
+              "label": "Decimals",
+              "does": "How many decimals the figure has.",
+              "type": "choice",
+              "values": {
+                "0": "0",
+                "1": "1",
+                "2": "2",
+                "3": "3",
+                "auto": "Automatic"
+              }
+            },
+            {
+              "key": "tap_action",
+              "label": "Tap action",
+              "does": "What a tap on the item does.",
+              "type": "action",
+              "default": "more-info"
+            },
+            {
+              "key": "hold_action",
+              "label": "Hold action",
+              "does": "What a long press on the item does.",
+              "type": "action",
+              "default": "more-info"
+            },
+            {
+              "key": "double_tap_action",
+              "label": "Double tap action",
+              "does": "What two taps on the item do.",
+              "helper": "A tap waits a moment to tell it from a double tap",
+              "type": "action",
+              "default": "none"
+            }
+          ]
+        }
+      ],
       "older_names": [
         {
           "from": "show_state",

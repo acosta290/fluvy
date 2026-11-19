@@ -3,9 +3,11 @@ import './english.js';
 import {
   formatNumber,
   isUsable,
+  itemsOf,
   localize,
   readText,
   writeText,
+  type ActionConfig,
   type EntityView,
   type FluvyCardConfig,
   type HomeAssistant,
@@ -14,14 +16,18 @@ import {
 } from '@fluvy/core';
 
 import {
+  activateKey,
   clamp,
+  clickPress,
   decimalsOf,
   head,
   label,
   LOW_BATTERY,
   options,
+  preventMenu,
   readout,
   rulerLabels,
+  startPress,
   stepper,
   type DialArc,
   type DialChangeDetail,
@@ -36,6 +42,7 @@ import { climateStyles } from '@fluvy/ui/styles/climate';
 import { css, html, nothing, type CSSResultGroup, type TemplateResult } from 'lit';
 
 import { DEFAULT_MODES, SHOWN, thermostatHeight } from '../climate-family.js';
+import type { TileReadout } from '../tile/tile-card.js';
 
 import { Card, type CardEditor, type ControlHost } from '../shared/base.js';
 
@@ -49,6 +56,8 @@ import { chipRow, inForce, type Choice } from '../shared/chips.js';
 import { haWord, modeWord, pretty } from '../shared/mode-words.js';
 import { stateLook, tintOf, type StateTintConfig } from '../shared/state-tint.js';
 import { ICON_GAP, iconColumns } from '../shared/heights.js';
+import { readoutName, readoutsRow } from '../shared/readouts.js';
+import { askedParts } from '../shared/units.js';
 import {
   fitValueRow,
   STEPPER,
@@ -97,10 +106,27 @@ export interface ThermostatCardConfig extends FluvyCardConfig, ReadingsAsk, Stat
    * (`current`), the target then the control beside it — the stepper with the target between its halves.
    */
   focus?: ThermostatFocus;
+  /** Readings under the value (#215): up to four, each an id or a sensor with what it says of its own. */
+  readouts?: ReadonlyArray<string | ThermostatReadout>;
 }
 
 export type ModesStyle = 'tiles' | 'icons' | RowStyle;
 export type ThermostatFocus = 'target' | 'current';
+
+/**
+ * A reading under the value (#215): a tile's readout (its sensor, its name, the unit and the decimals its figure reads
+ * in) with an icon of its own, the tone its figure is said in, and what it answers — its sensor's details by default.
+ */
+export interface ThermostatReadout extends TileReadout {
+  icon?: string;
+  tone?: Tone;
+  tap_action?: ActionConfig;
+  hold_action?: ActionConfig;
+  double_tap_action?: ActionConfig;
+}
+
+/** The readings a row holds: four, each a column. */
+const READINGS = 4;
 
 /** The target between the stepper's halves (`focus: current`): measured in its own class, 4 a side. */
 const TARGET_VALUE = 'fv-stepper fv-stepper--value > fv-stepper__value';
@@ -607,10 +633,75 @@ export class FluvyThermostatCard extends Card<ThermostatCardConfig> {
     };
   }
 
-  /** The device, and the entity its picture is read from (`image`): its new picture draws the card again. */
+  /**
+   * The device, its readings (`readouts`) and the entity its picture is read from (`image`): a new reading, a new
+   * picture draws the card again.
+   */
   protected override watched(): readonly string[] {
     const image = imageEntity(this.config?.image);
-    return image ? [...super.watched(), image] : super.watched();
+    return [
+      ...super.watched(),
+      ...this.readings().map((item) => item.entity),
+      ...(image ? [image] : []),
+    ];
+  }
+
+  /** The readings the card asks for under its value: the first four (`readouts`). */
+  private readings(): readonly ThermostatReadout[] {
+    return itemsOf<ThermostatReadout>(this.config?.readouts).slice(0, READINGS);
+  }
+
+  /**
+   * The readings under the value (`readouts`, #215), one row of equal columns 16 apart: each its sensor's figure in
+   * the unit and the decimals it asks for, said in its tone where it names one, under its words as a tile's readout
+   * says them (`readoutName`) — or its icon where the row's words would not hold, the figures giving way then to their
+   * smaller size (`readoutsRow`). Each answers as it is told, its sensor's details by default.
+   */
+  private renderReadings(name: string): TemplateResult | typeof nothing {
+    const items = this.readings();
+    if (!items.length) return nothing;
+    const stats = items.map((item) => {
+      const view = this.entity(item.entity);
+      const own = item.name ? this.nameFor(view, item.name) : '';
+      return {
+        item,
+        ...askedParts(this.hass, view, item),
+        ...readoutName(this.hass, view, own, this.nameFor(view, undefined), name),
+        glyph: iconOf(view, item.icon),
+      };
+    });
+    const row = readoutsRow(this.head.ruler, this.contentWidth, stats);
+    return html`<div
+      class="fv-cols cl-readings ${row.odd ? 'fv-cols--odd' : ''}"
+      style="grid-template-columns:repeat(${row.columns}, minmax(0, 1fr))"
+    >
+      ${stats.map(({ item, label: words, named, value, unit, glyph }) => {
+        const { onTap, onHold } = this.pressOf(item, item.entity);
+        const pressed = Boolean(onTap ?? onHold);
+        return html`<div
+          class="cl-reading"
+          role=${pressed ? 'button' : nothing}
+          tabindex=${pressed ? 0 : nothing}
+          aria-label=${pressed ? `${words} ${value} ${unit}`.trim() : nothing}
+          .fvTap=${onTap}
+          .fvHold=${onHold}
+          @pointerdown=${pressed ? startPress : nothing}
+          @click=${pressed ? clickPress : nothing}
+          @contextmenu=${onHold ? preventMenu : nothing}
+          @keydown=${pressed ? activateKey(onTap, onHold) : nothing}
+        >
+          ${readout({
+            label: words,
+            value,
+            unit,
+            size: row.size,
+            name: named,
+            ...(row.labels === 'icons' ? { glyph } : {}),
+            ...(item.tone ? { ink: this.accents.ink(item.tone) } : {}),
+          })}
+        </div>`;
+      })}
+    </div>`;
   }
 
   override getCardSize(): number {
@@ -1148,6 +1239,7 @@ export class FluvyThermostatCard extends Card<ThermostatCardConfig> {
               ></fluvy-dial>
             </div>`
       }
+      ${this.renderReadings(name)}
       ${modes.length ? html`${label(this.t('climate.mode'))}${this.renderModes(view, m, modes)}` : nothing}
       ${
         m.presets.length && !essentials && this.config?.show_presets !== false

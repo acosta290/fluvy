@@ -49,6 +49,7 @@ import { FontsSettled } from '../shared/fonts.js';
 import { statusToneOf, washesAtRest, type LightColours, type Tint } from '../shared/colour.js';
 import { NAME_LINE, twoLines, type NameLines } from '../shared/heights.js';
 import { NAME_MIN } from '../shared/row-end.js';
+import { readoutName } from '../shared/readouts.js';
 import { shorterForms } from '../shared/secondary.js';
 import { changedAt, sinceIds } from '../shared/since.js';
 import type { Band, ThresholdsConfig } from '../shared/thresholds.js';
@@ -686,8 +687,8 @@ export class FluvyTileCard extends Card<TileCardConfig> {
 
   /**
    * A tile's readouts as it writes them (`name`: the tile's): each one's figure in the unit and the decimals it asks
-   * for, and its label — its own name, else its measure's word (a power's, an energy's, a cost's), else its sensor's
-   * name beyond the tile's.
+   * for, and its label — its own name, else its measure's word, else its sensor's name beyond the tile's
+   * (`readoutName`).
    */
   private readings(item: TileItem, name: string): Reading[] {
     return itemsOf<TileReadout>(item.readouts).map((readout) => {
@@ -695,19 +696,10 @@ export class FluvyTileCard extends Card<TileCardConfig> {
       const own = readout.name ? this.nameFor(view, readout.name) : '';
       // the sensor's name as the card names its items (`names`, #200), beyond the tile's
       const said = this.nameFor(view, undefined);
-      const measure =
-        view.deviceClass === 'power'
-          ? this.t('energy.power')
-          : view.deviceClass === 'energy'
-            ? this.t('energy.today')
-            : view.deviceClass === 'monetary'
-              ? this.t('energy.cost')
-              : '';
       return {
         ...askedParts(this.hass, view, readout),
-        label: own || measure || said.replace(name, '').trim() || said,
+        ...readoutName(this.hass, view, own, said, name),
         own,
-        named: Boolean(own) || !measure,
         ok: view.status === 'ok',
       };
     });

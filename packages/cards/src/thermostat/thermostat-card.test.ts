@@ -960,3 +960,102 @@ describe('the room as the large figure (#215)', () => {
     expect(thermostatEditor.defaults(config(), hass)).toMatchObject({ focus: 'target' });
   });
 });
+
+describe('the readings under the value (#215)', () => {
+  it('declares its readings as one row of 60, four at most whatever the list holds', () => {
+    expect(declared({ variant: 'compact', readouts: ['sensor.humidity'] })).toBe(292 + 60);
+    const five = ['sensor.a', 'sensor.b', { entity: 'sensor.c' }, 'sensor.d', 'sensor.e'];
+    expect(declared({ readouts: five })).toBe(484 + 60);
+    expect(declared({ readouts: [] })).toBe(484);
+  });
+
+  it('reads its sensors under the value, each in its own words, figure and tone, opening its details', async () => {
+    const humidity = entity('sensor.garderobe_humidity', '48', {
+      friendly_name: 'Garderobe humidity',
+      unit_of_measurement: '%',
+      device_class: 'humidity',
+    });
+    const power = entity('sensor.radiator_power', '1240', {
+      friendly_name: 'Radiator power',
+      unit_of_measurement: 'W',
+      device_class: 'power',
+    });
+    const ran = entity('sensor.radiator_on_today', '12', {
+      friendly_name: 'Radiator on today',
+      unit_of_measurement: 'min',
+    });
+    const card = await draw(
+      homematic,
+      360,
+      {
+        variant: 'compact',
+        readouts: [
+          'sensor.garderobe_humidity',
+          { entity: 'sensor.radiator_power', unit: 'W' },
+          { entity: 'sensor.radiator_on_today', name: 'On today', tone: 'heat' },
+        ],
+      },
+      { states: house(homematic, humidity, power, ran).states },
+    );
+    const readings = [...card.renderRoot.querySelectorAll<HTMLElement>('.cl-reading')];
+    const said = readings.map((reading) => [
+      reading.querySelector('.fv-readout__label')?.textContent?.trim(),
+      reading.querySelector('.fv-readout__value > span')?.textContent,
+      reading.querySelector('.fv-unit')?.textContent,
+    ]);
+    // its sensor's name beyond the card's, a power's measure, its own name
+    expect(said).toEqual([
+      ['humidity', '48', '%'],
+      ['Power', '1,240', 'W'],
+      ['On today', '12', 'min'],
+    ]);
+    expect(readings[2]?.querySelector('.fv-readout')?.getAttribute('data-ink')).toBe('heat');
+    expect(readings.every((reading) => reading.getAttribute('role') === 'button')).toBe(true);
+    const asked: string[] = [];
+    card.addEventListener('hass-more-info', (event) =>
+      asked.push((event as CustomEvent<{ entityId: string }>).detail.entityId),
+    );
+    readings[1]?.dispatchEvent(new MouseEvent('click', { detail: 0, bubbles: true }));
+    await vi.waitFor(() => expect(asked).toEqual(['sensor.radiator_power']));
+    // a new reading draws the card again: its sensors are watched
+    const hass = card.hass!;
+    card.hass = {
+      ...hass,
+      states: { ...hass.states, [humidity.entity_id]: { ...humidity, state: '52' } },
+    };
+    await card.updateComplete;
+    expect(
+      card.renderRoot.querySelector('.cl-reading .fv-readout__value > span')?.textContent,
+    ).toBe('52');
+    card.remove();
+  });
+
+  it('stands four readings at most on its row', async () => {
+    const card = await draw(homematic, 360, {
+      variant: 'compact',
+      readouts: ['sensor.a', 'sensor.b', 'sensor.c', 'sensor.d', 'sensor.e'],
+    });
+    expect(card.renderRoot.querySelectorAll('.cl-reading')).toHaveLength(4);
+    card.remove();
+  });
+
+  it('lists its readings item by item in its editor, none written while it has none', () => {
+    expect(thermostatEditor.defaults(config(), house(homematic))).not.toHaveProperty('readouts');
+    expect(thermostatEditor.lists.map((list) => [list.key, list.keys])).toEqual([
+      [
+        'readouts',
+        [
+          'entity',
+          'name',
+          'icon',
+          'tone',
+          'unit',
+          'decimals',
+          'tap_action',
+          'hold_action',
+          'double_tap_action',
+        ],
+      ],
+    ]);
+  });
+});

@@ -10,10 +10,12 @@ import {
   boolField,
   colourFields,
   editorWord,
+  entitiesField,
   entityField,
   fieldRow,
   formLabels,
   nameIconFields,
+  numberFields,
   onlyWhen,
   orderedField,
   ownTextField,
@@ -23,9 +25,11 @@ import {
   stateLabels,
   stateTintFields,
   textField,
+  toneField,
+  unitChoicesOf,
   whenOffField,
 } from '../shared/form.js';
-import type { EditorChoices, EditorDefaults } from '../shared/rows-editor.js';
+import type { EditorChoices, EditorDefaults, RowsListSpec } from '../shared/rows-editor.js';
 import { configKeys } from '../shared/config.js';
 import { STATE_TINT_KEYS } from '../shared/state-tint.js';
 import { batteryLevel, valveOf, windowBy } from './readings.js';
@@ -110,6 +114,7 @@ export const keys = configKeys<ThermostatCardConfig>()([
   'fan_style',
   'when_off',
   'focus',
+  'readouts',
   'state_entity',
   'show_valve',
   'valve_entity',
@@ -129,6 +134,40 @@ const valueRow = (data: Data): boolean =>
   data['variant'] === 'compact' || data['variant'] === 'ruler';
 /** The room's reading is said beside the target: in the dial, and in a row whose figure is the target. */
 const saysNow = (data: Data): boolean => !valueRow(data) || data['focus'] !== 'current';
+
+/** What a reading under the value may be (#215): a sensor's figure, or a binary sensor's word. */
+const READING_DOMAINS = ['sensor', 'binary_sensor'];
+
+/**
+ * The readings under the value, item by item (#215): each a sensor, with a name and an icon of its own, the tone its
+ * figure is said in, the unit and the decimals it reads in (the units its own class converts to), and what it answers.
+ */
+export const lists: readonly RowsListSpec[] = [
+  {
+    key: 'readouts',
+    title: 'editor.readouts',
+    domains: READING_DOMAINS,
+    keys: [
+      'entity',
+      'name',
+      'icon',
+      'tone',
+      'unit',
+      'decimals',
+      'tap_action',
+      'hold_action',
+      'double_tap_action',
+    ],
+    schema: [
+      entityField(READING_DOMAINS),
+      nameIconFields(),
+      toneField(),
+      numberFields(),
+      actionFields(),
+    ],
+    choices: unitChoicesOf,
+  },
+];
 
 /** The card says what the thermostat is doing (its badge, `show_badge`): what the word's own options act on. */
 const said = (data: Data): boolean => data['show_badge'] !== false;
@@ -191,6 +230,8 @@ export function getConfigForm(): LovelaceConfigForm {
         ),
         onlyWhen(saysNow, boolField('show_current')),
       ),
+      // the readings under the value, edited item by item (the rows editor takes the list out of the form)
+      entitiesField('readouts', READING_DOMAINS),
       fieldRow(
         boolField('show_modes'),
         selectField('modes_style', ['tiles', 'chips', 'full', 'icons']),

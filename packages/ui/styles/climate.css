@@ -120,3 +120,25 @@
 .cl-target.is-idle > .fv-stepper__value {
   color: var(--fluvy-text-disabled);
 }
+
+/* the readings under the value (#215): one row of equal columns (`fv-cols`), each readout centred and, where it
+   answers, a target 44 tall at either size — the smaller figure's 20 line 8 under its label */
+.cl-reading {
+  display: flex;
+  justify-content: center;
+  min-width: 0;
+  min-height: 44px;
+  border-radius: var(--fluvy-radius-control);
+}
+
+.cl-reading[role='button'] {
+  cursor: pointer;
+}
+
+.cl-reading .fv-readout {
+  min-width: 0;
+}
+
+.cl-reading .fv-readout--xs .fv-readout__value {
+  margin-top: 8px;
+}

@@ -43,6 +43,7 @@ name_lines: 1
 variant: dial
 show_stepper: true
 show_current: true
+# readouts:
 show_modes: true
 modes_style: tiles
 # modes:
@@ -106,6 +107,7 @@ show_battery: false
 | `tint` | `off` | When the card shows its colour beyond its circle: never, while it is on or active, or at rest too. `off` (Never) · `on` (When active) · `always`. |
 | `tint_style` | `wash` | How the colour is shown: a wash over the card, the card’s edge, or the control alone. `wash` · `edge` · `control`. |
 | `state_colors` |  | A colour for each of the device’s states, held under this key: a tone, none, or a colour of your own. Its keys: `heating` · `cooling` · `drying` · `fan` · `humidifying` · `idle` · `off`. |
+| [`readouts`](#readouts) |  | Sensors read under the value, up to four on one row, in this order: the room’s humidity, the power, how long it ran. A list: [its items](#readouts). |
 | **What it is doing** |  |  |
 | `state_entity` |  | Another entity whose state says what the thermostat is doing. A `sensor`, `binary_sensor`, `switch` or `input_boolean`. |
 | `show_valve` | `false` | Shows how far the valve is open beside what it is doing. |
@@ -143,6 +145,25 @@ show_battery: false
 More about them in [Options every card takes](../customising.md#options-every-card-takes).
 
 </details>
+
+## Lists
+
+### `readouts`
+
+An item is an entity id, or a map with `entity` and any of these fields.
+
+| Field | What it does |
+| --- | --- |
+| `entity` | The entity the item shows. A `sensor` or `binary_sensor`. |
+| `name` | The item’s own name, in place of the one the card would give it. |
+| `icon` | The item’s own icon, in place of the one the card would give it. |
+| `tone` | The item’s colour from the palette’s tones. `accent` · `light` · `heat` · `cool` · `dry` · `fan` · `water` · `solar` · `grid` · `media` · `presence` · `armed` · `battery` · `house` · `gas` · `vehicle` (Car) · `neutral` · `ok` (Good) · `warning` · `danger`. |
+| `unit` | The unit the figure is written in. `auto` · `W` · `kW` · `MW` · `Wh` · `kWh` · `MWh` · `L` · `m³` · `gal` · `ft³`, or your own. |
+| `decimals` | How many decimals the figure has. `auto` · `0` · `1` · `2` · `3`. |
+| **Interactions** |  |
+| `tap_action` | What a tap on the item does. |
+| `hold_action` | What a long press on the item does. |
+| `double_tap_action` | What two taps on the item do. |
 
 ## Guide
 

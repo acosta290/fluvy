@@ -5,11 +5,13 @@ import {
   chipBlock,
   chipRows,
   COLUMN,
+  entryCount,
   iconBlock,
   iconColumns,
   optionBlock,
   optionRows,
   rowsOf,
+  statsBlock,
 } from './shared/heights.js';
 import { pretty } from './shared/mode-words.js';
 
@@ -62,11 +64,12 @@ const UNDESCRIBED: ThermostatOffers = { modes: DEFAULT_MODES, presets: [], fans:
 /**
  * The card's height at a 360 column, for the automatic dashboard's columns: the head and the dial (a dial without
  * its stepper is 56 shorter), the readout and its ruler (two rulers for a range) — the same row whichever figure it
- * makes large (`focus`) — then the modes under their label — tiles in rows of 84 (three a row, two where a word is
- * long: `optionRows`), icons in rows of 44 by their count alone (`iconColumns`), chips in rows of 44 — and the presets
- * and the fan speeds as rows of chips, each under its label. The modes are the config's, else what the entity offers
- * as the house describes it (`house-heights.ts`); the presets and the fan speeds are the entity's. A card that keeps
- * to the essentials while off is reserved its height when on.
+ * makes large (`focus`) — the readings under it (`readouts`: one row of up to four, 60), then the modes under their
+ * label — tiles in rows of 84 (three a row, two where a word is long: `optionRows`), icons in rows of 44 by their
+ * count alone (`iconColumns`), chips in rows of 44 — and the presets and the fan speeds as rows of chips, each under
+ * its label. The modes are the config's, else what the entity offers as the house describes it (`house-heights.ts`);
+ * the presets and the fan speeds are the entity's. A card that keeps to the essentials while off is reserved its
+ * height when on.
  */
 export function thermostatHeight(
   config: LovelaceCardConfig,
@@ -116,7 +119,8 @@ export function thermostatHeight(
       : chips(offers.presets.map(pretty), config['preset_style']);
   const fans =
     config['show_fan'] === false ? 0 : chips(offers.fans.map(pretty), config['fan_style']);
-  return height + modes + presets + fans;
+  const readings = statsBlock(Math.min(1, entryCount(config, ['readouts'])));
+  return height + readings + modes + presets + fans;
 }
 
 export const CLIMATE_FAMILY: readonly FamilyEntry[] = [['fluvy-thermostat-card', thermostatHeight]];

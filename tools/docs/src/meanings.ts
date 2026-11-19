@@ -557,6 +557,8 @@ export const MEANINGS: Readonly<Record<string, string>> = {
     'A picture of your own in the dial’s circle: an address, or an entity whose picture it is.',
   'thermostat.modes':
     'The modes the card offers, in this order; left out, every mode the device has.',
+  'thermostat.readouts[]':
+    'Sensors read under the value, up to four on one row, in this order: the room’s humidity, the power, how long it ran.',
   'thermostat.show_battery': 'Warns of a low battery on the head’s line.',
   'thermostat.show_presets': 'Shows the presets.',
   'tiles.name_lines':
