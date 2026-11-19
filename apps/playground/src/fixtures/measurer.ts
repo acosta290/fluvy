@@ -260,6 +260,13 @@ export const sheet: SheetSpec = {
       ],
     },
     {
+      // the frame's twelve tracks are 15.33 each: the second half-section card's 172 lands at 171.984, the layout's
+      // 1/64 of a pixel short, which the grid decides and the card cannot
+      title: 'clean · half a section under a row of thirds, a layout pixel short of the grid',
+      width: 360,
+      cards: [4, 4, 4, 4, 6, 6].map((cols) => ({ ...card('<p>Kitchen</p>'), cols })),
+    },
+    {
       title: 'clean · a 12-hour time is no key',
       cards: [
         card(

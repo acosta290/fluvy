@@ -198,17 +198,22 @@ function audit(opts) {
 
   /**
    * Whether an element sits in a column off the grid: the frame's child that holds it (a card in its grid cell) is not a
-   * whole multiple of the grid — the 211 floor, a 266 card, a third of a section. Every box its width decides (a bar's
-   * remainder, a block inset from one side, a picture's height) then falls off the grid by that remainder, so the grid
-   * and the whole pixel are judged where the card's width is on the grid, and nothing else is spared.
+   * whole multiple of the grid — the 211 floor, a 266 card, a third of a section — or is one only to the layout's
+   * 1/64 of a pixel, never whole on a device's (half a section's twelve 15.33 tracks, under a row of thirds: 171.984).
+   * Every box its width decides (a bar's remainder, a block inset from one side, a picture's height) then falls off the
+   * grid by that remainder, so the grid and the whole pixel are judged where the card's width is on the grid, and
+   * nothing else is spared.
    */
   const offGridColumns = new Map();
+  const wholeOnDevices = (v) => dprs.every((dpr) => Math.abs(v * dpr - Math.round(v * dpr)) <= tol);
   const inOffGridColumn = (el, frame) => {
     let column = el;
     while (column && up(column) && up(column) !== frame) column = up(column);
     if (!column || up(column) !== frame) return false;
-    if (!offGridColumns.has(column))
-      offGridColumns.set(column, offGrid(column.getBoundingClientRect().width));
+    if (!offGridColumns.has(column)) {
+      const width = column.getBoundingClientRect().width;
+      offGridColumns.set(column, offGrid(width) || !wholeOnDevices(width));
+    }
     return offGridColumns.get(column);
   };
 

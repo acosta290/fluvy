@@ -401,8 +401,9 @@ seven (`--widths` takes page widths, `--cards` card widths; `--lang en,de` langu
 catalogue speaks; `--jobs 8` pages at once; `--only climate,home` some pages). CI measures English at all seven and,
 in a job of its own beside it, every language at the four card widths (`pnpm measure:narrow`), where a long word is
 cut, broken or laid over its neighbour first. A card whose column is off the 4 grid (the 211 floor, a 266 card, a 182 half, a
-third of a section) is held to every rule but the grid and the whole pixel, which its own width breaks for every box
-it decides; it meets those two at the probes where its column is on the grid. The playground marks every frame with
+third of a section), or on it only to the layout's 1/64 of a pixel (half a section under a row of thirds: 171.984), is
+held to every rule but the grid and the whole pixel, which its own width breaks for every box it decides; it meets
+those two at the probes where its column is on the grid. The playground marks every frame with
 its narrowest card's columns (`data-span`), which is how a card probe picks its frames.
 
 Until 1.9 the measurer passed viewport widths, and the frame (a flex item with a grid of twelve 16 gaps) shrank to
