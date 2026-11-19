@@ -111,7 +111,7 @@ budget (`BUDGETS`; the facts guard in `tools/docs` holds this table to it):
 | `rounds` | 4 KB | the Rounds card (1.23, #224) and its English; the rounds it draws are the quick actions' |
 | `thermostats` | 8 KB | the Thermostats card (1.23, #230, #219), what it reads of the house and its English; its model and what a thermostat is doing are the Thermostat card's, its rows the quick actions' |
 | `rooms` | 8 KB | the Rooms card (1.23, #225): its card, what finds the dashboard the house's rooms open on, its English; its rounds are the quick actions', the rooms' glyphs their set's |
-| `about` | 4 KB | what each card is (1.22, #193): the line the card picker's search reads and Customise's list says under each name, in English; fetched as the bundle starts, with the families |
+| `about` | 5 KB | what each card is (1.22, #193): the line the card picker's search reads and Customise's list says under each name, in English; fetched as the bundle starts, with the families |
 | `expander` | 8 KB | the Expander card, what holds the cards it folds, what remembers how it was left, its English |
 | `expander-editor` | 4 KB | the Expander card's editor: its form, Home Assistant's stack editor under it; the Swipe card's, built on it |
 | `swipe` | 8 KB | the Swipe card (1.22, #206): what remembers where it was left, what a finger's drag is theirs on, its English; it holds its cards with the Expander's chunk |
@@ -137,7 +137,7 @@ budget (`BUDGETS`; the facts guard in `tools/docs` holds this table to it):
 | `calendar` | 16 KB | the calendar card: its views, what reads its events, its sheet |
 | `editor` | 8 KB | the cards' visual editor |
 | `fields` | 9 KB | the fields every card's editor is built of: the schema's helpers, a list's row form, the editors' English |
-| `forms` | 19 KB | the editors of the cards every page carries and of the template, Slider, Cover, Vacuum, Thermostat, remote and Heating schedule cards: their forms, lists and defaults |
+| `forms` | 20 KB | the editors of the cards every page carries and of the template, Slider, Cover, Vacuum, Thermostat, remote and Heating schedule cards: their forms, lists and defaults |
 | `view-icons` | 6 KB | a view's icon from its name |
 | `glass` | 4 KB | what a see-through card wears: its sheet's writer (every fill at its opacity) and its rules (its solid overlays, its blur) |
 | `quiet` | 4 KB | what a card quiet out of reach wears: the rules that give the unavailable skin's paint back, one sheet every such card adopts |

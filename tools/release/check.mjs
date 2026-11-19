@@ -143,8 +143,9 @@ const BUDGETS = {
   // actions', the rooms' glyphs it draws their set's (`glyphs-rooms`). Measured at 4.4 KB
   rooms: 8192,
   // what each card is (1.22, #193): the line the card picker's search reads and Customise's list says under each name,
-  // in English, which left core; measured at 3.6 KB
-  about: 4096,
+  // in English, which left core; measured at 3.6 KB. 5 KB since 2026-11-20 (1.23: the Compass, Rounds, Heating schedule,
+  // Thermostats and Rooms cards' lines): measured at 4.0 KB
+  about: 5120,
   // the Expander card (1.20, #180): the card, what holds the cards it folds, what remembers how it was left and its
   // English; measured at 5.2 KB
   expander: 8192,
@@ -230,8 +231,9 @@ const BUDGETS = {
   // at 14.1 KB. 16 KB since 2026-11-15 (1.22: two lines for a head's name, #191, a tile's readouts each with its name,
   // unit and decimals, #197, a list's names, #200): measured at 15.0 KB. 19 KB since 2026-11-19 (1.23: the Rounds
   // card's and the Compass card's editors, a card's own blur, the thermostat's focus, icons and readouts, a chart's
-  // states): measured at 17.1 KB, the round's other new cards' editors to come
-  forms: 19_456,
+  // states): measured at 17.1 KB, the round's other new cards' editors to come. 20 KB since 2026-11-20 (the Heating
+  // schedule's, the Thermostats card's and the Rooms card's editors, the numbers set in place): measured at 19.3 KB
+  forms: 20_480,
   // 6 KB since 2026-11-13 (1.20: Ukrainian's words for a view's icon, #176, about 400 B; measured at 5.0 KB); 5 since
   // 2026-11-11 (1.19: Russian's, #167, about 800 B); 4 before
   'view-icons': 6144,
