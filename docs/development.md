@@ -357,10 +357,19 @@ targets, baselines, text inside its box, containment, pill sides, and the text r
 another value (`overlap`), no two runs of text laid over each other anywhere else (`collision`: a week strip's
 weekdays reading "LUNMARMER"), no word broken across two lines by `overflow-wrap` or `word-break`, nor a figure parted
 from its unit (`midword`: "Resta/rt HA"), no pill that cuts its name (`pill-cut`), no text cut by a box with no
-ellipsis to say so (`clipped`), no catalogue key on screen (`raw-key`: a dotted word that starts with a catalogue
-namespace or has an underscore; "p.m." is a word), a head that keeps a free 44 × 44 to tap (`head-target`) —
-**0 violations** or the change is not done. Every tool reads the playground from `PLAYGROUND` (default
-`http://127.0.0.1:5183/`): a worktree runs its own on a port of its own.
+ellipsis to say so (`clipped`), no word wider than the box that lays it out, cut at its edge or painted past it onto
+what stands beside (`text-clipped`: one long word a tile's value cannot break, Danish "Betjeningspaneler"), no
+catalogue key on screen (`raw-key`: a dotted word that starts with a catalogue namespace or has an underscore; "p.m."
+is a word), a head that keeps a free 44 × 44 to tap (`head-target`) — **0 violations** or the change is not done.
+Every tool reads the playground from `PLAYGROUND` (default `http://127.0.0.1:5183/`): a worktree runs its own on a
+port of its own.
+
+The measurer reads a page at rest: it lets the page settle first (no request in flight for half a second, every
+update Lit has pending done, two frames drawn, asked again until nothing moves), and ends every finite animation in
+the task that reads, so a card a late chunk draws (the Chart card's thresholds) is read whole and at its last
+keyframe, never at an entrance's first (every box at 0.985). `MEASURE_CPU=20` slows the CPU twenty times and
+`MEASURE_LATE=shared/thresholds.ts:4000` answers the requests whose URL holds that 4 s late, to reproduce what a slow
+runner does.
 
 An ellipsis is a name's, nothing else's (design/language.md, § Narrow columns). The measurer reads every text cut by
 one, or by a line clamp, where the cut falls: a figure, a unit or a percentage is `cut-figure` wherever it is ("Schauer

@@ -84,6 +84,17 @@ export const sheet: SheetSpec = {
       ],
     },
     {
+      title: 'text-clipped · a long word its tile cannot hold',
+      cards: [
+        card(
+          '<div class="fx-tile"><span>Scope</span><span class="fx-value">Betjeningspaneler</span></div>',
+          `.fx-tile { box-sizing: border-box; display: flex; flex-direction: column; width: 140px; padding: 12px;
+             border-radius: 16px; background: var(--fluvy-page); }
+           .fx-value { max-width: 100%; font-weight: 600; }`,
+        ),
+      ],
+    },
+    {
       title: 'raw-key · a word that never arrived',
       cards: [card('<p>wall.back_to</p>')],
     },

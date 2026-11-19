@@ -37,7 +37,7 @@
  * defect.
  *
  * Text is read where it is laid: a run's line boxes (a range's rect is the font's content area, which overhangs a
- * tight line height). Seven rules read it so:
+ * tight line height). Eight rules read it so:
  *   `overlap`      a run drawn over a `[data-control]` it is not inside (a figure under its stepper), or over another
  *                  run inside value rows, readouts and tile feet (a label over its value); pieces placed out of the
  *                  flow (absolute, fixed) are exempt, as they are from containment;
@@ -50,6 +50,8 @@
  *   `pill-cut`     a content-sized pill (`[data-fit]`) that does not hold its content: a pill must, so a name inside
  *                  one has no ellipsis to fall back on;
  *   `clipped`      a run that runs past the box clipping it (an ancestor's `overflow`), with no ellipsis to say so;
+ *   `text-clipped` words wider than the box that lays them out (one long word a tile's value cannot break), cut at
+ *                  its edge or painted past it onto what stands beside, with no ellipsis to say so;
  *   `raw-key`      a catalogue key on screen (`wall.back`): a word that never arrived — a catalogue namespace, or an
  *                  underscore, before its dotted rest (an entity id the house has is a name; "p.m." is a word);
  *   `head-target`  a card head's button (`.fv-card__tap`, its overlay stretched over the head) that keeps no free
@@ -505,6 +507,33 @@ function audit(opts) {
   };
 
   const clips = (ecs) => /hidden|clip/.test(ecs.overflowX) || /hidden|clip/.test(ecs.overflowY);
+
+  /**
+   * How far the words a box lays out itself (its own text and its inline children's, down to the next box of their
+   * own) run past its content box sideways, and the words that run furthest: one long word no line can break.
+   */
+  const textPast = (el, ecs) => {
+    const box = paddingBox(el);
+    const left = box.left + parseFloat(ecs.paddingLeft);
+    const right = box.right - parseFloat(ecs.paddingRight);
+    const past = { by: 0, text: '' };
+    const walk = (parent) => {
+      for (const node of parent.childNodes) {
+        if (
+          node instanceof globalThis.HTMLElement &&
+          /^(inline|contents)$/.test(globalThis.getComputedStyle(node).display)
+        )
+          walk(node);
+        if (node.nodeType !== 3 || !node.textContent.trim()) continue;
+        for (const line of lineBoxes(node, node.parentElement ?? el)) {
+          const by = Math.max(line.right - right, left - line.left);
+          if (by > past.by) Object.assign(past, { by, text: node.textContent.trim() });
+        }
+      }
+    };
+    walk(el.shadowRoot ?? el);
+    return past;
+  };
 
   /** What of a run's boxes is painted: each box cut to every box that clips or scrolls it (an ellipsis's own box). */
   const shownBoxes = (boxes, el, frame) => {
@@ -1125,19 +1154,30 @@ function audit(opts) {
 
       // Text must stay inside its box. A name that declares `text-overflow: ellipsis` is allowed to end in
       // one — that is the design's answer for a long device name. A VALUE has no ellipsis, so a clipped
-      // value is still a defect, and so is any text that escapes its card.
-      if (
-        cs.overflow !== 'visible' &&
-        cs.textOverflow !== 'ellipsis' &&
-        !scrollRow(el) &&
-        el.scrollWidth > el.clientWidth + 1
-      ) {
-        add(
-          'text-clipped',
-          el,
-          rect,
-          `scrollWidth ${el.scrollWidth} > clientWidth ${el.clientWidth}`,
-        );
+      // value is still a defect, and so is any text that escapes its card. Words wider than the box that lays them
+      // (one long word a tile's value cannot break: Danish "Betjeningspaneler") are cut at its edge where it clips,
+      // and painted past it onto what stands beside where it does not: with no ellipsis to say so, a defect either way.
+      if (!scrollRow(el) && !/^(inline|contents)$/.test(cs.display)) {
+        const ends = cs.textOverflow === 'ellipsis' && /hidden|clip/.test(cs.overflowX);
+        const past = !ends && seen(el) && inked(el) ? textPast(el, cs) : { by: 0 };
+        if (past.by > overlapTol)
+          add(
+            'text-clipped',
+            el,
+            rect,
+            `"${past.text.slice(0, 40)}" runs ${r3(past.by)} past its box, ${clips(cs) ? 'cut at its edge' : 'painted beyond it'}`,
+          );
+        else if (
+          cs.overflow !== 'visible' &&
+          cs.textOverflow !== 'ellipsis' &&
+          el.scrollWidth > el.clientWidth + 1
+        )
+          add(
+            'text-clipped',
+            el,
+            rect,
+            `scrollWidth ${el.scrollWidth} > clientWidth ${el.clientWidth}`,
+          );
       }
       // Text cut with an ellipsis or a line clamp: a name's answer to a narrow column, nothing else's. A figure cut
       // anywhere is `cut-figure`; a word in a control, a heading, a title, a date or a state `ellipsis`; any other
