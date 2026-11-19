@@ -171,7 +171,7 @@ setSidebar(() => import('./sidebar/index.js'));
 
 export { CATALOGUE };
 export { loadPanel, panelOnDemand } from './panel/on-demand.js';
-export { detailsSheets } from './details-family.js';
+export { detailsSheets, openEntityDetails } from './details-family.js';
 export { activityIsOurs, takeOverActivity } from './activity/takeover.js';
 export { historyIsOurs, takeOverHistory } from './history/takeover.js';
 export { takeOverDetails } from './details-history/takeover.js';

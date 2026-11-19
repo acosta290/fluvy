@@ -17,7 +17,13 @@ import {
   type ShellHandle,
   type UpdateWatch,
 } from '@fluvy/core';
-import { panelOnDemand, takeOverActivity, takeOverDetails, takeOverHistory } from '@fluvy/cards';
+import {
+  openEntityDetails,
+  panelOnDemand,
+  takeOverActivity,
+  takeOverDetails,
+  takeOverHistory,
+} from '@fluvy/cards';
 
 declare const __FLUVY_VERSION__: string;
 
@@ -40,6 +46,8 @@ const host = window as unknown as {
     activity: boolean | null;
     /** The watch for another build on the server (1.17 on). */
     update?: UpdateWatch;
+    /** Opens an entity's details as a Fluvy card does, for a card of one's own (1.23, #219: `openEntityDetails`). */
+    openDetails?: typeof openEntityDetails;
   };
 };
 const badge = (text: string): void =>
@@ -71,6 +79,7 @@ if (host.__fluvy) {
     history: null as boolean | null,
     details: null as boolean | null,
     update: watchUpdates(buildOf(here)),
+    openDetails: openEntityDetails,
   };
   host.__fluvy = fluvy;
   panelOnDemand();

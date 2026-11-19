@@ -119,6 +119,13 @@ tap_action:
   details: home-assistant # this tile keeps Home Assistant's dialog; `fluvy` asks for the sheet
 ```
 
+A card of your own opens the same, by the house's choice: Fluvy's sheet where it has one, else Home Assistant's
+dialog. Pass your card's element as `from`, so the focus comes back to it:
+
+```js
+window.__fluvy?.openDetails('climate.living_room', { from: this });
+```
+
 ## Customisation
 
 Every card lets you choose what it shows:

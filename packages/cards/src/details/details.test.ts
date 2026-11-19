@@ -7,7 +7,7 @@ import {
   type Sheets,
 } from '@fluvy/core';
 import { afterEach, describe, expect, it, vi, type Mock } from 'vitest';
-import { detailsSheets } from '../details-family.js';
+import { detailsSheets, openEntityDetails } from '../details-family.js';
 import { openDetails } from './open.js';
 import type { DetailsSheet } from './sheet.js';
 
@@ -269,6 +269,39 @@ describe('who opens the details', () => {
       expect(document.body.querySelector('fluvy-details-light')).not.toBeNull(),
     );
     expect(asked).toEqual(['sensor.outside', 'light.floor']);
+  });
+
+  it('opens a card of one’s own’s details as a Fluvy card does (`__fluvy.openDetails`, #219)', async () => {
+    setDetailsSheets(detailsSheets(() => 'fluvy'));
+    const asked: string[] = [];
+    const heard = (event: Event): void =>
+      void asked.push((event as CustomEvent<{ entityId: string }>).detail.entityId);
+    // Home Assistant's root holds the house: a sheet for a light, its dialog for a sensor, from the root
+    const app = Object.assign(document.createElement('home-assistant'), { hass: house(FLOOR) });
+    document.body.append(app);
+    app.addEventListener('hass-more-info', heard);
+    openEntityDetails('light.floor');
+    openEntityDetails('sensor.outside');
+    await vi.waitFor(() =>
+      expect(document.body.querySelector('fluvy-details-light')).not.toBeNull(),
+    );
+    expect(asked).toEqual(['sensor.outside']);
+    // from a card of one's own, the dialog asked of it; nothing for an id that is no entity's, nor with no house
+    const theirs = document.createElement('div');
+    document.body.append(theirs);
+    theirs.addEventListener('hass-more-info', heard);
+    openEntityDetails('lock.front', { from: theirs });
+    openEntityDetails('not an id', { from: theirs });
+    openEntityDetails(42, null);
+    expect(asked).toEqual(['sensor.outside', 'lock.front']);
+    app.remove();
+    const alone = Object.assign(document.createElement('div'), { hass: house() });
+    document.body.append(alone);
+    alone.addEventListener('hass-more-info', heard);
+    openEntityDetails('switch.plug', { from: alone });
+    openEntityDetails('switch.plug');
+    expect(asked.at(-1)).toBe('switch.plug');
+    expect(asked.filter((id) => id === 'switch.plug')).toHaveLength(1);
   });
 
   it('never answers a more-info it was not handed: Home Assistant’s own cards keep the dialog', async () => {
