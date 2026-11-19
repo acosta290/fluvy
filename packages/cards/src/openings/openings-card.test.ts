@@ -77,18 +77,19 @@ type CardElement = HTMLElement & {
 };
 
 /** The card drawn at 360 on a stub ruler (8 px a glyph): the layout happy-dom has none of. */
-async function draw(config: Record<string, unknown>): Promise<CardElement> {
+async function draw(config: Record<string, unknown>, width = 360): Promise<CardElement> {
   const card = document.createElement('fluvy-openings-card') as CardElement;
   Object.assign(card.headFit, {
     ruler: {
-      width: (_cls: string, text: string) => text.length * 8,
+      // a mini tile's state is a size smaller
+      width: (cls: string, text: string) => text.length * (cls.includes('--mini') ? 6 : 8),
       pill: (_cls: string, text: string, sides: number) => text.length * 8 + sides,
       clear() {},
     },
   });
   card.setConfig({ type: 'custom:fluvy-openings-card', _now: NOW.toISOString(), ...config });
   card.hass = hass;
-  card.width = 360;
+  card.width = width;
   document.body.append(card);
   await card.updateComplete;
   return card;
@@ -493,5 +494,50 @@ describe('the openings card’s alerts for motion and the like (#223)', () => {
         ),
       ).toEqual(['true', 'false']);
     });
+  });
+});
+
+/*
+ * Half a section: a state that would leave its name under 40 goes under it, as every list's does (`fitValue`), and a
+ * tile's that no tile one a row would hold at 13 takes the mini tile's 12 — never cut.
+ */
+describe('the openings card at half a section', () => {
+  const stacked = (card: CardElement): boolean[] =>
+    [...card.shadowRoot!.querySelectorAll('.am-rows .fv-row')].map((row) =>
+      row.classList.contains('fv-row--stack'),
+    );
+
+  it('puts a state under its name where beside it the name would be cut to nothing, its time kept', async () => {
+    const rows = [
+      { entity: 'binary_sensor.hall_motion', name: 'Hall motion' },
+      'binary_sensor.shed',
+    ];
+    expect(stacked(await draw({ rows }))).toEqual([false, false]);
+    // a short name keeps its state beside it
+    const narrow = await draw({ rows, alert_classes: ['motion'] }, 152);
+    expect(stacked(narrow)).toEqual([true, false]);
+    expect(lines(narrow)[0]).toBe('1 min');
+    // a compact row's too
+    expect(stacked(await draw({ rows, variant: 'compact' }, 152))).toEqual([true, false]);
+  });
+
+  it('gives a tile’s state the smaller size where one a row would not hold it', async () => {
+    const tiles = (states?: Record<string, string>) =>
+      draw(
+        {
+          variant: 'tiles',
+          rows: [{ entity: 'binary_sensor.hall_motion', ...(states ? { states } : {}) }],
+        },
+        152,
+      );
+    const grid = async (states?: Record<string, string>) =>
+      (await tiles(states)).shadowRoot!.querySelector('.op-tiles')!.classList;
+    expect((await grid()).contains('op-tiles--small')).toBe(false);
+    expect((await grid({ on: 'Bewegung erkannt' })).contains('op-tiles--small')).toBe(true);
+  });
+
+  it('declares its rows whatever its column: the lines a state under its words adds are the live card’s', () => {
+    const config = { type: 'custom:fluvy-openings-card', rows: ['binary_sensor.hall_motion'] };
+    expect(FluvyOpeningsCard.layoutHeight(config)).toBe(100 + 60);
   });
 });

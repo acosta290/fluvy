@@ -1,5 +1,5 @@
 import { FluvyOpeningsCard } from '../../../../packages/cards/src/openings/openings-card.js';
-import type { SheetSpec } from '../scenes.js';
+import type { FrameSpec, SheetSpec } from '../scenes.js';
 
 if (!customElements.get('fluvy-openings-card'))
   customElements.define('fluvy-openings-card', FluvyOpeningsCard);
@@ -8,8 +8,9 @@ if (!customElements.get('fluvy-openings-card'))
  * Motion that alerts (#223): an Openings card that counts the hall's motion and the landing's presence as alerts
  * (`alert_classes`), as an open window is — the warning tone, the badge's count, the time it has been on — beside a
  * door shut; "2 detected" where every alert is of them, "2 alerts" with a window open among them; a row's own say
- * (`alert`: the shed's tilt sensor always, the nursery's motion never); compact, as tiles, folded, and as before, none
- * counted. Light and dark are the page's (`&mode=dark`).
+ * (`alert`: the shed's tilt sensor always, the nursery's motion never); compact, as tiles, folded, at half a section
+ * (where a long state goes under its name, and a tile's takes the smaller size), and as before, none counted. Light
+ * and dark are the page's (`&mode=dark`).
  */
 
 const OPENINGS = 'custom:fluvy-openings-card';
@@ -34,6 +35,21 @@ const card = (rows: readonly unknown[], more: Record<string, unknown> = {}) => (
   ...COUNTED,
   rows,
   ...more,
+});
+
+/**
+ * Half a section each, at the narrow columns too (152 to 266, which the measurer draws): held to their heights from
+ * 211 where `heights` says so, as under it a state that would leave its name under 40 goes under the name, which a
+ * config cannot say (the Entities card's rule, which the rows keep), and tiles one a row are their estimate's two.
+ */
+const halves = (
+  title: string,
+  cards: readonly Record<string, unknown>[],
+  heights?: readonly number[],
+): FrameSpec => ({
+  title,
+  ...(heights ? { heights } : {}),
+  cards: cards.map((one) => ({ ...(one as { type: string }), cols: 6 })),
 });
 
 export const sheet: SheetSpec = {
@@ -91,6 +107,15 @@ export const sheet: SheetSpec = {
       title: 'Motion that alerts · folded, what it hides detected',
       cards: [card([FRONT, BACK, HALL, LANDING], { max_rows: 2 })],
     },
+    halves(
+      'Motion that alerts · half a section, rows and compact',
+      [card([HALL, FRONT, KITCHEN]), card([HALL, FRONT, KITCHEN], { variant: 'compact' })],
+      [211, 266],
+    ),
+    halves('Motion that alerts · half a section, tiles', [
+      card([HALL, LANDING], { variant: 'tiles' }),
+      card([FRONT, KITCHEN], { variant: 'tiles' }),
+    ]),
     {
       title: 'Motion that alerts · as before, none counted',
       cards: [{ type: OPENINGS, _now, rows: [HALL, FRONT, KITCHEN] }],

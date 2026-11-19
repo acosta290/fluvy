@@ -2193,6 +2193,11 @@ reads "—" there; a slot that knew part of its time reads that part.
   name beside the circle would end before it had begun (96, or the name), every tile gives its circle's room to its
   words, and where a state still would not fit, one tile a row — measured in the tile's own type, at the grid's own
   gap). `show_time` takes the times away.
+- **Half a section (1.23):** a row's state stands as every list's does (`fitValue`): beside the name while the name
+  keeps 96 (or itself), on its two lines where it is a few words, and under the name, at its start, where beside it the
+  name would be cut under 40 (German's "Geschlossen", Russian's "Обнаружено" at 152), the row growing by its line, its
+  time kept; a compact row's too. A tile's state that no tile one a row would hold at its 13 takes the mini tile's 12.
+  Never cut.
 - **A sensor that cannot be read** (gone, unavailable or unknown) is a dash on its tile — on the dashed skin of
   anything gone, on the live skin when unknown — so its state never lays the tiles out otherwise; its word is said
   where the time would be when it fits, and is always its label.

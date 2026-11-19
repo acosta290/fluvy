@@ -39,6 +39,8 @@ import {
   rowEndStyles,
   rowsKeepIcon,
   rowStacks,
+  valueFitStyles,
+  wrapsInWords,
   type ValueFit,
 } from '../shared/row-end.js';
 import { rowLine, type RowLine } from '../shared/secondary.js';
@@ -137,6 +139,7 @@ export class FluvyEntitiesCard extends Card<EntitiesCardConfig> {
   static override styles: CSSResultGroup = [
     ...(Card.styles as CSSResultGroup[]),
     rowEndStyles,
+    valueFitStyles,
     css`
       .fv-rows {
         margin-top: 8px;
@@ -144,49 +147,6 @@ export class FluvyEntitiesCard extends Card<EntitiesCardConfig> {
       .fv-rows--bare {
         margin-top: -8px;
         margin-bottom: -8px;
-      }
-      /* a state in words is never cut: it wraps at its words, never narrower than its longest one ("Niet /
-         gedetecteerd"), and the name gives way first */
-      .fv-row__value.fv-row__value--text {
-        overflow-wrap: normal;
-        min-width: min-content;
-      }
-      .fv-row:has(.fv-row__value--text) .fv-row__text {
-        min-width: 0;
-      }
-      /* a row that gave its circle away holds its value at the width the card measured (fitValue): on one line, or a
-         state of a few words at its two ("No / detectado", the part's own wrap); the words have the rest of the row,
-         the name ending in its ellipsis */
-      .fv-row--bare > .fv-row__value:not(.fv-row__value--wrap) {
-        display: block;
-        flex: none;
-        max-width: none;
-        overflow: visible;
-        white-space: nowrap;
-      }
-      /* …and where even so the name would be cut to nothing or the line under it would not hold, the state goes
-         under the words, at their start, and the row grows by its lines of 20, on the grid: broken between its words,
-         and inside one only where the row would not hold it at the smallest size */
-      .fv-row--stack {
-        flex-wrap: wrap;
-        row-gap: 4px;
-        height: auto;
-        min-height: 60px;
-        padding: 8px 0;
-      }
-      .fv-row--stack > .fv-row__text {
-        flex-basis: 100%;
-      }
-      .fv-row--stack > .fv-row__value.fv-row__value {
-        top: 0;
-        display: block;
-        flex: none;
-        max-width: 100%;
-        overflow: visible;
-        white-space: normal;
-        overflow-wrap: anywhere;
-        line-height: 20px;
-        text-align: start;
       }
     `,
   ];
@@ -336,7 +296,7 @@ export class FluvyEntitiesCard extends Card<EntitiesCardConfig> {
       cls: `fv-row__value ${wordsClass(row.value)}`.trim(),
       least: compact ? 0 : ruler.width('fv-row__sub', least),
       // a state in words; a figure and its unit stay on one line
-      wraps: /\p{L}/u.test(row.value) && !/\p{Nd}/u.test(row.value) && row.value.includes(' '),
+      wraps: wrapsInWords(row.value),
     });
   }
 

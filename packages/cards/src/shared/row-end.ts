@@ -108,6 +108,10 @@ export interface ValueRow {
   readonly wraps: boolean;
 }
 
+/** A value in words that may take two lines, broken between them: a state of a few words, never a figure and its unit. */
+export const wrapsInWords = (value: string): boolean =>
+  /\p{L}/u.test(value) && !/\p{Nd}/u.test(value) && value.includes(' ');
+
 /** How a row's value stands with its words (`fitValue`). */
 export interface ValueFit {
   /** The value goes under the words, which have the row. */
@@ -241,5 +245,52 @@ export const rowEndStyles = css`
 
   [anchored] {
     display: contents;
+  }
+`;
+
+/** A row's value as `fitValue` lays it out: on one line or two beside the words, or under them, never cut. */
+export const valueFitStyles = css`
+  /* a state in words is never cut: it wraps at its words, never narrower than its longest one ("Niet /
+     gedetecteerd"), and the name gives way first */
+  .fv-row__value.fv-row__value--text {
+    overflow-wrap: normal;
+    min-width: min-content;
+  }
+  .fv-row:has(.fv-row__value--text) .fv-row__text {
+    min-width: 0;
+  }
+  /* a row that gave its circle away holds its value at the width the card measured (fitValue): on one line, or a
+     state of a few words at its two ("No / detectado", the part's own wrap); the words have the rest of the row,
+     the name ending in its ellipsis */
+  .fv-row--bare > .fv-row__value:not(.fv-row__value--wrap) {
+    display: block;
+    flex: none;
+    max-width: none;
+    overflow: visible;
+    white-space: nowrap;
+  }
+  /* …and where even so the name would be cut to nothing or the line under it would not hold, the state goes
+     under the words, at their start, and the row grows by its lines of 20, on the grid: broken between its words,
+     and inside one only where the row would not hold it at the smallest size */
+  .fv-row--stack {
+    flex-wrap: wrap;
+    row-gap: 4px;
+    height: auto;
+    min-height: 60px;
+    padding: 8px 0;
+  }
+  .fv-row--stack > .fv-row__text {
+    flex-basis: 100%;
+  }
+  .fv-row--stack > .fv-row__value.fv-row__value {
+    top: 0;
+    display: block;
+    flex: none;
+    max-width: 100%;
+    overflow: visible;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    line-height: 20px;
+    text-align: start;
   }
 `;

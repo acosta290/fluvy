@@ -21,6 +21,7 @@ import {
   preventMenu,
   sheetStyles,
   startPress,
+  wordsClass,
 } from '@fluvy/ui';
 
 import { css, html, nothing, type CSSResultGroup, type TemplateResult } from 'lit';
@@ -34,11 +35,14 @@ import { iconOf } from '../shared/domain.js';
 import { byState, ITEM_ALIASES, type AliasSpec } from '../shared/config.js';
 import { EMPTY, entryCount, HEAD, ROW } from '../shared/heights.js';
 import { emptyPanel, itemsOf, listOf, type EmptyList } from '../shared/lists.js';
+import { fitValue, valueFitStyles, wrapsInWords } from '../shared/row-end.js';
 import { changedAt, sinceIds, sinceOf } from '../shared/since.js';
 
 const s = strings('openings');
 /** A tile's state line as the tile sets it (13 px in a compact tile, not the large tile's 14). */
 const TILE_STATE = 'fv-tile fv-tile--compact > fv-tile__state';
+/** …and at the mini tile's 12, where a state would not hold even one tile a row (half a section). */
+const TILE_STATE_SMALL = 'fv-tile fv-tile--mini > fv-tile__state';
 /** A tile's name as the tile sets it (its larger size: a narrow tile's 14 only leaves more room). */
 const TILE_NAME = 'fv-tile fv-tile--compact > fv-tile__name';
 
@@ -172,7 +176,12 @@ const maxRowsOf = (config: Pick<OpeningsCardConfig, 'max_rows'>): number =>
  * carry fluvy's own wording so a door never reads "On".
  */
 export class FluvyOpeningsCard extends Card<OpeningsCardConfig> {
-  /** The card's height at a 360 column, for the automatic dashboard's columns. */
+  /**
+   * The card's height at a 360 column, for the automatic dashboard's columns: its rows of 60 (48 compact), which a
+   * section's column always holds. In a column so narrow that a row's state goes under its words (`fitValue`: half a
+   * section, a long word), the live card is that state's lines taller and its grid follows it (`rows: auto`); no config
+   * can say which states those are.
+   */
   static override layoutHeight(config: OpeningsCardConfig): number {
     const n = entryCount(config, ['rows', 'entities']);
     if (!n) return HEAD + EMPTY;
@@ -192,6 +201,7 @@ export class FluvyOpeningsCard extends Card<OpeningsCardConfig> {
   static override styles: CSSResultGroup = [
     ...(Card.styles as CSSResultGroup[]),
     sheetStyles.ambient,
+    valueFitStyles,
     css`
       /* the lab fixes the sheet at 360; a dashboard column decides here */
       .am-card {
@@ -200,6 +210,10 @@ export class FluvyOpeningsCard extends Card<OpeningsCardConfig> {
       /* tiles: two a row on the card, the inner tiles' page fill */
       .op-tiles {
         margin-top: 16px;
+      }
+      /* a state no tile one a row would hold at its 13: the mini tile's 12 */
+      .op-tiles--small .fv-tile__state {
+        font-size: 12px;
       }
     `,
   ];
@@ -326,14 +340,17 @@ export class FluvyOpeningsCard extends Card<OpeningsCardConfig> {
     // tile's label, and a gone one's skin): its state never lays the tiles out otherwise (1.9: a card keeps its size)
     const words = (item: OpeningItem, view: EntityView): string =>
       view.status === 'ok' ? this.valueText(view, item) : '—';
-    const widest = Math.max(
-      ...rows.map(({ item, view }) => this.headFit.ruler.width(TILE_STATE, words(item, view))),
-    );
+    const widestIn = (cls: string): number =>
+      Math.max(...rows.map(({ item, view }) => this.headFit.ruler.width(cls, words(item, view))));
+    const widest = widestIn(TILE_STATE);
     // the grid's gap is the dashboard's (Fluvy's theme sets 16)
     const gap = this.gridGap();
     const half = (this.contentWidth - gap) / 2 - 32;
     const columns = widest <= half ? 2 : 1;
     const share = columns === 2 ? half : this.contentWidth - 32;
+    // where even one a row a state would not hold (a long word at half a section), every state takes the smaller size
+    const small = widest > share;
+    const state = small ? TILE_STATE_SMALL : TILE_STATE;
     // a tile under 136 (104 inside) hides its circle by its own rule (tiles.css): its words have that room; and as the
     // rows do, every tile gives its circle where a name beside it would end before it had begun (96, or the name)
     const named = rows.some(
@@ -341,9 +358,11 @@ export class FluvyOpeningsCard extends Card<OpeningsCardConfig> {
         share - 56 <
         Math.min(96, this.headFit.ruler.width(TILE_NAME, this.nameFor(view, item.name))),
     );
-    const bare = widest > share - 56 || share < 104 || named;
+    const bare = (small ? widestIn(TILE_STATE_SMALL) : widest) > share - 56 || share < 104 || named;
     const room = bare ? share : share - 56;
-    return html`<div class="fv-tiles fv-tiles--${columns} op-tiles">
+    return html`<div
+      class="fv-tiles fv-tiles--${columns} op-tiles ${small ? 'op-tiles--small' : ''}"
+    >
       ${rows.map(({ item, view }) => {
         const warn = this.alert(view, item);
         const dead = !isUsable(view);
@@ -352,7 +371,7 @@ export class FluvyOpeningsCard extends Card<OpeningsCardConfig> {
         // the state stays; its time goes, whole, where the tile cannot hold both
         const timedLine = !dead && timed ? `${value} · ${this.when(item, view, warn, now)}` : '';
         const when =
-          timedLine && this.headFit.ruler.width(TILE_STATE, timedLine) <= room
+          timedLine && this.headFit.ruler.width(state, timedLine) <= room
             ? this.when(item, view, warn, now)
             : '';
         const { onTap, onHold } = this.pressOf(item, view.id);
@@ -445,19 +464,9 @@ export class FluvyOpeningsCard extends Card<OpeningsCardConfig> {
     });
   }
 
-  /** A row's time where it fits beside its value; else none, whole (the value is what the row is for). */
-  private timeFitted(
-    when: string,
-    item: OpeningItem,
-    view: EntityView,
-    compact: boolean,
-    keep: boolean,
-  ): string {
-    const room = this.headFit.rowRoom(this.contentWidth, this.valueText(view, item), {
-      compact,
-      icon: keep,
-    });
-    return when && this.headFit.ruler.width('fv-row__sub', when) <= room ? when : '';
+  /** A line under a row's name where it holds in the room its words have; else none, whole. */
+  private lineFitted(line: string, room: number): string {
+    return line && this.headFit.ruler.width('fv-row__sub', line) <= room ? line : '';
   }
 
   /**
@@ -570,6 +579,19 @@ export class FluvyOpeningsCard extends Card<OpeningsCardConfig> {
                 const warn = this.alert(view, item);
                 const dead = !isUsable(view);
                 const title = this.nameFor(view, item.name);
+                // a sensor that cannot be read is a dash (its word is the row's line, or its label)
+                const value = dead ? '—' : this.valueText(view, item);
+                // where the state stands, as every list's does (`fitValue`): beside the words, on its two lines, or
+                // under them where the name would be cut to nothing (half a section); never cut
+                const fit = fitValue(this.headFit.ruler, {
+                  row: this.contentWidth,
+                  base: this.headFit.rowRoom(this.contentWidth, '', { compact, icon: keep }),
+                  name: title,
+                  value,
+                  cls: `fv-row__value ${wordsClass(value)}`.trim(),
+                  least: 0,
+                  wraps: wrapsInWords(value),
+                });
                 return listRow({
                   icon: keep ? iconOf(view, item.icon) : null,
                   // what needs acting on is filled in the warning tone, circle and state alike; a row's own colour is who
@@ -581,18 +603,20 @@ export class FluvyOpeningsCard extends Card<OpeningsCardConfig> {
                   name: true,
                   compact,
                   // "Unavailable" is said once, where the time would be — where it fits beside the dash; else the dashed
-                  // skin says it and the word is the row's label
-                  sub: dead
-                    ? this.headFit.ruler.width('fv-row__sub', stateText(this.hass, view)) <=
-                      this.headFit.rowRoom(this.contentWidth, '—', { compact, icon: keep })
+                  // skin says it and the word is the row's label; the time goes, whole, where it would not hold
+                  sub: this.lineFitted(
+                    dead
                       ? stateText(this.hass, view)
-                      : ''
-                    : timed
-                      ? this.timeFitted(this.when(item, view, warn, now), item, view, compact, keep)
-                      : '',
+                      : timed
+                        ? this.when(item, view, warn, now)
+                        : '',
+                    fit.room,
+                  ),
+                  stack: fit.stack,
+                  valueWidth: fit.width,
+                  valueSize: fit.size,
                   trailing: 'value',
-                  // a value never wraps: a sensor that cannot be read is a dash (its word is the row's sub, or its label)
-                  value: dead ? '—' : this.valueText(view, item),
+                  value,
                   valueTone: warn ? 'warning' : '',
                   unavailable: dead,
                   ...(dead ? { label: `${title} · ${stateText(this.hass, view)}` } : {}),
