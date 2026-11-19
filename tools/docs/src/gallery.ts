@@ -139,6 +139,10 @@ export const GALLERY: Readonly<Record<string, Example>> = {
     config: { type: 'custom:fluvy-thermostat-card', entity: 'climate.living' },
     variants: { compact: {}, ruler: {} },
   },
+  'fluvy-schedule-card': {
+    config: { type: 'custom:fluvy-schedule-card', entity: 'climate.bedroom_radiator' },
+    variants: { today: {} },
+  },
   'fluvy-entities-card': {
     config: {
       type: 'custom:fluvy-entities-card',

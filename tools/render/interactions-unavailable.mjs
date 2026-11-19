@@ -126,6 +126,11 @@ const SOURCES = {
     ['vehicle', 'Strips · half a section', 0],
   ],
   'fluvy-automations-card': [['automations', 'Rows', 0]],
+  // its stub finds no schedule on the house's first thermostat: the bedroom's week, and today's line in half a section
+  'fluvy-schedule-card': [
+    ['schedule', 'Bedroom heating plan', 0],
+    ['schedule', 'Today · half', 0],
+  ],
   'fluvy-appliances-card': [['appliances', 'Appliances · rows', 0]],
   // its stub finds no flights sensor in the house of every sheet: the issue's three aircraft
   'fluvy-items-card': [['items', 'Items · flights', 0]],

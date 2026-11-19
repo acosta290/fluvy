@@ -82,7 +82,7 @@ import type {
   FluvyScheduleSheet,
   ScheduleRequest,
 } from './sheet/schedule-sheet.js';
-import { AutomationStore, workdaySensor } from './store.js';
+import { AutomationStore, automationIds, workdaySensor } from './store.js';
 
 const s = strings('automations');
 
@@ -208,18 +208,6 @@ interface Row {
   readonly scheduled: boolean;
   readonly next: Date | undefined;
   readonly last: Date | undefined;
-}
-
-/** The automation entities of a house, once per `hass.states` object. */
-const universes = new WeakMap<object, readonly string[]>();
-function automationIds(hass: HomeAssistant | undefined): readonly string[] {
-  if (!hass) return [];
-  let ids = universes.get(hass.states);
-  if (!ids) {
-    ids = Object.keys(hass.states).filter((id) => id.startsWith('automation.'));
-    universes.set(hass.states, ids);
-  }
-  return ids;
 }
 
 const sameList = (a: readonly string[], b: readonly string[]): boolean =>

@@ -182,6 +182,12 @@ const BUDGETS = {
   // #207: a car that burns fuel, its tank, a plug-in hybrid's two gauges, AdBlue, oil and the next service, and the
   // words of five more integrations, 3.6 KB: measured at 24.0 KB)
   vehicle: 26_624,
+  // the Heating schedule card (1.23, #229): the card, the week and the automation it reads and writes, how a preset
+  // looks, its store and its English; its editor goes with the forms. Measured at 12.0 KB
+  schedule: 16_384,
+  // its sheet (1.23, #229): a day's times, a day copied to others, the presets and what Save writes, fetched the first
+  // time the card is tapped. Measured at 6.6 KB
+  'schedule-sheet': 8192,
   // Fluvy's own details sheets (1.20, #162): the light's, the thermostat's, the cover's, the player's and the fan's,
   // what they share (the sheet, its keys and rows, its day) and their English, fetched the first time a card opens
   // one. Measured at 11.5 KB

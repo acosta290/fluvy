@@ -2822,6 +2822,77 @@ plain automation): the name, "last run · On", the switch in the head, "Open in 
 **Heights** at a 360 column: the head (100), the filter chips (60) when shown, then 60 a row, 48 compact, or the
 tiles two a row (84, 8 apart) with the fold row (16 + 48) under them; the empty panel (132 with its hint) under the head.
 
+## Heating schedule (1.23, #229)
+
+**The week lives in Home Assistant; the card draws it and writes it.** `fluvy-schedule-card` is a room's heating week
+on Home Assistant's own schedule helper (`schedule.*`: per weekday, times from and until, each with `data: {preset:
+comfort}`, its attributes while it is on), applied by one native automation Fluvy writes in a strict shape of its own
+beside the automations card's (`schedule/automation.ts`: the helper's state and Home Assistant's start as triggers, the
+helper on or off as the condition, one `choose` branch a preset under its name as the branch's alias, the base preset
+of the gaps as the default under its name; a step sets the target, a range-only unit's low end with its top as the
+high, or the thermostat's own `preset_mode`; template-free, so Home Assistant's editor shows every part as it is). It
+runs with every browser closed. Edited by hand past the shape, the automation is Home Assistant's: the card draws the
+week and its sheet says where to change it; a helper kept in YAML likewise.
+
+**The head** is the header pattern: the circle in the preset in force's glyph and tone while the schedule is on
+(Comfort the home in the heat's, Eco the leaf in the good's), the calendar's neutral otherwise; the room as the title
+(the card's `name`, else the thermostat's area, else its name); the line what the thermostat is doing (`doing()`, its
+word and nothing else of it), the preset in force and its target, the room now ("Heating · Comfort 21° · Now 20.6°"),
+giving way from its end, the doing word never cut (Fluvy's shorter word, else the line goes); and **one trailing
+element, the schedule's switch** (the automation: anyone may switch it, as Home Assistant has it; switched on it runs
+once, so the time it is now takes effect). Schedule off, the line says so in the preset's place ("Schedule off").
+
+**The week** (`variant: week`): a line a day, from the day the house starts its week on (`first_weekday`, the
+calendar's grammar), the days' short words in a column as wide as the widest of them on the 4 grid (today's in the
+text's ink at 600), each beside its line: a 24 well (`--fluvy-inset` on the page's fill, radius 12) holding the day's
+times as pills where they fall in its 24 hours, each its preset's tone (`--tone-fill`, its hairline; a preset's own
+colour through the card's accent sheet), its times in it (11/600, the tone's on-fill ink, tabular) where they hold it
+with 6 to spare on each side, else its start, else nothing — a time is never cut. **The gaps are the well**: the base
+preset is the line's own colour, its swatch in the legend the well's. Seven lines 8 apart (216), then the hours (8 above
+their 16: 0 · 6 · 12 · 18 · 24, a 12-hour clock's "6 AM"; three, then the two ends where the line is narrower), then
+**the legend** (`show_presets`, 16 above its 20): one centred line of the presets in the plan's order, each a 12
+swatch, its name and its temperature (a tenth where any preset has one), the preset in force in the text's ink at 600;
+as many as the line holds, the rest said by their count ("+2"), never a word cut. **Now** is a 2 line of the text's
+ink across today's well, over its times. The lines are a drawing (`data-measure="drawn"`): the times' places are the
+plan's minutes. **Today** (`variant: today`): today's line alone, 32 tall (12/600 times), no day column — for half a
+section.
+
+**The sheet** (`fluvy-heating-sheet`, a chunk of its own fetched on the first tap; the schedule sheet's modal, scrim,
+insets, grabber and pair): a tap on a day's line opens it on that day, a tap on the head or Enter on today's. Its
+head: "Heating schedule" (a word wider than its line steps it to 16, then its short form, "Schedule"), the room under
+it, the close round. **Day**: the seven days as chips that fill one row (four and three), the one shown pressed; under
+them the day's line as Today draws it, with its hours. **Heating times**: each time a well (radius 16, 12 padding) of
+its preset as a dropdown with the remove round beside it, and from – until as the house's time fields on the quarter
+hour (until may be 24:00); in a column too narrow for the two side by side, the preset on a line of its own and from
+and until under it, the round beside until. "Add a time" (two hours in the day's first room from 06:00, else its
+longest gap; "The day has no room left" when there is none) as a full-width quiet button whose words take a second
+line rather than leave it. **Two times that overlap are refused in words** ("08:00–18:00 overlaps 17:00–22:00", the day
+named where it is not the one shown) and Save waits. **Copy this day to**: the other days as chips chosen one by one
+(the day shown disabled), then Copy, then "Copied to Tue–Fri". **Presets**: each its circle (its glyph in its tone),
+its name over its temperature in the house's unit ("21.0 °C · Between times" for the base, the figure alone where both
+would not hold), the remove round (a preset no time names and that is not the base) and the stepper by the
+thermostat's step within its bounds; where the name or the figure would not hold beside them, the round and the stepper
+take a line of their own under them. A preset of the person's own has its name as a text field under its row (its name
+is its key: renamed, the times that named it name it again). "Add a preset" opens a dropdown of Home Assistant's
+presets the plan has not (Home, Sleep, Boost, Activity) and "One of your own". **Between times** chooses the base;
+**Use the thermostat's own presets** (shown only where the thermostat has one of the plan's) sets its own instead of a
+temperature, the row saying "The thermostat's own". A field whose title would not hold beside its control puts the
+control under it. **Footer**: Cancel · Save (one width for both); Save writes the helper (made where the thermostat has
+none: "Bedroom heating", named after the room) and the automation, each only where it changed, closes, and runs it once;
+refused, the helper goes back to what it was (one just made is deleted), the sheet stays with Home Assistant's words
+under the footer. **Read only** for anyone but an administrator, a YAML helper or an automation edited by hand: the
+same sections with the times as rows (a swatch, the preset's name, its times), the presets with their temperatures
+where they can be read, the reason under the head ("Only an administrator can change the schedule"), "Open in Home
+Assistant" for the automation edited by hand, and Close.
+
+**No week**: the lines' room keeps its height as one panel (the empty state's ring, "No heating schedule yet", the
+hint "It runs in Home Assistant, every browser closed", and for an administrator "Create a schedule", its short form
+"Create" in a narrow column), its content set on the 4 grid from its top; the first answers on their way keep the room
+blank. Out of reach (the thermostat), the card keeps its anatomy in the off skin: the week, the legend, the switch.
+
+**Heights** at a 360 column, from the config alone: 40 + the head (60, `show_head`) + the week (216) or today (32) + the
+hours (24) + the legend (36, `show_presets`): 376 by default, 192 for today.
+
 ## Alerts (1.9)
 
 **One definition drives an alert: its count, its list and what can be done about it.** `fluvy-alerts-card` takes

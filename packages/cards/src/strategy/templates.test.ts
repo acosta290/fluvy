@@ -253,7 +253,8 @@ describe('the dashboard templates', () => {
     // the dashboards gathering the scenes on one Scenes card (#172); and the Expander card (#180), which folds away the
     // cards a person chooses to; and the Swipe card (#206), whose pages are the person's to choose; and the Compass
     // card, whose wind speed and its matching bearing sensor are a pairing only the person can name; and the Rounds
-    // card (#224), whose picks are the person's own
+    // card (#224), whose picks are the person's own; and the Heating schedule card (#229), whose week the person
+    // makes on it, written into Home Assistant from its sheet
     const byHand = new Set([
       'custom:fluvy-scene-card',
       'custom:fluvy-automations-card',
@@ -269,6 +270,7 @@ describe('the dashboard templates', () => {
       'custom:fluvy-swipe-card',
       'custom:fluvy-compass-card',
       'custom:fluvy-rounds-card',
+      'custom:fluvy-schedule-card',
     ]);
     expect(
       CATALOGUE.map(([tag]) => `custom:${tag}`).filter(

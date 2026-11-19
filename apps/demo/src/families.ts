@@ -33,7 +33,7 @@ export const FAMILIES: readonly Family[] = [
       'lights',
     ],
   },
-  { key: 'climate', label: 'family.climate', glyph: 'thermo', sheets: ['climate'] },
+  { key: 'climate', label: 'family.climate', glyph: 'thermo', sheets: ['climate', 'schedule'] },
   { key: 'vehicles', label: 'family.vehicles', glyph: 'car', sheets: ['vehicle'] },
   {
     key: 'energy',
@@ -108,6 +108,7 @@ export const CARD_GROUPS: readonly CardGroup[] = [
       'lights',
       'slider',
       'thermostat',
+      'schedule',
       'cover',
       'fan',
       'vacuum',

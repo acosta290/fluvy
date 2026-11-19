@@ -29,6 +29,7 @@ import { sheet as remote } from './remote.js';
 import { sheet as rooms } from './rooms.js';
 import { sheet as rounds } from './rounds.js';
 import { sheet as sankey } from './sankey.js';
+import { sheet as schedule } from './schedule.js';
 import { sheet as slider } from './slider.js';
 import { sheet as sliderCard } from './slider-card.js';
 import { sheet as solar } from './solar.js';
@@ -76,6 +77,8 @@ export const sheet: SheetSpec = {
     sliderCard,
     lights,
     climate,
+    // before the automations': its config API answers the heating plans' ids, which that one refuses as unknown
+    schedule,
     items,
     media,
     remote,

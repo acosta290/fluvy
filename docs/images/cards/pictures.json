@@ -109,6 +109,16 @@
     "width": 784,
     "height": 600
   },
+  "schedule": {
+    "example": "6d5de1bb7f0d",
+    "width": 784,
+    "height": 816
+  },
+  "schedule.today": {
+    "example": "872b9415699c",
+    "width": 784,
+    "height": 448
+  },
   "entities": {
     "example": "5ea67b5f5984",
     "width": 784,

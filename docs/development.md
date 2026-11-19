@@ -42,7 +42,7 @@ pnpm build
 ```
 
 The bundle is one ES module, `fluvy.js`, that imports `chunks/core-<hash>.js` (everything a page needs) and fetches
-`chunks/{activity,history,details-history,panel,customise,sidebar-editor,pages,words,strategy,house-heights,wall,weather,calendar,media,chart,chart-card,energy-period,energy,history-bars-readings,devices,cameras-sheet,appliances,appliance-art,automations,automations-sheet,alerts,alerts-sheet,template,web,rounds,about,expander,expander-editor,swipe,sidebar,slider,cover,vacuum,ring,vacuum-drive,climate,remote,app-logos,vehicle,details,items,items-sheet,lights-colour,light-colour,quick-actions,editor,fields,forms,view-icons,glass,quiet,thresholds,number-controls,slider-styles,switch-styles,background,dock,groups,icons,icons-appliances,icons-levels,icons-energy,icons-devices,icons-climate,icons-safety,icons-outdoor,icons-home,icons-rooms,levels,shared,lang-*}-<hash>.js`
+`chunks/{activity,history,details-history,panel,customise,sidebar-editor,pages,words,strategy,house-heights,wall,weather,calendar,media,chart,chart-card,energy-period,energy,history-bars-readings,devices,cameras-sheet,appliances,appliance-art,automations,automations-sheet,alerts,alerts-sheet,template,web,rounds,about,expander,expander-editor,swipe,sidebar,slider,cover,vacuum,ring,vacuum-drive,climate,remote,app-logos,vehicle,schedule,schedule-sheet,details,items,items-sheet,lights-colour,light-colour,quick-actions,editor,fields,forms,view-icons,glass,quiet,thresholds,number-controls,slider-styles,switch-styles,background,dock,groups,icons,icons-appliances,icons-levels,icons-energy,icons-devices,icons-climate,icons-safety,icons-outdoor,icons-home,icons-rooms,levels,shared,lang-*}-<hash>.js`
 on demand — the Activity page, the History page, our history in Home Assistant's details dialog (the first time a dialog
 shows it), the settings panel (and Customise, the first time one of its dashboards is customised; a dashboard's
 sidebar, the first time its section is opened), what they
@@ -55,13 +55,13 @@ from their configs alone), wall mode (on a device that is a wall), the chart eng
 sensor card in core reaches it through `src/shared/chart-load.ts`, the energy family, the History page and the Chart
 card import it from their own chunks), a room's quick actions (fetched as the bundle starts too: the room card in
 core reaches them through `loadQuickActions`; and what says what a thermostat is doing, which a tile and a room's row
-asked to say it reach through `doingReading`, in the Thermostat card's chunk), the weather, calendar, template, Energy period and usage, web page, Rounds, Expander, Swipe, Slider, Cover, Vacuum, Thermostat, remote, Vehicle, items and
+asked to say it reach through `doingReading`, in the Thermostat card's chunk), the weather, calendar, template, Energy period and usage, web page, Rounds, Expander, Swipe, Slider, Cover, Vacuum, Thermostat, remote, Vehicle, Heating schedule, items and
 chart cards and the media, energy, devices, appliances, automations and alerts families (fetched as the bundle starts:
 their cards are announced in core — `src/energy-family.ts` and its siblings, their tags and heights — and defined as
 `src/energy-cards.ts` and its siblings land; Home Assistant builds a card again the moment its tag is defined), the
 history bars' readings (the first card that reads a counter by them), the appliances' pictures (the first card that
 draws one), the drive pad (the first Vacuum card that draws a Drive command; its ring is the remote's, a chunk both
-fetch), the schedule sheet, the alerts' sheet, the cameras' sheet and an item's sheet (when one is opened), Fluvy's
+fetch), the schedule sheet, the heating sheet, the alerts' sheet, the cameras' sheet and an item's sheet (when one is opened), Fluvy's
 own details sheets (the first time a card opens one), the
 light card's colour controls (the first colour bulb), the cards' visual editor, the fields every editor is built of
 (with the families too) and the forms of the cards every page carries (when a card is edited), what a see-through card wears (the first card under 100 %, or a house whose cards
@@ -123,6 +123,8 @@ budget (`BUDGETS`; the facts guard in `tools/docs` holds this table to it):
 | `remote` | 16 KB | the TV remote card: its keys and the integrations' commands for them, the platforms it knows by name, its English |
 | `app-logos` | 24 KB | the platforms' logos (Simple Icons, Material Design Icons, Fluvy's monograms), fetched by the first remote card that draws an app |
 | `vehicle` | 26 KB | the Vehicle card: what finds a car's entities and folds its integration's words, its glyphs, its English |
+| `schedule` | 16 KB | the Heating schedule card: the week and the automation it reads and writes, how a preset looks, its store, its English |
+| `schedule-sheet` | 8 KB | the Heating schedule card's sheet: a day's times, a day copied to others, the presets and what Save writes |
 | `items` | 12 KB | the Items card, its fields and presets, its English |
 | `details` | 16 KB | Fluvy's own details sheets (#162): the light's, the thermostat's, the cover's, the player's and the fan's, opened by a card's more-info |
 | `items-sheet` | 8 KB | an item's sheet |
@@ -133,7 +135,7 @@ budget (`BUDGETS`; the facts guard in `tools/docs` holds this table to it):
 | `calendar` | 16 KB | the calendar card: its views, what reads its events, its sheet |
 | `editor` | 8 KB | the cards' visual editor |
 | `fields` | 9 KB | the fields every card's editor is built of: the schema's helpers, a list's row form, the editors' English |
-| `forms` | 19 KB | the editors of the cards every page carries and of the template, Slider, Cover, Vacuum, Thermostat and remote cards: their forms, lists and defaults |
+| `forms` | 19 KB | the editors of the cards every page carries and of the template, Slider, Cover, Vacuum, Thermostat, remote and Heating schedule cards: their forms, lists and defaults |
 | `view-icons` | 6 KB | a view's icon from its name |
 | `glass` | 4 KB | what a see-through card wears: its sheet's writer (every fill at its opacity) and its rules (its solid overlays, its blur) |
 | `quiet` | 4 KB | what a card quiet out of reach wears: the rules that give the unavailable skin's paint back, one sheet every such card adopts |
@@ -456,7 +458,7 @@ cp -a usr/lib/x86_64-linux-gnu/. ~/.cache/ms-playwright/webkit-*/minibrowser-wpe
 
 ### The facts guard
 
-`tools/docs/src/facts.ts` (part of `pnpm check`) reads every count the prose spells — "sixty-nine cards", "fifteen
+`tools/docs/src/facts.ts` (part of `pnpm check`) reads every count the prose spells — "seventy cards", "fifteen
 palettes", "seven automatic dashboards", "twenty languages", "six tabs", in any case, in words or in digits — in the
 README, `CONTRIBUTING.md`, the package description, `docs/*.md`, `packages/cards/README.md` and the design language,
 and holds it to the catalogue, `PALETTE_NAMES`, the strategy's templates, `LANGUAGE_CODES` and the panel's `TABS`;

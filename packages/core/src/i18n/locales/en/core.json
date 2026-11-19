@@ -849,6 +849,7 @@
     "chart": "Chart",
     "swipe": "Swipe",
     "compass": "Compass",
-    "rounds": "Rounds"
+    "rounds": "Rounds",
+    "schedule": "Heating schedule"
   }
 }

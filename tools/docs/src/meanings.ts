@@ -543,6 +543,14 @@ export const MEANINGS: Readonly<Record<string, string>> = {
   'scene.entity': 'The scene, script or button the tile runs.',
   'scenes.columns': 'How many scenes stand in a row.',
   'scenes.tint': 'When each scene’s tile shows its colour.',
+  'schedule.entity': 'The thermostat the schedule sets.',
+  'schedule.schedule':
+    'The schedule helper the card draws and writes; left out, the one its automation follows.',
+  'schedule.show_head':
+    'Shows the head: the room, what the thermostat is doing, the preset in force and the schedule’s switch.',
+  'schedule.show_presets': 'Shows the presets and their temperatures under the hours.',
+  'schedule.show_switch': 'Shows the switch that turns the schedule on and off.',
+  'schedule.variant': 'The week, a line a day, or today’s line alone.',
   'sensor.chart': 'The chart’s style.',
   'sensor.entity': 'The sensor the card charts and reads out.',
   'sensor.tint':
@@ -684,6 +692,7 @@ export const MEANINGS: Readonly<Record<string, string>> = {
   'room.tiles[]': 'Tiles of the room’s entities, in this order.',
   'rounds.items[]': 'The entities the card draws as rounds, in this order.',
   'scenes.scenes[]': 'The scenes, in the order they are drawn.',
+  'schedule.presets[]': 'How a preset looks on this card: its name, icon and colour, by its key.',
   'sensor.entities[]': 'Up to two more sensors drawn on the same chart.',
   'stat-tiles.rows[]': 'Rows under the tiles.',
   'stat-tiles.tiles[]': 'The figures as tiles, in this order.',
@@ -868,5 +877,7 @@ export const MEANINGS: Readonly<Record<string, string>> = {
     'Shows this quick action’s state in its round, or hides it, whatever the card says.',
   'rounds.items[].show_state':
     'Shows this round’s state under its icon, or hides it, whatever the layout says.',
+  'schedule.presets[].preset':
+    'The preset’s key: comfort, eco, away, home, sleep, boost, activity, or the name of one of your own.',
   'vehicle.roles[].role': 'What the entity is to the car.',
 };

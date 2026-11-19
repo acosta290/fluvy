@@ -36,6 +36,7 @@ import { chipRow, type ChipFit } from '../../shared/chips.js';
 import { TextRuler } from '../../shared/fit.js';
 import { FontsSettled } from '../../shared/fonts.js';
 import { LaidWidth } from '../../shared/laid.js';
+import { fitPair } from '../../shared/pair.js';
 import { optionCell, optionColumnsFor, optionsHold } from '../../shared/options.js';
 import { sheetDialog, sheetInsets } from '../../shared/sheet-insets.js';
 import { daysShort, daysText, lastText, spanText, suggestAlias } from '../format.js';
@@ -61,7 +62,7 @@ import {
 import type { TargetChoice } from '../scope.js';
 import { apiMessage } from '../store.js';
 import { dayChips } from './day-chips.js';
-import { heldValue, pairWidth } from './fit.js';
+import { heldValue } from './fit.js';
 import {
   clockOf,
   later,
@@ -597,7 +598,8 @@ export class FluvyScheduleSheet extends LitElement {
     const dialog = this.renderRoot.querySelector('dialog');
     if (dialog && !dialog.open && this.request_ && !this.leaving_) dialog.showModal();
     if (changed.has('request_') && this.request_) requestAnimationFrame(() => this.focusFirst());
-    this.fitPair();
+    // the pair shares one width (`pairWidth`): the design's 172, the row's equal share, else stacked
+    fitPair(this.renderRoot.querySelector<HTMLElement>('.dv-actions'));
     fitPills(this.renderRoot);
   }
 
@@ -643,26 +645,6 @@ export class FluvyScheduleSheet extends LitElement {
       resolveEntity(this.hass, id),
       this.request?.only?.find((choice) => choice.id === id)?.name,
     );
-  }
-
-  /**
-   * The pair shares one width (`pairWidth`): the design's 172 where the row holds two of them and the 16 between,
-   * else the row's equal share while the longer label holds it, else the label's own and the two stacked. The
-   * labels are measured laid out, at their natural width, and the row as it is now.
-   */
-  private fitPair(): void {
-    const row = this.renderRoot.querySelector<HTMLElement>('.dv-actions');
-    if (!row) return;
-    let natural = 0;
-    for (const button of row.querySelectorAll<HTMLElement>('.fv-btn')) {
-      const previous = button.style.width;
-      button.style.width = 'max-content';
-      natural = Math.max(natural, button.offsetWidth + 16);
-      button.style.width = previous;
-    }
-    const { pair, stacked } = pairWidth(natural, row.clientWidth);
-    row.style.setProperty('--ss-pair', `${pair}px`);
-    row.classList.toggle('dv-actions--stacked', stacked);
   }
 
   /** A tile's value where it holds a cell of `cell` px, its shorter form where that holds, else nothing (`word`: a descriptor's style). */

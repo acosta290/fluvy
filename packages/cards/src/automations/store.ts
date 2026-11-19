@@ -19,8 +19,9 @@ import {
  *
  * Writing is narrow on purpose: `save` takes a config, parses it as a schedule (or an appliance's "Tell me when it's
  * done", `notice.ts`) and builds it again, and posts the built one only when the two agree, so what reaches Home
- * Assistant is always the shape `buildAutomation` (or `buildNotice`) writes; `save` and `remove` take Fluvy's own ids
- * only.
+ * Assistant is always the shape `buildAutomation` (or `buildNotice`) writes; `saveShape` does the same for a shape
+ * another of Fluvy's chunks owns (a heating schedule's, its parse and build handed in); `save` and `remove` take
+ * Fluvy's own ids only.
  *
  * What Home Assistant relates to an entity (`related`: the automations whose triggers, conditions or actions name it,
  * asked with `search/related`, which anyone may) is kept here too, for a card about a few entities. It is asked again
@@ -115,6 +116,18 @@ function index(hass: HomeAssistant): Map<string, HassEntity> {
 /** The automation entity whose config has that id (`attributes.id`), if the house has one. */
 export const automationEntity = (hass: HomeAssistant, id: string): HassEntity | undefined =>
   index(hass).get(id);
+
+/** The automation entities of a house, once per `hass.states` object. */
+const universes = new WeakMap<object, readonly string[]>();
+export function automationIds(hass: HomeAssistant | undefined): readonly string[] {
+  if (!hass) return [];
+  let ids = universes.get(hass.states);
+  if (!ids) {
+    ids = Object.keys(hass.states).filter((id) => id.startsWith('automation.'));
+    universes.set(hass.states, ids);
+  }
+  return ids;
+}
 
 /** The config ids of the house's automations that are Fluvy schedules by their id. */
 export const scheduleIds = (hass: HomeAssistant): string[] =>
@@ -259,6 +272,30 @@ export class AutomationStore {
     if (!schedule || schedule.id !== id) throw new Error('not the shape Fluvy writes');
     const built = buildAutomation(schedule);
     await this.post(id, built, config);
+    this.wrote(id, built);
+  }
+
+  /**
+   * Writes a config of another strict shape Fluvy owns (a heating schedule's, `schedule/automation.ts`): a Fluvy id,
+   * `rebuild` reading it strictly and building it again (nothing where it is not the shape), posted only when the two
+   * agree. The cache then holds the built config, stale until the next read, as `save`'s.
+   */
+  async saveShape<T extends object>(
+    id: string,
+    config: T,
+    rebuild: (config: unknown) => T | undefined,
+  ): Promise<void> {
+    if (!SCHEDULE_ID.test(id)) throw new Error(`not a schedule id: ${id}`);
+    if (!this.admin) throw new Error('only an administrator may write automations');
+    const built = rebuild(config);
+    if (!built || (built as { id?: unknown }).id !== id)
+      throw new Error('not the shape Fluvy writes');
+    await this.post(id, built, config);
+    this.wrote(id, built as unknown as AutomationConfig);
+  }
+
+  /** What was just written is what the cache holds, stale until the next read. */
+  private wrote(id: string, built: AutomationConfig): void {
     const entry = this.entry(id);
     entry.config = built;
     entry.error = undefined;
@@ -270,11 +307,7 @@ export class AutomationStore {
   }
 
   /** Posts what was built, only where it says what was asked. */
-  private async post(
-    id: string,
-    built: AutomationConfig | NoticeConfig,
-    asked: AutomationConfig | NoticeConfig,
-  ): Promise<void> {
+  private async post(id: string, built: object, asked: object): Promise<void> {
     if (canonical(built) !== canonical(asked)) throw new Error('not the shape Fluvy writes');
     await this.hass.callApi('POST', CONFIG_PATH + id, { ...built });
   }

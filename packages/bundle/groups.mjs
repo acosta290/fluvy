@@ -325,6 +325,21 @@ const VEHICLE =
   /\/packages\/(cards\/src\/(vehicle-cards\.ts|vehicle\/)|core\/src\/i18n\/locales\/en\/vehicle\.json)/;
 
 /**
+ * The Heating schedule card's sheet (1.23, #229: a day's times, a day copied to others, the presets and their
+ * temperatures, what it writes): fetched the first time the card is tapped, never by a dashboard that only shows the
+ * week; it reaches the page controls (the time field, the dropdown) through the pages chunk.
+ */
+const SCHEDULE_SHEET = /\/packages\/cards\/src\/schedule\/sheet\//;
+
+/**
+ * The Heating schedule card (1.23, #229: its card, the week and the automation it reads and writes, its store and its
+ * English; its editor goes with the forms): fetched as the bundle starts and defined as it lands, as the Vehicle card
+ * is (`schedule-family.ts` stays in core: the tag, the height).
+ */
+const SCHEDULE =
+  /\/packages\/(cards\/src\/(schedule-cards\.ts|schedule\/)|core\/src\/i18n\/locales\/en\/schedule\.json)/;
+
+/**
  * Fluvy's own details (1.20, #162: the sheets of a light, a thermostat, a cover, a player and a fan, what they share
  * and their English): fetched the first time a card opens one, never by a dashboard nobody opens details on
  * (`details-family.ts` stays in core: which entities have a sheet, who opens it).
@@ -452,12 +467,13 @@ const GLYPH_SETS = /\/packages\/ui\/src\/glyph-sets\/([\w-]+)\.ts/;
  * (`Ticker`), the width a sheet was laid out at (`LaidWidth`), where a modal sheet stands on a phone (`sheetInsets`,
  * 1.21), a name's plain letters (the appliances, the strategy, the view icons) and, since the Thermostat card left
  * core (1.21), a person's own picture in a head's circle (the thermostat, the player, the appliances, the Vehicle
- * card). Nothing every page runs reaches them: in core every page waited on them, here they come with the first chunk
- * that needs them — as the bundle starts, beside the editors' fields the families fetch too. And the dashboard
- * sidebar's glyph (1.21, #187), which the sidebar and the settings panel both draw.
+ * card), and the width a sheet's pair of buttons share (`pair`, 1.23). Nothing every page runs reaches them: in core
+ * every page waited on them, here they come with the first chunk that needs them — as the bundle starts, beside the
+ * editors' fields the families fetch too. And the dashboard sidebar's glyph (1.21, #187), which the sidebar and the
+ * settings panel both draw.
  */
 const SHARED =
-  /\/packages\/(cards\/src\/shared\/(dates|days|ticker|laid|sheet-insets|picture|side-glyph)|core\/src\/plain)\.ts/;
+  /\/packages\/(cards\/src\/shared\/(dates|days|ticker|laid|sheet-insets|picture|side-glyph|pair)|core\/src\/plain)\.ts/;
 
 /** The cards' visual editor (the rows editor every card's `getConfigElement` builds): fetched the first time a card is edited. */
 const EDITOR = /\/packages\/cards\/src\/shared\/rows-editor\.ts/;
@@ -494,7 +510,7 @@ const FORMS =
  * automations and alerts families (each sheet on its own), the template card, the web page card, the Rounds card, what each card is, the
  * Expander card (its editor on its own, before the forms, with the Swipe card's), the Swipe card, a dashboard's own
  * sidebar, the Slider card, the ring, the Cover card, the drive pad, the Vacuum card, the Thermostat card, the platforms' logos, the
- * remote card, the Vehicle card, Fluvy's own details, the items card (its sheet on its own), the light card's colours,
+ * remote card, the Vehicle card, the Heating schedule card (its sheet on its own), Fluvy's own details, the items card (its sheet on its own), the light card's colours,
  * a room's quick actions, the cards' editor, the fields every editor is built of, the view icons, what a see-through
  * card wears, what a quiet one wears, what reads a card's thresholds, what sets a number in place, the slider styles,
  * the switch styles, the page's background, this device's sidebar beside the page, a list in groups, the icon set's
@@ -550,6 +566,8 @@ export const GROUPS = [
   { name: 'app-logos', test: APP_LOGOS },
   { name: 'remote', test: REMOTE },
   { name: 'vehicle', test: VEHICLE },
+  { name: 'schedule-sheet', test: SCHEDULE_SHEET },
+  { name: 'schedule', test: SCHEDULE },
   { name: 'details', test: DETAILS },
   { name: 'items-sheet', test: ITEMS_SHEET },
   { name: 'items', test: ITEMS },

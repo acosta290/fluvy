@@ -68,6 +68,7 @@
     "chart": "Any time series on one chart — history, statistics, a list in an attribute (Nordpool’s prices, a solar forecast) or a weather’s forecast — past to future with now marked, thresholds in their colours and the cheapest hours found.",
     "swipe": "Any cards, one a page, turned by a swipe or the page marks under them: side by side on a wide screen, round from the last to the first.",
     "compass": "Wind speed and direction, a vehicle’s heading or any bearing on a 360° compass ring, with a secondary marker and up to three readouts underneath.",
-    "rounds": "Any entities as round buttons, each lit while it is on: a tap switches what is safe to switch, a hold opens its details, with an optional head saying how many are on."
+    "rounds": "Any entities as round buttons, each lit while it is on: a tap switches what is safe to switch, a hold opens its details, with an optional head saying how many are on.",
+    "schedule": "A room’s heating week on Home Assistant’s own schedule helper: a timeline a day in its presets’ colours, Comfort, Eco and Away with their temperatures, its times edited, a day copied to others, the schedule on or off."
   }
 }

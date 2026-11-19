@@ -2,7 +2,8 @@
 import type { HassEntity, HomeAssistant } from '@fluvy/core';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { SCHEDULE_ID, type Schedule } from '../schedule.js';
-import { heldValue, pairWidth } from './fit.js';
+import { pairWidth } from '../../shared/pair.js';
+import { heldValue } from './fit.js';
 import {
   FluvyScheduleSheet,
   type DetailsRequest,
