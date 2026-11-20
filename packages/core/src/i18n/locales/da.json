@@ -3630,7 +3630,10 @@
     "north_offset": "Nordforskydning",
     "show_cardinals": "Verdenshjørner",
     "point16": "{cardinal}{intercardinal}",
-    "pointer_arrow": "Pil"
+    "pointer_arrow": "Pil",
+    "arrow_points": "Pilen peger",
+    "arrow_outward": "Udad",
+    "arrow_inward": "Indad"
   },
   "schedule": {
     "card": "Varmeplan",

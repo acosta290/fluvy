@@ -3630,7 +3630,10 @@
     "north_offset": "Отместване на севера",
     "show_cardinals": "Посоки на света",
     "point16": "{cardinal}{intercardinal}",
-    "pointer_arrow": "Стрелка"
+    "pointer_arrow": "Стрелка",
+    "arrow_points": "Стрелката сочи",
+    "arrow_outward": "Навън",
+    "arrow_inward": "Навътре"
   },
   "schedule": {
     "card": "График за отопление",

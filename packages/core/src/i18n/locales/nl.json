@@ -3630,7 +3630,10 @@
     "north_offset": "Noordverschuiving",
     "show_cardinals": "Windstreken",
     "point16": "{cardinal}{intercardinal}",
-    "pointer_arrow": "Pijl"
+    "pointer_arrow": "Pijl",
+    "arrow_points": "Pijl wijst",
+    "arrow_outward": "Naar buiten",
+    "arrow_inward": "Naar binnen"
   },
   "schedule": {
     "card": "Verwarmingsschema",

@@ -12,6 +12,9 @@
     "north_offset": "North offset",
     "show_cardinals": "Cardinal points",
     "point16": "{cardinal}{intercardinal}",
-    "pointer_arrow": "Arrow"
+    "pointer_arrow": "Arrow",
+    "arrow_points": "Arrow points",
+    "arrow_outward": "Outward",
+    "arrow_inward": "Inward"
   }
 }

@@ -3630,7 +3630,10 @@
     "north_offset": "Északi eltolás",
     "show_cardinals": "Égtájak",
     "point16": "{cardinal}{intercardinal}",
-    "pointer_arrow": "Nyíl"
+    "pointer_arrow": "Nyíl",
+    "arrow_points": "A nyíl iránya",
+    "arrow_outward": "Kifelé",
+    "arrow_inward": "Befelé"
   },
   "schedule": {
     "card": "Fűtési ütemterv",

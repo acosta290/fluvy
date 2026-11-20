@@ -3755,7 +3755,10 @@
     "north_offset": "Przesunięcie północy",
     "show_cardinals": "Kierunki świata",
     "point16": "{cardinal}-{intercardinal}",
-    "pointer_arrow": "Strzałka"
+    "pointer_arrow": "Strzałka",
+    "arrow_points": "Strzałka wskazuje",
+    "arrow_outward": "Na zewnątrz",
+    "arrow_inward": "Do środka"
   },
   "schedule": {
     "card": "Harmonogram ogrzewania",

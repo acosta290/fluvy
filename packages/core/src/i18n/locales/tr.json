@@ -3630,7 +3630,10 @@
     "north_offset": "Kuzey kayması",
     "show_cardinals": "Ana yönler",
     "point16": "{cardinal}{intercardinal}",
-    "pointer_arrow": "Ok"
+    "pointer_arrow": "Ok",
+    "arrow_points": "Ok yönü",
+    "arrow_outward": "Dışa doğru",
+    "arrow_inward": "İçe doğru"
   },
   "schedule": {
     "card": "Isıtma planı",

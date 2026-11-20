@@ -12999,7 +12999,7 @@
         {
           "key": "indicator",
           "label": "Pointer",
-          "does": "How the bearing is marked: an arrow across the ring pointing in, the knob on the ring, the ticks lit across it, or a dot outside them.",
+          "does": "How the bearing is marked: an arrow across the ring, the knob on the ring, the ticks lit across it, or a dot outside them.",
           "type": "choice",
           "default": "arrow",
           "values": {
@@ -13032,6 +13032,17 @@
             "knob": "Knob",
             "ticks": "Lit ticks",
             "dot": "Dot"
+          }
+        },
+        {
+          "key": "arrow_points",
+          "label": "Arrow points",
+          "does": "Which way an arrow points, the bearing’s and the second’s: out from the centre to the bearing, as a compass needle’s head, or in at the figure, as the wind blows from it.",
+          "type": "choice",
+          "default": "outward",
+          "values": {
+            "outward": "Outward",
+            "inward": "Inward"
           }
         },
         {

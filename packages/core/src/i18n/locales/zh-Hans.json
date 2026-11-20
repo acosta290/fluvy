@@ -3630,7 +3630,10 @@
     "north_offset": "正北偏移",
     "show_cardinals": "方位点",
     "point16": "{cardinal}{intercardinal}",
-    "pointer_arrow": "箭头"
+    "pointer_arrow": "箭头",
+    "arrow_points": "箭头方向",
+    "arrow_outward": "朝外",
+    "arrow_inward": "朝内"
   },
   "schedule": {
     "card": "供暖计划",

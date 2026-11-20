@@ -3630,7 +3630,10 @@
     "north_offset": "Nordversatz",
     "show_cardinals": "Himmelsrichtungen",
     "point16": "{cardinal}{intercardinal}",
-    "pointer_arrow": "Pfeil"
+    "pointer_arrow": "Pfeil",
+    "arrow_points": "Pfeil zeigt",
+    "arrow_outward": "Nach außen",
+    "arrow_inward": "Nach innen"
   },
   "schedule": {
     "card": "Heizplan",

@@ -624,6 +624,8 @@ export const MEANINGS: Readonly<Record<string, string>> = {
     'The tank’s size, so that a car which says only how much is in it shows its level.',
   'weather.days': 'How many days the forecast shows.',
   'weather.entity': 'The weather entity the card shows.',
+  'compass.arrow_points':
+    'Which way an arrow points, the bearing’s and the second’s: out from the centre to the bearing, as a compass needle’s head, or in at the figure, as the wind blows from it.',
   'compass.badge':
     'The words in the head’s badge: your own, an entity’s state or a template; none by default.',
   'compass.direction_attribute':
@@ -633,7 +635,7 @@ export const MEANINGS: Readonly<Record<string, string>> = {
   'compass.entity':
     'The figure in the ring beside `direction_entity`, such as the wind’s speed; alone, it is read as the bearing.',
   'compass.indicator':
-    'How the bearing is marked: an arrow across the ring pointing in, the knob on the ring, the ticks lit across it, or a dot outside them.',
+    'How the bearing is marked: an arrow across the ring, the knob on the ring, the ticks lit across it, or a dot outside them.',
   'compass.label': 'The words inside the ring, over the figure.',
   'compass.north_offset':
     'Where north is drawn, in degrees clockwise from the top, for a window that does not face north.',

@@ -3630,7 +3630,10 @@
     "north_offset": "Décalage du nord",
     "show_cardinals": "Points cardinaux",
     "point16": "{cardinal}{intercardinal}",
-    "pointer_arrow": "Flèche"
+    "pointer_arrow": "Flèche",
+    "arrow_points": "La flèche pointe",
+    "arrow_outward": "Vers l’extérieur",
+    "arrow_inward": "Vers l’intérieur"
   },
   "schedule": {
     "card": "Programme de chauffage",

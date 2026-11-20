@@ -234,16 +234,37 @@ describe('the Compass card', () => {
       const xy = (arrow?.getAttribute('d') ?? '').match(/-?[\d.]+/g)!.map(Number);
       return xy.flatMap((v, i) => (i % 2 === 0 ? [[v, xy[i + 1]!]] : []));
     };
-    // the ring's own a needle's head, symmetric about its axis, drawn at the top of its 240 box: its tip 12 inside the
-    // ring of 96, its wings 23 outside it and 8.5 either side, its notch 3 into its base; 35 long, as the knob is wide
+    // the ring's own a needle's head, symmetric about its axis, drawn at the top of its 240 box and pointing out: its
+    // tip 23 outside the ring of 96, its wings 12 inside it (the open centre's edge) and 8.5 either side, its notch 3
+    // into its base; 35 long, as the knob is wide
     expect(corners(first)).toEqual([
+      [120, 1],
+      [128.5, 36],
+      [120, 33],
+      [111.5, 36],
+    ]);
+    // the second's the same head, unnotched, its outline alone
+    expect(corners(second)).toEqual([
+      [120, 1],
+      [128.5, 36],
+      [120, 36],
+      [111.5, 36],
+    ]);
+    // pointing in, both: the same head the other way round, its tip at the open centre's edge
+    const inward = await mount({
+      direction_entity: 'sensor.wind_bearing',
+      secondary_direction_entity: 'sensor.wind_average',
+      secondary_indicator: 'arrow',
+      arrow_points: 'inward',
+    });
+    const [secondIn, firstIn] = [...(inward.shadowRoot?.querySelectorAll('.cp-arrow') ?? [])];
+    expect(corners(firstIn)).toEqual([
       [120, 36],
       [128.5, 1],
       [120, 4],
       [111.5, 1],
     ]);
-    // the second's the same head, unnotched, its outline alone
-    expect(corners(second)).toEqual([
+    expect(corners(secondIn)).toEqual([
       [120, 36],
       [128.5, 1],
       [120, 1],
@@ -390,7 +411,7 @@ describe('the Compass card', () => {
     const root = card.shadowRoot!;
     expect(root.querySelector('.cp-dial svg')?.getAttribute('width')).toBe('104');
     // the arrow in the tile's knob's place: its tip 20/3 inside the ring of 28
-    expect(root.querySelector('.cp-arrow')?.getAttribute('d')).toMatch(/^M52 30\.67L/);
+    expect(root.querySelector('.cp-arrow')?.getAttribute('d')).toMatch(/^M52 11\.22L/);
     const knob = await mount({
       variant: 'compact',
       direction_entity: 'sensor.wind_bearing',
@@ -625,7 +646,24 @@ describe('the Compass card’s editor', () => {
     expect(compassEditor.defaults({ type: 'custom:fluvy-compass-card' }, undefined)).toMatchObject({
       indicator: 'arrow',
       secondary_indicator: 'dot',
+      arrow_points: 'outward',
     });
+  });
+
+  it('shows which way an arrow points only where one is drawn: the bearing’s, or a second asked for one', () => {
+    const bearing = { direction_entity: 'sensor.wind_bearing' };
+    const second = { ...bearing, secondary_direction_entity: 'sensor.wind_average' };
+    expect(shown(bearing)).toContain('arrow_points');
+    expect(shown({ ...bearing, indicator: 'arrow' })).toContain('arrow_points');
+    for (const indicator of ['knob', 'ticks', 'dot'])
+      expect(shown({ ...second, indicator })).not.toContain('arrow_points');
+    expect(shown({ ...second, indicator: 'knob', secondary_indicator: 'arrow' })).toContain(
+      'arrow_points',
+    );
+    // a second's arrow without a second bearing draws nothing
+    expect(shown({ ...bearing, indicator: 'knob', secondary_indicator: 'arrow' })).not.toContain(
+      'arrow_points',
+    );
   });
 
   it('shows only what can act: a second pointer with a second bearing, an attribute with its entity', () => {

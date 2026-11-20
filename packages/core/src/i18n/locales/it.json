@@ -3630,7 +3630,10 @@
     "north_offset": "Scostamento del nord",
     "show_cardinals": "Punti cardinali",
     "point16": "{cardinal}{intercardinal}",
-    "pointer_arrow": "Freccia"
+    "pointer_arrow": "Freccia",
+    "arrow_points": "La freccia punta",
+    "arrow_outward": "Verso l’esterno",
+    "arrow_inward": "Verso l’interno"
   },
   "schedule": {
     "card": "Programma riscaldamento",

@@ -40,8 +40,9 @@ const drawn = (card) =>
         size: Math.round(k.getBoundingClientRect().width),
         tone: [...k.classList].find((n) => n.startsWith('fv-knob--')),
       })),
-      // an arrow by the turn it is drawn at (wound past a whole turn where it went round), its tip's and its base's
-      // distances from the centre on its own drawing, whether it is filled or its outline alone
+      // an arrow by the turn it is drawn at (wound past a whole turn where it went round), the distances from the centre
+      // of its inner and its outer end on its own drawing, whether its tip (its first corner) is the outer one, whether
+      // it is filled or its outline alone
       arrows: [...root.querySelectorAll('.cp-dial .cp-arrow')].map((a) => {
         const ys = a
           .getAttribute('d')
@@ -51,8 +52,9 @@ const drawn = (card) =>
         const half = Number(a.closest('svg').getAttribute('width')) / 2;
         return {
           turned: parseFloat(a.style.rotate),
-          tip: Math.round(half - Math.max(...ys)),
-          base: Math.round(half - Math.min(...ys)),
+          inner: Math.round(half - Math.max(...ys)),
+          outer: Math.round(half - Math.min(...ys)),
+          outward: ys[0] === Math.min(...ys),
           second: a.classList.contains('is-second'),
           outline: getComputedStyle(a).fill === 'none',
           lifted: a.closest('svg').classList.contains('cp-lift'),
@@ -105,13 +107,14 @@ const near = (a, b, within = 1.5) => Math.abs(((a - b + 540) % 360) - 180) <= wi
     JSON.stringify(d),
   );
   check(
-    'the arrow across the ring at 248° (R 96: its tip 12 inside it, its base 23 outside, as long as the knob is wide), filled, lifted, the ticks under it cleared; the 10-minute average’s dot outside the ticks at 236°',
+    'the arrow across the ring at 248° (R 96: from 12 inside it to 23 outside, as long as the knob is wide), pointing out, filled, lifted, the ticks under it cleared; the 10-minute average’s dot outside the ticks at 236°',
     d.box === 240 &&
       d.knobs.length === 0 &&
       d.arrows.length === 1 &&
       d.arrows[0].turned === 248 &&
-      d.arrows[0].tip === 84 &&
-      d.arrows[0].base === 119 &&
+      d.arrows[0].inner === 84 &&
+      d.arrows[0].outer === 119 &&
+      d.arrows[0].outward &&
       !d.arrows[0].outline &&
       d.arrows[0].lifted &&
       d.cleared.length === 2 &&
@@ -250,10 +253,10 @@ const near = (a, b, within = 1.5) => Math.abs(((a - b + 540) % 360) - 180) <= wi
   check(
     'half a section: the ring holds in its column, the reading stands under it',
     halves.every((h) => h.under && h.box <= h.column) &&
-      // R 40: the arrow in a small dial's 28 knob's place, its tip 9.3 inside the ring, its base 17.9 outside
+      // R 40: the arrow in a small dial's 28 knob's place, from 9.3 inside the ring to 17.9 outside
       halves[0].arrows.length === 1 &&
-      halves[0].arrows[0].tip === 31 &&
-      halves[0].arrows[0].base === 58 &&
+      halves[0].arrows[0].inner === 31 &&
+      halves[0].arrows[0].outer === 58 &&
       halves[0].figure === '14.2km/h' &&
       halves[1].line === 'NE · 47°',
     JSON.stringify(
@@ -287,6 +290,24 @@ const near = (a, b, within = 1.5) => Math.abs(((a - b + 540) % 360) - 180) <= wi
       !sun.dots[0].second &&
       sun.arrows.length + sun.knobs.length === 0,
     JSON.stringify({ garden, balcony: balcony.knobs, car: car.lit, sun: sun.dots }),
+  );
+  check(
+    'pointing out by default, the second’s with the first',
+    garden.arrows.every((arrow) => arrow.outward),
+    JSON.stringify(garden.arrows),
+  );
+  const inward = await Promise.all(
+    [0, 1].map((n) => drawn(compass(page, 'Compass · arrow inward', n))),
+  );
+  check(
+    'arrow_points: inward turns both arrows, the same head the other way round: its tip at the open centre’s edge',
+    inward[0].arrows.length === 2 &&
+      inward.every(({ arrows }) =>
+        arrows.every((arrow) => !arrow.outward && arrow.inner === 84 && arrow.outer === 119),
+      ) &&
+      inward[0].arrows[0].outline &&
+      inward[1].arrows[0].turned === 291.4,
+    JSON.stringify(inward.map(({ arrows }) => arrows)),
   );
   await page.close();
 }

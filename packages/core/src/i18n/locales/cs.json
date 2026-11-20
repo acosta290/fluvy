@@ -3690,7 +3690,10 @@
     "north_offset": "Posun severu",
     "show_cardinals": "Světové strany",
     "point16": "{cardinal}{intercardinal}",
-    "pointer_arrow": "Šipka"
+    "pointer_arrow": "Šipka",
+    "arrow_points": "Šipka míří",
+    "arrow_outward": "Ven",
+    "arrow_inward": "Dovnitř"
   },
   "schedule": {
     "card": "Plán vytápění",

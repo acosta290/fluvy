@@ -3756,7 +3756,10 @@
     "north_offset": "Смещение севера",
     "show_cardinals": "Стороны света",
     "point16": "{cardinal}{intercardinal}",
-    "pointer_arrow": "Стрелка"
+    "pointer_arrow": "Стрелка",
+    "arrow_points": "Стрелка указывает",
+    "arrow_outward": "Наружу",
+    "arrow_inward": "Внутрь"
   },
   "schedule": {
     "card": "График отопления",

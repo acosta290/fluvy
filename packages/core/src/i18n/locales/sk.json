@@ -3690,7 +3690,10 @@
     "north_offset": "Posun severu",
     "show_cardinals": "Svetové strany",
     "point16": "{cardinal}{intercardinal}",
-    "pointer_arrow": "Šípka"
+    "pointer_arrow": "Šípka",
+    "arrow_points": "Šípka smeruje",
+    "arrow_outward": "Von",
+    "arrow_inward": "Dovnútra"
   },
   "schedule": {
     "card": "Plán kúrenia",

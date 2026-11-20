@@ -52,12 +52,19 @@ const s = words('compass');
 const weatherWords = words('weather');
 
 /**
- * How a bearing is marked on the ring: the compass's own arrow across the ring, pointing in from the bearing; or one
- * of Fluvy's controls read: the thermostat's knob riding the ring, the ring's ticks lit across the bearing's sixteenth
- * (the gauge's lit ticks), or the dial's dot outside the ticks (the thermostat's current reading).
+ * How a bearing is marked on the ring: the compass's own arrow across the ring at the bearing; or one of Fluvy's
+ * controls read: the thermostat's knob riding the ring, the ring's ticks lit across the bearing's sixteenth (the
+ * gauge's lit ticks), or the dial's dot outside the ticks (the thermostat's current reading).
  */
 export type CompassPointer = 'arrow' | 'knob' | 'ticks' | 'dot';
 export const COMPASS_POINTERS: readonly CompassPointer[] = ['arrow', 'knob', 'ticks', 'dot'];
+
+/**
+ * Which way an arrow points: out from the centre to the bearing, as a compass needle's head, or in from the bearing at
+ * the figure, as the wind blows from it.
+ */
+export type CompassArrowPoints = 'outward' | 'inward';
+export const COMPASS_ARROW_POINTS: readonly CompassArrowPoints[] = ['outward', 'inward'];
 
 /** The card's layouts: the ring in its column, the head over a small ring beside its figure, one row. */
 export type CompassVariant = 'full' | 'compact' | 'row';
@@ -92,6 +99,8 @@ export interface CompassCardConfig
   /** How the bearing is marked (`arrow`); the second's (`dot`), in the secondary ink. */
   indicator?: CompassPointer;
   secondary_indicator?: CompassPointer;
+  /** Which way an arrow points, the bearing's and the second's: `outward` (default) or `inward`. */
+  arrow_points?: CompassArrowPoints;
   /** Where north is drawn, in degrees clockwise from the top (−180 to 180): a window that does not face north. */
   north_offset?: number;
   /** The word over the figure in the ring. Defaults to what the figure is ("Wind speed", "Direction"). */
@@ -199,6 +208,9 @@ const COMPACT_RADIUS = COMPASS_SMALL_RING / 2 - COMPASS_RIM;
 const offsetOf = (config: CompassCardConfig): number =>
   typeof config.north_offset === 'number' ? Math.max(-180, Math.min(180, config.north_offset)) : 0;
 
+/** Whether the config's arrows point out from the centre: all but where it asks for them `inward`. */
+const pointsOut = (config: CompassCardConfig): boolean => config.arrow_points !== 'inward';
+
 /** The four cardinal points, by their bearings, in the weather's words. */
 const CARDINALS: readonly (readonly [bearing: number, word: CompassKey])[] = [
   [0, 'dir.n'],
@@ -225,7 +237,7 @@ type Point = readonly [x: number, y: number];
 /** The knob a ring carries: the thermostat's 36, its small dial's 28, a tile's 20. */
 const knobSize = (r: number): number => (r >= 72 ? 36 : r >= 40 ? 28 : 20);
 
-/** An arrow's measures on its ring: how far its tip reaches inside it, its base outside it, its half-width, its notch. */
+/** An arrow's measures on its ring: how far it reaches inside it and outside it, its half-width, its notch. */
 interface Dart {
   readonly in: number;
   readonly out: number;
@@ -235,8 +247,9 @@ interface Dart {
 
 /**
  * The arrow in a knob's place, as long as the knob is wide and in the same proportions at every size: for the
- * thermostat's 36, a compass needle's head, isosceles and slim, 35 long and 17 wide, its tip 12 inside the ring (the
- * open centre's edge), its base 23 outside it (past the ticks), gently notched (3).
+ * thermostat's 36, a compass needle's head, isosceles and slim, 35 long and 17 wide, from 12 inside the ring (the open
+ * centre's edge) to 23 outside it (past the ticks), gently notched (3) at its base. Pointing out, its tip is the outer
+ * end and its base stands at the open centre's edge; pointing in, the other way round.
  */
 const dartOf = (size: number): Dart => {
   const k = size / 36;
@@ -244,21 +257,33 @@ const dartOf = (size: number): Dart => {
 };
 
 /**
- * A row's arrow across its track in the same proportions, 14 long: its tip 5 into the circle it points at, its base no
- * further out than the knob in small reaches.
+ * A row's arrow across its track in the same proportions, 14 long, from 5 into the circle to no further out than the
+ * knob in small reaches: pointing in, its tip in the circle; pointing out, its base.
  */
 const ROW_DART: Dart = { in: 9.5, out: 4.5, half: 3.4, notch: 1.2 };
 
-/** The arrow on a ring of radius `r` centred at `c`, pointing in from its top: its tip, a wing, its notch, the other wing. */
-const dartPath = (c: number, r: number, dart: Dart): string => {
+/** The radii an arrow's tip and base stand at on a ring of radius `r`, its tip the outer end where it points out. */
+const dartEnds = (
+  r: number,
+  dart: Dart,
+  outward: boolean,
+): { readonly tip: number; readonly base: number } =>
+  outward ? { tip: r + dart.out, base: r - dart.in } : { tip: r - dart.in, base: r + dart.out };
+
+/**
+ * The arrow on a ring of radius `r` centred at `c`, at its top: its tip, a wing, its notch (into its base, toward the
+ * tip), the other wing.
+ */
+const dartPath = (c: number, r: number, dart: Dart, outward: boolean): string => {
   const at = (v: number): number => Math.round(v * 100) / 100;
-  const [tip, base] = [at(c - r + dart.in), at(c - r - dart.out)];
+  const { tip, base } = dartEnds(r, dart, outward);
+  const notch = base + Math.sign(tip - base) * dart.notch;
   const [left, right] = [at(c - dart.half), at(c + dart.half)];
-  return `M${c} ${tip}L${right} ${base}L${c} ${at(c - r - dart.out + dart.notch)}L${left} ${base}Z`;
+  return `M${c} ${at(c - tip)}L${right} ${at(c - base)}L${c} ${at(c - notch)}L${left} ${at(c - base)}Z`;
 };
 
 /** The arrow turned to `deg` (clockwise from the top), as the three corners that hold it: its tip and its wings. */
-const dartOutline = (c: number, r: number, dart: Dart, deg: number): Point[] => {
+const dartOutline = (c: number, r: number, dart: Dart, deg: number, outward: boolean): Point[] => {
   const a = (deg * Math.PI) / 180;
   const [sin, cos] = [Math.sin(a), Math.cos(a)];
   // along the bearing from the centre, and across it clockwise
@@ -266,7 +291,8 @@ const dartOutline = (c: number, r: number, dart: Dart, deg: number): Point[] => 
     c + along * sin + across * cos,
     c - along * cos + across * sin,
   ];
-  return [at(r - dart.in, 0), at(r + dart.out, dart.half), at(r + dart.out, -dart.half)];
+  const { tip, base } = dartEnds(r, dart, outward);
+  return [at(tip, 0), at(base, dart.half), at(base, -dart.half)];
 };
 
 /** A round mark (a knob with its halo, a dot) as the twelve corners that hold it. */
@@ -298,11 +324,18 @@ function meets(a: readonly Point[], b: readonly Point[], clear: number): boolean
 type Slot = 'first' | 'second';
 
 /**
- * An arrow on a ring of radius `r` centred at `c`, turned to `angle` (clockwise from the top, wound as it turned): the
- * bearing's filled, the second's its outline alone.
+ * An arrow on a ring of radius `r` centred at `c`, turned to `angle` (clockwise from the top, wound as it turned) and
+ * pointing out or in: the bearing's filled, the second's its outline alone.
  */
-const arrowOf = (c: number, r: number, dart: Dart, angle: number, second: boolean) =>
-  svg`<path class="cp-arrow ${second ? 'is-second' : ''}" d=${dartPath(c, r, second ? { ...dart, notch: 0 } : dart)} style="transform-origin:${c}px ${c}px;rotate:${Math.round(angle * 100) / 100}deg" />`;
+const arrowOf = (
+  c: number,
+  r: number,
+  dart: Dart,
+  angle: number,
+  second: boolean,
+  outward: boolean,
+) =>
+  svg`<path class="cp-arrow ${second ? 'is-second' : ''}" d=${dartPath(c, r, second ? { ...dart, notch: 0 } : dart, outward)} style="transform-origin:${c}px ${c}px;rotate:${Math.round(angle * 100) / 100}deg" />`;
 
 /** What the ring's open centre reads: its figure, its words, and the reading a threshold is held to. */
 interface Reading {
@@ -978,7 +1011,14 @@ export class FluvyCompassCard extends Card<CompassCardConfig> {
       if (deg === null) return nothing;
       const [x, y] = at(deg).split(' ');
       if (pointer === 'arrow')
-        return arrowOf(29, R, ROW_DART, this.swing(slot, deg + offset), slot === 'second');
+        return arrowOf(
+          29,
+          R,
+          ROW_DART,
+          this.swing(slot, deg + offset),
+          slot === 'second',
+          pointsOut(c),
+        );
       if (pointer === 'ticks')
         return svg`<path class="cp-arc ${cls}" d="M ${at(deg - 11.25)} A ${R} ${R} 0 0 1 ${at(deg + 11.25)}" />`;
       return pointer === 'knob'
@@ -1104,9 +1144,10 @@ export class FluvyCompassCard extends Card<CompassCardConfig> {
       const a = ((bearing + offset) * Math.PI) / 180;
       return [half + radius * Math.sin(a), half - radius * Math.cos(a)];
     };
-    // the knob its ring carries, and the arrow in its place
+    // the knob its ring carries, and the arrow in its place, pointing out or in
     const size = knobSize(r);
     const dart = dartOf(size);
+    const outward = pointsOut(c);
     // what each pointer covers, by its outline: an arrow the ticks under it, 4 clear of a tick (its 1 either side of
     // the line); an arrow, a knob (its halo, which cuts the ticks) or a dot a point's word, 3 clear of it
     const marks = (
@@ -1117,7 +1158,7 @@ export class FluvyCompassCard extends Card<CompassCardConfig> {
     ).flatMap(([bearing, pointer]): { arrow: boolean; outline: Point[] }[] => {
       if (bearing === null || pointer === 'ticks') return [];
       if (pointer === 'arrow')
-        return [{ arrow: true, outline: dartOutline(half, r, dart, bearing + offset) }];
+        return [{ arrow: true, outline: dartOutline(half, r, dart, bearing + offset, outward) }];
       return [
         {
           arrow: false,
@@ -1177,7 +1218,7 @@ export class FluvyCompassCard extends Card<CompassCardConfig> {
           viewBox="0 0 ${box} ${box}"
           aria-hidden="true"
         >
-          ${arrowOf(half, r, dart, this.swing(slot, bearing + offset), slot === 'second')}
+          ${arrowOf(half, r, dart, this.swing(slot, bearing + offset), slot === 'second', outward)}
         </svg>`;
       if (kind !== 'knob') return nothing;
       const [x, y] = at(bearing, r);

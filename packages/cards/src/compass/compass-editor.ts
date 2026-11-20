@@ -26,7 +26,12 @@ import {
   unitChoicesOf,
 } from '../shared/form.js';
 import type { EditorChoices, EditorDefaults, RowsListSpec } from '../shared/rows-editor.js';
-import { COMPASS_POINTERS, COMPASS_VARIANTS, type CompassCardConfig } from './compass-card.js';
+import {
+  COMPASS_ARROW_POINTS,
+  COMPASS_POINTERS,
+  COMPASS_VARIANTS,
+  type CompassCardConfig,
+} from './compass-card.js';
 
 /** The Compass card's editor: fetched by its `editor()` the first time the card is edited, never by a dashboard. */
 
@@ -46,6 +51,7 @@ export const keys = configKeys<CompassCardConfig>()([
   'secondary_direction_attribute',
   'indicator',
   'secondary_indicator',
+  'arrow_points',
   'north_offset',
   'label',
   'badge',
@@ -95,11 +101,17 @@ const names =
   (data: Data): boolean =>
     Boolean(data[key]);
 
+/** Whether the card draws an arrow: the bearing's (its default pointer), or a second bearing's asked for one. */
+const drawsArrow = (data: Data): boolean =>
+  (data['indicator'] ?? 'arrow') === 'arrow' ||
+  (names('secondary_direction_entity')(data) && data['secondary_indicator'] === 'arrow');
+
 /** What the editor shows where the config says nothing: what the card does then. */
 export const defaults: EditorDefaults = () => ({
   variant: 'full',
   indicator: 'arrow',
   secondary_indicator: 'dot',
+  arrow_points: 'outward',
   north_offset: 0,
   show_ticks: true,
   show_cardinals: true,
@@ -138,6 +150,14 @@ export function getConfigForm(): LovelaceConfigForm {
       entityField(undefined, 'secondary_direction_entity', false),
       attributeField('secondary_direction_attribute', 'secondary_direction_entity'),
       onlyWhen(names('secondary_direction_entity'), pointerField('secondary_indicator')),
+      // which way an arrow points, the bearing's and the second's: shown where one is drawn
+      onlyWhen(
+        drawsArrow,
+        choiceField(
+          'arrow_points',
+          COMPASS_ARROW_POINTS.map((way) => [way, `compass.arrow_${way}`] as const),
+        ),
+      ),
       {
         name: 'north_offset',
         selector: {
@@ -180,6 +200,7 @@ export function getConfigForm(): LovelaceConfigForm {
         secondary_direction_attribute: 'attribute',
         indicator: 'indicator',
         secondary_indicator: 'secondary_indicator',
+        arrow_points: 'arrow_points',
         north_offset: 'north_offset',
         show_cardinals: 'show_cardinals',
       },

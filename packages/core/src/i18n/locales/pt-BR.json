@@ -3630,7 +3630,10 @@
     "north_offset": "Deslocamento do norte",
     "show_cardinals": "Pontos cardeais",
     "point16": "{cardinal}{intercardinal}",
-    "pointer_arrow": "Seta"
+    "pointer_arrow": "Seta",
+    "arrow_points": "A seta aponta",
+    "arrow_outward": "Para fora",
+    "arrow_inward": "Para dentro"
   },
   "schedule": {
     "card": "Agenda de aquecimento",

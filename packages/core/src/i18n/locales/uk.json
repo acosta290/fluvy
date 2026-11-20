@@ -3756,7 +3756,10 @@
     "north_offset": "Зміщення півночі",
     "show_cardinals": "Сторони світу",
     "point16": "{cardinal}{intercardinal}",
-    "pointer_arrow": "Стрілка"
+    "pointer_arrow": "Стрілка",
+    "arrow_points": "Стрілка вказує",
+    "arrow_outward": "Назовні",
+    "arrow_inward": "Усередину"
   },
   "schedule": {
     "card": "Графік опалення",

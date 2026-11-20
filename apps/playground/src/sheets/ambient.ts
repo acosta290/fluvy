@@ -1578,6 +1578,22 @@ export const sheet: SheetSpec = {
       ].map((card) => ({ ...card, cols: 6 })),
     },
 
+    /* the arrow pointing in where it is asked to (`arrow_points: inward`): at the figure from the bearing, as the wind
+       blows from it, the 10-minute average's outline with it; the sun's light falling in */
+    {
+      title: 'Compass · arrow inward',
+      cards: [
+        { ...COMPASS_WIND, name: 'Garden', arrow_points: 'inward', secondary_indicator: 'arrow' },
+        {
+          type: 'custom:fluvy-compass-card',
+          name: 'Sun',
+          direction_entity: 'sun.sun',
+          label: 'Azimuth',
+          arrow_points: 'inward',
+        },
+      ].map((card) => ({ ...card, cols: 6 })),
+    },
+
     /* its two other layouts: compact (the head, a small ring beside its figure, the readouts at the extra-small size)
        and one row (its circle ringed by the bearing), in a section and in half of one */
     { title: 'Compass · compact', cards: [{ ...COMPASS_STATION, variant: 'compact' }] },

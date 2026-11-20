@@ -3630,7 +3630,10 @@
     "north_offset": "Nordförskjutning",
     "show_cardinals": "Väderstreck",
     "point16": "{cardinal}{intercardinal}",
-    "pointer_arrow": "Pil"
+    "pointer_arrow": "Pil",
+    "arrow_points": "Pilen pekar",
+    "arrow_outward": "Utåt",
+    "arrow_inward": "Inåt"
   },
   "schedule": {
     "card": "Värmeschema",
