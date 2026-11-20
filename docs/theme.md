@@ -223,8 +223,9 @@ their own lines too.
 ## Fluvy's icons
 
 Fluvy's glyphs are a Home Assistant icon set: `fluvy:<name>` goes wherever Home Assistant takes an icon — a card's
-`icon`, an entity's icon in its settings, a dashboard's view, the icon picker, which lists them all — so a wall tablet
-stays in one icon language. A Fluvy card draws them at its own size, beside the glyphs it draws by itself; Home
+`icon`, an entity's icon in its settings, a dashboard's view, the icon picker, which lists them all and finds them by
+what they draw too ("sofa" finds `fluvy:living-room`, "rssi" a signal's bars) — so a wall tablet stays in one icon
+language. A Fluvy card draws them at its own size, beside the glyphs it draws by itself; Home
 Assistant's own cards draw them at Material's. The set's everyday glyphs (`bulb`, `plug`, `thermo`, `door`,
 `window-open`, `garage`, `lock`, `camera`, `speaker`, `tv`, `wifi`, `battery`, `signal`, `sun`, `cloud-sun` and the
 rest) come with every page; the families below, and the appliances a person picks (`washer`, `dryer`, `dishwasher`,

@@ -78,8 +78,14 @@ export function registerIcons(): void {
   host.customIcons[CARD_ICONS] ??= { getIcon: (name) => iconOutline(name, true) };
   const set: CustomIconSet = {
     getIcon: (name) => iconOutline(name),
-    getIconList: async () =>
-      (await iconNames()).map((name) => ({ name, keywords: name.split('-') })),
+    // the picker reads a name's own words itself (`battery-low` by "battery"); the part adds what else finds it
+    getIconList: async () => {
+      const words = await onDemand().then(
+        (part) => part.keywordsOf,
+        () => () => [],
+      );
+      return (await iconNames()).map((name) => ({ name, keywords: words(name) }));
+    },
   };
   host.customIcons[ICON_SET] = set;
   // the loader's stand-in (registered before the app rendered) answers the icons asked of it meanwhile

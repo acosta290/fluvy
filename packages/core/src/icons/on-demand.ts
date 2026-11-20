@@ -1,10 +1,12 @@
 import { ON_DEMAND_PATHS, PARTS, type Outline } from './generated-on-demand.js';
 
+export { keywordsOf } from './keywords.js';
+
 /*
  * The set's glyphs beyond core's part, which no page needs until Home Assistant asks for one: this chunk holds the
- * glyphs of the set Fluvy's own chrome never names (a garage, a gate, a window, a door open) and the index of the set's
+ * glyphs of the set Fluvy's own chrome never names (a garage, a gate, a window, a door open), the index of the set's
  * other parts (the appliances, the levels, energy, devices, climate, safety, outdoors, home, rooms), each fetched the
- * first time one of its glyphs is asked for.
+ * first time one of its glyphs is asked for, and the words the icon picker finds each glyph by.
  */
 
 /** The part that holds a name, by the names each holds. */

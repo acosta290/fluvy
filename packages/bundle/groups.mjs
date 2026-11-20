@@ -455,10 +455,10 @@ const DOCK = /\/packages\/core\/src\/look\/dock\.ts/;
 const GROUPS_OF_A_LIST = /\/packages\/cards\/src\/shared\/groups\.ts/;
 
 /**
- * The icon set's glyphs beyond core's part (`fluvy:gate-open` …) and the index of its other parts: fetched the first
- * time Home Assistant asks for one.
+ * The icon set's glyphs beyond core's part (`fluvy:gate-open` …), the index of its other parts and the words its icon
+ * picker finds each glyph by: fetched the first time Home Assistant asks for one, or for the list.
  */
-const ICONS = /\/packages\/core\/src\/icons\/(generated-)?on-demand\.ts/;
+const ICONS = /\/packages\/core\/src\/icons\/((generated-)?on-demand|keywords)\.ts/;
 
 /**
  * The icon set's other parts (1.23, #226: the appliances, the levels, energy, devices, climate, safety, outdoors, home,

@@ -192,6 +192,56 @@ describe('fluvy icon set', () => {
     expect(host.customIcons?.[ICON_SET]).toBe(set);
   });
 
+  it('is found in Home Assistant’s icon picker by what a glyph draws, not by its name alone', async () => {
+    (globalThis as { window?: unknown }).window ??= globalThis;
+    registerIcons();
+    const set = (
+      globalThis as unknown as {
+        customIcons: Record<
+          string,
+          { getIconList: () => Promise<{ name: string; keywords?: string[] }[]> }
+        >;
+      }
+    ).customIcons[ICON_SET]!;
+    const list = await set.getIconList();
+    expect(list.map((icon) => icon.name)).toEqual(await iconNames());
+    // the picker's search (ha-icon-picker `_filterIcons`): a word of the name, a keyword, a part of the id or of a
+    // keyword; what is typed with its spaces as hyphens
+    const found = (typed: string): string[] => {
+      const filter = typed.toLowerCase().replace(/\s+/g, '-');
+      return list
+        .filter(
+          ({ name, keywords = [] }) =>
+            name.split('-').includes(filter) ||
+            `${ICON_SET}:${name}`.includes(filter) ||
+            keywords.some((word) => word.includes(filter)),
+        )
+        .map(({ name }) => name);
+    };
+    for (const [typed, names] of [
+      ['sofa', ['living-room']],
+      ['bed', ['bedroom']],
+      ['shower', ['bathroom']],
+      ['bath', ['bathroom']],
+      ['child', ['kids-room']],
+      ['stove', ['kitchen']],
+      ['pot', ['kitchen']],
+      ['desk', ['office', 'desk-lamp']],
+      ['washing', ['laundry', 'washer']],
+      ['battery', ['battery', 'battery-empty', 'battery-low', 'battery-half', 'battery-full']],
+      ['battery', ['battery-charging', 'battery-alert', 'battery-home']],
+      ['wifi', ['wifi', 'signal', 'signal-none', 'signal-weak', 'signal-fair', 'signal-good']],
+      ['rssi', ['signal-strong', 'signal-off']],
+      ['washing machine', ['washer']],
+      ['air conditioner', ['aircon']],
+      ['carbon', ['co2', 'co-alarm']],
+    ] as const)
+      expect(found(typed), typed).toEqual(expect.arrayContaining([...names]));
+    // a name says itself whole: its words are the picker's own, never repeated as keywords
+    for (const { name, keywords = [] } of list)
+      for (const word of keywords) expect(name.split('-'), name).not.toContain(word);
+  });
+
   it("takes over from the loader's stand-in and answers the icons asked of it meanwhile", async () => {
     (globalThis as { window?: unknown }).window ??= globalThis;
     const host = globalThis as unknown as { customIcons: Record<string, unknown> };
