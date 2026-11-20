@@ -112,12 +112,12 @@
   "schedule": {
     "example": "6d5de1bb7f0d",
     "width": 784,
-    "height": 816
+    "height": 832
   },
   "schedule.today": {
     "example": "872b9415699c",
     "width": 784,
-    "height": 448
+    "height": 464
   },
   "schedule.row": {
     "example": "713c7c79164c",

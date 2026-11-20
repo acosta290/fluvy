@@ -116,7 +116,7 @@ const canonical = (value) =>
     return {
       days: [...root.querySelectorAll('.sc-day')].map((d) => d.textContent.trim()),
       blocks: root.querySelectorAll('.sc-block').length,
-      legend: [...root.querySelectorAll('.sc-item')].map((i) =>
+      legend: [...root.querySelectorAll('.sc-chip')].map((i) =>
         i.textContent.replace(/\s+/g, ' ').trim(),
       ),
       sub: root.querySelector('.fv-card__sub')?.textContent.trim(),

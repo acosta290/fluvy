@@ -279,13 +279,20 @@ describe('the Heating schedule card', () => {
     expect(text(card, '.sc-day')).toEqual(['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']);
     expect(root(card).querySelectorAll('.sc-track')).toHaveLength(7);
     expect(root(card).querySelectorAll('.sc-block.fv-tone--heat')).toHaveLength(12);
-    expect(text(card, '.sc-item')).toEqual(['Comfort 21°', 'Eco 18°', 'Away 16°']);
+    expect(text(card, '.sc-chip')).toEqual(['Comfort 21°', 'Eco 18°', 'Away 16°']);
     expect(root(card).querySelector('.sc-swatch.is-base')).not.toBeNull();
     // what the thermostat is doing, the preset in force and its target, the room now
     expect(sub(card)).toBe('Heating · Comfort 21° · Now 20.6°');
-    expect(text(card, '.sc-item.is-active')).toEqual(['Comfort 21°']);
-    // today's line carries the marker of the time it is now
-    expect(root(card).querySelectorAll('.sc-now')).toHaveLength(1);
+    expect(text(card, '.sc-chip.is-active')).toEqual(['Comfort 21°']);
+    // the preset in force in its tone, in the head's line and on its chip
+    expect(text(card, '.fv-card__sub .sc-in-force.fv-tone--heat')).toEqual(['Comfort 21°']);
+    expect(root(card).querySelector('.sc-chip.is-active.fv-tone--heat')).not.toBeNull();
+    // today's line alone carries the knob at the time it is now, on the accent's wash; the needle crosses the week
+    // down to the time in its bubble, the hour it stands on gone
+    expect(root(card).querySelectorAll('.sc-knob')).toHaveLength(1);
+    expect(root(card).querySelector('.sc-line.is-today .sc-knob')).not.toBeNull();
+    expect(root(card).querySelectorAll('.sc-needle')).toHaveLength(1);
+    expect(text(card, '.sc-clock')).toEqual(['21:47']);
     // an administrator reads the automation's config once, and the helper is heard, not asked
     expect(fixture.callApi.mock.calls.map((call) => call[1])).toEqual([
       `config/automation/config/${BEDROOM.id}`,
@@ -307,7 +314,7 @@ describe('the Heating schedule card', () => {
     const card = await mount({}, fixture);
     expect(fixture.callApi).not.toHaveBeenCalled();
     expect(root(card).querySelectorAll('.sc-block')).toHaveLength(12);
-    expect(text(card, '.sc-item')).toEqual(['Comfort']);
+    expect(text(card, '.sc-chip')).toEqual(['Comfort']);
     expect(root(card).querySelector('.fv-switch')).not.toBeNull();
     expect(sub(card)).toBe('Heating · Comfort 21° · Now 20.6°');
   });
@@ -345,16 +352,16 @@ describe('the Heating schedule card', () => {
     const card = await mount({ entity: 'climate.attic' }, fixture);
     expect(root(card).querySelector('.fv-card.is-unavailable')).not.toBeNull();
     expect(root(card).querySelectorAll('.sc-track')).toHaveLength(7);
-    expect(text(card, '.sc-item')).toHaveLength(3);
+    expect(text(card, '.sc-chip')).toHaveLength(3);
     expect(sub(card)).toBe('Unavailable');
   });
 
   it('declares its height from its layout and what it shows, never from the plan', () => {
     const height = (config: Record<string, unknown>): number =>
       scheduleHeight({ type: 'custom:fluvy-schedule-card', ...config });
-    expect(height({})).toBe(376);
-    expect(height({ variant: 'today' })).toBe(192);
-    expect(height({ show_head: false })).toBe(316);
+    expect(height({})).toBe(384);
+    expect(height({ variant: 'today' })).toBe(200);
+    expect(height({ show_head: false })).toBe(324);
     expect(height({ show_presets: false })).toBe(340);
     expect(height({ variant: 'today', show_head: false, show_presets: false })).toBe(96);
     // the row is the house's, whatever it shows

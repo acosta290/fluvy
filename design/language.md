@@ -2847,20 +2847,37 @@ giving way from its end, the doing word never cut (Fluvy's shorter word, else th
 element, the schedule's switch** (the automation: anyone may switch it, as Home Assistant has it; switched on it runs
 once, so the time it is now takes effect). Schedule off, the line says so in the preset's place ("Schedule off").
 
-**The week** (`variant: week`): a line a day, from the day the house starts its week on (`first_weekday`, the
-calendar's grammar), the days' short words in a column as wide as the widest of them on the 4 grid (today's in the
-text's ink at 600), each beside its line: a 24 well (`--fluvy-inset` on the page's fill, radius 12) holding the day's
-times as pills where they fall in its 24 hours, each its preset's tone (`--tone-fill`, its hairline; a preset's own
-colour through the card's accent sheet), its times in it (11/600, the tone's on-fill ink, tabular) where they hold it
-with 6 to spare on each side, else its start, else nothing — a time is never cut. **The gaps are the well**: the base
-preset is the line's own colour, its swatch in the legend the well's. Seven lines 8 apart (216), then the hours (8 above
-their 16: 0 · 6 · 12 · 18 · 24, a 12-hour clock's "6 AM"; three, then the two ends where the line is narrower), then
-**the legend** (`show_presets`, 16 above its 20): one centred line of the presets in the plan's order, each a 12
-swatch, its name and its temperature (a tenth where any preset has one), the preset in force in the text's ink at 600;
-as many as the line holds, the rest said by their count ("+2"), never a word cut. **Now** is a 2 line of the text's
-ink across today's well, over its times. The lines are a drawing (`data-measure="drawn"`): the times' places are the
-plan's minutes. **Today** (`variant: today`): today's line alone, 32 tall (12/600 times), no day column — for half a
-section. **Row** (`variant: row`): the house's row (76, 16 in, half a section; the printer's, the compass's): the
+**The week** (`variant: week`, after the owner's review of 1.23's notes: "the volume and brightness scroll is
+premium; this looks basic"): a line a day, from the day the house starts its week on (`first_weekday`, the calendar's
+grammar), the days' short words in a column as wide as the widest of them on the 4 grid (today's in the text's ink at
+600), each beside its line, a **drawing in the ruler's language** (`schedule/lines.ts`, `data-measure="drawn"`: its
+places are the plan's minutes on whole pixels, never the 4 grid's). The line is the day's 24 hours as the ruler's
+ticks (2 wide, round caps, `--fluvy-border-strong`): one an hour, 6 tall, 0 · 6 · 12 · 18 · 24 at 12, centred on its
+24 — one every 2, 3 or 6 hours where an hour's would stand closer than 8. **The ticks are the gaps, and so the base
+preset**: its legend chip's swatch is three of them. **A time is a block**: a solid tile of its preset's ink (radius
+6; a preset's own colour through the card's accent sheet), lit a little from above and set on its own soft shadow of
+the tone, two that meet parted by 2 of the line, never narrower than 4 (a quarter of an hour on a narrow line is still
+a tile, never a sliver, never a circle); its start at its left and its end at its right in it (11/600, tabular, the
+house's ink on a solid accent, `--fluvy-text-on-accent`), with 6 to spare at each side and 8 between, else its start
+alone, else nothing — a time is never cut. Every block says its preset and its times as a tooltip. A tick is whole or
+absent: none within 3 of a block, nor within 4 of the needle, nor under the knob's ring and halo. **Today's line** stands
+on the accent's wash (4 round it, 8 past its ends, radius 16: the calendar's "accent is today"). **Now** is the ruler's
+knob (20, its 2 ring the line's 24, its 5 halo in what it stands on) in the accent on today's line, over its blocks;
+from it **the needle** (2 dotted, the accent, under the blocks: seen in the gaps) crosses the week down to the hours,
+where **the time it is now** stands in its bubble (the accent's pill, 20 tall, 11/600, its ink on the accent), the hours
+it would stand on gone whole. A block's words the knob would cover go: its end, then its start. The hours stand 8 under
+the lines (0 · 6 · 12 · 18 · 24, a 12-hour clock's "6 AM"; three, then the two ends where the line is narrower), then
+**the legend** (`show_presets`, 16 above it): one centred line of the house's 28 chips, each its swatch (the block in
+small, 12, radius 4), its name (13/600) and its temperature (13/500, tabular; a tenth where any preset has one), the
+preset in force in its tone (its fill, its hairline, its on-fill ink); as many as the line holds, the rest said by their
+count ("+2"), never a word cut. **Motion**: the blocks draw themselves in from the day's start as a chart's strips do
+(a clip, 700 ms after 120, each line 40 later than the one above), and the knob, the needle and the bubble arrive as
+they end; nothing moves where the person or the system asks for less. **Today** (`variant: today`): today's line
+alone, 32 tall (ticks 8 and 16, blocks radius 8 with 8 sides, 12/600 times, the knob 28 with the needle from it to its
+bubble), no day column — for half a section. **The preset in force** is said in its tone's ink in the head's line
+("Heating · **Comfort 21°** · Now 20.6°") and the row's ("**Comfort** · 21° · Eco at 22:30"), where the line says it
+whole.
+**Row** (`variant: row`): the house's row (76, 16 in, half a section; the printer's, the compass's): the
 room's circle as the head's, its name over the preset in force, its target and the next change ("Comfort · 21° · Eco
 at 22:30", another day's with its weekday, "Comfort Fri at 06:30"; "Schedule off · 18°" while it is off; why there is
 no week where there is none), the schedule's switch at its end. Narrow, it gives way in order: the next change, then
@@ -2899,15 +2916,17 @@ written back with them while it keeps its minute), closes, and runs it once; ref
 was (one just made is deleted), the sheet stays with Home Assistant's words under the footer. **Read only** for anyone but an administrator, a YAML helper or an automation edited by hand: the
 same sections with the times as rows (a swatch, the preset's name, its times), the presets with their temperatures
 where they can be read, the reason under the head ("Only an administrator can change the schedule"), "Open in Home
-Assistant" for the automation edited by hand, and Close.
+Assistant" for the automation edited by hand, and Close. The day's line under the chips is Today's, without the knob,
+and a read-only time's swatch is its block in small.
 
 **No week**: the lines' room keeps its height as one panel (the empty state's ring, "No heating schedule yet", the
 hint "It runs in Home Assistant, every browser closed", and for an administrator "Create a schedule", its short form
 "Create" in a narrow column), its content set on the 4 grid from its top; the first answers on their way keep the room
-blank. Out of reach (the thermostat), the card keeps its anatomy in the off skin: the week, the legend, the switch.
+blank. Out of reach (the thermostat), the card keeps its anatomy in the off skin: the week (its blocks at half), the
+legend (its chips edged in the unavailable border, the card being the page's fill, as a chip is), the switch.
 
 **Heights** at a 360 column, from the config alone: 40 + the head (60, `show_head`) + the week (216) or today (32) + the
-hours (24) + the legend (36, `show_presets`): 376 by default, 192 for today; the row 76, whatever it shows.
+hours (24) + the legend (44, `show_presets`): 384 by default, 200 for today; the row 76, whatever it shows.
 
 ## Alerts (1.9)
 

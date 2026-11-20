@@ -36,7 +36,17 @@ import {
   type Heating,
   type Preset,
 } from './automation.js';
-import { blockWords, clockOf, dayWord, hours, lineStyles, toneClass, track } from './lines.js';
+import {
+  clockOf,
+  dayWord,
+  hours,
+  lineStyles,
+  needle,
+  nowAt,
+  swatch,
+  toneClass,
+  track,
+} from './lines.js';
 import { DAYS, nextChange, sameWeek, type HelperItem, type Week } from './plan.js';
 import { presetLooks, type PresetConfig, type PresetLook } from './presets.js';
 import type { FluvyHeatingSheet, HeatingDraft, HeatingRequest } from './sheet/heating-sheet.js';
@@ -84,9 +94,10 @@ interface Tie {
   readonly waiting: boolean;
 }
 
-/** A legend item's swatch with its gap, and the room between two items. */
-const SWATCH = 18;
-const LEGEND_GAP = 16;
+/** A legend chip's sides (`fitPills` rounds it up to the 4 grid), its swatch with its gap, and the room between two. */
+const CHIP_SIDES = 2 * 10;
+const SWATCH = 12 + 6;
+const LEGEND_GAP = 8;
 
 /** The icon a new helper wears in Home Assistant's list of helpers. */
 const HELPER_ICON = 'mdi:calendar-clock';
@@ -147,16 +158,17 @@ export class FluvyScheduleCard extends Card<ScheduleCardConfig> {
       .sc-head-off + .sc-body {
         margin-top: 0;
       }
-      /* the week: a column of the days' short words, each beside its line of 24, 8 apart */
+      /* the week: a line a day, the day's short word in a column beside its line of 24, 8 apart; today's on the
+         accent's wash (4 round it, 8 past its ends), the needle through them all */
       .sc-today {
+        position: relative;
         border-radius: 16px;
         cursor: pointer;
         -webkit-tap-highlight-color: transparent;
       }
       .sc-week {
+        position: relative;
         display: grid;
-        grid-template-columns: var(--sc-days) minmax(0, 1fr);
-        column-gap: 8px;
         row-gap: 8px;
         border-radius: 12px;
         cursor: pointer;
@@ -166,6 +178,21 @@ export class FluvyScheduleCard extends Card<ScheduleCardConfig> {
       .sc-today:focus-visible {
         outline: 2px solid var(--fluvy-accent);
         outline-offset: 4px;
+      }
+      .sc-line {
+        display: grid;
+        grid-template-columns: var(--sc-days) minmax(0, 1fr);
+        column-gap: 8px;
+        align-items: center;
+      }
+      .sc-line.is-today {
+        --sc-band: var(--fluvy-accent-wash, var(--fluvy-accent-fill));
+        --knob-halo: var(--sc-band);
+        border-radius: 12px;
+        background: var(--sc-band);
+        box-shadow:
+          -4px 0 0 4px var(--sc-band),
+          4px 0 0 4px var(--sc-band);
       }
       .sc-day {
         margin: 0;
@@ -180,45 +207,44 @@ export class FluvyScheduleCard extends Card<ScheduleCardConfig> {
         font-weight: 600;
         color: var(--fluvy-text);
       }
-      /* the presets: one line, centred, each its swatch, its name and its temperature; those past the line say how many */
+      /* the presets: one centred line of the house's chips, each its swatch, its name and its temperature, the one in
+         force in its tone; those past the line say how many */
       .sc-legend {
         display: flex;
         justify-content: center;
-        gap: 16px;
-        height: 20px;
+        gap: 8px;
+        height: 28px;
         margin-top: 16px;
         white-space: nowrap;
       }
-      .sc-item {
+      .sc-chip {
         display: inline-flex;
+        flex: 0 0 auto;
         align-items: center;
         gap: 6px;
+        box-sizing: border-box;
+        height: 28px;
         margin: 0;
+        padding: 0 10px;
+        border-radius: var(--fluvy-radius-pill, 9999px);
+        background: var(--fluvy-inset, var(--fluvy-page));
         font-size: 13px;
-        font-weight: 500;
+        font-weight: 600;
         line-height: 20px;
         color: var(--fluvy-text-secondary);
       }
-      .sc-item.is-active {
-        font-weight: 600;
-        color: var(--fluvy-text);
-      }
-      .sc-item__value {
-        font-variant-numeric: tabular-nums;
-      }
-      .sc-swatch {
-        flex: 0 0 auto;
-        width: 12px;
-        height: 12px;
-        box-sizing: border-box;
-        border-radius: 4px;
+      .sc-chip.is-active {
         background: var(--tone-fill);
+        color: var(--tone-on);
         box-shadow: inset 0 0 0 1px var(--tone-border);
       }
-      /* the base preset is the gaps: its swatch is the line's own */
-      .sc-swatch.is-base {
-        background: var(--fluvy-inset, var(--fluvy-page));
-        box-shadow: inset 0 0 0 1px var(--fluvy-border-strong);
+      .sc-chip__value {
+        font-weight: 500;
+        font-variant-numeric: tabular-nums;
+      }
+      /* the preset in force, in the head's line and the row's: in its tone's ink */
+      .sc-in-force {
+        color: var(--tone-ink);
       }
       .sc-empty {
         box-sizing: border-box;
@@ -242,6 +268,10 @@ export class FluvyScheduleCard extends Card<ScheduleCardConfig> {
       .is-off .sc-block,
       .is-off .sc-swatch {
         opacity: 0.5;
+      }
+      /* out of reach the card is the page's fill, as a chip is: its edge says where it stands */
+      .is-off .sc-chip:not(.is-active) {
+        box-shadow: inset 0 0 0 1px var(--fluvy-unavailable-border);
       }
       /* the row: the house's (76, 16 in, half a section; the printer's, the compass's), the room's circle, its name
          over its line, the switch at its end; the row is the card's button (a cover over it), its circle and its
@@ -742,6 +772,33 @@ export class FluvyScheduleCard extends Card<ScheduleCardConfig> {
     );
   }
 
+  /**
+   * A line with the preset in force (`part`: its name, in the head with its target) in its tone's ink, where the line
+   * says it whole as one of its parts; the line as it is otherwise.
+   */
+  private inTone(
+    line: string,
+    part: string,
+    look: PresetLook | undefined,
+  ): string | TemplateResult {
+    const parts = line.split(' · ');
+    const at = look && part ? parts.indexOf(part) : -1;
+    if (!look || at < 0) return line;
+    const before = parts
+      .slice(0, at)
+      .map((each) => `${each} · `)
+      .join('');
+    const after = parts
+      .slice(at + 1)
+      .map((each) => ` · ${each}`)
+      .join('');
+    return html`${before}<span
+        class="sc-in-force ${toneClass(look)}"
+        data-accent=${(look.color && this.accents.item(look.color)) || nothing}
+        >${part}</span
+      >${after}`;
+  }
+
   private renderHead(view: EntityView, tie: Tie, active: PresetLook | undefined): TemplateResult {
     const hass = this.hass;
     const config = this.config as ScheduleCardConfig;
@@ -753,10 +810,11 @@ export class FluvyScheduleCard extends Card<ScheduleCardConfig> {
     const said = doing({ hass, rawHass: this.rawHass }, view, this.stateOf(view), 'neutral');
     const target = this.target(view);
     const current = numberAttr(view, 'current_temperature');
+    const inForce = automation && !on ? '' : [active?.name, target].filter(Boolean).join(' ');
     const segments = usable
       ? [
           said.text,
-          automation && !on ? s(hass, 'paused') : [active?.name, target].filter(Boolean).join(' '),
+          automation && !on ? s(hass, 'paused') : inForce,
           current === null ? '' : this.t('climate.current', { value: degrees(hass, current, 0.1) }),
         ].filter(Boolean)
       : [said.text];
@@ -775,7 +833,7 @@ export class FluvyScheduleCard extends Card<ScheduleCardConfig> {
       tone: circle.tone,
       title,
       name: true,
-      sub: fitted.line,
+      sub: this.inTone(fitted.sub, inForce, active),
       cut: fitted.cut,
       trailing: switchable ? this.renderSwitch(automation, on) : nothing,
       // a tap opens the sheet where the config says nothing; a hold, the thermostat's details
@@ -863,7 +921,7 @@ export class FluvyScheduleCard extends Card<ScheduleCardConfig> {
       }
       <span class="fv-row__text"
         ><span class="fv-row__title" data-name>${name}</span
-        ><span class="fv-row__sub">${line}</span></span
+        ><span class="fv-row__sub">${this.inTone(line, active?.name ?? '', active)}</span></span
       >
       ${withSwitch ? this.renderSwitch(automation, on) : nothing}
       ${onTap || onHold ? pressCover(`${name} · ${line}`, onTap, onHold) : nothing}
@@ -898,32 +956,34 @@ export class FluvyScheduleCard extends Card<ScheduleCardConfig> {
     return s(hass, 'next_on', { preset: to.name, day: dayWord(hass, day), time });
   }
 
-  /** A day's line: its blocks in their presets' tones, their times where they hold, the time it is now on today's. */
+  /** A day's line: its blocks in their presets' tones, their times where they hold, the knob on today's. */
   private renderTrack(
     blocks: Week[keyof Week],
     looks: ReadonlyMap<string, PresetLook>,
     base: PresetLook | undefined,
     width: number,
     now: number | undefined,
+    today: boolean,
     tall: boolean,
   ): TemplateResult {
     const cls = tall ? 'sc-time sc-time--tall' : 'sc-time';
     return track({
+      hass: this.hass,
       blocks,
       looks,
       base,
       width,
-      now,
       tall,
-      words: (block, room) =>
-        blockWords(this.hass, block, room, (text) => this.headFit.ruler.width(cls, text)),
+      needle: now,
+      knob: today,
+      measure: (text) => this.headFit.ruler.width(cls, text),
       accent: (color) => this.accents.item(color),
     });
   }
 
   /**
-   * The legend: the presets in the plan's order, each its swatch, its name and its temperature; as many as its line
-   * holds, the rest said by their count ("+2"), never a word cut.
+   * The legend: the presets in the plan's order as the house's chips, each its swatch, its name and its temperature,
+   * the one in force in its tone; as many as its line holds, the rest said by their count ("+2"), never a word cut.
    */
   private renderLegend(
     looks: readonly PresetLook[],
@@ -941,13 +1001,17 @@ export class FluvyScheduleCard extends Card<ScheduleCardConfig> {
     });
     const room = this.contentWidth;
     const ruler = this.headFit.ruler;
-    // an item as it is set: its swatch, its name and its figure in the figure's own (tabular) digits
+    // a chip as it is set, on the 4 grid: its sides, its swatch, its name and its figure in the figure's own
+    // (tabular) digits
+    const chip = (content: number): number => Math.ceil((CHIP_SIDES + content) / 4) * 4;
     const width = ({ look, value }: (typeof items)[number]): number =>
-      SWATCH +
-      ruler.width('sc-item is-active', look.name) +
-      (value ? ruler.width('sc-item is-active > sc-item__value', ` ${value}`) : 0);
+      chip(
+        SWATCH +
+          ruler.width('sc-chip', look.name) +
+          (value ? ruler.width('sc-chip > sc-chip__value', ` ${value}`) : 0),
+      );
     const more = (count: number): number =>
-      count ? LEGEND_GAP + ruler.width('sc-item', `+${count}`) : 0;
+      count ? LEGEND_GAP + chip(ruler.width('sc-chip', `+${count}`)) : 0;
     /** How many of the items hold the line beside the count of the rest. */
     const holding = (each: readonly (typeof items)[number][]): number => {
       let shown = each.length;
@@ -965,22 +1029,20 @@ export class FluvyScheduleCard extends Card<ScheduleCardConfig> {
     const said = named ? bare : items;
     const shown = holding(said);
     const rest = items.length - shown;
+    const accent = (color: string): string | undefined => this.accents.item(color);
     return html`<div class="sc-legend">
-      ${said
-        .slice(0, shown)
-        .map(
-          ({ look, value }) =>
-            html`<span class="sc-item ${look.key === active ? 'is-active' : ''}"
-              ><span
-                class="sc-swatch ${look.key === base ? 'is-base' : toneClass(look)}"
-                data-accent=${(look.color && look.key !== base && this.accents.item(look.color)) || nothing}
-              ></span
-              ><span
-                >${look.name}${value ? html` <span class="sc-item__value">${value}</span>` : nothing}</span
-              ></span
-            >`,
-        )}
-      ${rest ? html`<span class="sc-item">+${rest}</span>` : nothing}
+      ${said.slice(0, shown).map(({ look, value }) => {
+        const on = look.key === active;
+        return html`<span
+          class="sc-chip ${on ? `is-active ${toneClass(look)}` : ''}"
+          data-fit=${CHIP_SIDES}
+          data-accent=${(on && look.color && accent(look.color)) || nothing}
+          >${swatch(look, look.key === base, accent)}<span
+            >${look.name}${value ? html` <span class="sc-chip__value">${value}</span>` : nothing}</span
+          ></span
+        >`;
+      })}
+      ${rest ? html`<span class="sc-chip" data-fit=${CHIP_SIDES}>+${rest}</span>` : nothing}
     </div>`;
   }
 
@@ -1091,6 +1153,13 @@ export class FluvyScheduleCard extends Card<ScheduleCardConfig> {
     const inset = tall ? 0 : label + 8;
     const width = Math.max(0, this.contentWidth - inset);
     const region = scheduleHeight(config) - 40 - (showHead ? 60 : 0);
+    // the time it is now: the knob on today's line, the needle from it (through the week) to its bubble in the hours
+    const now = nowAt(today.minute, width, tall);
+    const clock = {
+      x: now,
+      text: clockOf(hass, today.minute),
+      measure: (text: string) => this.headFit.ruler.width('sc-clock', text),
+    };
     const lines = tall
       ? html`<div
           class="sc-today"
@@ -1105,7 +1174,8 @@ export class FluvyScheduleCard extends Card<ScheduleCardConfig> {
             }
           }}
         >
-          ${this.renderTrack(week?.[today.day] ?? [], byKey, base, width, today.minute, true)}
+          ${this.renderTrack(week?.[today.day] ?? [], byKey, base, width, now, true, true)}
+          ${needle(now, 16)}
         </div>`
       : html`<div
           class="sc-week"
@@ -1123,16 +1193,23 @@ export class FluvyScheduleCard extends Card<ScheduleCardConfig> {
         >
           ${days.map(
             (day, index) =>
-              html`<p class="sc-day ${day === today.day ? 'is-today' : ''}">${words[index]}</p>
+              html`<div
+                class="sc-line ${day === today.day ? 'is-today' : ''}"
+                style="--sc-row:${index}"
+              >
+                <p class="sc-day ${day === today.day ? 'is-today' : ''}">${words[index]}</p>
                 ${this.renderTrack(
                   week?.[day] ?? [],
                   byKey,
                   base,
                   width,
-                  day === today.day ? today.minute : undefined,
+                  now,
+                  day === today.day,
                   false,
-                )}`,
+                )}
+              </div>`,
           )}
+          ${needle(inset + now)}
         </div>`;
     const body = waiting
       ? html`<div class="sc-wait" aria-busy="true">
@@ -1141,7 +1218,7 @@ export class FluvyScheduleCard extends Card<ScheduleCardConfig> {
         </div>`
       : !week
         ? this.renderNoWeek(region, !tall, tie.schedule !== undefined)
-        : html`${lines}${hours(hass, width, inset)}
+        : html`${lines}${hours(hass, width, inset, clock)}
           ${legend ? this.renderLegend(looks, presets, tie.heating?.base, activeKey) : nothing}`;
 
     return html`<article class="fv-card ${usable ? '' : 'is-unavailable is-off'}" data-card>

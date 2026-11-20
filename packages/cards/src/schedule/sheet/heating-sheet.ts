@@ -44,7 +44,7 @@ import { LaidWidth } from '../../shared/laid.js';
 import { fitPair } from '../../shared/pair.js';
 import { sheetDialog, sheetInsets } from '../../shared/sheet-insets.js';
 import { presetName, type Preset } from '../automation.js';
-import { blockWords, dayWord, hours, lineStyles, spanOf, track } from '../lines.js';
+import { dayWord, hours, lineStyles, spanOf, swatch, track } from '../lines.js';
 import { DAY_END, STEP, type Block, type DayProblem, type Week } from '../plan.js';
 import { isStandard, standardWord, type PresetLook } from '../presets.js';
 import {
@@ -212,16 +212,7 @@ export class FluvyHeatingSheet extends LitElement {
         flex: 0 0 auto;
         color: var(--fluvy-text-secondary);
       }
-      .hs-swatch {
-        flex: 0 0 auto;
-        width: 12px;
-        height: 12px;
-        margin-left: 4px;
-        border-radius: 4px;
-        background: var(--tone-fill);
-        box-shadow: inset 0 0 0 1px var(--tone-border);
-      }
-      /* a read-only time: its preset's swatch, its name and its times */
+      /* a read-only time: its preset's swatch (its block in small), its name and its times */
       .hs-read {
         display: flex;
         align-items: center;
@@ -230,6 +221,9 @@ export class FluvyHeatingSheet extends LitElement {
         font-size: 15px;
         font-weight: 500;
         line-height: 20px;
+      }
+      .hs-read .sc-swatch {
+        margin-left: 4px;
       }
       .hs-read__name {
         min-width: 0;
@@ -606,15 +600,13 @@ export class FluvyHeatingSheet extends LitElement {
     const width = this.fit.width;
     return html`<div class="hs-line">
       ${track({
+        hass: this.hass,
         blocks: draft.week[draft.day],
         looks,
         base: looks.get(draft.base),
         width,
         tall: true,
-        words: (block, room) =>
-          blockWords(this.hass, block, room, (text) =>
-            this.ruler.width('sc-time sc-time--tall', text),
-          ),
+        measure: (text) => this.ruler.width('sc-time sc-time--tall', text),
         accent: () => undefined,
       })}
       ${hours(this.hass, width, 0)}
@@ -686,10 +678,8 @@ export class FluvyHeatingSheet extends LitElement {
                 const look =
                   (block.preset !== undefined ? looks.get(block.preset) : undefined) ?? base;
                 return html`<div class="hs-read">
-                  <span
-                    class="hs-swatch fv-tone--${look ? (look.color ? 'accent' : look.tone) : 'neutral'}"
-                  ></span
-                  ><span class="hs-read__name" data-name>${look?.name ?? block.preset ?? ''}</span
+                  ${swatch(look, false, () => undefined)}<span class="hs-read__name" data-name
+                    >${look?.name ?? block.preset ?? ''}</span
                   ><span class="hs-read__time">${spanOf(hass, block)}</span>
                 </div>`;
               })

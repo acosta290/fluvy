@@ -17,8 +17,8 @@ const WEEK = 7 * 24 + 6 * 8;
 const TODAY = 32;
 /** The hours under the lines: 8 above their 16. */
 const AXIS = 24;
-/** The presets' legend: one line of 20, 16 under the hours. */
-const LEGEND = 36;
+/** The presets' legend: one line of the house's 28 chips, 16 under the hours. */
+const LEGEND = 44;
 
 /** The row: the house's, 16 in round its 44 circle. */
 const ROW = 76;
