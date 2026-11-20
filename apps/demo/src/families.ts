@@ -15,7 +15,7 @@ export const FAMILIES: readonly Family[] = [
     key: 'home',
     label: 'family.home',
     glyph: 'home',
-    sheets: ['home', 'home-extras', 'ambient', 'rooms', 'rooms-card'],
+    sheets: ['home', 'home-extras', 'ambient', 'rooms', 'rooms-card', 'motion-alerts'],
   },
   {
     key: 'devices',
@@ -73,6 +73,7 @@ export const FAMILIES: readonly Family[] = [
     glyph: 'sliders',
     sheets: [
       'inputs',
+      'numbers',
       'lists',
       'items',
       'template',
@@ -83,6 +84,7 @@ export const FAMILIES: readonly Family[] = [
       'swipe',
     ],
   },
+  { key: 'icons', label: 'family.icons', glyph: 'grid', sheets: ['glyphs'] },
 ];
 
 /** The sheets a name stands for: a family's, or the one sheet of that name. */
