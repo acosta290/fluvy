@@ -7,7 +7,8 @@
  * turns it off; the kitchen window's and the hall motion's open their details and switch nothing; a hold opens a
  * round's details, the gone plug's too, whose tap does nothing. Of two doors, the unlocked one locks at a tap and the
  * locked one asks Home Assistant first (`hass-action`, `confirmation`), nothing unlocked before its yes. A row each
- * taps as its round. With their states, each says its own whole under its glyph, as the taps left it.
+ * taps as its round. With their states, each says its own whole under its glyph, as the taps left it, in a key: every
+ * key of the card one width, its words 12 from its sides at least.
  */
 import { calls, frame, moreInfo, reset, settle, startSuite } from './lib/suite.mjs';
 
@@ -137,6 +138,29 @@ check(
       all.every((said) => said.scrollWidth <= said.clientWidth + 0.5),
     )),
   (await labels.allTextContents()).join(),
+);
+// the owner's review: a key each, every one of the card one width on the 4 grid, its words 12 from its sides at least
+const keys = await frame(page, 'Quick picks · labels and names')
+  .locator('fluvy-rounds-card .lt-bulb')
+  .evaluateAll((all) =>
+    all.map((key) => {
+      const box = key.getBoundingClientRect();
+      const words = key.querySelector('.lt-said').getBoundingClientRect();
+      return {
+        width: box.width,
+        height: box.height,
+        sides: Math.min(words.left - box.left, box.right - words.right),
+      };
+    }),
+  );
+check(
+  'labels: a key each, every one as wide as the widest on the 4 grid, its words 12 from its sides at least',
+  keys.length === 6 &&
+    keys.every(
+      ({ width, height }) => width === keys[0].width && width % 4 === 0 && height === 64,
+    ) &&
+    keys.every(({ sides }) => sides >= 12),
+  JSON.stringify(keys),
 );
 
 await page.close();

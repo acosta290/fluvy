@@ -4,6 +4,7 @@ import { afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { familiesDefined } from '../index.js';
 import { roundsGrid, roundsHeight } from '../rounds-family.js';
 import { cardForm, drawEditor, listTitles, shownNames } from '../shared/fixtures/editor.js';
+import { saidWidths } from '../shared/fixtures/widths.js';
 import { visibleFields } from '../shared/form.js';
 import { FluvyRoundsCard } from './rounds-card.js';
 import * as roundsEditor from './rounds-editor.js';
@@ -236,6 +237,31 @@ describe('the Rounds card (#224)', () => {
     const said = rounds(card).map((round) => round.querySelector('.lt-said')?.textContent ?? '');
     expect(said).toEqual(['On', 'Off', 'On', 'Off', 'Locked', '—']);
     expect(rounds(card).every((round) => round.classList.contains('lt-bulb--under'))).toBe(true);
+  });
+
+  it('labels: a key each, every one as wide as the widest words and 12 a side on the 4 grid, 64 the least', async () => {
+    const restore = saidWidths();
+    try {
+      // "Locked" lays out 42: 42 and 24 on the 4 grid, the card's six keys alike
+      const widths = (card: CardElement): string[] => rounds(card).map((key) => key.style.width);
+      expect(widths(await drawn({ variant: 'labels' }))).toEqual(Array(6).fill('68px'));
+      document.body.replaceChildren();
+      // "On" and "Off" alone: a key as wide as it is tall
+      const short = await drawn({ variant: 'labels', items: QUICK_PICKS.slice(0, 2) });
+      expect(widths(short)).toEqual(['64px', '64px']);
+      document.body.replaceChildren();
+      // a word its cell cannot hold with its sides leaves its round a round: in a 66 column "Locked" needs 68
+      const items = ['lock.front_door', 'switch.washer'];
+      const narrow = await drawn({ variant: 'labels', items }, house().hass, 106);
+      const said = rounds(narrow).map((key) => key.querySelector('.lt-said')?.textContent ?? '');
+      expect(said).toEqual(['', 'Off']);
+      expect(widths(narrow)).toEqual(['', '64px']);
+    } finally {
+      restore();
+    }
+    // a cell where keys say their states is 72 at the least: half a phone's section of six stands them two a line
+    expect(roundsGrid({ type: '', variant: 'labels', items: QUICK_PICKS }, 226).perLine).toBe(2);
+    expect(roundsGrid({ type: '', show_names: true, items: QUICK_PICKS }, 226).perLine).toBe(3);
   });
 
   it('row: a list row each, its name over its state, the row its round’s tap', async () => {

@@ -3091,10 +3091,17 @@ details. An item's own name, icon, tone, colour, actions and `show_state`.
   columns (`align`); placed on whole pixels. `show_names`: a name under each round, 4 under it in 12/500 and the
   secondary ink on its 16 line, to its ellipsis in its cell — a cell then the line's share, 64 the least and 96 the
   most (a wide card lines them up as it does rounds), the lines 16 apart.
-- **Labels**: each round grown into the quick actions' pill under its glyph (64 tall, its words 12/600 4 under it, as
-  wide as its words, 44 the least) in its cell; the states in the longest form they all hold (a temperature's degree
-  alone, a count's short words), else each in its own, else none — that round a round again; "—" out of reach. A
-  round's own `show_state` asks for its pill in any layout, and `false` takes it away.
+- **Labels**: each round grown into a key in its cell (the owner's review, 1.23): the quick actions' pill under its
+  glyph (64 tall, its glyph 12 from its top on the rounds' glyph line, its words 12/600 4 under it and 12 from its
+  foot) at a tappable's radius (12), its words never closer than 12 to its sides; every key of the card one width,
+  the widest's on the 4 grid (64 the least: as wide as it is tall), centred in its cell, so the keys read as one set
+  of buttons; a cell where keys say their states is 72 at the least (a key and a word such as "Locked" 12 from each
+  side). Lit, its colour's fill and ink, as an active option tile (no ring: its words say its level); at rest the
+  neutral fill; out of reach the dashed ring round its corners and "—"; the focus ring 2 outside its corners. The
+  states in the longest form they all hold (a temperature's degree alone, a count's short words), else each in its
+  own, else none — that round a round again, its glyph on the keys' glyph line. A round's own `show_state` asks for
+  its key in any layout, and `false` takes it away. A room's quick actions keep their pill (§ Room): packed beside a
+  room's name, a key's sides would cost a reading or the name its room.
 - **Row**: a list row each (60), its circle lit as its round, its name over its state; the whole row its round's tap
   and hold.
 - **The head** only where the card has a title: its icon (`grid` by default) lit while any is on, "2 of 6 on" under it

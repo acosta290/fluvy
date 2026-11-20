@@ -627,17 +627,17 @@ export function statesIn(
   return [];
 }
 
-/** A round drawn with the state it says (none: a round), its pill as wide as its words need. */
+/**
+ * A round drawn with the state it says (none: a round), its pill as wide as its words need, or `width` (the Rounds
+ * card's keys, one width a card).
+ */
 export const drawRound = (
   host: RoundsHost,
   round: Round,
   text: string | undefined,
   under: boolean,
-): TemplateResult =>
-  levelRound({
-    ...round,
-    state: text ? { text, width: pillWidth(host, text, under), under } : undefined,
-  });
+  width = text ? pillWidth(host, text, under) : 0,
+): TemplateResult => levelRound({ ...round, state: text ? { text, width, under } : undefined });
 
 /** How many rounds a line's `room` holds: 44 each, 8 apart, 12 after what is before them. */
 export const roundsHeld = (room: number): number =>

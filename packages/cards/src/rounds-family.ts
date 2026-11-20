@@ -12,15 +12,19 @@ import { EMPTY, ROW } from './shared/heights.js';
 export interface RoundsGrid {
   readonly perLine: number;
   readonly lines: number;
-  /** A cell's least width: the round alone (44), or 64 with a name or a state under it. */
+  /** A cell's least width: the round alone (44), 64 with a name under it, 72 where a key says its state. */
   readonly cell: number;
   readonly line: number;
   readonly gap: number;
 }
 
-/** The rounds' 8 between cells, and the least cell of a round with words under it. */
+/**
+ * The rounds' 8 between cells, and the least cell of a round with its name under it, and of a key (a state under its
+ * glyph: 64 wide at the least, a word such as "Locked" 12 from each of its sides).
+ */
 const GAP = 8;
 const WORDED = 64;
+const KEYED = 72;
 
 /** The rounds a config lists: its `items`, else Home Assistant's `entities` (the card reads them alike). */
 const listed = (config: LovelaceCardConfig): unknown[] | undefined =>
@@ -41,7 +45,7 @@ export function roundsGrid(config: LovelaceCardConfig, width: number): RoundsGri
       : labels,
   );
   const named = config['show_names'] === true;
-  const cell = named || states ? WORDED : 44;
+  const cell = states ? KEYED : named ? WORDED : 44;
   const most = Math.max(1, Math.floor((width + GAP) / (cell + GAP)));
   const asked = Math.floor(Number(config['columns']));
   const columns = asked >= 1 ? Math.min(asked, most) : most;

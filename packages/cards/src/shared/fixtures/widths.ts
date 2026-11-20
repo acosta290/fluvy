@@ -36,3 +36,6 @@ export const stateLineWidths = (): (() => void) => laidOut([STATE]);
  */
 export const readoutWidths = (): (() => void) =>
   laidOut([STATE, 'fv-readout__label', 'fv-readout__value']);
+
+/** The states the rounds say (`lt-said`, in a pill or a key) by the same model. */
+export const saidWidths = (): (() => void) => laidOut(['lt-said']);

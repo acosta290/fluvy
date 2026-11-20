@@ -125,6 +125,25 @@ export const sheet: SheetSpec = {
         },
       ],
     },
+    // …each saying its state in its key: the lamp's brightness, the blinds' position, the fan's speed, the TV off, the
+    // patio door unlocked, the air's humidity; every key as wide as the widest
+    {
+      title: 'Lounge · labels',
+      cards: [
+        {
+          type: ROUNDS,
+          title: 'Lounge',
+          icon: 'mdi:sofa',
+          variant: 'labels',
+          show_names: true,
+          items: [
+            ...LOUNGE.slice(0, 4),
+            { entity: 'lock.rd_back_door', name: 'Patio door' },
+            { entity: 'sensor.rd_lounge_humidity', name: 'Humidity' },
+          ],
+        },
+      ],
+    },
     // where they stand on their line: in its middle, from edge to edge, three a line
     {
       title: 'Align · center',

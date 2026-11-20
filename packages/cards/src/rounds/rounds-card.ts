@@ -28,7 +28,7 @@ import {
   type RoundsHost,
 } from '../shared/rounds.js';
 
-/** `rounds` (default): the rounds in lines. `row`: a list row each. `labels`: each round says its state under it. */
+/** `rounds` (default): the rounds in lines. `row`: a list row each. `labels`: each round a key that says its state. */
 export type RoundsVariant = 'rounds' | 'row' | 'labels';
 export const ROUNDS_VARIANTS: readonly RoundsVariant[] = ['rounds', 'row', 'labels'];
 /** Where the rounds stand on their line: from its start (default), in its middle, or from edge to edge. */
@@ -58,16 +58,26 @@ const GAP = 8;
 /** A cell with words under its round is the line's share, at most this: a wide card lines them up as it does rounds. */
 const WIDEST = 96;
 
+/** A key's least width: as wide as it is tall, never a sliver. */
+const KEY = 64;
+
 /**
- * The states that hold their cells (`cell` wide, under their glyphs): every one in the longest of its forms they all
- * hold in; where no form holds them all, each in its longest that holds, else none — that round a round again.
+ * A round that says its state, as a key: the pill under its glyph (`pillWidth`, its words 6 from each side) with 6
+ * more a side, its words 12 from each, on the 4 grid; 64 the least.
+ */
+const keyWidth = (host: RoundsHost, text: string): number =>
+  Math.max(KEY, pillWidth(host, text, true) + 12);
+
+/**
+ * The states whose keys hold their cells (`cell` wide): every one in the longest of its forms they all hold in; where
+ * no form holds them all, each in its longest that holds, else none — that round a round again.
  */
 function cellStates(
   host: RoundsHost,
   rounds: readonly Round[],
   cell: number,
 ): (string | undefined)[] {
-  const holds = (text: string): boolean => pillWidth(host, text, true) <= cell;
+  const holds = (text: string): boolean => keyWidth(host, text) <= cell;
   const forms = Math.max(0, ...rounds.map((round) => round.said?.length ?? 0));
   for (let form = 0; form < forms; form++) {
     const states = rounds.map(({ said }) => said?.[Math.min(form, said.length - 1)]);
@@ -105,6 +115,13 @@ export class FluvyRoundsCard extends Card<RoundsCardConfig> {
         display: flex;
         flex-direction: column;
         align-items: center;
+      }
+      /* a round that says its state is a key: the rounds' pill under its glyph (64 tall, its glyph 12 from its top on
+         the rounds' glyph line, its words 4 under it and 12 from its foot) at a tappable's radius, its words 12 from
+         each side; the card's keys one width, centred in their cells */
+      .rd-cell > .lt-bulb.lt-bulb--under {
+        padding: 12px 12px 0;
+        border-radius: var(--fluvy-radius-control);
       }
       /* its name under it: 4 under its round or its pill, 12/500 on its 16 line, to its ellipsis in its cell */
       .rd-name {
@@ -241,7 +258,8 @@ export class FluvyRoundsCard extends Card<RoundsCardConfig> {
   /**
    * The rounds in their lines (`roundsGrid`): each in its cell — a round's 44, or the line's share (96 at most) where a
    * name or a state stands under it — from the line's start, in its middle, or from edge to edge on one set of columns; a state
-   * in its pill under its glyph where it holds its cell, a name under the round to its ellipsis.
+   * in its key where it holds its cell, every key of the card as wide as the widest, a name under the round to its
+   * ellipsis.
    */
   private renderRounds(host: RoundsHost, items: readonly RoundSpec[], w: number): TemplateResult {
     const grid = roundsGrid(this.config ?? { type: '' }, w);
@@ -253,6 +271,8 @@ export class FluvyRoundsCard extends Card<RoundsCardConfig> {
     const pitch = align === 'spread' && per > 1 ? (w - cell) / (per - 1) : cell + GAP;
     if (rounds.some((round) => round.said)) wear(host.root);
     const states = cellStates(host, rounds, cell);
+    // its keys one width: the widest words' (none: no round says a state)
+    const width = Math.max(0, ...states.map((state) => (state ? keyWidth(host, state) : 0)));
     const names = this.config?.show_names === true;
     return html`<div
       class="rd-rounds"
@@ -270,7 +290,7 @@ export class FluvyRoundsCard extends Card<RoundsCardConfig> {
             line * (grid.line + grid.gap)
           }px;width:${cell}px;height:${grid.line}px"
         >
-          ${drawRound(host, round, states[index], true)}
+          ${drawRound(host, round, states[index], true, width)}
           ${names ? html`<span class="rd-name" data-name aria-hidden="true">${round.name}</span>` : nothing}
         </div>`;
       })}
