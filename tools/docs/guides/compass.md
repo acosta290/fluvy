@@ -29,8 +29,9 @@ indicator: ticks
   sun's azimuth and a weather entity's `wind_bearing` are read on their own, and so is a weather entity's wind speed
   where the card has no `entity`; any other attribute is named with `direction_attribute`.
 - Without `entity` or a weather entity, the ring reads the bearing itself ("291°" over "WNW").
-- `indicator`: `knob` (the default), `ticks` (the ticks lit across the bearing's sixteenth) or `dot`; the second
-  bearing's `secondary_indicator` is a `dot` by default, in the secondary ink.
+- `indicator`: `arrow` (the default, laid across the ring at the bearing and pointing in), `knob`, `ticks` (the ticks
+  lit across the bearing's sixteenth) or `dot`; the second bearing's `secondary_indicator` is a `dot` by default, in
+  the secondary ink, and its `arrow` a smaller one.
 - `north_offset` turns the ring for a window that does not face north: `-90` puts east at the top. The letters stay
   upright.
 - In half a section the figure, the point and the degrees stand under the ring.

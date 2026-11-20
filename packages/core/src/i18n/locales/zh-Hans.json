@@ -3629,7 +3629,8 @@
     "pointer_dot": "圆点",
     "north_offset": "正北偏移",
     "show_cardinals": "方位点",
-    "point16": "{cardinal}{intercardinal}"
+    "point16": "{cardinal}{intercardinal}",
+    "pointer_arrow": "箭头"
   },
   "schedule": {
     "card": "供暖计划",

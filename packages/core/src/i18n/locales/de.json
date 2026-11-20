@@ -3629,7 +3629,8 @@
     "pointer_dot": "Punkt",
     "north_offset": "Nordversatz",
     "show_cardinals": "Himmelsrichtungen",
-    "point16": "{cardinal}{intercardinal}"
+    "point16": "{cardinal}{intercardinal}",
+    "pointer_arrow": "Pfeil"
   },
   "schedule": {
     "card": "Heizplan",

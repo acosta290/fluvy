@@ -52,12 +52,12 @@ const s = words('compass');
 const weatherWords = words('weather');
 
 /**
- * How a bearing is marked on the ring, each one of Fluvy's controls read: the thermostat's knob riding the ring, the
- * ring's ticks lit across the bearing's sixteenth (the gauge's lit ticks), or the dial's dot outside the ticks (the
- * thermostat's current reading).
+ * How a bearing is marked on the ring: the compass's own arrow across the ring, pointing in from the bearing; or one
+ * of Fluvy's controls read: the thermostat's knob riding the ring, the ring's ticks lit across the bearing's sixteenth
+ * (the gauge's lit ticks), or the dial's dot outside the ticks (the thermostat's current reading).
  */
-export type CompassPointer = 'knob' | 'ticks' | 'dot';
-export const COMPASS_POINTERS: readonly CompassPointer[] = ['knob', 'ticks', 'dot'];
+export type CompassPointer = 'arrow' | 'knob' | 'ticks' | 'dot';
+export const COMPASS_POINTERS: readonly CompassPointer[] = ['arrow', 'knob', 'ticks', 'dot'];
 
 /** The card's layouts: the ring in its column, the head over a small ring beside its figure, one row. */
 export type CompassVariant = 'full' | 'compact' | 'row';
@@ -89,7 +89,7 @@ export interface CompassCardConfig
   /** A second bearing on the same ring, to compare against (a 10-minute average, the sun). */
   secondary_direction_entity?: string;
   secondary_direction_attribute?: string;
-  /** How the bearing is marked (`knob`); the second's (`dot`), in the secondary ink. */
+  /** How the bearing is marked (`arrow`); the second's (`dot`), in the secondary ink. */
   indicator?: CompassPointer;
   secondary_indicator?: CompassPointer;
   /** Where north is drawn, in degrees clockwise from the top (−180 to 180): a window that does not face north. */
@@ -219,6 +219,98 @@ interface Tick {
   readonly y2: number;
 }
 
+/** A point of the ring's drawing, in its pixels. */
+type Point = readonly [x: number, y: number];
+
+/** The knob a ring carries: the thermostat's 36, its small dial's 28, a tile's 20. */
+const knobSize = (r: number): number => (r >= 72 ? 36 : r >= 40 ? 28 : 20);
+
+/** An arrow's measures on its ring: how far its tip reaches inside it, its base outside it, its half-width, its notch. */
+interface Dart {
+  readonly in: number;
+  readonly out: number;
+  readonly half: number;
+  readonly notch: number;
+}
+
+/**
+ * The arrow in a knob's place, in the same proportions at every size: for the thermostat's 36, 31 long and 17 wide,
+ * its tip 12 inside the ring (the open centre's edge), its base 19 outside it (past the ticks), notched 3.5.
+ */
+const dartOf = (size: number): Dart => {
+  const k = size / 36;
+  return { in: 12 * k, out: 19 * k, half: 8.5 * k, notch: 3.5 * k };
+};
+
+/**
+ * A row's arrow across its track, 12 long and 7.5 wide: its tip 3 into the circle it points at, its base no further
+ * out than the knob in small reaches.
+ */
+const ROW_DART: Dart = { in: 7.5, out: 4.5, half: 3.75, notch: 1 };
+
+/**
+ * The arrow on a ring of radius `r` centred at `c`, pointing in from its top, as a compass rose's point: the whole
+ * (its tip, a wing, its notch, the other wing) and its clockwise half, the facet drawn in the shade.
+ */
+const dartPaths = (c: number, r: number, dart: Dart): readonly [whole: string, facet: string] => {
+  const at = (v: number): number => Math.round(v * 100) / 100;
+  const [tip, base] = [`${c} ${at(c - r + dart.in)}`, at(c - r - dart.out)];
+  const [left, right] = [at(c - dart.half), at(c + dart.half)];
+  const notch = `${c} ${at(c - r - dart.out + dart.notch)}`;
+  return [
+    `M${tip}L${right} ${base}L${notch}L${left} ${base}Z`,
+    `M${tip}L${right} ${base}L${notch}Z`,
+  ];
+};
+
+/** The arrow turned to `deg` (clockwise from the top), as the three corners that hold it: its tip and its wings. */
+const dartOutline = (c: number, r: number, dart: Dart, deg: number): Point[] => {
+  const a = (deg * Math.PI) / 180;
+  const [sin, cos] = [Math.sin(a), Math.cos(a)];
+  // along the bearing from the centre, and across it clockwise
+  const at = (along: number, across: number): Point => [
+    c + along * sin + across * cos,
+    c - along * cos + across * sin,
+  ];
+  return [at(r - dart.in, 0), at(r + dart.out, dart.half), at(r + dart.out, -dart.half)];
+};
+
+/** A round mark (a knob with its halo, a dot) as the twelve corners that hold it. */
+const roundOutline = ([x, y]: Point, radius: number): Point[] =>
+  Array.from({ length: 12 }, (_, k): Point => {
+    const a = (k * Math.PI) / 6;
+    return [x + radius * Math.cos(a), y + radius * Math.sin(a)];
+  });
+
+/**
+ * Whether two convex outlines come within `clear` of each other: no edge of either parts them by more (the separating
+ * axis test). A tick is the outline of its two ends.
+ */
+function meets(a: readonly Point[], b: readonly Point[], clear: number): boolean {
+  const normals = (shape: readonly Point[]): Point[] =>
+    shape.map(([x, y], i): Point => {
+      const [u, v] = shape[(i + 1) % shape.length]!;
+      const length = Math.hypot(u - x, v - y) || 1;
+      return [(y - v) / length, (u - x) / length];
+    });
+  return [...normals(a), ...normals(b)].every(([nx, ny]) => {
+    const along = (shape: readonly Point[]): number[] => shape.map(([x, y]) => x * nx + y * ny);
+    const [sa, sb] = [along(a), along(b)];
+    return Math.min(...sa) <= Math.max(...sb) + clear && Math.min(...sb) <= Math.max(...sa) + clear;
+  });
+}
+
+/** Which pointer a bearing is, the card's own or the second, each remembering where it was last drawn. */
+type Slot = 'first' | 'second';
+
+/** An arrow on a ring of radius `r` centred at `c`, turned to `angle` (clockwise from the top, wound as it turned). */
+const arrowOf = (c: number, r: number, dart: Dart, angle: number, cls: string) => {
+  const [whole, facet] = dartPaths(c, r, dart);
+  return svg`<g class="cp-arrow ${cls}" style="transform-origin:${c}px ${c}px;rotate:${Math.round(angle * 100) / 100}deg"
+    ><path d=${whole} /><path class="cp-facet" d=${facet}
+  /></g>`;
+};
+
 /** What the ring's open centre reads: its figure, its words, and the reading a threshold is held to. */
 interface Reading {
   readonly value: string;
@@ -283,6 +375,37 @@ export class FluvyCompassCard extends Card<CompassCardConfig> {
          card's */
       .cp-dot {
         fill: var(--tone-ink);
+      }
+      /* the arrow in the tone's ink, its corners rounded, its clockwise half a facet in the ink's shade (deeper in light,
+         lighter in dark: the text's ink in it); it turns to a new bearing the short way round and settles there as a
+         needle does. The second's is smaller, in the secondary ink */
+      .cp-arrow {
+        fill: var(--tone-ink);
+        stroke: var(--tone-ink);
+        stroke-width: 1.5;
+        stroke-linejoin: round;
+        transition: rotate 640ms var(--fv-spring);
+      }
+      .cp-facet {
+        --cp-shade: color-mix(in oklab, var(--tone-ink) 70%, var(--fluvy-text));
+        fill: var(--cp-shade);
+        stroke: var(--cp-shade);
+      }
+      .cp-arrow.is-second {
+        --tone-ink: var(--fluvy-text-secondary);
+      }
+      /* the ring's own lifted as the knob is, and glowing in dark as a lit tick; the second's and a row's lie flat */
+      .cp-lift {
+        filter: drop-shadow(0 2px 2px rgb(0 0 0 / calc(0.24 * var(--fluvy-shade, 1))))
+          drop-shadow(0 0 var(--fv-tick-glow, 0px) var(--tone-ink));
+      }
+      /* a tick or a point a pointer covers gives way, and comes back as it leaves */
+      .cp-dial line,
+      .cp-point {
+        transition: opacity var(--fv-slow) var(--fv-ease);
+      }
+      .cp-dial .is-under {
+        opacity: 0;
       }
       /* a label longer than the ring's open centre is a name: it ends in an ellipsis inside it (the gauge's rule) */
       .cp-dial .fv-dial__label-in,
@@ -411,6 +534,20 @@ export class FluvyCompassCard extends Card<CompassCardConfig> {
 
   /** The ring's ticks, laid out once a ring (its radius, its step, its turn, its gaps for the points). */
   private ticks: { readonly key: string; readonly all: readonly Tick[] } | undefined;
+
+  /** Where each arrow was last drawn, in degrees wound past a whole turn where it went round. */
+  private readonly swung = new Map<Slot, number>();
+
+  /**
+   * The angle an arrow is drawn at: `deg` wound to within half a turn of where it stood, so it turns the short way
+   * round (350° to 10° is 20° clockwise, never 340° back across the ring).
+   */
+  private swing(slot: Slot, deg: number): number {
+    const last = this.swung.get(slot);
+    const angle = last === undefined ? deg : last + ((((deg - last) % 360) + 540) % 360) - 180;
+    this.swung.set(slot, angle);
+    return angle;
+  }
 
   static override editor(): Promise<CardEditor> {
     return import('./compass-editor.js');
@@ -843,9 +980,10 @@ export class FluvyCompassCard extends Card<CompassCardConfig> {
       const a = ((deg + offset) * Math.PI) / 180;
       return `${(29 + radius * Math.sin(a)).toFixed(2)} ${(29 - radius * Math.cos(a)).toFixed(2)}`;
     };
-    const mark = (deg: number | null, pointer: CompassPointer, cls: string) => {
+    const mark = (deg: number | null, pointer: CompassPointer, slot: Slot, cls: string) => {
       if (deg === null) return nothing;
       const [x, y] = at(deg).split(' ');
+      if (pointer === 'arrow') return arrowOf(29, R, ROW_DART, this.swing(slot, deg + offset), cls);
       if (pointer === 'ticks')
         return svg`<path class="cp-arc ${cls}" d="M ${at(deg - 11.25)} A ${R} ${R} 0 0 1 ${at(deg + 11.25)}" />`;
       return pointer === 'knob'
@@ -855,8 +993,8 @@ export class FluvyCompassCard extends Card<CompassCardConfig> {
     return svg`<svg viewBox="0 0 58 58" aria-hidden="true" data-measure="drawn">
       <circle class="cp-track" cx="29" cy="29" r=${R} />
       <path class="cp-notch" d="M ${at(0, R - 3)} L ${at(0, R + 3)}" />
-      ${mark(second, c.secondary_indicator ?? 'dot', 'is-second')}
-      ${mark(bearing, c.indicator ?? 'knob', '')}
+      ${mark(second, c.secondary_indicator ?? 'dot', 'second', 'is-second')}
+      ${mark(bearing, c.indicator ?? 'arrow', 'first', '')}
     </svg>`;
   }
 
@@ -950,37 +1088,99 @@ export class FluvyCompassCard extends Card<CompassCardConfig> {
     const points =
       c.show_cardinals === false
         ? []
-        : CARDINALS.map(([bearing, key]) => ({ bearing, word: weatherWords(this.hass, key) }));
+        : CARDINALS.map(([bearing, key]) => {
+            const word = weatherWords(this.hass, key);
+            return { bearing, word, width: textWidth(word, POINT_FACE) };
+          });
     // a point's word keeps its ticks clear: its box across the ring where it stands, 2 either side
-    const gaps = points.map(({ bearing, word }) => {
+    const gaps = points.map(({ bearing, width }) => {
       const a = ((bearing + offset) * Math.PI) / 180;
-      const across =
-        (Math.abs(textWidth(word, POINT_FACE) * Math.cos(a)) + Math.abs(11 * Math.sin(a))) / 2 + 2;
+      const across = (Math.abs(width * Math.cos(a)) + Math.abs(11 * Math.sin(a))) / 2 + 2;
       return [bearing, (Math.asin(Math.min(1, across / (r + TICK / 2))) * 180) / Math.PI] as const;
     });
     const ticks = this.ticksOf(r, half, r >= 64 ? 5 : 10, offset, gaps);
-    const primary = c.indicator ?? 'knob';
+    const primary = c.indicator ?? 'arrow';
     const secondary = c.secondary_indicator ?? 'dot';
+    const at = (bearing: number, radius: number): Point => {
+      const a = ((bearing + offset) * Math.PI) / 180;
+      return [half + radius * Math.sin(a), half - radius * Math.cos(a)];
+    };
+    // the knob its ring carries, and the arrow in its place; the second's arrow smaller, as its dot is
+    const size = knobSize(r);
+    const darts: Record<Slot, Dart> = { first: dartOf(size), second: dartOf(size * 0.75) };
+    // what each pointer covers, by its outline: an arrow the ticks under it, 4 clear of a tick (its 1 either side of
+    // the line); an arrow, a knob (its halo, which cuts the ticks) or a dot a point's word, 3 clear of it
+    const marks = (
+      [
+        ['second', o.second, secondary],
+        ['first', o.bearing, primary],
+      ] as const
+    ).flatMap(([slot, bearing, pointer]): { arrow: boolean; outline: Point[] }[] => {
+      if (bearing === null || pointer === 'ticks') return [];
+      if (pointer === 'arrow')
+        return [{ arrow: true, outline: dartOutline(half, r, darts[slot], bearing + offset) }];
+      return [
+        {
+          arrow: false,
+          outline:
+            pointer === 'knob'
+              ? roundOutline(at(bearing, r), size / 2 + 6)
+              : roundOutline(at(bearing, r + TICK + 6), 3),
+        },
+      ];
+    });
+    const under = (tick: Tick): boolean =>
+      marks.some(
+        ({ arrow, outline }) =>
+          arrow &&
+          meets(
+            outline,
+            [
+              [tick.x1, tick.y1],
+              [tick.x2, tick.y2],
+            ],
+            4,
+          ),
+      );
+    const covered = ([x, y]: Point, width: number): boolean =>
+      marks.some(({ outline }) =>
+        meets(
+          outline,
+          [
+            [x - width / 2, y - 5.5],
+            [x + width / 2, y - 5.5],
+            [x + width / 2, y + 5.5],
+            [x - width / 2, y + 5.5],
+          ],
+          3,
+        ),
+      );
     // the ticks across a bearing's sixteenth: lit by a pointer of ticks
     const across = (bearing: number | null, pointer: CompassPointer) => (tick: Tick) =>
       pointer === 'ticks' && bearing !== null && turn(tick.bearing, bearing) <= 11.25;
     const lit = across(o.bearing, primary);
     const litSecond = across(o.second, secondary);
-    const at = (bearing: number, radius: number): readonly [number, number] => {
-      const a = ((bearing + offset) * Math.PI) / 180;
-      return [half + radius * Math.sin(a), half - radius * Math.cos(a)];
-    };
     const line = (tick: Tick, cls: string) =>
-      svg`<line x1=${tick.x1.toFixed(2)} y1=${tick.y1.toFixed(2)} x2=${tick.x2.toFixed(2)} y2=${tick.y2.toFixed(2)} class=${cls} />`;
+      svg`<line x1=${tick.x1.toFixed(2)} y1=${tick.y1.toFixed(2)} x2=${tick.x2.toFixed(2)} y2=${tick.y2.toFixed(2)} class="${cls} ${under(tick) ? 'is-under' : ''}" />`;
     const dot = (bearing: number | null, pointer: CompassPointer, cls: string) => {
       if (bearing === null || pointer !== 'dot') return nothing;
       const [x, y] = at(bearing, r + TICK + 6);
       return svg`<circle cx=${x.toFixed(2)} cy=${y.toFixed(2)} r="3" class=${cls} />`;
     };
-    const knob = (bearing: number | null, pointer: CompassPointer, tone: Tone) => {
-      if (bearing === null || pointer !== 'knob') return nothing;
-      // the knob its ring can carry: the thermostat's 36, its small dial's 28, a tile's 20
-      const size = o.r >= 72 ? 36 : o.r >= 40 ? 28 : 20;
+    // a pointer over the ring, each a layer of its own, the second's under the first's: a knob, or an arrow's drawing
+    const pointer = (slot: Slot, bearing: number | null, kind: CompassPointer, tone: Tone) => {
+      if (bearing === null) return nothing;
+      if (kind === 'arrow')
+        return html`<svg
+          class=${slot === 'first' ? 'cp-lift' : nothing}
+          width=${box}
+          height=${box}
+          viewBox="0 0 ${box} ${box}"
+          aria-hidden="true"
+        >
+          ${arrowOf(half, r, darts[slot], this.swing(slot, bearing + offset), slot === 'second' ? 'is-second' : '')}
+        </svg>`;
+      if (kind !== 'knob') return nothing;
       const [x, y] = at(bearing, r);
       // half pixels: crisp at 2× and 3×, never off the ring
       const place = (v: number): number => Math.round((v - size / 2) * 2) / 2;
@@ -1005,13 +1205,13 @@ export class FluvyCompassCard extends Card<CompassCardConfig> {
                 ? line(tick, 'tk-off')
                 : nothing,
         )}
-        ${points.map(({ bearing, word }) => {
-          const [x, y] = at(bearing, r + TICK / 2);
-          return svg`<text class="cp-point ${bearing === 0 ? 'is-north' : ''}" x=${x.toFixed(2)} y=${y.toFixed(2)}>${word}</text>`;
+        ${points.map(({ bearing, word, width }) => {
+          const place = at(bearing, r + TICK / 2);
+          return svg`<text class="cp-point ${bearing === 0 ? 'is-north' : ''} ${covered(place, width) ? 'is-under' : ''}" x=${place[0].toFixed(2)} y=${place[1].toFixed(2)}>${word}</text>`;
         })}
         ${dot(o.second, secondary, 'dl-current')}${dot(o.bearing, primary, 'cp-dot')}
       </svg>
-      ${o.centre}${knob(o.second, secondary, 'neutral')}${knob(o.bearing, primary, o.tone)}
+      ${o.centre}${pointer('second', o.second, secondary, 'neutral')}${pointer('first', o.bearing, primary, o.tone)}
     </div>`;
   }
 }

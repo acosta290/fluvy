@@ -11,6 +11,7 @@
     "pointer_dot": "Dot",
     "north_offset": "North offset",
     "show_cardinals": "Cardinal points",
-    "point16": "{cardinal}{intercardinal}"
+    "point16": "{cardinal}{intercardinal}",
+    "pointer_arrow": "Arrow"
   }
 }

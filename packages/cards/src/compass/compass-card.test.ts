@@ -145,9 +145,14 @@ describe('the Compass card', () => {
     expect(text(card, '.fv-dial__label-in')).toBe('Speed');
     expect(text(card, '.fv-dial__value')).toBe('14.2km/h');
     expect(text(card, '.fv-dial__sub')).toBe('WSW · 248°');
-    // the bearing's knob in the card's colour, the second's dot in the secondary ink
-    expect(card.shadowRoot?.querySelectorAll('.fv-knob')).toHaveLength(1);
-    expect(card.shadowRoot?.querySelector('.fv-knob')?.classList.contains('fv-knob--accent')).toBe(
+    // the bearing's arrow in the card's colour, lifted, turned to 248°; the second's dot in the secondary ink
+    expect(card.shadowRoot?.querySelectorAll('.fv-knob')).toHaveLength(0);
+    const arrows = card.shadowRoot?.querySelectorAll('.cp-arrow');
+    expect(arrows).toHaveLength(1);
+    expect(arrows?.[0]?.classList.contains('is-second')).toBe(false);
+    expect(arrows?.[0]?.closest('svg')?.classList.contains('cp-lift')).toBe(true);
+    expect((arrows?.[0] as SVGElement).style.rotate).toBe('248deg');
+    expect(card.shadowRoot?.querySelector('.cp-dial')?.classList.contains('fv-dial--accent')).toBe(
       true,
     );
     expect(card.shadowRoot?.querySelectorAll('circle.dl-current')).toHaveLength(1);
@@ -203,14 +208,82 @@ describe('the Compass card', () => {
     for (const card of cards) card.remove();
   });
 
-  it('marks the bearing as asked: the knob, the ticks lit across its sixteenth, or the dot', async () => {
+  it('marks the bearing as asked: the arrow, the knob, the ticks lit across its sixteenth, or the dot', async () => {
+    const knob = await mount({ direction_entity: 'sensor.wind_bearing', indicator: 'knob' });
+    expect(knob.shadowRoot?.querySelectorAll('.fv-knob')).toHaveLength(1);
+    expect(knob.shadowRoot?.querySelectorAll('.cp-arrow')).toHaveLength(0);
     const lit = await mount({ direction_entity: 'sensor.wind_bearing', indicator: 'ticks' });
-    expect(lit.shadowRoot?.querySelectorAll('.fv-knob')).toHaveLength(0);
+    expect(lit.shadowRoot?.querySelectorAll('.fv-knob, .cp-arrow')).toHaveLength(0);
     // 240, 245, 250 and 255: the ticks within 11.25° of 248
     expect(lit.shadowRoot?.querySelectorAll('line.tk-on')).toHaveLength(4);
     const dot = await mount({ direction_entity: 'sensor.wind_bearing', indicator: 'dot' });
     expect(dot.shadowRoot?.querySelectorAll('circle.cp-dot')).toHaveLength(1);
-    expect(dot.shadowRoot?.querySelectorAll('.fv-knob')).toHaveLength(0);
+    expect(dot.shadowRoot?.querySelectorAll('.fv-knob, .cp-arrow')).toHaveLength(0);
+    // a second arrow: smaller, flat, in the secondary ink, under the first
+    const two = await mount({
+      direction_entity: 'sensor.wind_bearing',
+      secondary_direction_entity: 'sensor.wind_average',
+      secondary_indicator: 'arrow',
+    });
+    const [second, first] = [...(two.shadowRoot?.querySelectorAll('.cp-arrow') ?? [])];
+    expect(second?.classList.contains('is-second')).toBe(true);
+    expect(second?.closest('svg')?.classList.contains('cp-lift')).toBe(false);
+    expect(first?.closest('svg')?.classList.contains('cp-lift')).toBe(true);
+    const length = (arrow: Element | undefined): number => {
+      const ys = (arrow?.querySelector('path')?.getAttribute('d') ?? '')
+        .match(/-?[\d.]+/g)!
+        .map(Number)
+        .filter((_, i) => i % 2 === 1);
+      return Math.max(...ys) - Math.min(...ys);
+    };
+    // the ring's own 31 long (its tip 12 inside the ring, its base 19 outside), the second's three quarters of it
+    expect(length(first)).toBeCloseTo(31);
+    expect(length(second)).toBeCloseTo(31 * 0.75);
+  });
+
+  it('turns its arrow the short way round, and clears what it covers: the ticks under it, a point it stands on', async () => {
+    const card = await mount({ direction_entity: 'sensor.wind_bearing' });
+    const root = card.shadowRoot!;
+    const angle = (): string => (root.querySelector('.cp-arrow') as SVGElement).style.rotate;
+    const under = (): number[] => {
+      const dial = root.querySelector('.cp-dial svg')!;
+      const c = Number(dial.getAttribute('width')) / 2;
+      return [...root.querySelectorAll('line.is-under')].map((l) => {
+        const [x, y] = [Number(l.getAttribute('x1')) - c, Number(l.getAttribute('y1')) - c];
+        return Math.round((((Math.atan2(x, -y) * 180) / Math.PI + 360) % 360) * 10) / 10;
+      });
+    };
+    // at 248° the ticks at 245 and 250 give way, 240 and 255 stay; no point is covered
+    expect(under()).toEqual([245, 250]);
+    expect(root.querySelectorAll('text.is-under')).toHaveLength(0);
+    const turnTo = async (state: string): Promise<void> => {
+      card.hass = {
+        ...STATION,
+        states: {
+          ...STATION.states,
+          'sensor.wind_bearing': { ...STATION.states['sensor.wind_bearing']!, state },
+        },
+      };
+      await card.updateComplete;
+    };
+    // 248° to 10°: 122° clockwise, through north, never 238° back
+    await turnTo('10');
+    expect(angle()).toBe('370deg');
+    await turnTo('350');
+    expect(angle()).toBe('350deg');
+    // on west the arrow stands on its letter: the letter gives way; the knob's halo does as much
+    await turnTo('270');
+    const covered = (): string[] =>
+      [...root.querySelectorAll('text.cp-point.is-under')].map((t) => t.textContent ?? '');
+    expect(covered()).toEqual(['W']);
+    const knob = await mount({ direction_entity: 'sensor.wind_bearing', indicator: 'knob' });
+    knob.hass = card.hass;
+    await knob.updateComplete;
+    expect(
+      [...knob.shadowRoot!.querySelectorAll('text.cp-point.is-under')].map((t) => t.textContent),
+    ).toEqual(['W']);
+    // the knob cuts the ticks with its halo: none gives way under it
+    expect(knob.shadowRoot!.querySelectorAll('line.is-under')).toHaveLength(0);
   });
 
   it('turns north to `north_offset`, its cardinal points upright in their ticks’ place', async () => {
@@ -261,7 +334,7 @@ describe('the Compass card', () => {
     expect(text(card, '.fv-dial__value')).toBe('—');
     expect(text(card, '.fv-dial__sub')).toBe('—');
     expect(card.shadowRoot?.querySelectorAll('text.cp-point')).toHaveLength(4);
-    expect(card.shadowRoot?.querySelectorAll('.fv-knob')).toHaveLength(0);
+    expect(card.shadowRoot?.querySelectorAll('.fv-knob, .cp-arrow')).toHaveLength(0);
     expect(
       [...(card.shadowRoot?.querySelectorAll('.so-cols .fv-readout__value') ?? [])].map((v) =>
         v.textContent?.replace(/\s+/g, ''),
@@ -306,7 +379,14 @@ describe('the Compass card', () => {
     });
     const root = card.shadowRoot!;
     expect(root.querySelector('.cp-dial svg')?.getAttribute('width')).toBe('104');
-    expect((root.querySelector('.fv-knob') as HTMLElement).style.width).toBe('20px');
+    // the arrow in the tile's knob's place: its tip 20/3 inside the ring of 28
+    expect(root.querySelector('.cp-arrow path')?.getAttribute('d')).toMatch(/^M52 30\.67L/);
+    const knob = await mount({
+      variant: 'compact',
+      direction_entity: 'sensor.wind_bearing',
+      indicator: 'knob',
+    });
+    expect((knob.shadowRoot!.querySelector('.fv-knob') as HTMLElement).style.width).toBe('20px');
     expect(root.querySelector('.so-gauge')?.classList.contains('cp-beside')).toBe(true);
     expect(text(card, '.cp-reading .fv-readout__label')).toBe('Speed');
     expect(text(card, '.cp-reading .fv-readout__value')).toBe('14.2km/h');
@@ -430,10 +510,10 @@ describe('the Compass card', () => {
     expect(root.querySelector('.fv-card__head')).toBeNull();
     expect(text(card, '.fv-row__title')).toBe('Wind');
     expect(text(card, '.fv-row__sub')).toBe('14.2 km/h · WSW · 248°');
-    // its track, north's notch, the bearing's knob in small and the second's dot in the secondary ink; no readouts
+    // its track, north's notch, the bearing's arrow in small and the second's dot in the secondary ink; no readouts
     expect(root.querySelector('.cp-ringed circle.cp-track')).not.toBeNull();
     expect(root.querySelector('.cp-ringed path.cp-notch')).not.toBeNull();
-    expect(root.querySelector('.cp-ringed circle.cp-mini-knob:not(.is-second)')).not.toBeNull();
+    expect(root.querySelector('.cp-ringed .cp-arrow:not(.is-second)')).not.toBeNull();
     expect(root.querySelector('.cp-ringed circle.cp-dot.is-second')).not.toBeNull();
     expect(root.querySelector('.so-cols')).toBeNull();
     // the row is the card's button; it takes half a section
@@ -449,7 +529,10 @@ describe('the Compass card', () => {
       direction_entity: 'sensor.bearing_gone',
     });
     expect(text(gone, '.fv-row__sub')).toBe('Unavailable');
-    expect(gone.shadowRoot?.querySelector('.cp-ringed circle.cp-mini-knob')).toBeNull();
+    expect(gone.shadowRoot?.querySelector('.cp-ringed .cp-arrow')).toBeNull();
+    // the knob in small, where it is asked for
+    const knob = await mount({ variant: 'row', direction_entity: 'sun.sun', indicator: 'knob' });
+    expect(knob.shadowRoot?.querySelector('.cp-ringed circle.cp-mini-knob')).not.toBeNull();
   });
 
   it('asks for a bearing or a figure, and offers the house’s wind, never its speed as a direction', () => {
@@ -485,6 +568,22 @@ describe('the Compass card’s editor', () => {
     JSON.stringify(visibleFields(compassEditor.getConfigForm().schema, data))
       .match(/"name":"[a-z_]+"/g)!
       .map((name) => name.slice(8, -1));
+
+  it('offers the arrow first and says it is the bearing’s pointer where none is set; the second’s is the dot', () => {
+    const pointer = JSON.stringify(compassEditor.getConfigForm().schema).match(
+      /"name":"indicator","selector":\{"select":\{"mode":"dropdown","options":(\[[^\]]*\])/,
+    );
+    expect(JSON.parse(pointer![1]!).map((o: { value: string }) => o.value)).toEqual([
+      'arrow',
+      'knob',
+      'ticks',
+      'dot',
+    ]);
+    expect(compassEditor.defaults({ type: 'custom:fluvy-compass-card' }, undefined)).toMatchObject({
+      indicator: 'arrow',
+      secondary_indicator: 'dot',
+    });
+  });
 
   it('shows only what can act: a second pointer with a second bearing, an attribute with its entity', () => {
     const bare = shown({ direction_entity: 'sensor.wind_bearing' });

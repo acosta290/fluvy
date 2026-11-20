@@ -3629,7 +3629,8 @@
     "pointer_dot": "Punkt",
     "north_offset": "Nordförskjutning",
     "show_cardinals": "Väderstreck",
-    "point16": "{cardinal}{intercardinal}"
+    "point16": "{cardinal}{intercardinal}",
+    "pointer_arrow": "Pil"
   },
   "schedule": {
     "card": "Värmeschema",

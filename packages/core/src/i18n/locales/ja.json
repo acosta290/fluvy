@@ -3629,7 +3629,8 @@
     "pointer_dot": "点",
     "north_offset": "北のずれ",
     "show_cardinals": "東西南北",
-    "point16": "{cardinal}{intercardinal}"
+    "point16": "{cardinal}{intercardinal}",
+    "pointer_arrow": "矢印"
   },
   "schedule": {
     "card": "暖房スケジュール",

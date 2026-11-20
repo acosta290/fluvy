@@ -1555,6 +1555,29 @@ export const sheet: SheetSpec = {
       ],
     },
 
+    /* its four pointers: the arrow (the default; the 10-minute average's a smaller one in the secondary ink), the
+       thermostat's knob, the ticks lit across the bearing, the dial's dot */
+    {
+      title: 'Compass · four pointers',
+      cards: [
+        { ...COMPASS_WIND, name: 'Garden', secondary_indicator: 'arrow' },
+        {
+          type: 'custom:fluvy-compass-card',
+          name: 'Balcony',
+          direction_entity: 'weather.am_home',
+          indicator: 'knob',
+        },
+        COMPASS_CAR,
+        {
+          type: 'custom:fluvy-compass-card',
+          name: 'Sun',
+          direction_entity: 'sun.sun',
+          label: 'Azimuth',
+          indicator: 'dot',
+        },
+      ].map((card) => ({ ...card, cols: 6 })),
+    },
+
     /* its two other layouts: compact (the head, a small ring beside its figure, the readouts at the extra-small size)
        and one row (its circle ringed by the bearing), in a section and in half of one */
     { title: 'Compass · compact', cards: [{ ...COMPASS_STATION, variant: 'compact' }] },

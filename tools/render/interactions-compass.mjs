@@ -40,6 +40,30 @@ const drawn = (card) =>
         size: Math.round(k.getBoundingClientRect().width),
         tone: [...k.classList].find((n) => n.startsWith('fv-knob--')),
       })),
+      // an arrow by the turn it is drawn at (wound past a whole turn where it went round), its tip's and its base's
+      // distances from the centre on its own drawing, its length
+      arrows: [...root.querySelectorAll('.cp-dial .cp-arrow')].map((a) => {
+        const ys = a
+          .querySelector('path')
+          .getAttribute('d')
+          .match(/-?[\d.]+/g)
+          .map(Number)
+          .filter((_, i) => i % 2 === 1);
+        const half = Number(a.closest('svg').getAttribute('width')) / 2;
+        return {
+          turned: parseFloat(a.style.rotate),
+          tip: Math.round(half - Math.max(...ys)),
+          base: Math.round(half - Math.min(...ys)),
+          second: a.classList.contains('is-second'),
+          lifted: a.closest('svg').classList.contains('cp-lift'),
+        };
+      }),
+      cleared: [...root.querySelectorAll('line.is-under')].map(
+        (l) => polar(l.getBoundingClientRect()).bearing,
+      ),
+      covered: [...root.querySelectorAll('text.cp-point.is-under')].map((t) =>
+        t.textContent.trim(),
+      ),
       dots: [...root.querySelectorAll('circle.dl-current, circle.cp-dot')].map((d) => ({
         ...polar(d.getBoundingClientRect()),
         second: d.classList.contains('dl-current'),
@@ -81,41 +105,61 @@ const near = (a, b, within = 1.5) => Math.abs(((a - b + 540) % 360) - 180) <= wi
     JSON.stringify(d),
   );
   check(
-    'the knob on the ring at 248° (R 96, the thermostat’s 36), the 10-minute average’s dot outside the ticks at 236°',
+    'the arrow across the ring at 248° (R 96: its tip 12 inside it, its base 19 outside), lifted, the ticks under it cleared; the 10-minute average’s dot outside the ticks at 236°',
     d.box === 240 &&
-      d.knobs.length === 1 &&
-      near(d.knobs[0].bearing, 248) &&
-      d.knobs[0].distance === 96 &&
-      d.knobs[0].size === 36 &&
+      d.knobs.length === 0 &&
+      d.arrows.length === 1 &&
+      d.arrows[0].turned === 248 &&
+      d.arrows[0].tip === 84 &&
+      d.arrows[0].base === 115 &&
+      d.arrows[0].lifted &&
+      d.cleared.length === 2 &&
+      d.cleared.every((bearing) => near(bearing, 248, 3)) &&
       d.dots.length === 1 &&
       d.dots[0].second &&
       near(d.dots[0].bearing, 236, 2) &&
       d.dots[0].distance === 114,
-    JSON.stringify({ knobs: d.knobs, dots: d.dots }),
+    JSON.stringify({ arrows: d.arrows, cleared: d.cleared, dots: d.dots }),
   );
   check(
     'the four points in their ticks’ place, north at the top, upright',
     d.points.map((p) => p.word).join() === 'N,E,S,W' &&
-      d.points.every((p, i) => near(p.bearing, i * 90) && p.distance === 102 && p.upright),
+      d.points.every((p, i) => near(p.bearing, i * 90) && p.distance === 102 && p.upright) &&
+      d.covered.length === 0,
     JSON.stringify(d.points),
   );
 
-  // the wind turns: the knob and its words follow; 359.6° is north, 0°
+  // the wind turns: the arrow and its words follow, the short way round; 359.6° is north, 0°
   await page.evaluate(() => window.fluvyMock.set('sensor.am_wind_bearing', '359.6'));
   await page.waitForTimeout(300);
   const north = await drawn(card);
   check(
-    'the wind turning to 359.6° moves the knob to the top and reads "N · 0°", never 360°',
-    north.line === 'N · 0°' && near(north.knobs[0].bearing, 359.6),
-    JSON.stringify({ line: north.line, knobs: north.knobs }),
+    'the wind turning to 359.6° turns the arrow to the top, 111.6° clockwise, and reads "N · 0°", never 360°; the arrow stands on north’s letter, which gives way',
+    north.line === 'N · 0°' &&
+      Math.abs(north.arrows[0].turned - 359.6) < 0.01 &&
+      north.covered.join() === 'N',
+    JSON.stringify({ line: north.line, arrows: north.arrows, covered: north.covered }),
   );
   await page.evaluate(() => window.fluvyMock.set('sensor.am_wind_bearing', 'nne'));
   await page.waitForTimeout(300);
+  const nne = await drawn(card);
   check(
-    'a direction in English’s letters, in any case: NNE, at 22.5°',
-    (await drawn(card)).line === 'NNE · 23°',
-    (await drawn(card)).line,
+    'a direction in English’s letters, in any case: NNE, at 22.5°, the arrow on through north (382.5°), never back across the ring',
+    nne.line === 'NNE · 23°' && nne.arrows[0].turned === 382.5,
+    JSON.stringify({ line: nne.line, arrows: nne.arrows }),
   );
+  // where it settles: the arrow's drawing at the bearing once its turn is over
+  await page.waitForTimeout(900);
+  const settled = await card.evaluate((c) => {
+    const box = c.shadowRoot.querySelector('.cp-arrow').getBoundingClientRect();
+    const ring = c.shadowRoot.querySelector('.cp-dial').getBoundingClientRect();
+    const [x, y] = [
+      box.left + box.width / 2 - ring.left - ring.width / 2,
+      box.top + box.height / 2 - ring.top - ring.height / 2,
+    ];
+    return ((Math.atan2(x, -y) * 180) / Math.PI + 360) % 360;
+  });
+  check('once turned, the arrow stands at 22.5°', near(settled, 22.5, 3), String(settled));
 
   await reset(page);
   await tapHead(card);
@@ -136,13 +180,14 @@ const near = (a, b, within = 1.5) => Math.abs(((a - b + 540) % 360) - 180) <= wi
     sun.label === 'Azimuth' &&
       sun.figure === '291°' &&
       sun.line === 'WNW' &&
-      near(sun.knobs[0].bearing, 291.4),
+      sun.arrows[0]?.turned === 291.4,
     JSON.stringify(sun),
   );
   const car = await drawn(compass(page, 'Compass · a car’s heading'));
   check(
-    'a car’s heading from its tracker’s attribute: the ticks lit across 47°, no knob',
+    'a car’s heading from its tracker’s attribute: the ticks lit across 47°, no knob, no arrow',
     car.knobs.length === 0 &&
+      car.arrows.length === 0 &&
       car.lit.length === 4 &&
       car.lit.every((bearing) => near(bearing, 47, 11.25)) &&
       car.line === 'NE · 47°',
@@ -151,15 +196,17 @@ const near = (a, b, within = 1.5) => Math.abs(((a - b + 540) % 360) - 180) <= wi
   const balcony = await drawn(compass(page, 'Compass · a weather entity on a balcony facing east'));
   const at = (word) => balcony.points.find((p) => p.word === word);
   check(
-    'a weather entity’s wind on a balcony facing east: north on the left, east at the top, upright; the wind at 315° drawn at 225°, the sun’s knob in the secondary ink',
+    'a weather entity’s wind on a balcony facing east: north on the left, east at the top, upright; the wind at 315° drawn at 225°, the sun’s knob under it in the secondary ink',
     balcony.figure === '12km/h' &&
       balcony.line === 'NW · 315°' &&
       near(at('N').bearing, 270) &&
       near(at('E').bearing, 0) &&
       balcony.points.every((p) => p.upright) &&
-      balcony.knobs.length === 2 &&
+      balcony.knobs.length === 1 &&
       balcony.knobs[0].tone === 'fv-knob--neutral' &&
-      near(balcony.knobs[1].bearing, 225),
+      near(balcony.knobs[0].bearing, 201.4) &&
+      balcony.arrows.length === 1 &&
+      balcony.arrows[0].turned === 225,
     JSON.stringify(balcony),
   );
   const pier = compass(page, 'Compass · past its warning');
@@ -188,6 +235,7 @@ const near = (a, b, within = 1.5) => Math.abs(((a - b + 540) % 360) - 180) <= wi
   check(
     'out of reach: the ring and its points kept, no pointer, "—" for the figure and the point',
     gone.knobs.length === 0 &&
+      gone.arrows.length === 0 &&
       gone.dots.length === 0 &&
       gone.points.length === 4 &&
       gone.figure === '—' &&
@@ -200,12 +248,42 @@ const near = (a, b, within = 1.5) => Math.abs(((a - b + 540) % 360) - 180) <= wi
   );
   check(
     'half a section: the ring holds in its column, the reading stands under it',
-    halves.every((h) => h.under && h.box <= h.column && h.knobs.every((k) => k.size === 28)) &&
+    halves.every((h) => h.under && h.box <= h.column) &&
+      // R 40: the arrow in a small dial's 28 knob's place, its tip 9.3 inside the ring, its base 14.8 outside
+      halves[0].arrows.length === 1 &&
+      halves[0].arrows[0].tip === 31 &&
+      halves[0].arrows[0].base === 55 &&
       halves[0].figure === '14.2km/h' &&
       halves[1].line === 'NE · 47°',
     JSON.stringify(
       halves.map(({ box, column, under, figure, line }) => ({ box, column, under, figure, line })),
     ),
+  );
+  await page.close();
+}
+
+/* ---------- its four pointers ---------- */
+{
+  const page = await suite.sheet('ambient', { width: 760 });
+  const [garden, balcony, car, sun] = await Promise.all(
+    [0, 1, 2, 3].map((n) => drawn(compass(page, 'Compass · four pointers', n))),
+  );
+  check(
+    'four pointers: the arrow and the second’s smaller one under it, flat; the knob; the lit ticks; the dot',
+    garden.arrows.length === 2 &&
+      garden.arrows[0].second &&
+      !garden.arrows[0].lifted &&
+      garden.arrows[0].turned === 236 &&
+      garden.arrows[0].base - garden.arrows[0].tip < garden.arrows[1].base - garden.arrows[1].tip &&
+      garden.dots.length === 0 &&
+      balcony.knobs.length === 1 &&
+      balcony.arrows.length === 0 &&
+      car.lit.length === 4 &&
+      car.arrows.length === 0 &&
+      sun.dots.length === 1 &&
+      !sun.dots[0].second &&
+      sun.arrows.length + sun.knobs.length === 0,
+    JSON.stringify({ garden, balcony: balcony.knobs, car: car.lit, sun: sun.dots }),
   );
   await page.close();
 }
@@ -239,7 +317,7 @@ const near = (a, b, within = 1.5) => Math.abs(((a - b + 540) % 360) - 180) <= wi
       laid.height === 260 &&
       words.figure === '14.2km/h' &&
       words.line === 'WSW · 248°' &&
-      words.knobs[0]?.size === 20,
+      words.arrows.length === 1,
     JSON.stringify({ laid, words }),
   );
   const halves = await Promise.all(
@@ -262,6 +340,7 @@ const near = (a, b, within = 1.5) => Math.abs(((a - b + 540) % 360) - 180) <= wi
         ringed: ringed !== null,
         line: root.querySelector('.fv-row__sub').textContent.trim(),
         arc: root.querySelector('.cp-arc') !== null,
+        arrow: root.querySelector('.cp-ringed .cp-arrow:not(.is-second)') !== null,
         tone: ringed ? [...ringed.classList].find((n) => n.startsWith('fv-tone--')) : '',
         cut: [...root.querySelectorAll('.fv-row__sub')].some(
           (el) => el.scrollWidth > el.clientWidth + 1,
@@ -270,9 +349,10 @@ const near = (a, b, within = 1.5) => Math.abs(((a - b + 540) % 360) - 180) <= wi
     }),
   );
   check(
-    'rows in half a section: 76 each, the circle ringed by the bearing, the figure kept whole, the point left to the ring where the line runs short, the pier past its warning in its colour',
+    'rows in half a section: 76 each, the circle ringed by the bearing (the wind’s by its arrow), the figure kept whole, the point left to the ring where the line runs short, the pier past its warning in its colour',
     strips.length === 4 &&
       strips.every((s) => s.height === 76 && s.ringed && !s.cut) &&
+      strips[0].arrow &&
       strips[0].line.startsWith('14.2 km/h') &&
       strips[2].arc &&
       strips[2].tone === 'fv-tone--warning' &&

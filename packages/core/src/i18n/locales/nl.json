@@ -3629,7 +3629,8 @@
     "pointer_dot": "Punt",
     "north_offset": "Noordverschuiving",
     "show_cardinals": "Windstreken",
-    "point16": "{cardinal}{intercardinal}"
+    "point16": "{cardinal}{intercardinal}",
+    "pointer_arrow": "Pijl"
   },
   "schedule": {
     "card": "Verwarmingsschema",

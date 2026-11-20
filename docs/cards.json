@@ -12999,10 +12999,11 @@
         {
           "key": "indicator",
           "label": "Pointer",
-          "does": "How the bearing is marked: the knob on the ring, the ticks lit across it, or a dot outside them.",
+          "does": "How the bearing is marked: an arrow across the ring pointing in, the knob on the ring, the ticks lit across it, or a dot outside them.",
           "type": "choice",
-          "default": "knob",
+          "default": "arrow",
           "values": {
+            "arrow": "Arrow",
             "knob": "Knob",
             "ticks": "Lit ticks",
             "dot": "Dot"
@@ -13027,6 +13028,7 @@
           "type": "choice",
           "default": "dot",
           "values": {
+            "arrow": "Arrow",
             "knob": "Knob",
             "ticks": "Lit ticks",
             "dot": "Dot"

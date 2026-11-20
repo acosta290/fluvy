@@ -3629,7 +3629,8 @@
     "pointer_dot": "Punto",
     "north_offset": "Desfase del norte",
     "show_cardinals": "Puntos cardinales",
-    "point16": "{cardinal}{intercardinal}"
+    "point16": "{cardinal}{intercardinal}",
+    "pointer_arrow": "Flecha"
   },
   "schedule": {
     "card": "Calendario de calefacción",

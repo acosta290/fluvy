@@ -3629,7 +3629,8 @@
     "pointer_dot": "Prik",
     "north_offset": "Nordforskydning",
     "show_cardinals": "Verdenshjørner",
-    "point16": "{cardinal}{intercardinal}"
+    "point16": "{cardinal}{intercardinal}",
+    "pointer_arrow": "Pil"
   },
   "schedule": {
     "card": "Varmeplan",

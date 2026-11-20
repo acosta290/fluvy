@@ -3754,7 +3754,8 @@
     "pointer_dot": "Kropka",
     "north_offset": "Przesunięcie północy",
     "show_cardinals": "Kierunki świata",
-    "point16": "{cardinal}-{intercardinal}"
+    "point16": "{cardinal}-{intercardinal}",
+    "pointer_arrow": "Strzałka"
   },
   "schedule": {
     "card": "Harmonogram ogrzewania",

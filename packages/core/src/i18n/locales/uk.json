@@ -3755,7 +3755,8 @@
     "pointer_dot": "Точка",
     "north_offset": "Зміщення півночі",
     "show_cardinals": "Сторони світу",
-    "point16": "{cardinal}{intercardinal}"
+    "point16": "{cardinal}{intercardinal}",
+    "pointer_arrow": "Стрілка"
   },
   "schedule": {
     "card": "Графік опалення",

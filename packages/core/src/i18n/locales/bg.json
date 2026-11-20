@@ -3629,7 +3629,8 @@
     "pointer_dot": "Точка",
     "north_offset": "Отместване на севера",
     "show_cardinals": "Посоки на света",
-    "point16": "{cardinal}{intercardinal}"
+    "point16": "{cardinal}{intercardinal}",
+    "pointer_arrow": "Стрелка"
   },
   "schedule": {
     "card": "График за отопление",

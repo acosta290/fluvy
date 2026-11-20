@@ -3689,7 +3689,8 @@
     "pointer_dot": "Bod",
     "north_offset": "Posun severu",
     "show_cardinals": "Svetové strany",
-    "point16": "{cardinal}{intercardinal}"
+    "point16": "{cardinal}{intercardinal}",
+    "pointer_arrow": "Šípka"
   },
   "schedule": {
     "card": "Plán kúrenia",

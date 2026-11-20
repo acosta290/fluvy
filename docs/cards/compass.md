@@ -58,7 +58,7 @@ name_lines: 1
 # unavailable: dashed
 direction_entity: sensor.am_wind_bearing
 # direction_attribute:
-indicator: knob
+indicator: arrow
 secondary_direction_entity: sensor.am_wind_bearing_avg
 # secondary_direction_attribute:
 secondary_indicator: dot
@@ -103,10 +103,10 @@ show_stats: true
 | `variant` | `full` | The card’s layout. `full` · `compact` · `row`. |
 | `direction_entity` |  | The bearing: a state in degrees or in English letters (N, NNE … NNW), the sun’s azimuth, a weather entity’s wind. |
 | `direction_attribute` |  | The attribute the bearing is read from, on any entity (a car tracker’s `heading`). |
-| `indicator` | `knob` | How the bearing is marked: the knob on the ring, the ticks lit across it, or a dot outside them. `knob` · `ticks` (Lit ticks) · `dot`. |
+| `indicator` | `arrow` | How the bearing is marked: an arrow across the ring pointing in, the knob on the ring, the ticks lit across it, or a dot outside them. `arrow` · `knob` · `ticks` (Lit ticks) · `dot`. |
 | `secondary_direction_entity` |  | A second bearing on the same ring, in the secondary ink: a 10-minute average, the sun. |
 | `secondary_direction_attribute` |  | The attribute the second bearing is read from. |
-| `secondary_indicator` | `dot` | How the second bearing is marked. `knob` · `ticks` (Lit ticks) · `dot`. |
+| `secondary_indicator` | `dot` | How the second bearing is marked. `arrow` · `knob` · `ticks` (Lit ticks) · `dot`. |
 | `north_offset` | `0` | Where north is drawn, in degrees clockwise from the top, for a window that does not face north. -180 ° to 180 °. |
 | `show_ticks` | `true` | Draws the ring’s ticks. |
 | `show_cardinals` | `true` | Writes N, E, S and W in the ring, in the page’s language. |
@@ -206,8 +206,9 @@ indicator: ticks
   sun's azimuth and a weather entity's `wind_bearing` are read on their own, and so is a weather entity's wind speed
   where the card has no `entity`; any other attribute is named with `direction_attribute`.
 - Without `entity` or a weather entity, the ring reads the bearing itself ("291°" over "WNW").
-- `indicator`: `knob` (the default), `ticks` (the ticks lit across the bearing's sixteenth) or `dot`; the second
-  bearing's `secondary_indicator` is a `dot` by default, in the secondary ink.
+- `indicator`: `arrow` (the default, laid across the ring at the bearing and pointing in), `knob`, `ticks` (the ticks
+  lit across the bearing's sixteenth) or `dot`; the second bearing's `secondary_indicator` is a `dot` by default, in
+  the secondary ink, and its `arrow` a smaller one.
 - `north_offset` turns the ring for a window that does not face north: `-90` puts east at the top. The letters stay
   upright.
 - In half a section the figure, the point and the degrees stand under the ring.

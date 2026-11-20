@@ -3629,7 +3629,8 @@
     "pointer_dot": "Punto",
     "north_offset": "Scostamento del nord",
     "show_cardinals": "Punti cardinali",
-    "point16": "{cardinal}{intercardinal}"
+    "point16": "{cardinal}{intercardinal}",
+    "pointer_arrow": "Freccia"
   },
   "schedule": {
     "card": "Programma riscaldamento",

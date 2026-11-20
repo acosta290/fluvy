@@ -3755,7 +3755,8 @@
     "pointer_dot": "Точка",
     "north_offset": "Смещение севера",
     "show_cardinals": "Стороны света",
-    "point16": "{cardinal}{intercardinal}"
+    "point16": "{cardinal}{intercardinal}",
+    "pointer_arrow": "Стрелка"
   },
   "schedule": {
     "card": "График отопления",

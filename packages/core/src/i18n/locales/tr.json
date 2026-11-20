@@ -3629,7 +3629,8 @@
     "pointer_dot": "Nokta",
     "north_offset": "Kuzey kayması",
     "show_cardinals": "Ana yönler",
-    "point16": "{cardinal}{intercardinal}"
+    "point16": "{cardinal}{intercardinal}",
+    "pointer_arrow": "Ok"
   },
   "schedule": {
     "card": "Isıtma planı",

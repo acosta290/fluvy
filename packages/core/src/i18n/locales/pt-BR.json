@@ -3629,7 +3629,8 @@
     "pointer_dot": "Ponto",
     "north_offset": "Deslocamento do norte",
     "show_cardinals": "Pontos cardeais",
-    "point16": "{cardinal}{intercardinal}"
+    "point16": "{cardinal}{intercardinal}",
+    "pointer_arrow": "Seta"
   },
   "schedule": {
     "card": "Agenda de aquecimento",

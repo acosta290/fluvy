@@ -98,7 +98,7 @@ const names =
 /** What the editor shows where the config says nothing: what the card does then. */
 export const defaults: EditorDefaults = () => ({
   variant: 'full',
-  indicator: 'knob',
+  indicator: 'arrow',
   secondary_indicator: 'dot',
   north_offset: 0,
   show_ticks: true,

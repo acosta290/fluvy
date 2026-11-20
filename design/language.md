@@ -925,48 +925,62 @@ longer than the ends' 56 ends in an ellipsis.
 ## Compass (1.23, #209, by @twodrops)
 
 A bearing on a 360° ring, drawn as Fluvy's dials are: the wind from a weather station, a car's heading, the sun's
-azimuth. No shape of its own: each part is a control the house already has, read.
+azimuth. One shape of its own, its arrow; every other part is a control the house already has, read.
 
 - **The ring** is the gauge's: R 96 from a 240 column, in a 240 box, down to the column's on the 4 grid (as the gauge,
   `(width / 2 − 24)`), its ticks the dial's (2 px, round caps, the strong hairline; 12 long every 45°, 7.2 between,
   every 5°, every 10° under R 64). The four cardinal points stand in their ticks' place, in the ticks' band, 11/600
-  tracked as a dial's label, the weather's words in the page's language, north in the text's ink and the others in
-  the secondary's; `north_offset` turns the ring (east at the top for a window facing east) and the letters stay
-  upright. Without ticks, a 2 px ring in the hairline is the knob's track.
-- **The bearing** is marked by a control read: the thermostat's **knob** riding the ring (36, 28 on a small ring; its
-  dot, its lift, its halo cutting the ticks), the ring's **ticks lit** across the bearing's sixteenth (11.25° either
-  side, the gauge's lit ticks, glowing in dark), or the dial's **dot** outside the ticks (3, as the thermostat's
-  current reading). A second bearing to compare against (a 10-minute average, the sun) is drawn under the first in the
-  secondary ink: a dot by default. Nothing is marked where the bearing cannot be read.
+  tracked as a dial's label, the weather's words in the page's language, north in the text's ink and the others in the
+  secondary's; `north_offset` turns the ring (east at the top for a window facing east) and the letters stay upright.
+  Without ticks, a 2 px ring in the hairline is the knob's track.
+- **The bearing** is marked by the compass's **arrow** (the default, 1.23 polish: "compasses usually have an arrow"): a
+  compass rose's point made an arrowhead, laid across the ring where the bearing is and pointing in at the figure, as a
+  bezel's index points at its mark and the wind blows from its bearing. It stands in the knob's place and is sized from
+  the knob the ring carries (for the thermostat's 36: 31 long and 17 wide, its tip 12 inside the ring, at the open
+  centre's edge, its base 19 outside it, past the ticks, its base notched 3.5; 28 and 20 on smaller rings in the same
+  proportions), its corners rounded by a 1.5 stroke of its own ink, its clockwise half a facet in the ink's shade (the
+  tone's ink 70 % with the text's: deeper in light, lighter in dark), lifted as the knob is (0 2 2, the palette's share
+  of it) and glowing in dark as a lit tick. It turns to a new bearing the short way round (350° to 10° is 20° clockwise)
+  and settles there on the house's spring (640 ms; still under reduced motion). What it covers gives way, never cut: the
+  ticks it would touch (4 clear of their lines) fade out and back as it leaves, and a cardinal point it stands on fades
+  as well, as does a point under a knob's halo or a dot, where the letters were cut before. Or a control read: the
+  thermostat's **knob** riding the ring (36, 28 on a small ring; its dot, its lift, its halo cutting the ticks), the
+  ring's **ticks lit** across the bearing's sixteenth (11.25° either side, the gauge's lit ticks, glowing in dark), or
+  the dial's **dot** outside the ticks (3, as the thermostat's current reading). A second bearing to compare against (a
+  10-minute average, the sun) is drawn under the first in the secondary ink: a dot by default; its arrow, where it is
+  asked for one, is three quarters of the first's and lies flat. Each pointer is a layer of its own over the ring, the
+  second's under the first's. Nothing is marked where the bearing cannot be read.
 - **The open centre** is the gauge's dial's: the word over the figure (11/600 uppercase: the person's `label`, else what
   the figure is, which leaves where its line cannot hold it), the figure at the largest of the dial's sizes its disc
   holds with its unit (48, 32 on a small ring, then 24, 20, 16), and under it the point and the degrees ("WSW · 248°",
   13/500, the point 600 in the text's ink). The figure is the card's sensor, else a weather entity's wind, else the
-  bearing itself ("291°" over "WNW"). Under R 56 (half a section) the ring holds the pointers alone, and the figure,
-  the point and the degrees stand under it as a readout, as tall in every language and whatever it reads: a word that
-  leaves keeps its line (the gauge's bar's rule), and the point's line stays one line, the degrees leaving it where
-  they would not hold beside the point (Polish "Zach-Pd-Zach" in half a section).
-- **Words**: a bearing is read in degrees or in English's sixteen letters, never another language's (German's O is
-  East, Spanish's West); it is said in the page's language, a point between two as the language joins them
-  (`compass.point16`: "NNE", 北北東, "Pn-Pn-Wsch"); 359.6° is 0°.
-- **Layouts** (`variant`): `full` (the default, above); `compact`, the head, then a small ring at the column's start (R 28
-  in a 104 box, a tile's 20 knob, its points in its ticks' band) with the readout 16 beside it — the word, the figure
-  at the large readout's size where it holds, else the small one (the extra-small one before it would be cut), the
-  point and the degrees under it on one line, the stack centred on the ring — the readout under the ring where the
-  column does not leave it a room as wide as the ring beside it (under 224 of content: a phone's narrowest section,
-  half a section), by the column alone and never by the figure, so a card out of reach is drawn as the live one; the
-  readouts at the extra-small size (204, 260 with them; 76 more with the readout under the ring, and in half a section
-  each readout a row of its own); `row`, the house's row (76, 16 in, half a section; the printer's, a car's
-  mini): the card's circle ringed by the compass 3 clear of it (R 26.5: its track in the hairline, north's notch in the
-  text's ink where `north_offset` turns it, the bearing a knob in small, the arc across its sixteenth for lit ticks, or
-  a dot, the second in the secondary ink), its name over its figure, its point and its degrees. The row's line keeps
-  its figure whole: the degrees leave first, then the point (the ring says it), then a band's words; where the figure
-  would not hold beside the circle, the circle and its ring give way. The row is the card's button, its circle a button
-  of its own where it has actions (#179); a row draws no head, no readouts and no letters, and its editor offers none.
-- **The rest** is the gauge's: a figure past a threshold takes its band's colour (the knob, the lit ticks, the figure's
-  ink, the badge's words, the card's wash or edge by `tint`); the readouts under the ring are laid out by the widest
-  figure they write, never a dash; out of reach the ring keeps its ticks and points, the figure and the point read
-  "—" and no pointer is drawn. The direction is said once, in the ring: the badge says the band's words or the
+  bearing itself ("291°" over "WNW"). Under R 56 (half a section) the ring holds the pointers alone, and the figure, the
+  point and the degrees stand under it as a readout, as tall in every language and whatever it reads: a word that leaves
+  keeps its line (the gauge's bar's rule), and the point's line stays one line, the degrees leaving it where they would
+  not hold beside the point (Polish "Zach-Pd-Zach" in half a section).
+- **Words**: a bearing is read in degrees or in English's sixteen letters, never another language's (German's O is East,
+  Spanish's West); it is said in the page's language, a point between two as the language joins them (`compass.point16`:
+  "NNE", 北北東, "Pn-Pn-Wsch"); 359.6° is 0°.
+- **Layouts** (`variant`): `full` (the default, above); `compact`, the head, then a small ring at the column's start (R
+  28 in a 104 box, the arrow in a tile's 20 knob's place, its points in its ticks' band) with the readout 16 beside it —
+  the word, the figure at the large readout's size where it holds, else the small one (the extra-small one before it
+  would be cut), the point and the degrees under it on one line, the stack centred on the ring — the readout under the
+  ring where the column does not leave it a room as wide as the ring beside it (under 224 of content: a phone's
+  narrowest section, half a section), by the column alone and never by the figure, so a card out of reach is drawn as
+  the live one; the readouts at the extra-small size (204, 260 with them; 76 more with the readout under the ring, and
+  in half a section each readout a row of its own); `row`, the house's row (76, 16 in, half a section; the printer's, a
+  car's mini): the card's circle ringed by the compass 3 clear of it (R 26.5: its track in the hairline, north's notch
+  in the text's ink where `north_offset` turns it, the bearing's arrow across the track (12 long and 7.5 wide, its tip 3
+  into the circle it points at, its base no further out than a knob in small reaches), a knob in small where it is asked
+  for, the arc across its sixteenth for lit ticks, or a dot, the second in the secondary ink), its name over its figure,
+  its point and its degrees. The row's line keeps its figure whole: the degrees leave first, then the point (the ring
+  says it), then a band's words; where the figure would not hold beside the circle, the circle and its ring give way.
+  The row is the card's button, its circle a button of its own where it has actions (#179); a row draws no head, no
+  readouts and no letters, and its editor offers none.
+- **The rest** is the gauge's: a figure past a threshold takes its band's colour (the arrow, the knob, the lit ticks,
+  the figure's ink, the badge's words, the card's wash or edge by `tint`); the readouts under the ring are laid out by
+  the widest figure they write, never a dash; out of reach the ring keeps its ticks and points, the figure and the point
+  read "—" and no pointer is drawn. The direction is said once, in the ring: the badge says the band's words or the
   person's own.
 
 ## Several sensors (1.6)
