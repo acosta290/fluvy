@@ -2,6 +2,7 @@ import { gridHeight } from '../energy-family.js';
 import {
   formatNumber,
   strings,
+  withMinus,
   type EntityName,
   type FluvyCardConfig,
   type HomeAssistant,
@@ -713,10 +714,7 @@ export class FluvyGridCard extends Card<GridCardConfig> {
         money
           ? {
               label: g(this.hass, 'net_cost'),
-              value: formatNumber(this.hass, money.net, { digits: 2, minDigits: 2 }).replace(
-                /^-/,
-                '−',
-              ),
+              value: withMinus(formatNumber(this.hass, money.net, { digits: 2, minDigits: 2 })),
               unit: currencySymbol(this.hass),
             }
           : { label: g(this.hass, 'net_cost'), value: '—', unit: '' },

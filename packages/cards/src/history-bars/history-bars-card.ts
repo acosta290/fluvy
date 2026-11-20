@@ -9,6 +9,7 @@ import {
   plural,
   stateText,
   strings as words,
+  withMinus,
   type EntityEntry,
   type EntityView,
   type FluvyCardConfig,
@@ -1204,9 +1205,8 @@ export class FluvyHistoryBarsCard extends Card<HistoryBarsCardConfig> {
    */
   private figure(value: number | null, decimals = this.decimals): string {
     if (value === null || !Number.isFinite(value)) return '—';
-    return formatNumber(this.hass, exact(value), { digits: decimals, minDigits: decimals }).replace(
-      /^-/,
-      '−',
+    return withMinus(
+      formatNumber(this.hass, exact(value), { digits: decimals, minDigits: decimals }),
     );
   }
 

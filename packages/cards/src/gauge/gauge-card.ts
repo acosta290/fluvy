@@ -4,6 +4,7 @@ import {
   formatNumber,
   isUsable,
   strings as words,
+  withMinus,
   type EntityView,
   type FluvyCardConfig,
   type GaugePreset,
@@ -802,10 +803,12 @@ export class FluvyGaugeCard extends Card<GaugeCardConfig> {
     const endDigits = (range: { min: number; max: number }, at: Figures): number =>
       Number.isInteger(range.min / at.divisor) && Number.isInteger(range.max / at.divisor) ? 0 : 1;
     const endOf = (v: number, ways: boolean, at: Figures, digits: number): string => {
-      const shown = formatNumber(this.hass, (ways ? Math.abs(v) : v) / at.divisor, {
-        digits,
-        minDigits: digits,
-      }).replace(/^-/, '−');
+      const shown = withMinus(
+        formatNumber(this.hass, (ways ? Math.abs(v) : v) / at.divisor, {
+          digits,
+          minDigits: digits,
+        }),
+      );
       return [shown, at.unit, ways ? way(v) : ''].filter(Boolean).join(' ');
     };
     const edgeDigits = ends ? endDigits(ends, scale) : 1;

@@ -2,6 +2,7 @@ import { balanceHeight } from '../energy-family.js';
 import {
   formatNumber,
   strings,
+  withMinus,
   type FluvyCardConfig,
   type HomeAssistant,
   type LovelaceConfigForm,
@@ -776,7 +777,7 @@ export class FluvyEnergyBalanceCard extends Card<EnergyBalanceCardConfig> {
       v === undefined
         ? { value: '—', unit: '' }
         : {
-            value: formatNumber(this.hass, v, { digits: 2, minDigits: 2 }).replace(/^-/, '−'),
+            value: withMinus(formatNumber(this.hass, v, { digits: 2, minDigits: 2 })),
             unit,
           };
     const stats = [

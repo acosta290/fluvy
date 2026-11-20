@@ -460,6 +460,39 @@ describe('a reading too long for its tile says itself shorter, never goes (#93)'
   });
 });
 
+describe('a reading below zero: the design’s minus against its figure, in the head and in the foot', () => {
+  afterEach(() => document.body.replaceChildren());
+  const STATES = {
+    'sensor.shed_camera_signal': state('sensor.shed_camera_signal', '-95', {
+      friendly_name: 'Shed camera',
+      device_class: 'signal_strength',
+      unit_of_measurement: 'dBm',
+    }),
+    'sensor.grid_power': state('sensor.grid_power', '-1520', {
+      friendly_name: 'Grid',
+      device_class: 'power',
+      unit_of_measurement: 'W',
+    }),
+  };
+
+  it('writes "−95 dBm", never Intl’s hyphen, which tabular figures set loose ("- 95")', async () => {
+    const [tile] = await drawn(
+      {
+        type: 'custom:fluvy-tile-card',
+        entity: 'sensor.shed_camera_signal',
+        readouts: ['sensor.grid_power'],
+      },
+      STATES,
+    );
+    expect(tile!.querySelector('.fv-tile__value')?.textContent?.replace(/\s+/g, ' ').trim()).toBe(
+      '−95 dBm',
+    );
+    expect(tile!.querySelector('.fv-tile__foot .fv-readout__value')?.textContent?.trim()).toMatch(
+      /^−1\.52\s*kW$/,
+    );
+  });
+});
+
 describe('the tile’s circle: what opens drawn as it stands, Home Assistant’s icon where Fluvy has none', () => {
   afterEach(() => document.body.replaceChildren());
 

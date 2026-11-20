@@ -1,4 +1,4 @@
-import { formatNumber, type HomeAssistant } from '@fluvy/core';
+import { formatNumber, withMinus, type HomeAssistant } from '@fluvy/core';
 import { svg, type SVGTemplateResult } from 'lit';
 
 /**
@@ -17,8 +17,7 @@ export const tickText = (
   hass: HomeAssistant | undefined,
   value: number,
   decimals: number,
-): string =>
-  formatNumber(hass, value, { digits: decimals, minDigits: decimals }).replace(/^-/, '−');
+): string => withMinus(formatNumber(hass, value, { digits: decimals, minDigits: decimals }));
 
 /**
  * A gridline at each `y` from `x1` to `x2`, on the pixel grid (a 1 px line on a half pixel is one pixel): the classic

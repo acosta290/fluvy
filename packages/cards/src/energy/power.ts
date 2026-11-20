@@ -2,6 +2,7 @@ import {
   deviceNameOf,
   formatNumber,
   valueParts,
+  withMinus,
   type EntityView,
   type HomeAssistant,
   type ValueParts,
@@ -186,10 +187,12 @@ export function readoutParts(
     return raw === undefined
       ? valueParts(hass, view, digits === undefined ? {} : { digits, minDigits: digits })
       : {
-          value: formatNumber(hass, raw, {
-            digits: digits ?? (Math.abs(raw) >= 100 ? 0 : 1),
-            ...(digits === undefined ? {} : { minDigits: digits }),
-          }),
+          value: withMinus(
+            formatNumber(hass, raw, {
+              digits: digits ?? (Math.abs(raw) >= 100 ? 0 : 1),
+              ...(digits === undefined ? {} : { minDigits: digits }),
+            }),
+          ),
           unit,
         };
   const figures = figuresOf(hass, asked, base, value, view);
@@ -233,5 +236,8 @@ export function legendParts(
 export function costParts(hass: HomeAssistant | undefined, view: EntityView): ValueParts {
   if (view.status !== 'ok' || view.number === null) return valueParts(hass, view);
   const digits = precisionOf(hass, view) ?? 2;
-  return { value: formatNumber(hass, view.number, { digits, minDigits: digits }), unit: view.unit };
+  return {
+    value: withMinus(formatNumber(hass, view.number, { digits, minDigits: digits })),
+    unit: view.unit,
+  };
 }

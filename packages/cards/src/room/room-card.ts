@@ -17,6 +17,7 @@ import {
   strings,
   textName,
   valueParts,
+  withMinus,
   withTextName,
   type AreaContents,
   type ClimateKind,
@@ -266,7 +267,7 @@ export function writtenReading(
 ): ValueParts {
   const degrees = kind === 'temperature';
   return {
-    value: formatNumber(hass, value, { digits: degrees ? 1 : 0 }),
+    value: withMinus(formatNumber(hass, value, { digits: degrees ? 1 : 0 })),
     unit: degrees ? (hass?.config.unit_system.temperature ?? '°C') : '%',
   };
 }

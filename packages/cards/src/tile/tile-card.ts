@@ -16,6 +16,7 @@ import {
   TOGGLE_DOMAINS,
   toggleEntity,
   valueParts,
+  withMinus,
   type ActionConfig,
   type EntityName,
   type EntityView,
@@ -1056,7 +1057,7 @@ export class FluvyTileCard extends Card<TileCardConfig> {
     const parts =
       measured !== null
         ? {
-            value: formatNumber(this.hass, measured, { digits: 1 }),
+            value: withMinus(formatNumber(this.hass, measured, { digits: 1 })),
             unit: this.hass?.config.unit_system.temperature ?? '°C',
           }
         : sensorLike && item.entity && !level

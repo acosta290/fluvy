@@ -8,6 +8,7 @@ import {
   strings as words,
   toggleEntity,
   valueParts,
+  withMinus,
   type FluvyCardConfig,
   type GaugePreset,
   type LovelaceGridOptions,
@@ -319,11 +320,13 @@ export class FluvyHumidityCard extends Card<HumidityCardConfig> {
           ? { label: strings(this.hass, 'temperature'), ...valueParts(this.hass, temperature) }
           : {
               label: strings(this.hass, 'dew_point'),
-              value: formatNumber(
-                this.hass,
-                fromCelsius(dewPoint(toCelsius(temperature.number, unit), value), unit),
-                { digits: 1 },
-              ).replace(/^-/, '−'),
+              value: withMinus(
+                formatNumber(
+                  this.hass,
+                  fromCelsius(dewPoint(toCelsius(temperature.number, unit), value), unit),
+                  { digits: 1 },
+                ),
+              ),
               unit,
             };
     }

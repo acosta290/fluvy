@@ -56,6 +56,12 @@ export function formatNumber(
   }
 }
 
+/**
+ * A figure with the design's minus (U+2212) where Intl writes a hyphen: among tabular figures Inter sets the hyphen in
+ * a figure's width, its short stroke loose before the figure ("- 95 dBm"). Never for a figure a person types over.
+ */
+export const withMinus = (figure: string): string => figure.replace(/^-/, '−');
+
 /** `Intl.NumberFormat` construction is the expensive part of formatting; every card shares one per locale and option set. */
 const formatters = new Map<string, Intl.NumberFormat>();
 function numberFormat(
@@ -118,11 +124,13 @@ export function valueParts(
     precision !== undefined &&
     (options.digits === undefined || options.digits === precision);
   return {
-    value: formatNumber(hass, scaled.value, {
-      ...options,
-      digits,
-      ...(exact ? { minDigits: options.minDigits ?? precision } : {}),
-    }),
+    value: withMinus(
+      formatNumber(hass, scaled.value, {
+        ...options,
+        digits,
+        ...(exact ? { minDigits: options.minDigits ?? precision } : {}),
+      }),
+    ),
     unit: displayUnit(scaled.unit),
   };
 }

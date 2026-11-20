@@ -11,6 +11,7 @@ import {
   stateSaid,
   stateText,
   valueParts,
+  withMinus,
 } from '../format.js';
 import type { HomeAssistant } from '../ha/types.js';
 
@@ -102,6 +103,34 @@ describe('valueParts', () => {
     expect(valueParts(p, resolveEntity(p, 'sensor.x'))).toEqual({ value: '46', unit: '%' });
     const big = make('es', 'language', '12345.678', { unit_of_measurement: 'kWh' });
     expect(valueParts(big, resolveEntity(big, 'sensor.x'))).toEqual({ value: '12,3', unit: 'MWh' });
+  });
+  it('writes a reading below zero with the design’s minus against its figure, never Intl’s loose hyphen', () => {
+    const signal = make('en', 'language', '-95', {
+      unit_of_measurement: 'dBm',
+      device_class: 'signal_strength',
+    });
+    expect(valueParts(signal, resolveEntity(signal, 'sensor.x'))).toEqual({
+      value: '−95',
+      unit: 'dBm',
+    });
+    const export_ = make('de', 'language', '-1520', { unit_of_measurement: 'W' });
+    expect(valueParts(export_, resolveEntity(export_, 'sensor.x'))).toEqual({
+      value: '−1,52',
+      unit: 'kW',
+    });
+    // Swedish writes the minus itself: once
+    const frost = make('sv', 'language', '-2.5', { unit_of_measurement: '°C' });
+    expect(valueParts(frost, resolveEntity(frost, 'sensor.x')).value).toBe('−2,5');
+  });
+});
+
+describe('withMinus', () => {
+  it('puts the design’s minus in place of a leading hyphen alone', () => {
+    expect(withMinus('-95')).toBe('−95');
+    expect(withMinus('95')).toBe('95');
+    expect(withMinus('−95')).toBe('−95');
+    expect(withMinus('—')).toBe('—');
+    expect(withMinus('2026-11-20')).toBe('2026-11-20');
   });
 });
 

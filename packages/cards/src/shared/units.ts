@@ -1,6 +1,7 @@
 import {
   formatNumber,
   valueParts,
+  withMinus,
   type EntityView,
   type HomeAssistant,
   type ValueParts,
@@ -182,10 +183,7 @@ export function figure(
   // a scaled figure keeps its one decimal (1.0 kW beside 2.2 kW; 0.4 and 0 stay as they are), as does a precision
   // the entity asks for
   const fixed = precision !== undefined || (scale.divisor > 1 && size >= 1 && size < 100);
-  return formatNumber(hass, shown, { digits, ...(fixed ? { minDigits: digits } : {}) }).replace(
-    /^-/,
-    '−',
-  ); // the design's minus, not a hyphen
+  return withMinus(formatNumber(hass, shown, { digits, ...(fixed ? { minDigits: digits } : {}) }));
 }
 
 /** A base-unit figure as its set writes it: in the set's unit, at the set's decimals. */
