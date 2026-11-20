@@ -5,6 +5,8 @@ and the versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.23.0] — 2026-11-20
+
 ### Visible on upgrade
 
 Nothing new shows by itself in this release: every new function is a key, an option or a setting that is off until it is
