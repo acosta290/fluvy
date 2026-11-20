@@ -474,6 +474,39 @@ describe('the Compass card', () => {
     }
   });
 
+  it('in a small ring the line under the figure holds the open centre: the degrees leave, then the point; the line keeps its place', async () => {
+    // the point's line `letter` a letter, the rest 8
+    let letter = 8;
+    const ruler = vi
+      .spyOn(TextRuler.prototype, 'width')
+      .mockImplementation((cls: string, text: string, _unitCls?: string, unit = '') =>
+        cls.includes('cp-point-word') ? (text.length + unit.length) * letter : 8,
+      );
+    /** The line under the figure of a card 211 wide (R 60: its open centre 96, 80 of it for a line), `at` a letter. */
+    const line = async (config: Partial<CompassCardConfig>, at: number): Promise<string | null> => {
+      letter = at;
+      const card = await mount(config);
+      card.width = 211;
+      await card.updateComplete;
+      card.remove();
+      const sub = card.shadowRoot!.querySelector('.fv-dial__disc .fv-dial__sub');
+      return sub ? (sub.textContent ?? '').replace(/\s+/g, ' ').trim() : null;
+    };
+    const wind = { entity: 'sensor.wind_speed', direction_entity: 'sensor.wind_bearing' };
+    try {
+      // "WSW · 248°" at 8 a letter is 80: it holds
+      expect(await line(wind, 8)).toBe('WSW · 248°');
+      // at 12 the degrees leave (120), the point holds (36)
+      expect(await line(wind, 12)).toBe('WSW');
+      // at 30 the point alone (90) does not hold: the degrees are said alone
+      expect(await line(wind, 30)).toBe('248°');
+      // the sun's figure is its degrees: its line stays, empty
+      expect(await line({ direction_entity: 'sun.sun' }, 30)).toBe('');
+    } finally {
+      ruler.mockRestore();
+    }
+  });
+
   it('declares the part of a section `grid_options` asks: in half of one the reading is under the ring', () => {
     const config = {
       type: 'custom:fluvy-compass-card',

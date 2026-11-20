@@ -953,11 +953,14 @@ azimuth. One shape of its own, its arrow; every other part is a control the hous
 - **The open centre** is the gauge's dial's: the word over the figure (11/600 uppercase: the person's `label`, else what
   the figure is, which leaves where its line cannot hold it), the figure at the largest of the dial's sizes its disc
   holds with its unit (48, 32 on a small ring, then 24, 20, 16), and under it the point and the degrees ("WSW · 248°",
-  13/500, the point 600 in the text's ink). The figure is the card's sensor, else a weather entity's wind, else the
-  bearing itself ("291°" over "WNW"). Under R 56 (half a section) the ring holds the pointers alone, and the figure, the
-  point and the degrees stand under it as a readout, as tall in every language and whatever it reads: a word that leaves
-  keeps its line (the gauge's bar's rule), and the point's line stays one line, the degrees leaving it where they would
-  not hold beside the point (Polish "Zach-Pd-Zach" in half a section).
+  13/500, the point 600 in the text's ink), one line in the room the word over the figure has: the degrees leave where
+  they would not hold beside the point, and where the point alone would not hold (Polish "Wsch-Pd-Wsch" in a ring of 60,
+  which ran under the pointer) the degrees are said alone, or, where the figure is them, the line stays empty in its
+  place. The figure is the card's sensor, else a weather entity's wind, else the bearing itself ("291°" over "WNW").
+  Under R 56 (half a section) the ring holds the pointers alone, and the figure, the point and the degrees stand under
+  it as a readout, as tall in every language and whatever it reads: a word that leaves keeps its line (the gauge's bar's
+  rule), and the point's line stays one line, the degrees leaving it where they would not hold beside the point (Polish
+  "Zach-Pd-Zach" in half a section).
 - **Words**: a bearing is read in degrees or in English's sixteen letters, never another language's (German's O is East,
   Spanish's West); it is said in the page's language, a point between two as the language joins them (`compass.point16`:
   "NNE", 北北東, "Pn-Pn-Wsch"); 359.6° is 0°.

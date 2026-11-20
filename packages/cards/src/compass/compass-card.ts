@@ -439,6 +439,12 @@ export class FluvyCompassCard extends Card<CompassCardConfig> {
       .cp-under .fv-readout__value {
         justify-content: center;
       }
+      /* a figure too wide for the small size steps to the extra-small one in the small one's line: the card is as tall
+         whatever it reads (it was 4 shorter) */
+      .cp-under .fv-readout--xs .fv-readout__value {
+        height: 24px;
+        line-height: 24px;
+      }
       /* the compact card: its small ring at the start, its figure beside it, the point and the degrees under that */
       .so-gauge.cp-beside {
         align-items: center;
@@ -999,24 +1005,28 @@ export class FluvyCompassCard extends Card<CompassCardConfig> {
   }
 
   /**
-   * The line under the figure: the point, and the degrees where the figure is not already them. Outside the ring it
-   * is one line in its `room`, whatever the bearing says: the degrees leave where they would not hold beside the point
-   * (Polish "Zach-Pd-Zach" in half a section), as the row's do.
+   * The line under the figure: the point, and the degrees where the figure is not already them, one line in its
+   * `room` whatever the bearing says: the degrees leave where they would not hold beside the point (Polish
+   * "Zach-Pd-Zach" in half a section), as the row's do. In the ring's open centre (`dial`, its size) the point leaves
+   * too where it alone would not hold (Polish "Wsch-Pd-Wsch" in a ring of 60, which ran under the pointer), the
+   * degrees then said alone, or nothing where the figure is them: the line keeps its place.
    */
   private renderPoint(
     reading: Reading,
     point: string,
     degrees: string,
     room = Infinity,
+    dial?: 'l' | 's',
   ): TemplateResult {
+    const line = dial ? `fv-dial fv-dial--${dial} > fv-dial__sub` : 'fv-dial__sub';
+    const holds = (tail: string): boolean =>
+      room === Infinity ||
+      this.head.ruler.width(`${line} cp-point-word`, point, 'fv-dial__sub', tail) <= room;
     const tail = ` · ${degrees}`;
-    const said =
-      !reading.bearing &&
-      degrees !== '' &&
-      (room === Infinity ||
-        this.head.ruler.width('fv-dial__sub cp-point-word', point, 'fv-dial__sub', tail) <= room);
+    const said = !reading.bearing && degrees !== '';
+    if (dial && !holds('')) return html`<p class="fv-dial__sub">${said ? degrees : '\u00a0'}</p>`;
     return html`<p class="fv-dial__sub">
-      <span class="cp-point-word">${point}</span>${said ? tail : nothing}
+      <span class="cp-point-word">${point}</span>${said && holds(tail) ? tail : nothing}
     </p>`;
   }
 
@@ -1062,7 +1072,7 @@ export class FluvyCompassCard extends Card<CompassCardConfig> {
         <span>${reading.value}</span
         >${reading.unit ? html`<span class="fv-unit">${reading.unit}</span>` : nothing}
       </p>
-      ${this.renderPoint(reading, point, degrees)}
+      ${this.renderPoint(reading, point, degrees, 2 * (disc - 8), large ? 'l' : 's')}
     </div>`;
   }
 
