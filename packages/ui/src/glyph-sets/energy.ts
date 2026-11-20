@@ -23,7 +23,7 @@ export const ENERGY_GLYPHS = {
     '<path d="M4 10.5 12 4l8 6.5v8.5a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2Z"/><rect x="9.25" y="11.5" width="5.5" height="7" rx="1.25"/><path d="M11 9.75h2"/><rect x="10.75" y="15" width="2.5" height="2" rx=".5" fill="currentColor" stroke="none"/>',
   /** a car's charger: its post with a bolt, the cable to its plug */
   evPlug:
-    '<rect x="3" y="3" width="10" height="18" rx="2.5"/><path d="M8.75 6.5 6.5 11h3L7.25 15.5"/><path d="M13 16.5h1.5a2 2 0 0 0 2-2V12a1.75 1.75 0 0 1 3.5 0v-1.5"/><path d="M18.25 10.5V7.5h3.5v3Z"/><path d="M19 7.5V5.5"/><path d="M21 7.5V5.5"/>',
+    '<rect x="3" y="3" width="10" height="18" rx="2.5"/><path d="M8.75 6.5 6.5 11h3L7.25 15.5"/><path d="M13 16.5h1.25a1.5 1.5 0 0 0 1.5-1.5V12a1.75 1.75 0 0 1 3.5 0v-1.5"/><path d="M17.5 10.5V7.5h3.5v3Z"/><path d="M18.25 7.5V5.5"/><path d="M20.25 7.5V5.5"/>',
   /** an electricity meter: its counter over a bolt */
   electricMeter: `${METER}<path d="M12.75 12 10.5 15.75h3l-2.25 3.75"/>`,
   /** a gas meter: its counter over a flame */

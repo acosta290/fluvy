@@ -1,4 +1,12 @@
-import { CARD_ICONS } from '@fluvy/ui';
+import { CARD_ICONS, glyphBody, glyphNames } from '@fluvy/ui';
+import { CLIMATE_GLYPHS } from '@fluvy/ui/glyph-sets/climate';
+import { DEVICE_GLYPHS } from '@fluvy/ui/glyph-sets/devices';
+import { ENERGY_GLYPHS } from '@fluvy/ui/glyph-sets/energy';
+import { HOME_GLYPHS } from '@fluvy/ui/glyph-sets/home';
+import { LEVEL_GLYPHS } from '@fluvy/ui/glyph-sets/levels';
+import { OUTDOOR_GLYPHS } from '@fluvy/ui/glyph-sets/outdoor';
+import { ROOM_GLYPHS } from '@fluvy/ui/glyph-sets/rooms';
+import { SAFETY_GLYPHS } from '@fluvy/ui/glyph-sets/safety';
 import { describe, expect, it } from 'vitest';
 import { ON_DEMAND_PATHS, PARTS, type Outline } from '../icons/generated-on-demand.js';
 import { ICON_PATHS } from '../icons/generated.js';
@@ -16,35 +24,83 @@ async function everyPart(): Promise<Record<string, Readonly<Record<string, Outli
   return parts;
 }
 
+/** What an outline draws: its paths, less the empty one of a glyph drawn all faint (a signal no bar reaches). */
+const drawnOf = (outline: Outline): string[] =>
+  (typeof outline === 'string' ? [outline] : outline).filter(Boolean);
+
+/** A ring's points: its absolute start, then each relative step. */
+function pointsOf(ring: string): [number, number][] {
+  const [start = '', steps = ''] = ring.slice(1, -1).split('l');
+  const numbers = (text: string): number[] =>
+    (text.match(/-?(?:\d+\.?\d*|\.\d+)/g) ?? []).map(Number);
+  let [x = 0, y = 0] = numbers(start);
+  const moves = numbers(steps);
+  const points: [number, number][] = [[x, y]];
+  for (let i = 0; i < moves.length; i += 2) {
+    x += moves[i] ?? 0;
+    y += moves[i + 1] ?? 0;
+    points.push([x, y]);
+  }
+  return points;
+}
+
+const kebab = (name: string): string => name.replace(/([a-z0-9])([A-Z])/g, '$1-$2').toLowerCase();
+
+/** Each glyph's stroke by its `fluvy:` name: the set's 1.75, else what its table says (a signal's 2.2). */
+const STROKES: Readonly<Record<string, number>> = Object.fromEntries([
+  ...glyphNames.map((name) => [kebab(name), glyphBody(name).strokeWidth]),
+  ...[
+    LEVEL_GLYPHS,
+    ENERGY_GLYPHS,
+    DEVICE_GLYPHS,
+    CLIMATE_GLYPHS,
+    SAFETY_GLYPHS,
+    OUTDOOR_GLYPHS,
+    HOME_GLYPHS,
+    ROOM_GLYPHS,
+  ].flatMap((table) =>
+    Object.entries(table).map(([name, glyph]: [string, string | readonly [string, number]]) => [
+      kebab(name),
+      typeof glyph === 'string' ? 1.75 : glyph[1],
+    ]),
+  ),
+]);
+
 describe('fluvy icon set', () => {
   it('outlines every glyph as closed filled rings on the 24 grid', async () => {
     expect((await iconNames()).length).toBeGreaterThanOrEqual(240);
     for (const part of Object.values(await everyPart()))
       for (const [name, outline] of Object.entries(part)) {
         expect(name, name).toMatch(/^[a-z0-9-]+$/);
-        // a glyph drawn all faint (a signal no bar reaches) has no path of its own, only its faint one
-        const drawn = (typeof outline === 'string' ? [outline] : outline).filter(Boolean);
+        const drawn = drawnOf(outline);
         expect(drawn.length, name).toBeGreaterThan(0);
         for (const path of drawn) {
           // each ring: an absolute start, relative steps, closed
           const rings = path.match(/M[^Mz]*z/g) ?? [];
           expect(rings.join(''), name).toBe(path);
-          for (const ring of rings) {
-            const [start = '', steps = ''] = ring.slice(1, -1).split('l');
-            const numbers = (text: string): number[] =>
-              (text.match(/-?(?:\d+\.?\d*|\.\d+)/g) ?? []).map(Number);
-            let [x = 0, y = 0] = numbers(start);
-            const moves = numbers(steps);
-            for (let i = 0; i <= moves.length; i += 2) {
-              expect(x, `${name}: x`).toBeGreaterThanOrEqual(-0.5);
-              expect(x, `${name}: x`).toBeLessThanOrEqual(24.5);
-              expect(y, `${name}: y`).toBeGreaterThanOrEqual(-0.5);
-              expect(y, `${name}: y`).toBeLessThanOrEqual(24.5);
-              x += moves[i] ?? 0;
-              y += moves[i + 1] ?? 0;
-            }
+          for (const [x, y] of rings.flatMap(pointsOf)) {
+            expect(x, `${name}: x`).toBeGreaterThanOrEqual(-0.5);
+            expect(x, `${name}: x`).toBeLessThanOrEqual(24.5);
+            expect(y, `${name}: y`).toBeGreaterThanOrEqual(-0.5);
+            expect(y, `${name}: y`).toBeLessThanOrEqual(24.5);
           }
         }
+      }
+  });
+
+  it('keeps every glyph inside the set’s ink: 3..21 about the centre and half its stroke, a round’s overshoot at most half a unit', async () => {
+    for (const part of Object.values(await everyPart()))
+      for (const [name, outline] of Object.entries(part)) {
+        // the outline's grid with the set's scale undone (10/9 about the centre: Material's ink, 2..22)
+        const ink = drawnOf(outline)
+          .flatMap((path) => path.match(/M[^Mz]*z/g) ?? [])
+          .flatMap(pointsOf)
+          .flat()
+          .map((at) => 12 + ((at - 12) * 9) / 10);
+        // a round's overshoot (the sun, a thermometer's bulb) is the hand's; a flat edge past 21 is not (#226)
+        const reach = 9 + (STROKES[name] ?? 1.75) / 2 + 0.5;
+        expect(Math.min(...ink), name).toBeGreaterThanOrEqual(12 - reach);
+        expect(Math.max(...ink), name).toBeLessThanOrEqual(12 + reach);
       }
   });
 
