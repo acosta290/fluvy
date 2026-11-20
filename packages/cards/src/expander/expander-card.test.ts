@@ -843,9 +843,14 @@ describe('cards for a head', () => {
       (await drawn({ ...TODAY, ...config }, house(LIGHTS), width)).root
         .querySelector<HTMLElement>('.ex-heads > .ex-cards')!
         .getAttribute('style')!;
-    expect(await grid({})).toBe('--ex-columns:1;--ex-gap:40px');
+    // on the surface, what is held keeps its padding on the round's side (a lit card's skin short of the round)
+    expect(await grid({})).toBe('--ex-columns:1;--ex-gap:40px;--fv-held-bleed-end:0');
+    expect(await grid({ chevron_position: 'start' })).toBe(
+      '--ex-columns:1;--ex-gap:40px;--fv-held-bleed-start:0',
+    );
+    expect(await grid({ show_chevron: false })).toBe('--ex-columns:1;--ex-gap:40px');
     expect(await grid({ columns: 2, gap: 16, head_cards: [CLOCK, CLOCK] })).toBe(
-      '--ex-columns:2;--ex-gap:16px',
+      '--ex-columns:2;--ex-gap:16px;--fv-held-bleed-end:0',
     );
     // beside the round a phone's page holds one card on the page, two on its surface
     expect(await grid({ columns: 2, style: 'plain', head_cards: [CLOCK, CLOCK] })).toBe(

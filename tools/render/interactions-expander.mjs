@@ -729,4 +729,39 @@ const transparent = (colour) => colour === 'rgba(0, 0, 0, 0)' || colour === 'tra
   await house.close();
 }
 
+/* ---------- a lit card for a head: its skin short of the round (1.23) ---------- */
+{
+  /** The Template card's skin and the round, each [start, end] in px from the surface's start; the surface's width. */
+  const skin = (locator) =>
+    locator.evaluate((el) => {
+      const root = el.shadowRoot;
+      const box = root.querySelector('[data-card]').getBoundingClientRect();
+      const tile = el.querySelector('fluvy-template-card').shadowRoot.querySelector('.fv-tile');
+      const span = (node) => {
+        const own = node.getBoundingClientRect();
+        return [Math.round(own.left - box.left), Math.round(own.right - box.left)];
+      };
+      return {
+        lit: tile.classList.contains('is-on'),
+        skin: span(tile),
+        round: span(root.querySelector('button.fv-round')),
+        width: Math.round(box.width),
+      };
+    });
+  const page = await suite.sheet('expander');
+  const end = await skin(card(page, 'A lit Template card for a head', 0));
+  check(
+    'a lit Template card for a head wears its skin from the surface’s edge to 12 short of the round, never under it',
+    end.lit && end.skin[0] === 0 && end.skin[1] === end.round[0] - 12,
+    JSON.stringify(end),
+  );
+  const start = await skin(card(page, 'A lit Template card for a head', 1));
+  check(
+    '…and with the round at its start, from 12 after the round to the surface’s other edge',
+    start.lit && start.skin[0] === start.round[1] + 12 && start.skin[1] === start.width,
+    JSON.stringify(start),
+  );
+  await page.close();
+}
+
 await suite.finish();

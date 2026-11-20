@@ -3236,7 +3236,9 @@ the tile card's tile of the same entity, byte for byte.
   surface of an Expander, a Swipe or the sidebar it stands on the card as a tile, with its surface and its 16 inside
   the column; the card look is held there as a card is: at rest it draws no surface of its own and turns its 20 out, so
   its circle stands under the head's (for a head, where the head's own would) and its words in the column. Lit, tinted
-  or out of reach it wears the tile's skin, from the surface's edge to edge where it is held, as a lit light card does.
+  or out of reach it wears the tile's skin, from the surface's edge to edge where it is held, as a lit light card does;
+  for a head beside the Expander's round it keeps its 20 on the round's side (`--fv-held-bleed-start`,
+  `--fv-held-bleed-end`), at rest too, so its skin ends 12 short of the round with its own corners, never under it.
   Its words give way as a compact tile 8 narrower (its sides are 4 wider), what its sheet's container rules read too.
 - Its chunk is its own (`template`, 2.1 KB of 8): every page carries only its tag and height (`template-family.ts`).
 - **Chips (1.13, #87).** A chip of the chips card takes the same templates for its words, its icon and its colour (the

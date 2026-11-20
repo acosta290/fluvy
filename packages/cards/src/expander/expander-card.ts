@@ -347,8 +347,9 @@ export class FluvyExpanderCard extends Card<ExpanderCardConfig> {
         padding-top: var(--ex-gap);
       }
       /* on the surface the fold reaches its edges, and what it holds stands in the head's column: a card of Fluvy's
-         draws no surface (--fv-held) and turns its own padding out (--fv-held-bleed), one of Home Assistant's wears
-         none (--ha-card-*); what stood on the page there stands on the card, in the card's inks */
+         draws no surface (--fv-held) and turns its own padding out (--fv-held-bleed: every side alike, but the side of
+         a head's round, which renderHeadCards says), one of Home Assistant's wears none (--ha-card-*); what stood on
+         the page there stands on the card, in the card's inks */
       .ex-card > .ex-body {
         margin: 0 -${PADDING}px;
       }
@@ -358,6 +359,8 @@ export class FluvyExpanderCard extends Card<ExpanderCardConfig> {
       .ex-card .ex-cards {
         --fv-held: none;
         --fv-held-bleed: -1;
+        --fv-held-bleed-start: initial;
+        --fv-held-bleed-end: initial;
         --ha-card-background: transparent;
         --ha-card-border-width: 0px;
         --ha-card-box-shadow: none;
@@ -1121,11 +1124,14 @@ export class FluvyExpanderCard extends Card<ExpanderCardConfig> {
     const beside = this.beside;
     const round = beside ? this.renderRound(open, said) : nothing;
     const start = this.place === 'start';
+    // on the surface a card in a card's look keeps its padding on the round's side: lit, its skin never passes
+    // under the round
+    const kept = beside && !this.plain ? `;--fv-held-bleed-${start ? 'start' : 'end'}:0` : '';
     return html`<div class="ex-heads" role="group" aria-label=${title}>
       ${start ? round : nothing}
       <div
         class="ex-cards"
-        style="--ex-columns:${this.columns(beside)};--ex-gap:${expanderGap(config)}px"
+        style="--ex-columns:${this.columns(beside)};--ex-gap:${expanderGap(config)}px${kept}"
       >
         <slot name="head"></slot>
       </div>

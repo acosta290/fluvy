@@ -658,6 +658,51 @@ export const sheet: SheetSpec = {
         },
       ],
     },
+    // lit, its skin from the surface's edges to the head's column, never under the chevron's round beside it; at the
+    // round's start too
+    {
+      title: 'A lit Template card for a head',
+      cards: [
+        {
+          type: EXPANDER,
+          title: 'Terrace',
+          remember: 'off',
+          head_cards: [
+            {
+              type: TEMPLATE,
+              entity: 'light.ex_terrace',
+              name: 'Terrace',
+              secondary: "Lit at {{ (state_attr(entity, 'brightness') / 2.55) | round(0) }} %",
+              variant: 'card',
+            },
+          ],
+          cards: [LIGHT],
+        },
+        {
+          type: EXPANDER,
+          title: 'Garage',
+          remember: 'off',
+          chevron_position: 'start',
+          head_cards: [
+            {
+              type: TEMPLATE,
+              entity: 'binary_sensor.ex_garage_door',
+              name: 'Garage',
+              icon: 'garage',
+              secondary: "{{ 'Door open' if is_state(entity, 'on') else 'Door shut' }}",
+              variant: 'card',
+            },
+          ],
+          cards: [
+            {
+              type: 'custom:fluvy-tiles-card',
+              size: 'compact',
+              tiles: [{ entity: 'light.ex_garage' }, { entity: 'switch.ex_charger' }],
+            },
+          ],
+        },
+      ],
+    },
     // a tile and a player's row for a head on its surface: each keeps a surface of its own, the card's 20 round it,
     // as the card declares
     {

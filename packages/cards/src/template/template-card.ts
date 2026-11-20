@@ -106,7 +106,8 @@ export class FluvyTemplateCard extends FluvyTileCard {
    * and its height (84, 96 with its name in two lines), so it stands as the other cards' heads stand. Held by another
    * card's surface (an Expander's, a Swipe's, the sidebar's) it draws none of its own at rest and turns its 20 out as
    * a card does, its circle in the holder's column; lit, tinted or out of reach it wears the tile's skin from edge to
-   * edge there, as a lit light card does.
+   * edge there, as a lit light card does, but on the side of a round the holder stands beside it
+   * (`--fv-held-bleed-start`, `--fv-held-bleed-end`), where it keeps its 20.
    */
   static override styles: CSSResultGroup = [
     ...(FluvyTileCard.styles as CSSResultGroup[]),
@@ -129,8 +130,12 @@ export class FluvyTemplateCard extends FluvyTileCard {
       :host([card-look][borderless]) .fv-tile--compact:not(.is-on, .is-tinted, .fv-tile--off) {
         box-shadow: var(--fv-held, var(--fv-hover-edge, none));
       }
+      /* held, its 20 turned out; beside a holder's round (an Expander's head) kept on the round's side, so a lit skin
+         ends 12 short of the round, never under it */
       :host([card-look]) {
         margin: calc(var(--fv-held-bleed, 0) * 20px);
+        margin-inline: calc(var(--fv-held-bleed-start, var(--fv-held-bleed, 0)) * 20px)
+          calc(var(--fv-held-bleed-end, var(--fv-held-bleed, 0)) * 20px);
       }
     `,
   ];
