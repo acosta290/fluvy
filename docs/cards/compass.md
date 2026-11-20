@@ -208,7 +208,7 @@ indicator: ticks
 - Without `entity` or a weather entity, the ring reads the bearing itself ("291°" over "WNW").
 - `indicator`: `arrow` (the default, laid across the ring at the bearing and pointing in), `knob`, `ticks` (the ticks
   lit across the bearing's sixteenth) or `dot`; the second bearing's `secondary_indicator` is a `dot` by default, in
-  the secondary ink, and its `arrow` a smaller one.
+  the secondary ink, and its `arrow` the arrow's outline.
 - `north_offset` turns the ring for a window that does not face north: `-90` puts east at the top. The letters stay
   upright.
 - In half a section the figure, the point and the degrees stand under the ring.

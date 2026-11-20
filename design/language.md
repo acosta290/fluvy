@@ -934,22 +934,24 @@ azimuth. One shape of its own, its arrow; every other part is a control the hous
   secondary's; `north_offset` turns the ring (east at the top for a window facing east) and the letters stay upright.
   Without ticks, a 2 px ring in the hairline is the knob's track.
 - **The bearing** is marked by the compass's **arrow** (the default, 1.23 polish: "compasses usually have an arrow"): a
-  compass rose's point made an arrowhead, laid across the ring where the bearing is and pointing in at the figure, as a
-  bezel's index points at its mark and the wind blows from its bearing. It stands in the knob's place and is sized from
-  the knob the ring carries (for the thermostat's 36: 31 long and 17 wide, its tip 12 inside the ring, at the open
-  centre's edge, its base 19 outside it, past the ticks, its base notched 3.5; 28 and 20 on smaller rings in the same
-  proportions), its corners rounded by a 1.5 stroke of its own ink, its clockwise half a facet in the ink's shade (the
-  tone's ink 70 % with the text's: deeper in light, lighter in dark), lifted as the knob is (0 2 2, the palette's share
-  of it) and glowing in dark as a lit tick. It turns to a new bearing the short way round (350° to 10° is 20° clockwise)
-  and settles there on the house's spring (640 ms; still under reduced motion). What it covers gives way, never cut: the
-  ticks it would touch (4 clear of their lines) fade out and back as it leaves, and a cardinal point it stands on fades
-  as well, as does a point under a knob's halo or a dot, where the letters were cut before. Or a control read: the
-  thermostat's **knob** riding the ring (36, 28 on a small ring; its dot, its lift, its halo cutting the ticks), the
-  ring's **ticks lit** across the bearing's sixteenth (11.25° either side, the gauge's lit ticks, glowing in dark), or
-  the dial's **dot** outside the ticks (3, as the thermostat's current reading). A second bearing to compare against (a
-  10-minute average, the sun) is drawn under the first in the secondary ink: a dot by default; its arrow, where it is
-  asked for one, is three quarters of the first's and lies flat. Each pointer is a layer of its own over the ring, the
-  second's under the first's. Nothing is marked where the bearing cannot be read.
+  compass needle's head, isosceles and slim, symmetric about its axis and of one ink, laid across the ring where the
+  bearing is and pointing in at the figure, as a bezel's index points at its mark and the wind blows from its bearing.
+  It stands in the knob's place, as long as the knob the ring carries is wide (for the thermostat's 36: 35 long and 17
+  wide, its tip 12 inside the ring, at the open centre's edge, its base 23 outside it, past the ticks, gently notched 3;
+  28 and 20 on smaller rings in the same proportions), so it holds its own beside the 48 figure; its corners rounded by
+  a 1.5 stroke of its own ink, lifted as the knob is (0 2 2, the palette's share of it) and glowing in dark as a lit
+  tick. A two-tone facet, a fold down its axis or a deep notch reads as a paper plane or a cursor at an angle (248°):
+  none of them. It turns to a new bearing the short way round (350° to 10° is 20° clockwise) and settles there on the
+  house's spring (640 ms; still under reduced motion). What it covers gives way, never cut: the ticks it would touch (4
+  clear of their lines) fade out and back as it leaves, and a cardinal point it stands on fades as well, as does a point
+  under a knob's halo or a dot, where the letters were cut before. Or a control read: the thermostat's **knob** riding
+  the ring (36, 28 on a small ring; its dot, its lift, its halo cutting the ticks), the ring's **ticks lit** across the
+  bearing's sixteenth (11.25° either side, the gauge's lit ticks, glowing in dark), or the dial's **dot** outside the
+  ticks (3, as the thermostat's current reading). A second bearing to compare against (a 10-minute average, the sun) is
+  drawn under the first in the secondary ink: a dot by default; its arrow, where it is asked for one, is the same head
+  unnotched, its outline alone (1.5) and flat, never a second filled arrow beside the first (a notched outline is the
+  paper plane again). Each pointer is a layer of its own over the ring, the second's under the first's. Nothing is
+  marked where the bearing cannot be read.
 - **The open centre** is the gauge's dial's: the word over the figure (11/600 uppercase: the person's `label`, else what
   the figure is, which leaves where its line cannot hold it), the figure at the largest of the dial's sizes its disc
   holds with its unit (48, 32 on a small ring, then 24, 20, 16), and under it the point and the degrees ("WSW · 248°",
@@ -973,13 +975,13 @@ azimuth. One shape of its own, its arrow; every other part is a control the hous
   the live one; the readouts at the extra-small size (204, 260 with them; 76 more with the readout under the ring, and
   in half a section each readout a row of its own); `row`, the house's row (76, 16 in, half a section; the printer's, a
   car's mini): the card's circle ringed by the compass 3 clear of it (R 26.5: its track in the hairline, north's notch
-  in the text's ink where `north_offset` turns it, the bearing's arrow across the track (12 long and 7.5 wide, its tip 3
-  into the circle it points at, its base no further out than a knob in small reaches), a knob in small where it is asked
-  for, the arc across its sixteenth for lit ticks, or a dot, the second in the secondary ink), its name over its figure,
-  its point and its degrees. The row's line keeps its figure whole: the degrees leave first, then the point (the ring
-  says it), then a band's words; where the figure would not hold beside the circle, the circle and its ring give way.
-  The row is the card's button, its circle a button of its own where it has actions (#179); a row draws no head, no
-  readouts and no letters, and its editor offers none.
+  in the text's ink where `north_offset` turns it, the bearing's arrow across the track (the same head, 14 long and 6.8
+  wide, its tip 5 into the circle it points at, its base no further out than a knob in small reaches), a knob in small
+  where it is asked for, the arc across its sixteenth for lit ticks, or a dot, the second in the secondary ink), its
+  name over its figure, its point and its degrees. The row's line keeps its figure whole: the degrees leave first, then
+  the point (the ring says it), then a band's words; where the figure would not hold beside the circle, the circle and
+  its ring give way. The row is the card's button, its circle a button of its own where it has actions (#179); a row
+  draws no head, no readouts and no letters, and its editor offers none.
 - **The rest** is the gauge's: a figure past a threshold takes its band's colour (the arrow, the knob, the lit ticks,
   the figure's ink, the badge's words, the card's wash or edge by `tint`); the readouts under the ring are laid out by
   the widest figure they write, never a dash; out of reach the ring keeps its ticks and points, the figure and the point

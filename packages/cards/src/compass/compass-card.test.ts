@@ -219,7 +219,7 @@ describe('the Compass card', () => {
     const dot = await mount({ direction_entity: 'sensor.wind_bearing', indicator: 'dot' });
     expect(dot.shadowRoot?.querySelectorAll('circle.cp-dot')).toHaveLength(1);
     expect(dot.shadowRoot?.querySelectorAll('.fv-knob, .cp-arrow')).toHaveLength(0);
-    // a second arrow: smaller, flat, in the secondary ink, under the first
+    // a second arrow: its outline alone, flat, in the secondary ink, under the first
     const two = await mount({
       direction_entity: 'sensor.wind_bearing',
       secondary_direction_entity: 'sensor.wind_average',
@@ -229,16 +229,26 @@ describe('the Compass card', () => {
     expect(second?.classList.contains('is-second')).toBe(true);
     expect(second?.closest('svg')?.classList.contains('cp-lift')).toBe(false);
     expect(first?.closest('svg')?.classList.contains('cp-lift')).toBe(true);
-    const length = (arrow: Element | undefined): number => {
-      const ys = (arrow?.querySelector('path')?.getAttribute('d') ?? '')
-        .match(/-?[\d.]+/g)!
-        .map(Number)
-        .filter((_, i) => i % 2 === 1);
-      return Math.max(...ys) - Math.min(...ys);
+    /** An arrow's corners, x and y, as its outline draws them. */
+    const corners = (arrow: Element | undefined): number[][] => {
+      const xy = (arrow?.getAttribute('d') ?? '').match(/-?[\d.]+/g)!.map(Number);
+      return xy.flatMap((v, i) => (i % 2 === 0 ? [[v, xy[i + 1]!]] : []));
     };
-    // the ring's own 31 long (its tip 12 inside the ring, its base 19 outside), the second's three quarters of it
-    expect(length(first)).toBeCloseTo(31);
-    expect(length(second)).toBeCloseTo(31 * 0.75);
+    // the ring's own a needle's head, symmetric about its axis, drawn at the top of its 240 box: its tip 12 inside the
+    // ring of 96, its wings 23 outside it and 8.5 either side, its notch 3 into its base; 35 long, as the knob is wide
+    expect(corners(first)).toEqual([
+      [120, 36],
+      [128.5, 1],
+      [120, 4],
+      [111.5, 1],
+    ]);
+    // the second's the same head, unnotched, its outline alone
+    expect(corners(second)).toEqual([
+      [120, 36],
+      [128.5, 1],
+      [120, 1],
+      [111.5, 1],
+    ]);
   });
 
   it('turns its arrow the short way round, and clears what it covers: the ticks under it, a point it stands on', async () => {
@@ -380,7 +390,7 @@ describe('the Compass card', () => {
     const root = card.shadowRoot!;
     expect(root.querySelector('.cp-dial svg')?.getAttribute('width')).toBe('104');
     // the arrow in the tile's knob's place: its tip 20/3 inside the ring of 28
-    expect(root.querySelector('.cp-arrow path')?.getAttribute('d')).toMatch(/^M52 30\.67L/);
+    expect(root.querySelector('.cp-arrow')?.getAttribute('d')).toMatch(/^M52 30\.67L/);
     const knob = await mount({
       variant: 'compact',
       direction_entity: 'sensor.wind_bearing',

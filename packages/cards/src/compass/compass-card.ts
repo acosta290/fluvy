@@ -234,33 +234,27 @@ interface Dart {
 }
 
 /**
- * The arrow in a knob's place, in the same proportions at every size: for the thermostat's 36, 31 long and 17 wide,
- * its tip 12 inside the ring (the open centre's edge), its base 19 outside it (past the ticks), notched 3.5.
+ * The arrow in a knob's place, as long as the knob is wide and in the same proportions at every size: for the
+ * thermostat's 36, a compass needle's head, isosceles and slim, 35 long and 17 wide, its tip 12 inside the ring (the
+ * open centre's edge), its base 23 outside it (past the ticks), gently notched (3).
  */
 const dartOf = (size: number): Dart => {
   const k = size / 36;
-  return { in: 12 * k, out: 19 * k, half: 8.5 * k, notch: 3.5 * k };
+  return { in: 12 * k, out: 23 * k, half: 8.5 * k, notch: 3 * k };
 };
 
 /**
- * A row's arrow across its track, 12 long and 7.5 wide: its tip 3 into the circle it points at, its base no further
- * out than the knob in small reaches.
+ * A row's arrow across its track in the same proportions, 14 long: its tip 5 into the circle it points at, its base no
+ * further out than the knob in small reaches.
  */
-const ROW_DART: Dart = { in: 7.5, out: 4.5, half: 3.75, notch: 1 };
+const ROW_DART: Dart = { in: 9.5, out: 4.5, half: 3.4, notch: 1.2 };
 
-/**
- * The arrow on a ring of radius `r` centred at `c`, pointing in from its top, as a compass rose's point: the whole
- * (its tip, a wing, its notch, the other wing) and its clockwise half, the facet drawn in the shade.
- */
-const dartPaths = (c: number, r: number, dart: Dart): readonly [whole: string, facet: string] => {
+/** The arrow on a ring of radius `r` centred at `c`, pointing in from its top: its tip, a wing, its notch, the other wing. */
+const dartPath = (c: number, r: number, dart: Dart): string => {
   const at = (v: number): number => Math.round(v * 100) / 100;
-  const [tip, base] = [`${c} ${at(c - r + dart.in)}`, at(c - r - dart.out)];
+  const [tip, base] = [at(c - r + dart.in), at(c - r - dart.out)];
   const [left, right] = [at(c - dart.half), at(c + dart.half)];
-  const notch = `${c} ${at(c - r - dart.out + dart.notch)}`;
-  return [
-    `M${tip}L${right} ${base}L${notch}L${left} ${base}Z`,
-    `M${tip}L${right} ${base}L${notch}Z`,
-  ];
+  return `M${c} ${tip}L${right} ${base}L${c} ${at(c - r - dart.out + dart.notch)}L${left} ${base}Z`;
 };
 
 /** The arrow turned to `deg` (clockwise from the top), as the three corners that hold it: its tip and its wings. */
@@ -303,13 +297,12 @@ function meets(a: readonly Point[], b: readonly Point[], clear: number): boolean
 /** Which pointer a bearing is, the card's own or the second, each remembering where it was last drawn. */
 type Slot = 'first' | 'second';
 
-/** An arrow on a ring of radius `r` centred at `c`, turned to `angle` (clockwise from the top, wound as it turned). */
-const arrowOf = (c: number, r: number, dart: Dart, angle: number, cls: string) => {
-  const [whole, facet] = dartPaths(c, r, dart);
-  return svg`<g class="cp-arrow ${cls}" style="transform-origin:${c}px ${c}px;rotate:${Math.round(angle * 100) / 100}deg"
-    ><path d=${whole} /><path class="cp-facet" d=${facet}
-  /></g>`;
-};
+/**
+ * An arrow on a ring of radius `r` centred at `c`, turned to `angle` (clockwise from the top, wound as it turned): the
+ * bearing's filled, the second's its outline alone.
+ */
+const arrowOf = (c: number, r: number, dart: Dart, angle: number, second: boolean) =>
+  svg`<path class="cp-arrow ${second ? 'is-second' : ''}" d=${dartPath(c, r, second ? { ...dart, notch: 0 } : dart)} style="transform-origin:${c}px ${c}px;rotate:${Math.round(angle * 100) / 100}deg" />`;
 
 /** What the ring's open centre reads: its figure, its words, and the reading a threshold is held to. */
 interface Reading {
@@ -376,9 +369,8 @@ export class FluvyCompassCard extends Card<CompassCardConfig> {
       .cp-dot {
         fill: var(--tone-ink);
       }
-      /* the arrow in the tone's ink, its corners rounded, its clockwise half a facet in the ink's shade (deeper in light,
-         lighter in dark: the text's ink in it); it turns to a new bearing the short way round and settles there as a
-         needle does. The second's is smaller, in the secondary ink */
+      /* the arrow in the tone's ink, its corners rounded; it turns to a new bearing the short way round and settles
+         there as a needle does. The second's is its outline alone, in the secondary ink */
       .cp-arrow {
         fill: var(--tone-ink);
         stroke: var(--tone-ink);
@@ -386,13 +378,9 @@ export class FluvyCompassCard extends Card<CompassCardConfig> {
         stroke-linejoin: round;
         transition: rotate 640ms var(--fv-spring);
       }
-      .cp-facet {
-        --cp-shade: color-mix(in oklab, var(--tone-ink) 70%, var(--fluvy-text));
-        fill: var(--cp-shade);
-        stroke: var(--cp-shade);
-      }
       .cp-arrow.is-second {
-        --tone-ink: var(--fluvy-text-secondary);
+        fill: none;
+        stroke: var(--fluvy-text-secondary);
       }
       /* the ring's own lifted as the knob is, and glowing in dark as a lit tick; the second's and a row's lie flat */
       .cp-lift {
@@ -989,7 +977,8 @@ export class FluvyCompassCard extends Card<CompassCardConfig> {
     const mark = (deg: number | null, pointer: CompassPointer, slot: Slot, cls: string) => {
       if (deg === null) return nothing;
       const [x, y] = at(deg).split(' ');
-      if (pointer === 'arrow') return arrowOf(29, R, ROW_DART, this.swing(slot, deg + offset), cls);
+      if (pointer === 'arrow')
+        return arrowOf(29, R, ROW_DART, this.swing(slot, deg + offset), slot === 'second');
       if (pointer === 'ticks')
         return svg`<path class="cp-arc ${cls}" d="M ${at(deg - 11.25)} A ${R} ${R} 0 0 1 ${at(deg + 11.25)}" />`;
       return pointer === 'knob'
@@ -1115,20 +1104,20 @@ export class FluvyCompassCard extends Card<CompassCardConfig> {
       const a = ((bearing + offset) * Math.PI) / 180;
       return [half + radius * Math.sin(a), half - radius * Math.cos(a)];
     };
-    // the knob its ring carries, and the arrow in its place; the second's arrow smaller, as its dot is
+    // the knob its ring carries, and the arrow in its place
     const size = knobSize(r);
-    const darts: Record<Slot, Dart> = { first: dartOf(size), second: dartOf(size * 0.75) };
+    const dart = dartOf(size);
     // what each pointer covers, by its outline: an arrow the ticks under it, 4 clear of a tick (its 1 either side of
     // the line); an arrow, a knob (its halo, which cuts the ticks) or a dot a point's word, 3 clear of it
     const marks = (
       [
-        ['second', o.second, secondary],
-        ['first', o.bearing, primary],
+        [o.second, secondary],
+        [o.bearing, primary],
       ] as const
-    ).flatMap(([slot, bearing, pointer]): { arrow: boolean; outline: Point[] }[] => {
+    ).flatMap(([bearing, pointer]): { arrow: boolean; outline: Point[] }[] => {
       if (bearing === null || pointer === 'ticks') return [];
       if (pointer === 'arrow')
-        return [{ arrow: true, outline: dartOutline(half, r, darts[slot], bearing + offset) }];
+        return [{ arrow: true, outline: dartOutline(half, r, dart, bearing + offset) }];
       return [
         {
           arrow: false,
@@ -1188,7 +1177,7 @@ export class FluvyCompassCard extends Card<CompassCardConfig> {
           viewBox="0 0 ${box} ${box}"
           aria-hidden="true"
         >
-          ${arrowOf(half, r, darts[slot], this.swing(slot, bearing + offset), slot === 'second' ? 'is-second' : '')}
+          ${arrowOf(half, r, dart, this.swing(slot, bearing + offset), slot === 'second')}
         </svg>`;
       if (kind !== 'knob') return nothing;
       const [x, y] = at(bearing, r);

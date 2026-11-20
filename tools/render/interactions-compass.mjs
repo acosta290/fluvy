@@ -41,10 +41,9 @@ const drawn = (card) =>
         tone: [...k.classList].find((n) => n.startsWith('fv-knob--')),
       })),
       // an arrow by the turn it is drawn at (wound past a whole turn where it went round), its tip's and its base's
-      // distances from the centre on its own drawing, its length
+      // distances from the centre on its own drawing, whether it is filled or its outline alone
       arrows: [...root.querySelectorAll('.cp-dial .cp-arrow')].map((a) => {
         const ys = a
-          .querySelector('path')
           .getAttribute('d')
           .match(/-?[\d.]+/g)
           .map(Number)
@@ -55,6 +54,7 @@ const drawn = (card) =>
           tip: Math.round(half - Math.max(...ys)),
           base: Math.round(half - Math.min(...ys)),
           second: a.classList.contains('is-second'),
+          outline: getComputedStyle(a).fill === 'none',
           lifted: a.closest('svg').classList.contains('cp-lift'),
         };
       }),
@@ -105,13 +105,14 @@ const near = (a, b, within = 1.5) => Math.abs(((a - b + 540) % 360) - 180) <= wi
     JSON.stringify(d),
   );
   check(
-    'the arrow across the ring at 248° (R 96: its tip 12 inside it, its base 19 outside), lifted, the ticks under it cleared; the 10-minute average’s dot outside the ticks at 236°',
+    'the arrow across the ring at 248° (R 96: its tip 12 inside it, its base 23 outside, as long as the knob is wide), filled, lifted, the ticks under it cleared; the 10-minute average’s dot outside the ticks at 236°',
     d.box === 240 &&
       d.knobs.length === 0 &&
       d.arrows.length === 1 &&
       d.arrows[0].turned === 248 &&
       d.arrows[0].tip === 84 &&
-      d.arrows[0].base === 115 &&
+      d.arrows[0].base === 119 &&
+      !d.arrows[0].outline &&
       d.arrows[0].lifted &&
       d.cleared.length === 2 &&
       d.cleared.every((bearing) => near(bearing, 248, 3)) &&
@@ -249,10 +250,10 @@ const near = (a, b, within = 1.5) => Math.abs(((a - b + 540) % 360) - 180) <= wi
   check(
     'half a section: the ring holds in its column, the reading stands under it',
     halves.every((h) => h.under && h.box <= h.column) &&
-      // R 40: the arrow in a small dial's 28 knob's place, its tip 9.3 inside the ring, its base 14.8 outside
+      // R 40: the arrow in a small dial's 28 knob's place, its tip 9.3 inside the ring, its base 17.9 outside
       halves[0].arrows.length === 1 &&
       halves[0].arrows[0].tip === 31 &&
-      halves[0].arrows[0].base === 55 &&
+      halves[0].arrows[0].base === 58 &&
       halves[0].figure === '14.2km/h' &&
       halves[1].line === 'NE · 47°',
     JSON.stringify(
@@ -269,12 +270,14 @@ const near = (a, b, within = 1.5) => Math.abs(((a - b + 540) % 360) - 180) <= wi
     [0, 1, 2, 3].map((n) => drawn(compass(page, 'Compass · four pointers', n))),
   );
   check(
-    'four pointers: the arrow and the second’s smaller one under it, flat; the knob; the lit ticks; the dot',
+    'four pointers: the arrow and under it the second’s, its outline alone, flat; the knob; the lit ticks; the dot',
     garden.arrows.length === 2 &&
       garden.arrows[0].second &&
       !garden.arrows[0].lifted &&
       garden.arrows[0].turned === 236 &&
-      garden.arrows[0].base - garden.arrows[0].tip < garden.arrows[1].base - garden.arrows[1].tip &&
+      garden.arrows[0].outline &&
+      !garden.arrows[1].outline &&
+      garden.arrows[1].lifted &&
       garden.dots.length === 0 &&
       balcony.knobs.length === 1 &&
       balcony.arrows.length === 0 &&
