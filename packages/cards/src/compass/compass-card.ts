@@ -22,6 +22,8 @@ import {
   readout,
   sheetStyles,
   textWidth,
+  type GlyphName,
+  type IconRef,
   type Tone,
 } from '@fluvy/ui';
 import { css, html, nothing, svg, type CSSResultGroup, type TemplateResult } from 'lit';
@@ -490,6 +492,26 @@ export class FluvyCompassCard extends Card<CompassCardConfig> {
    * as its speed and its unit say it; else the bearing itself, in degrees. The figure's word is the person's `label`
    * (applied by the caller), else what the figure is: its class's word ("Wind speed"), else "Direction".
    */
+  /**
+   * The head's glyph: a band's, the person's, the one set in Home Assistant, else Fluvy's own for what the card points
+   * at where the entity has no glyph of ours (the wind's for a wind speed, a weather entity or a wind's bearing, the
+   * sun's for the sun), else the entity's.
+   */
+  private headIcon(main: EntityView, band: Band | undefined): IconRef | string {
+    const own = band?.icon ?? this.config!.icon;
+    if (own) return own;
+    if (main.registryIcon) return main.registryIcon;
+    const pointsAt = (view: EntityView): GlyphName | undefined =>
+      view.domain === 'sun'
+        ? 'sun'
+        : view.domain === 'weather' ||
+            view.deviceClass === 'wind_speed' ||
+            view.deviceClass === 'wind_direction'
+          ? 'wind'
+          : undefined;
+    return pointsAt(main) ?? pointsAt(this.entity(this.directionId)) ?? iconOf(main);
+  }
+
   private reading(direction: EntityView, bearing: number | null): Reading {
     const c = this.config!;
     // a sensor alone is the bearing: the figure is its own only beside a bearing named of its own
@@ -677,7 +699,7 @@ export class FluvyCompassCard extends Card<CompassCardConfig> {
       data-edge=${tinted.edge}
     >
       ${head({
-        icon: fitted.icon ? iconOf(main, band?.icon ?? c.icon) : null,
+        icon: fitted.icon ? this.headIcon(main, band) : null,
         tone: headTone,
         title: name,
         sub: fitted.sub,
@@ -793,7 +815,7 @@ export class FluvyCompassCard extends Card<CompassCardConfig> {
         ringed
           ? html`<span class="cp-ringed fv-tone--${tone}">
               ${this.renderRing(o.bearing, o.second)}
-              ${ico(iconOf(o.main, band?.icon ?? c.icon), tone, {
+              ${ico(this.headIcon(o.main, band), tone, {
                 onTap: actions.onIconTap,
                 onHold: actions.onIconHold,
                 label: actions.iconLabel?.(name),

@@ -177,6 +177,32 @@ describe('the Compass card', () => {
     expect(text(alone, '.fv-dial__sub')).toBe('WSW');
   });
 
+  it('wears the wind’s glyph for a wind and the sun’s for the sun where it is given none; the person’s otherwise', async () => {
+    const cards: CardElement[] = [];
+    const headIcon = async (config: Partial<CompassCardConfig>): Promise<string> => {
+      const card = await mount(config);
+      cards.push(card);
+      return card.shadowRoot?.querySelector('[data-icon]')?.innerHTML ?? '';
+    };
+    const wind = await headIcon({
+      entity: 'sensor.wind_speed',
+      direction_entity: 'sensor.wind_bearing',
+    });
+    expect(wind).toContain('M4 10h11');
+    expect(await headIcon({ direction_entity: 'weather.home' })).toContain('M4 10h11');
+    const sun = await headIcon({ direction_entity: 'sun.sun' });
+    expect(sun).not.toContain('M4 10h11');
+    expect(sun).toBe(await headIcon({ direction_entity: 'sun.sun', icon: 'fluvy:sun' }));
+    expect(
+      await headIcon({
+        entity: 'sensor.wind_speed',
+        direction_entity: 'sensor.wind_bearing',
+        icon: 'mdi:compass',
+      }),
+    ).toContain('ha-icon');
+    for (const card of cards) card.remove();
+  });
+
   it('marks the bearing as asked: the knob, the ticks lit across its sixteenth, or the dot', async () => {
     const lit = await mount({ direction_entity: 'sensor.wind_bearing', indicator: 'ticks' });
     expect(lit.shadowRoot?.querySelectorAll('.fv-knob')).toHaveLength(0);
@@ -193,7 +219,9 @@ describe('the Compass card', () => {
         direction_entity: 'sensor.wind_bearing',
         ...(north_offset === undefined ? {} : { north_offset }),
       });
-      const centre = Number(card.shadowRoot?.querySelector('svg')?.getAttribute('width')) / 2;
+      // the dial's own drawing (the head's circle draws a glyph of its own)
+      const dial = card.shadowRoot?.querySelector('text.cp-point')?.closest('svg');
+      const centre = Number(dial?.getAttribute('width')) / 2;
       return [...(card.shadowRoot?.querySelectorAll('text.cp-point') ?? [])].map((t) => ({
         word: t.textContent,
         dx: Math.round(Number(t.getAttribute('x')) - centre),
