@@ -95,8 +95,9 @@ turned on, so an upgrade changes no dashboard. What changes without being asked 
   open (it says so and offers Reload), keeping the seconds of a time made by hand (#229, asked by @xoatrash).
 - The Compass card (`custom:fluvy-compass-card`) draws a bearing on a 360° ring as Fluvy's dials are: the wind from a
   weather station, a car's heading read from its tracker, a weather entity's wind or the sun's azimuth, marked by an
-  arrow of its own laid across the ring and pointing in, which turns to a new bearing the short way round, or by the
-  thermostat's knob, the ticks lit across it or a dot, a second bearing beside it to compare, its figure in the ring
+  arrow of its own laid across the ring and pointing out to the bearing as a compass needle's head (`arrow_points:
+  inward` points it at the figure, as the wind blows from it), which turns to a new bearing the short way round, or by
+  the thermostat's knob, the ticks lit across it or a dot, a second bearing beside it to compare, its figure in the ring
   over the point and the degrees, the cardinal points in the page's language, `north_offset` for a window that does not
   face north, the house's thresholds and up to three readouts under the ring; `compact` puts a small ring beside its
   reading and `row` draws one row whose circle is ringed by the bearing (#209, the Compass card by @twodrops).
