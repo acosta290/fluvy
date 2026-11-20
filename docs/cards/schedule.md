@@ -145,9 +145,12 @@ after the room) and its automation; Cancel writes nothing.
 
 **Changing it.** A tap on a day opens the sheet on that day: add, move or remove its times, choose each one's preset,
 copy the day to others, set the presets' temperatures, add one of your own. Two times that overlap are refused. The
-switch in the head turns the automation off and on; turned on, the time it is now takes effect at once. Where the
-schedule was changed in Home Assistant while the sheet was open, Save writes nothing and says so; Reload opens it again
-as it is now.
+switch in the head turns the automation off and on. Where the schedule was changed in Home Assistant while the sheet
+was open, Save writes nothing and says so; Reload opens it again as it is now.
+
+**When it sets the thermostat.** Saving a plan, or switching it on, sets the thermostat at once to what the plan says
+for this moment, and the automation sets it again at every start of Home Assistant, as well as at each change of the
+plan. A temperature set by hand lasts until the next of these.
 
 - `schedule`: the helper, where the card should not find it by its automation.
 - "Use the thermostat's own presets" sets the thermostat's own Comfort, Eco or Away (`preset_mode`) where it has
