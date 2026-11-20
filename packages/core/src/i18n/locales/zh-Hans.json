@@ -3706,7 +3706,8 @@
     "spread": "两端对齐",
     "empty": "还没有按钮",
     "empty_hint": "在卡片设置中添加实体",
-    "quick_picks": "快捷选择"
+    "quick_picks": "快捷选择",
+    "fill": "均匀分布"
   },
   "thermostat": {
     "room": "室内"

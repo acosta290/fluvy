@@ -3706,7 +3706,8 @@
     "spread": "Van rand tot rand",
     "empty": "Nog geen knoppen",
     "empty_hint": "Voeg entiteiten toe in de instellingen van de kaart",
-    "quick_picks": "Snelkeuzes"
+    "quick_picks": "Snelkeuzes",
+    "fill": "Gelijkmatig"
   },
   "thermostat": {
     "room": "Kamer"

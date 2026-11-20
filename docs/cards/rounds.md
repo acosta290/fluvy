@@ -47,7 +47,7 @@ show_icon: auto
 name_lines: 1
 show_names: false
 # columns:
-align: start
+align: fill
 items:
   - switch.kitchen_light
   - switch.washer
@@ -86,7 +86,7 @@ names: full
 | `show_count` | `true` | Says on the head’s line how many are on. |
 | `show_names` | `false` | Shows each round’s name under it. |
 | `columns` |  | How many rounds stand on a line, at most as many as the width holds. 1 to 12. |
-| `align` | `start` | Where the rounds stand on their line: from its start, in its middle, or from edge to edge. `start` (From the start) · `center` (In the middle) · `spread` (Edge to edge). |
+| `align` | `fill` | Where the rounds stand on their line: in equal shares of it (rounds alone from its start), from its start, in its middle, or from edge to edge. `fill` (Evenly) · `start` (From the start) · `center` (In the middle) · `spread` (Edge to edge). |
 | `names` | `full` | How a row is named where it has no name of its own: the entity’s full name, its own, or its device’s. `full` · `entity` · `device`. |
 | `light_colors` | `false` | Shows each light that is on in its bulb’s own colour. |
 | `light_whites` | `temperature` | Draws a lit white by its colour temperature, or as the palette’s light. `palette` (The theme’s light) · `temperature` (The bulb’s white). |

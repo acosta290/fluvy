@@ -3706,7 +3706,8 @@
     "spread": "Fra kant til kant",
     "empty": "Ingen knapper endnu",
     "empty_hint": "Tilføj entiteter i kortets indstillinger",
-    "quick_picks": "Hurtigvalg"
+    "quick_picks": "Hurtigvalg",
+    "fill": "Jævnt fordelt"
   },
   "thermostat": {
     "room": "Rum"

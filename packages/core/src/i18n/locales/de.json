@@ -3706,7 +3706,8 @@
     "spread": "Von Rand zu Rand",
     "empty": "Noch keine Tasten",
     "empty_hint": "Entitäten in den Karteneinstellungen hinzufügen",
-    "quick_picks": "Schnellauswahl"
+    "quick_picks": "Schnellauswahl",
+    "fill": "Gleichmäßig verteilt"
   },
   "thermostat": {
     "room": "Raum"

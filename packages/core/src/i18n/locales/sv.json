@@ -3706,7 +3706,8 @@
     "spread": "Kant till kant",
     "empty": "Inga knappar än",
     "empty_hint": "Lägg till entiteter i kortets inställningar",
-    "quick_picks": "Snabbval"
+    "quick_picks": "Snabbval",
+    "fill": "Jämnt fördelade"
   },
   "thermostat": {
     "room": "Rum"

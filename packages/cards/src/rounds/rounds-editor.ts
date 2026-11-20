@@ -68,7 +68,7 @@ export const defaults: EditorDefaults = () => ({
   variant: 'rounds',
   show_count: true,
   show_names: false,
-  align: 'start',
+  align: 'fill',
   light_colors: lightDefaults().colors,
   light_whites: 'temperature',
 });

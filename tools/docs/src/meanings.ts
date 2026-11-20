@@ -543,7 +543,7 @@ export const MEANINGS: Readonly<Record<string, string>> = {
   'rooms.show_head':
     'Shows the head: its title, its icon, how many rooms and their average temperature.',
   'rounds.align':
-    'Where the rounds stand on their line: from its start, in its middle, or from edge to edge.',
+    'Where the rounds stand on their line: in equal shares of it (rounds alone from its start), from its start, in its middle, or from edge to edge.',
   'rounds.columns': 'How many rounds stand on a line, at most as many as the width holds.',
   'rounds.show_count': 'Says on the head’s line how many are on.',
   'rounds.show_names': 'Shows each round’s name under it.',

@@ -342,6 +342,32 @@ describe('the Rounds card (#224)', () => {
     expect(await lefts('center')).toEqual(['86px', '138px', '190px']);
     // the line their own: the first on its start, the last on its end
     expect(await lefts('spread')).toEqual(['0px', '138px', '276px']);
+    // rounds alone stand from the start by default too
+    expect(await lefts('')).toEqual(['0px', '52px', '104px']);
+  });
+
+  it('fills the line with rounds that have words under them by default: equal shares, every line in the same columns', async () => {
+    const cells = async (config: Partial<LovelaceCardConfig>): Promise<string[]> => {
+      const card = await drawn(config);
+      const all = [...root(card).querySelectorAll<HTMLElement>('.rd-cell')];
+      document.body.replaceChildren();
+      return all.map((cell) => `${cell.style.left} ${cell.style.width}`);
+    };
+    // six keys in 320, three a line: three shares of 101, the first on the line's start, the last on its end, the
+    // second line in the first's columns
+    const filled = ['0px 101px', '110px 101px', '219px 101px'];
+    expect(await cells({ variant: 'labels' })).toEqual([...filled, ...filled]);
+    expect(await cells({ variant: 'labels', align: 'fill' })).toEqual([...filled, ...filled]);
+    // names under the rounds alike; seven, four columns on both lines
+    expect((await cells({ show_names: true })).slice(0, 3)).toEqual(filled);
+    const seven = await cells({ show_names: true, items: [...QUICK_PICKS, 'light.desk'] });
+    expect(seven.slice(4)).toEqual(seven.slice(0, 3));
+    // asked to stand from the start: 96 a cell, 8 apart, as before
+    expect((await cells({ variant: 'labels', align: 'start' })).slice(0, 3)).toEqual([
+      '0px 96px',
+      '104px 96px',
+      '208px 96px',
+    ]);
   });
 
   it('its editor: its rounds a list of their own, its lines’ options only where they act', async () => {

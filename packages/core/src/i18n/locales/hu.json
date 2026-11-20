@@ -3706,7 +3706,8 @@
     "spread": "Széltől szélig",
     "empty": "Még nincs gomb",
     "empty_hint": "Adj hozzá entitásokat a kártya beállításaiban",
-    "quick_picks": "Gyorsválasztás"
+    "quick_picks": "Gyorsválasztás",
+    "fill": "Egyenletesen"
   },
   "thermostat": {
     "room": "Szoba"

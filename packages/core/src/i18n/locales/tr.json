@@ -3706,7 +3706,8 @@
     "spread": "Kenardan kenara",
     "empty": "Henüz düğme yok",
     "empty_hint": "Kartın ayarlarından varlık ekleyin",
-    "quick_picks": "Hızlı seçimler"
+    "quick_picks": "Hızlı seçimler",
+    "fill": "Eşit aralıklı"
   },
   "thermostat": {
     "room": "Oda"

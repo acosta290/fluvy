@@ -3706,7 +3706,8 @@
     "spread": "De borde a borde",
     "empty": "Aún no hay botones",
     "empty_hint": "Añade entidades en los ajustes de la tarjeta",
-    "quick_picks": "Accesos rápidos"
+    "quick_picks": "Accesos rápidos",
+    "fill": "De forma uniforme"
   },
   "thermostat": {
     "room": "Habitación"

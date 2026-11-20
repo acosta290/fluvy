@@ -3766,7 +3766,8 @@
     "spread": "Od okraja po okraj",
     "empty": "Zatiaľ žiadne tlačidlá",
     "empty_hint": "Pridajte entity v nastaveniach karty",
-    "quick_picks": "Rýchly výber"
+    "quick_picks": "Rýchly výber",
+    "fill": "Rovnomerne"
   },
   "thermostat": {
     "room": "Miestnosť"

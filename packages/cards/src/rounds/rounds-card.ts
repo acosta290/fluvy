@@ -31,9 +31,12 @@ import {
 /** `rounds` (default): the rounds in lines. `row`: a list row each. `labels`: each round a key that says its state. */
 export type RoundsVariant = 'rounds' | 'row' | 'labels';
 export const ROUNDS_VARIANTS: readonly RoundsVariant[] = ['rounds', 'row', 'labels'];
-/** Where the rounds stand on their line: from its start (default), in its middle, or from edge to edge. */
-export type RoundsAlign = 'start' | 'center' | 'spread';
-export const ROUNDS_ALIGNS: readonly RoundsAlign[] = ['start', 'center', 'spread'];
+/**
+ * Where the rounds stand on their line: in equal shares of it (default: a round with words under it in its share, a
+ * round alone from the line's start), from its start, in its middle, or from edge to edge.
+ */
+export type RoundsAlign = 'fill' | 'start' | 'center' | 'spread';
+export const ROUNDS_ALIGNS: readonly RoundsAlign[] = ['fill', 'start', 'center', 'spread'];
 
 /** One round: an entity, its own name, icon, tone and colour, its actions, and whether it says its state. */
 export type RoundItem = Omit<RoundSpec, 'group' | 'entity'> & { entity: string };
@@ -55,7 +58,7 @@ export interface RoundsCardConfig extends FluvyCardConfig, LightColours {
 
 /** A round's line: 8 between its cells. */
 const GAP = 8;
-/** A cell with words under its round is the line's share, at most this: a wide card lines them up as it does rounds. */
+/** A cell with words under its round is the line's share; where the line stands otherwise (`align`), at most this. */
 const WIDEST = 96;
 
 /** A key's least width: as wide as it is tall, never a sliver. */
@@ -256,19 +259,22 @@ export class FluvyRoundsCard extends Card<RoundsCardConfig> {
   }
 
   /**
-   * The rounds in their lines (`roundsGrid`): each in its cell — a round's 44, or the line's share (96 at most) where a
-   * name or a state stands under it — from the line's start, in its middle, or from edge to edge on one set of columns; a state
-   * in its key where it holds its cell, every key of the card as wide as the widest, a name under the round to its
+   * The rounds in their lines (`roundsGrid`): each in its cell — a round's 44, or the line's share where a name or a
+   * state stands under it, the cells filling the line by default (every line in the same columns), else 96 at most
+   * from the line's start, in its middle or from edge to edge — on one set of columns; a state in its key where it
+   * holds its cell, every key of the card as wide as the widest and centred in its cell, a name under the round to its
    * ellipsis.
    */
   private renderRounds(host: RoundsHost, items: readonly RoundSpec[], w: number): TemplateResult {
     const grid = roundsGrid(this.config ?? { type: '' }, w);
     const rounds = items.map((item) => roundOf(host, item));
     const per = grid.perLine;
-    const cell =
-      grid.cell > 44 ? Math.min(WIDEST, Math.floor((w - (per - 1) * GAP) / per)) : grid.cell;
     const align = this.config?.align;
-    const pitch = align === 'spread' && per > 1 ? (w - cell) / (per - 1) : cell + GAP;
+    const share = Math.floor((w - (per - 1) * GAP) / per);
+    // rounds with words under them fill the line by default, each cell its share; asked to stand otherwise, 96 at most
+    const fills = grid.cell > 44 && (!align || align === 'fill');
+    const cell = grid.cell > 44 ? (fills ? share : Math.min(WIDEST, share)) : grid.cell;
+    const pitch = (fills || align === 'spread') && per > 1 ? (w - cell) / (per - 1) : cell + GAP;
     if (rounds.some((round) => round.said)) wear(host.root);
     const states = cellStates(host, rounds, cell);
     // its keys one width: the widest words' (none: no round says a state)

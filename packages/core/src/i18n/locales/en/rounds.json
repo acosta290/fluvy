@@ -9,6 +9,7 @@
     "spread": "Edge to edge",
     "empty": "No rounds yet",
     "empty_hint": "Add entities in the card’s settings",
-    "quick_picks": "Quick picks"
+    "quick_picks": "Quick picks",
+    "fill": "Evenly"
   }
 }

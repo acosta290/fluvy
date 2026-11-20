@@ -4277,10 +4277,11 @@
         {
           "key": "align",
           "label": "Line them up",
-          "does": "Where the rounds stand on their line: from its start, in its middle, or from edge to edge.",
+          "does": "Where the rounds stand on their line: in equal shares of it (rounds alone from its start), from its start, in its middle, or from edge to edge.",
           "type": "choice",
-          "default": "start",
+          "default": "fill",
           "values": {
+            "fill": "Evenly",
             "start": "From the start",
             "center": "In the middle",
             "spread": "Edge to edge"

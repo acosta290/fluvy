@@ -3706,7 +3706,8 @@
     "spread": "De ponta a ponta",
     "empty": "Ainda sem botões",
     "empty_hint": "Adicione entidades nas definições do cartão",
-    "quick_picks": "Atalhos"
+    "quick_picks": "Atalhos",
+    "fill": "Uniformemente"
   },
   "thermostat": {
     "room": "Divisão"

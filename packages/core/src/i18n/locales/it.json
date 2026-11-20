@@ -3706,7 +3706,8 @@
     "spread": "Da bordo a bordo",
     "empty": "Ancora nessun pulsante",
     "empty_hint": "Aggiungi entità nelle impostazioni della scheda",
-    "quick_picks": "Scelte rapide"
+    "quick_picks": "Scelte rapide",
+    "fill": "In modo uniforme"
   },
   "thermostat": {
     "room": "Stanza"

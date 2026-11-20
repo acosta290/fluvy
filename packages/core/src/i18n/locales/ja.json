@@ -3706,7 +3706,8 @@
     "spread": "端から端まで",
     "empty": "ボタンはまだありません",
     "empty_hint": "カードの設定でエンティティを追加してください",
-    "quick_picks": "クイック操作"
+    "quick_picks": "クイック操作",
+    "fill": "均等に"
   },
   "thermostat": {
     "room": "室内"

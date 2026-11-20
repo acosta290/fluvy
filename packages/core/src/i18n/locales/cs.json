@@ -3766,7 +3766,8 @@
     "spread": "Od okraje k okraji",
     "empty": "Zatím žádná tlačítka",
     "empty_hint": "Přidejte entity v nastavení karty",
-    "quick_picks": "Rychlý výběr"
+    "quick_picks": "Rychlý výběr",
+    "fill": "Rovnoměrně"
   },
   "thermostat": {
     "room": "Místnost"

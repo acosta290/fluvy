@@ -3706,7 +3706,8 @@
     "spread": "D’un bord à l’autre",
     "empty": "Pas encore de boutons",
     "empty_hint": "Ajoutez des entités dans les réglages de la carte",
-    "quick_picks": "Raccourcis"
+    "quick_picks": "Raccourcis",
+    "fill": "Uniformément"
   },
   "thermostat": {
     "room": "Pièce"

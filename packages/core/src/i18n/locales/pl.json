@@ -3831,7 +3831,8 @@
     "spread": "Od krawędzi do krawędzi",
     "empty": "Brak przycisków",
     "empty_hint": "Dodaj encje w ustawieniach karty",
-    "quick_picks": "Szybki wybór"
+    "quick_picks": "Szybki wybór",
+    "fill": "Równomiernie"
   },
   "thermostat": {
     "room": "Pokój"

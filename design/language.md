@@ -3089,13 +3089,17 @@ details. An item's own name, icon, tone, colour, actions and `show_state`.
 - **Rounds** (the default): in lines, 44 each, 8 apart; as many a line as hold (`columns` asks for fewer), the lines
   balanced (seven are four and three), each line from its start, in its middle or from edge to edge on one set of
   columns (`align`); placed on whole pixels. `show_names`: a name under each round, 4 under it in 12/500 and the
-  secondary ink on its 16 line, to its ellipsis in its cell — a cell then the line's share, 64 the least and 96 the
-  most (a wide card lines them up as it does rounds), the lines 16 apart.
+  secondary ink on its 16 line, to its ellipsis in its cell, the lines 16 apart. **Rounds with words under them fill
+  their line** (`align: fill`, the default, "Evenly", as a row of chips fills its line): every cell an equal share
+  of the line, the first on its start and the last on its end, every line of the card in the same columns (the last
+  one's few in the first columns), each round or key centred in its cell; asked to stand from the start, in the
+  middle or from edge to edge, a cell is the line's share up to 96 (64 the least). Rounds alone stand from the
+  line's start by default, as the room lights' do.
 - **Labels**: each round grown into a key in its cell (the owner's review, 1.23): the quick actions' pill under its
   glyph (64 tall, its glyph 12 from its top on the rounds' glyph line, its words 12/600 4 under it and 12 from its
   foot) at a tappable's radius (12), its words never closer than 12 to its sides; every key of the card one width,
-  the widest's on the 4 grid (64 the least: as wide as it is tall), centred in its cell, so the keys read as one set
-  of buttons; a cell where keys say their states is 72 at the least (a key and a word such as "Locked" 12 from each
+  the widest's on the 4 grid (64 the least: as wide as it is tall), centred in its cell (the line's share), so the
+  keys read as one set of buttons across the card; a cell where keys say their states is 72 at the least (a key and a word such as "Locked" 12 from each
   side). Lit, its colour's fill and ink, as an active option tile (no ring: its words say its level); at rest the
   neutral fill; out of reach the dashed ring round its corners and "—"; the focus ring 2 outside its corners. The
   states in the longest form they all hold (a temperature's degree alone, a count's short words), else each in its
