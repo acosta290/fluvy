@@ -5,22 +5,142 @@ and the versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Visible on upgrade
+
+Nothing new shows by itself in this release: every new function is a key, an option or a setting that is off until it is
+turned on, so an upgrade changes no dashboard. What changes without being asked is a fix or a word:
+
+- A dashboard's sidebar keeps its head and its foot in place again while they fit the screen, the middle scrolling
+  between them however little room it has; since 1.22.0 they scrolled away with the whole column in a short window
+  (#211, reported by @SentinelXS).
+- A card at 0 % opacity is clear: the house's blur no longer frosts it into a pane (#213, reported by @SentinelXS).
+- The Map card's map stands centred on its plate, in an Expander as anywhere: Home Assistant's map inside it filled a
+  square under the plate, so the people sat under its middle (#220, reported by @SentinelXS).
+- A lock locks at one tap and asks before it unlocks wherever a tap toggles it (a room's quick action, a tile, its switch
+  and its circle, a `toggle` written by hand), in Home Assistant's own dialog; `confirmation: false` on the tap unlocks
+  at once as before. One tap on a locked door's round or tile opened it.
+- The Water & gas card's rows give an automation, a blind, a group and a remote the switch the Entities card's rows give
+  them: the two cards wrote the rule of what a stray tap may flip twice and disagreed.
+- The Chart card leaves a gap where a sensor was `unavailable`, `unknown` or said no number: its line, its area and its
+  columns break there and its value row reads a dash, where it carried the last number across the stretch; the details
+  dialog's history of a measure breaks at the same stretches and its average counts only what the sensor said (#228).
+- The Energy sankey card names the house's devices in a legend under the drawing, where a meter of a few hundredths of a
+  kWh drew a bar a pixel wide and its words stood in tiers drifting away from it; an item under the pointer or the focus
+  lifts its bar, and a meter's opens it (#210, the legend by @waphbs).
+- The Thermostat card's chosen mode chip is filled in its mode's colour, as its tile and its details sheet are, where it
+  wore the accent (#215).
+- The Openings card at half a section puts a state too long to sit beside its name under it, as the Entities card does,
+  and a tile's state that will not fit takes a smaller size, where German "Geschlossen" and Russian "Обнаружено" ran past
+  the row at 152.
+- The Energy flow card never leaves a Chinese or Japanese character alone on a label's line: a battery's charge takes its
+  own line ("电池" over "64 %"), and a house whose battery or car says its charge keeps its diagram on a phone read at
+  125 %, where it turned into its list.
+- A Cover card's favourite that sets an angle says "Breeze · 70 %" where its words hold no row, where its chip cut the
+  figure at 211 in Spanish, French, Italian, Polish, Portuguese and Slovak; a cover not read yet keeps the room of its
+  tilt where a favourite sets an angle.
+- Words in narrow columns and long languages are no longer cut or drawn past their box: the Cover card's ruler words, a
+  dial's scale ends, the date picker's month, a button that fills its row, a pair of buttons where one half is too
+  narrow, an uppercase label wider than its column (Danish "Forudindstilling"), the energy period sheet's dates, the
+  Appliance card's time left, an appliance tile's label (Russian "Следующее кормление"), the settings panel's option
+  tiles; and the Turkish keypad's OK, the pet feeder's next meal in Russian and Ukrainian, the Hungarian Charts palette
+  line and the Bulgarian alarm modes are worded to fit.
+- A dashboard's sidebar in the settings panel opens a person's lists of cards in Home Assistant's own stack editor after
+  a reload on its page too, where they stood in a YAML field until a dashboard had been opened first.
+- Fluvy's database icon as Home Assistant draws it (Settings › Storage, the InfluxDB and phpMyAdmin items in the
+  sidebar) has its top again (#226).
+- Czech says what Home Assistant says where Home Assistant names the same thing: a tap is "klepnutí", a dashboard an
+  "ovládací panel", solar is "Solární", the openings take their device class's "Otevření" and the greeting is formal;
+  four sentences that read as English are rewritten (#227, by @DJjohn07).
+
 ### Added
 
-- The Compass card (`custom:fluvy-compass-card`) draws a bearing — wind, a vehicle’s heading, a dish’s or the sun’s —
-  on a 360° ring with degree ticks and localised cardinal points, a primary pointer and an optional second one to
-  compare against (`direction_entity`, `secondary_direction_entity`), a reading in its centre that turns to a warning
-  or a danger past a threshold, and up to three more readouts underneath, after tomvanswam’s compass-card (#209, by
-  @twodrops).
+- The Rounds card: any entities as rounds, lit while on with the ring of their level, the dashed ring out of reach; a
+  tap flips what is safe to flip and opens the rest, a lock locking at once and asking before it unlocks, a hold opens
+  the details; in lines from the start, the middle or edge to edge, with their names, with their states under them, or
+  a row each, under a head with "2 of 6 on" where it has a title (#224, after @twodrops's proposal).
+- The Rooms card shows every room in one card: a row each with the room's icon, its name, its temperature and humidity
+  and its quick actions at the end (its lights, its thermostat, its blinds or any entity), standing in columns as the
+  issue drew them, a room without blinds or a thermostat leaving that place empty; or compact rows, or tiles two a row;
+  left without a list it shows the house's rooms in their order, a tap opens the room's own path or its page on the
+  automatic dashboard (else the area's settings for an administrator), and its head says "6 rooms · 20.9° average"
+  (#225, asked by @xoatrash).
+- The Thermostats card shows every thermostat of the house, an area or a list in one card, a row per room with its
+  temperature, what it is doing, its preset and its target and a round that opens its details, with optional minus and
+  plus buttons for the target, compact rows or tiles, a count and the rooms' average in its head, and All off and the
+  house's presets as chips, each unit set with its own (#230, asked by @xoatrash, with @waphbs's house-card prototype,
+  #219).
+- The Heating schedule card: a room's heating week on Home Assistant's own schedule helper, a line a day in its presets'
+  colours with a marker at the time it is now, what the thermostat is doing, the preset in force and the room's
+  temperature in its head beside the schedule's switch, the presets with their temperatures under the hours, today's
+  line alone, or one row ("Comfort · 21° · Eco at 22:30"); its sheet edits a day's times, refuses two that overlap,
+  copies a day to others and sets the presets, and Save writes the helper and one automation you can see in Home
+  Assistant, so the week runs with every browser closed (#229, asked by @xoatrash).
+- The Compass card (`custom:fluvy-compass-card`) draws a bearing on a 360° ring as Fluvy's dials are: the wind from a
+  weather station, a car's heading read from its tracker, a weather entity's wind or the sun's azimuth, marked by the
+  thermostat's knob, the ticks lit across it or a dot, a second bearing beside it to compare, its figure in the ring
+  over the point and the degrees, the cardinal points in the page's language, `north_offset` for a window that does not
+  face north, the house's thresholds and up to three readouts under the ring; `compact` puts a small ring beside its
+  reading and `row` draws one row whose circle is ringed by the bearing (#209, the Compass card by @twodrops).
+- The Thermostat card's `focus: current` makes the room's temperature the large figure of the compact and ruler layouts,
+  with the target beside it as − 24° +; `modes_style: icons` draws the modes in one row of tiles, an icon over each
+  word; `readouts` shows up to four sensors under the value, such as the humidity, the power or how long it ran today
+  (#215, after @waphbs's sketch).
+- The Chart card draws any entity's states as a strip under its chart (`kind: states`): a switch, a door or a heat
+  pump's mode on the chart's own time, on in the series' colour, unavailable and unknown striped, a state in a colour of
+  its own where `state_colors` names one; the cursor runs down the strip and the legend says the state then in Home
+  Assistant's words, and a chart of states alone gives them the plot's room. A series read from a sensor's history
+  takes `stat` (`min`, `max` or `last`), so a template sensor of 0 and 100 reads 0 or 100, never a value between
+  (#228, asked by @SentinelXS, with @twodrops).
+- Fluvy's icon set has 94 new glyphs in its own hand, so a wall tablet stays in one icon language: batteries and signal
+  bars at every level, a valve open or shut, energy, devices, climate and air, water and safety, outdoors, home and
+  twelve rooms, each as `fluvy:<name>` in Home Assistant's icon picker and in a card's `icon`; the hob, the microwave,
+  the kettle, the air fryer and the toaster can be picked too. Appearance › Cards › Icons show their level, off by
+  default, lets a battery show its charge, a signal its bars and a valve whether it is open or shut (#226, asked by
+  @SentinelXS).
+- Every card may set its own blur while it is see-through: `card_blur: false` keeps it clear, `card_blur: true` frosts
+  it even at 0 %; a dashboard's sidebar takes the key too (#213, reported by @SentinelXS).
+- The Template card has a card's look, `variant: card`: the compact tile at a card's padding and height, standing in an
+  Expander's column or as its head as the other cards do (#220, reported by @SentinelXS).
+- The Openings card's `alert_classes` makes motion, occupancy, presence and other classes alert while on, as an open
+  window does, the head saying "2 detected"; a row's own `alert: true` or `false` comes first (#223, thanks @twodrops).
+- The Entities card's number rows (`input_number`, `number`, `counter`) can end in their value between − and +
+  (`number_control: stepper`) or in a value you tap to type (`entry`), for the card or one row; the Helpers card types
+  its figures the same way with `number_entry: true` (#218, thanks @xoatrash).
+- The automatic dashboards' Long lists offers Up to… between Shortened and In full, one number for every list from 1 to
+  50 (`caps: 10`); in YAML, `caps: { all: 10, lights: 4 }` keeps a list's own number beside it (#231, thanks
+  @darkimage404).
+- A wall's subview can stand with no way back at all: Back from a subview in the Wall tab offers None beside Back button
+  and Header, and says how a subview is left then (#222, thanks @xoatrash).
+- A card of your own opens an entity's details as Fluvy's cards do with `window.__fluvy.openDetails(entityId, { from })`;
+  the Room lights and Room cards count an area's lamps on plugs among its lights with `lamp_switches`; the Room lights
+  card's `show_mixed` gives the room's switch a look of its own while only some lights are on; `docs/theme.md` names the
+  tone variables a card of your own wears (#219, asked by @waphbs).
 
-### Changed
+### Fixed
 
-- Czech says what Home Assistant says where Home Assistant names the same thing, read from a Czech instance: a tap is
-  "klepnutí", a dashboard an "ovládací panel" (shortened to "panel" where a title, a tab or a 152 px row cannot hold
-  the pair), solar is "Solární", the openings take their device class's "Otevření" and the greeting is formal. Four
-  sentences that read as English carried over word for word are rewritten. The alarm keeps "Zastřeženo" and
-  "Odstřeženo", the Czech security trade's words, where Home Assistant says "Zabezpečeno" and "Odbezpečeno".
-- Czech's row of the translating guide names the language's maintainer.
+- The Thermostat card declares a row of content-sized mode chips at the height its icons make it take (#215).
+- An Expander whose head is a tile, a scene, a chip, a row or a Template card in a card's look, and a Swipe card holding
+  them, declare the height they draw, so the automatic dashboard keeps them their room.
+- The Cover card declares the favourites it draws on a cover with no position too, as many rows as their words take.
+- The Helpers card declares only the ruler it draws: a counter with a minimum and a maximum, and a range of more than
+  256 steps not set to slider, stood 48 px too tall in the automatic dashboards' columns.
+- The docs, the README and the package description name the cards, the languages and the automatic dashboards without
+  counting them, so no page goes stale with a new card (#221, reported by @twodrops).
+
+### Development
+
+- The rounds are one engine (`shared/rounds.ts`) and a list row ends in them (`shared/rounds-row.ts`), with a card's own
+  control, a chevron or rounds in columns where it asks; one rule says what a stray tap may flip (`SAFE_TOGGLE`); the
+  switch takes `'mixed'`; the stepper takes the figure it sets between its halves; the option tiles gain an icon form.
+- `@fluvy/core/spans` lays a thing's states as stretches for the History page, the details dialog and the Chart card
+  alike; a rows editor list may say what an entity picked becomes (`picked`).
+- New lazy chunks: `rounds`, `rooms`, `thermostats`, `schedule`, `schedule-sheet`, `number-controls`, `words` (the
+  naming words and the lamp rule), `glyphs-rooms`, `levels` and the icon set's parts (`icons-<family>`).
+- The measurer waits for the page to settle and ends every animation before it measures, so a card whose code arrives
+  late is measured whole and at rest (`MEASURE_LATE` reproduces it); its `text-clipped` rule finds words wider than the
+  box that lays them out; a column off whole pixels by 1/64 is not counted against a card.
+- The facts guard flags any count of the cards, the languages or the automatic dashboards (#221).
+- New browser suites: `interactions-rounds`, `-rooms-card`, `-thermostats`, `-schedule`, `-compass`, `-chart-states`.
 
 ## [1.22.0] — 2026-11-16
 
