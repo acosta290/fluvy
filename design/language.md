@@ -3118,8 +3118,10 @@ details. An item's own name, icon, tone, colour, actions and `show_state`.
   row's rounds end on one line, and the chevrons give way before a round, every row's together. Where its list asks
   (`columns`), the rounds stand in columns: every row's n-th round under the others' (a room's lights under every
   room's lights), a kind a row lacks leaving its 44 empty, a place no row fills drawn on none, and every row as many
-  places as the tightest holds, so its values stand in one column too; a list a round of which says its state keeps
-  its rounds packed, the pill pushing no column apart.
+  places as the tightest holds, so its values stand in one column too. Where an empty place would cut a row's name
+  (de "Kinderzimmer" beside a room's three places in a phone's 328), the places give way first: the list stands its
+  rounds packed at that width, every row together, never one row out of its columns. A list a round of which says
+  its state keeps its rounds packed, the pill pushing no column apart.
 
 ## Rooms (1.23, #225)
 
@@ -3143,8 +3145,8 @@ chevron where it opens a page. The hairline from the text's left edge, as every 
   lock locking at once and asking before it unlocks, the rest opening their details (§ Rounds). A room's colour is its
   lights' round's too, where the house shows no bulb's colour. The rows stand them in columns, as the issue's picture
   does (§ Rounds: `columns`): each in the place its list gives it, a kind a room lacks (no blinds, no thermostat)
-  leaving its place empty, so every room's lights and every room's temperature stand in one column; a tile keeps its
-  own packed.
+  leaving its place empty, so every room's lights and every room's temperature stand in one column, packed where an
+  empty place would cut a room's name; a tile keeps its own packed.
 - **Where a tap goes**: the room's own `tap_action`; else its `path`; else its page on the automatic dashboard the
   house's rooms open on — the one the card stands on, else Fluvy's Rooms dashboard, else Home's while it keeps its Rooms
   view (read once a page from those dashboards' configurations, nothing written) — where the room has one; else the

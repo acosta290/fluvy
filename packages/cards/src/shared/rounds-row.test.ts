@@ -236,9 +236,25 @@ describe('a row with rounds at its end (1.23)', () => {
     ]);
     // as many places on every row as the tightest holds: the long name's 96 leaves two (56 + 96 + 112 = 264)
     const long = { ...bare, title: 'The long living room by the garden' };
-    expect(places(264, [rows[0]!, { ...long, rounds: [null, null, fan] }])).toEqual([
+    expect(places(264, [rows[0]!, { ...long, rounds: [ceiling, blinds, fan] }])).toEqual([
       ['lounge ceiling', 'lounge blinds'],
-      ['·', '·'],
+      ['lounge ceiling', 'lounge blinds'],
+    ]);
+    // where an empty place would cut a row's name, the list packs its rounds at that width: "Children's room" (120)
+    // holds 104 beside three places in 320 and 156 beside its own two; in 400 its place stays empty, its name whole
+    const children = { ...bare, title: 'Children’s room', rounds: [ceiling, blinds, null] };
+    expect(places(320, [rows[0]!, children])).toEqual([
+      ['lounge ceiling', 'lounge blinds', 'lounge fan'],
+      ['lounge ceiling', 'lounge blinds'],
+    ]);
+    expect(places(400, [rows[0]!, children])).toEqual([
+      ['lounge ceiling', 'lounge blinds', 'lounge fan'],
+      ['lounge ceiling', 'lounge blinds', '·'],
+    ]);
+    // …so a row whose places would leave its own rounds out shows them: the long name's fan, past its two places
+    expect(places(264, [rows[0]!, { ...long, rounds: [null, null, fan] }])).toEqual([
+      ['lounge ceiling', 'lounge blinds', 'lounge fan'],
+      ['lounge fan'],
     ]);
     // a round that says its state keeps the list's rounds packed: its pill would push its column apart
     expect(

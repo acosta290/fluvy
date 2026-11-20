@@ -228,8 +228,10 @@ const saysState = (host: RoundsHost, row: RoundsRowSpec): boolean =>
  * a chevron at the end of each row that opens a page, where every row keeps all its rounds beside one — else none: a
  * chevron gives way before a round, every row's together; and where it asks (`columns`), its rounds in columns, each
  * row's n-th round under the others' (a room's lights under every room's lights), a row that lacks one leaving its
- * place empty: the places some row fills, as many on every row as the tightest holds. A list a round of which says
- * its state keeps its rounds packed, as every list does.
+ * place empty: the places some row fills, as many on every row as the tightest holds. Where an empty place would cut
+ * a row's name (de "Kinderzimmer" beside a room's three places at 360), the places give way first: the list stands
+ * its rounds packed at that width, as a list that does not ask does, never one row apart from its columns. A list a
+ * round of which says its state keeps its rounds packed, as every list does.
  */
 export const roundsRows = (
   host: RoundsHost,
@@ -249,17 +251,51 @@ export const roundsRows = (
           ...new Set(rows.flatMap((row) => row.rounds.flatMap((round, at) => (round ? [at] : [])))),
         ].sort((a, b) => a - b)
       : undefined;
-  const placed = filled
-    ? rows.map((row) => ({ ...row, rounds: filled.map((at) => row.rounds[at] ?? null) }))
-    : rows;
-  const wanted = (row: RoundsRowSpec): number => filled?.length ?? roundsOfRow(row).length;
   const held = (row: RoundsRowSpec, line: number): number =>
     roundsHeld(roundsRoom(host, line, row, compact, icon));
-  const arrow =
-    arrows &&
-    rows.some((row) => row.opens) &&
-    placed.every((row) => held(row, width - ARROW) >= wanted(row));
-  const line = width - (arrow ? ARROW : 0);
-  const places = filled && Math.min(filled.length, ...placed.map((row) => held(row, line)));
+  /** The rows in `columned`'s places (none: packed), and their chevrons where every row holds its rounds beside one. */
+  const laid = (columned?: readonly number[]) => {
+    const placed = columned
+      ? rows.map((row) => ({ ...row, rounds: columned.map((at) => row.rounds[at] ?? null) }))
+      : rows;
+    const wanted = (row: RoundsRowSpec): number => columned?.length ?? roundsOfRow(row).length;
+    const arrow =
+      arrows &&
+      rows.some((row) => row.opens) &&
+      placed.every((row) => held(row, width - ARROW) >= wanted(row));
+    const line = width - (arrow ? ARROW : 0);
+    const places = columned && Math.min(columned.length, ...placed.map((row) => held(row, line)));
+    return { placed, arrow, line, places };
+  };
+  // in columns while no empty place cuts a row's name, else packed
+  const inColumns = filled && laid(filled);
+  const { placed, arrow, places } =
+    inColumns &&
+    !inColumns.placed.some((row) =>
+      cutByPlace(host, inColumns.line, row, compact, icon, inColumns.places ?? 0),
+    )
+      ? inColumns
+      : laid();
   return placed.map((row) => roundsRow(host, width, row, { compact, icon, arrow, places }));
 };
+
+/**
+ * Whether an empty place among a row's first `places` leaves its name less than its whole: the room `roundsRow` gives
+ * its words beside its circle, its value and its places.
+ */
+function cutByPlace(
+  host: RoundsHost,
+  line: number,
+  row: RoundsRowSpec,
+  compact: boolean,
+  icon: boolean,
+  places: number,
+): boolean {
+  if (!row.rounds.slice(0, places).includes(null)) return false;
+  const words =
+    line -
+    (icon ? before(row, compact, icon) : 0) -
+    valueSlot(host, row.value) -
+    roundsTaken(places);
+  return host.ruler.width('fv-row__title', row.title) > words;
+}

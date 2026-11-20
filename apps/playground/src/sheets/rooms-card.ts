@@ -210,7 +210,8 @@ export const sheet: SheetSpec = {
     { title: 'The house', hass: house, cards: [HOUSE] },
     { title: 'The house · tiles', hass: house, cards: [{ ...HOUSE, variant: 'tiles' }] },
     { title: 'The house · compact', hass: house, cards: [{ ...HOUSE, variant: 'compact' }] },
-    // the issue's picture: the reporter's rooms in German, as its mockup draws them
+    // the issue's picture: the reporter's rooms in German, as its mockup draws them; on a phone's 328 an empty place
+    // would cut "Kinderzimmer", so the rounds stand packed there, every name whole
     { title: 'The house · in German', hass: houseInGerman, cards: [HOUSE] },
     {
       title: 'The house · how many are on',
