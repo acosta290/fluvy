@@ -91,7 +91,13 @@ interface Fixture {
  * from the configs, and the config API (`refuse`: a POST refused as Home Assistant refuses one).
  */
 function house(
-  options: { admin?: boolean; states?: Record<string, HassEntity>; refuse?: boolean } = {},
+  options: {
+    admin?: boolean;
+    states?: Record<string, HassEntity>;
+    refuse?: boolean;
+    /** Home Assistant answers which automation is the thermostat's only once this settles. */
+    hold?: Promise<void>;
+  } = {},
 ): Fixture {
   const configs = new Map<string, unknown>([[BEDROOM.id, buildHeating(BEDROOM)]]);
   const items = new Map<string, Record<string, unknown>>([
@@ -112,6 +118,7 @@ function house(
   const callWS = vi.fn(async (message: Record<string, unknown>) => {
     switch (message['type']) {
       case 'search/related': {
+        await options.hold;
         if (message['item_type'] === 'automation')
           return { entity: ['climate.bedroom', 'schedule.bedroom_heating'] };
         const id = message['item_id'];
@@ -415,6 +422,23 @@ describe('the Heating schedule card', () => {
       expect(sheet.shadowRoot!.querySelector('.hs-note')?.textContent?.trim()).toBe(
         'Only an administrator can change the schedule',
       );
+    });
+
+    it('opens no sheet while it still reads which plan is the thermostat’s, where one would offer a second', async () => {
+      let answer!: () => void;
+      const hold = new Promise<void>((resolve) => (answer = resolve));
+      const card = await mount({ variant: 'row' }, house({ hold }));
+      root(card).querySelector<HTMLElement>('.sc-row > .fv-tile__tap')?.click();
+      await settle(card);
+      await new Promise((resolve) => setTimeout(resolve, 50));
+      const early = root(card).querySelector<FluvyHeatingSheet>('fluvy-heating-sheet');
+      expect(early?.isOpen ?? false).toBe(false);
+      answer();
+      await settle(card);
+      await settle(card);
+      root(card).querySelector<HTMLElement>('.sc-row > .fv-tile__tap')?.click();
+      await settle(card);
+      expect((await sheetOf(card)).isOpen).toBe(true);
     });
 
     it('gives way narrow: the next change, the circle, then the switch with the circle back; the figure never', async () => {

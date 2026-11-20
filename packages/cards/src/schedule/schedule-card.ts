@@ -629,6 +629,13 @@ export class FluvyScheduleCard extends Card<ScheduleCardConfig> {
     const view = this.entity();
     const plans = this.plans;
     const week = tie.schedule ? plans?.week(tie.schedule) : undefined;
+    // not while the card still reads which plan is the thermostat's: a sheet opened then would offer to make a second
+    // helper and automation beside the one it has not found yet
+    if (
+      tie.waiting ||
+      (tie.schedule !== undefined && !week && !(plans?.settled(tie.schedule) ?? false))
+    )
+      return;
     const editable =
       this.admin &&
       !tie.foreign &&
