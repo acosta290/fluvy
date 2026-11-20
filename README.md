@@ -95,13 +95,21 @@ drag, slide away to slow down, hold for the 1 % scale.
 </p>
 
 **Control** — lights with brightness and colour temperature, a room's lights on one card (one tap for the whole
-room, a round for each light, in its bulb's colour), thermostats (dial or compact), water heaters and humidifiers,
+room, a round for each light, in its bulb's colour), thermostats (dial or compact, the room's temperature first if you like), every thermostat of the house in one card with its presets and an All off, a heating week that runs in Home Assistant itself (its own schedule helper and an automation), water heaters and humidifiers,
 covers with position and tilt, fans, vacuums, valves, media players and TVs, 3D printers (OctoPrint, PrusaLink,
 Bambu Lab, Moonraker, Creality, Elegoo, Anycubic, Snapmaker and FlashForge: the job, its time left, the heaters, the
 filament unit's trays, the camera, pause and stop), electric cars (Tesla, Renault, Volvo, Škoda, Kia, Hyundai,
 Volkswagen, Polestar, MG and BMW: the battery with its range and charge limit, when it is full, where it is, and its
-lock, climate, charging, boot and windows in one row), tiles and lists — and a tile of your own whose name, line, icon
+lock, climate, charging, boot and windows in one row), tiles and lists, any entities as a row of round buttons, every room in one card with its temperature, humidity and quick actions — and a tile of your own whose name, line, icon
 and colour are Home Assistant templates (the Template card; a Mushroom template card pastes in).
+
+<p align="center">
+  <a href="https://acosta290.github.io/fluvy/?sheet=rooms-card&amp;palette=linen"><img src="https://raw.githubusercontent.com/acosta290/fluvy/main/docs/images/readme/rooms-schedule.webp" width="822" alt="The Rooms card with every room's temperature, humidity and quick actions in columns, and the Heating schedule card's week drawn like the brightness ruler, today highlighted with its knob at the time it is now"></a>
+</p>
+
+<p align="center">
+  <a href="https://acosta290.github.io/fluvy/?sheet=rounds&amp;palette=linen"><img src="https://raw.githubusercontent.com/acosta290/fluvy/main/docs/images/readme/rounds-thermostats.webp" width="822" alt="A lounge as round keys with their states, and every thermostat of the house in one card with All off and the house's presets"></a>
+</p>
 
 <p align="center">
   <a href="https://acosta290.github.io/fluvy/?sheet=devices-motion&amp;palette=linen"><img src="https://raw.githubusercontent.com/acosta290/fluvy/main/docs/images/readme/control-cover.webp" width="411" alt="The cover card: blinds with their position and tilt"></a><a href="https://acosta290.github.io/fluvy/?sheet=devices-motion&amp;palette=linen"><img src="https://raw.githubusercontent.com/acosta290/fluvy/main/docs/images/readme/control-vacuum.webp" width="411" alt="The vacuum card: cleaning the kitchen, its battery, its controls and its suction"></a>
@@ -132,7 +140,7 @@ decimals you ask for. [How they read a house](docs/energy.md).
 </p>
 
 **Security and sensors** — locks, alarms, cameras (live, in their own shape, or several at a glance on the Cameras
-card, each with what it sees), openings and motion, humidity, plants, gauges, sensor tiles, and up to three sensors on
+card, each with what it sees), openings and motion (motion that alerts where you ask), humidity, plants, gauges, sensor tiles, and up to three sensors on
 one chart.
 
 <p align="center">
@@ -144,7 +152,7 @@ Fluvy always drew, or `soft`, `glow`, `minimal`, `step`, `bars`, `columns`, `ban
 gauge read as Fluvy's own dial, ring or ruler, or moving with what it reads — a liquid, the sky over the ground, a
 tank, a battery, a pulse, the air, the sun. The Chart card draws any time series from what has happened to what is to
 come — a sensor's history, tomorrow's electricity prices, a solar forecast — with thresholds in their colours and the
-cheapest hours marked.
+cheapest hours marked, and a switch, a door or a mode as a strip of its states under the line.
 
 <p align="center">
   <a href="https://acosta290.github.io/fluvy/?sheet=chart&amp;palette=linen"><img src="https://raw.githubusercontent.com/acosta290/fluvy/main/docs/images/readme/chart-light.webp" width="411" alt="The Chart card: today's and tomorrow's electricity prices, stepped, the cheapest and dearest hours marked, light"></a><a href="https://acosta290.github.io/fluvy/?sheet=chart&amp;palette=linen&amp;mode=dark"><img src="https://raw.githubusercontent.com/acosta290/fluvy/main/docs/images/readme/chart-dark.webp" width="411" alt="The same Chart card, dark"></a>
@@ -154,8 +162,8 @@ cheapest hours marked.
   <a href="https://acosta290.github.io/fluvy/?sheet=chart-styles&amp;palette=linen"><img src="https://raw.githubusercontent.com/acosta290/fluvy/main/docs/images/readme/chart-soft.webp" width="411" alt="A day of a room's temperature in the soft style"></a><a href="https://acosta290.github.io/fluvy/?sheet=chart-styles&amp;palette=linen"><img src="https://raw.githubusercontent.com/acosta290/fluvy/main/docs/images/readme/chart-columns.webp" width="411" alt="A day of the house's energy in columns"></a>
 </p>
 
-**Home, time and helpers** — weather and forecasts, who is home, scenes and actions, calendars (month, week,
-timeline, upcoming), clocks (analog, digital, world), readouts and trends, safety, helpers, updates, timers, to-do
+**Home, time and helpers** — weather and forecasts, a compass for the wind, a car's heading or the sun, who is home, scenes and actions, calendars (month, week,
+timeline, upcoming), clocks (analog, digital, world), readouts and trends, safety, helpers (a number set with − and + or typed in place), updates, timers, to-do
 lists, and the house's automations: every one as a row with its switch and last run, and schedules written in a
 sheet as native Home Assistant automations — for the whole house, or for the one lamp a popup is about. A web page on
 a plate (a map, a site of your own), and the items of a sensor's list as rows — the flights overhead, a departures
@@ -209,6 +217,9 @@ a dashboard each — **Rooms** (a tab a floor, or a tab a room), **Energy**, **S
   drawn on purpose, at the size and in the anatomy the card has live — among them a Template card for tiles of your
   own (Home Assistant templates, a Mushroom template card pasted in), a Cameras card for every camera at a glance and
   a Chart card for any time series, from a sensor's history to tomorrow's prices.
+- **Fluvy's own icons**: a battery, a signal, a router, a radiator, a valve, the rooms of a house and many more as
+  `fluvy:` icons in Home Assistant's picker, drawn the size of Material's beside them; a battery's or a signal's can
+  show its level.
 - **Charts in a style of the house's**: classic, soft, glow, minimal, step, bars, columns or band, chosen once in the
   settings panel or per card, and gauges that move with what they read.
 - **Energy as your meters read it**: a house that imports and exports at once shows both, per phase; with nothing
