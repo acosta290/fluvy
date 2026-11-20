@@ -37,6 +37,11 @@ export interface Block {
   readonly preset?: string;
   /** What else its `data` holds, kept as it was read. */
   readonly data?: Readonly<Record<string, Scalar>>;
+  /**
+   * Its times as Home Assistant wrote them where they hold seconds (a block made by hand there, "06:30:15", or a day
+   * that ends "23:59:59"): written back as they were while the block keeps its minute.
+   */
+  readonly exact?: { readonly from?: string; readonly to?: string };
 }
 
 export type Week = Readonly<Record<Weekday, readonly Block[]>>;
@@ -49,14 +54,17 @@ const isRecord = (value: unknown): value is Record<string, unknown> =>
 
 const pad2 = (n: number): string => String(n).padStart(2, '0');
 
+/** A time as Home Assistant writes one: its hours, its minutes, and its seconds where it has them. */
+const TIME = /^(\d{1,2}):(\d{2})(?::(\d{2})(?:\.\d+)?)?$/;
+
 /**
  * A time as Home Assistant writes one ('06:30', '06:30:00', '24:00:00', and the day's end as `get_schedule` answers
- * it, '23:59:59.999999'), in whole minutes; seconds are dropped. `end`: the time ends a block, so the day's end is
- * one. Nothing for anything else.
+ * it, '23:59:59.999999'), in whole minutes; seconds are dropped (`exactOf` keeps them). `end`: the time ends a block,
+ * so the day's end is one. Nothing for anything else.
  */
 export function minutesOf(text: unknown, end = false): number | undefined {
   if (typeof text !== 'string') return undefined;
-  const match = /^(\d{1,2}):(\d{2})(?::(\d{2})(?:\.\d+)?)?$/.exec(text.trim());
+  const match = TIME.exec(text.trim());
   if (!match) return undefined;
   const hours = Number(match[1]);
   const minutes = Number(match[2]);
@@ -70,8 +78,28 @@ export function minutesOf(text: unknown, end = false): number | undefined {
 export const clockText = (minutes: number): string =>
   `${pad2(Math.floor(minutes / 60))}:${pad2(minutes % 60)}`;
 
-/** Minutes as the helper is written: 'HH:MM:00', the day's end '24:00:00'. */
-const helperTime = (minutes: number): string => `${clockText(minutes)}:00`;
+/**
+ * A time read with seconds ('06:30:15'), as the helper is written ('HH:MM:SS'); nothing for one on the minute, nor for
+ * the day's end as `get_schedule` serialises it ('23:59:59.999999', the only time written with a fraction).
+ */
+function exactOf(text: unknown): string | undefined {
+  const match = typeof text === 'string' && !text.includes('.') ? TIME.exec(text.trim()) : null;
+  const seconds = match?.[3];
+  return match && seconds && seconds !== '00'
+    ? `${pad2(Number(match[1]))}:${match[2]}:${seconds}`
+    : undefined;
+}
+
+/**
+ * A block's time as the helper is written: as Home Assistant wrote it while the block keeps that minute (its seconds),
+ * else 'HH:MM:00', the day's end '24:00:00'.
+ */
+function helperTime(block: Block, edge: 'from' | 'to'): string {
+  const exact = block.exact?.[edge];
+  return exact !== undefined && minutesOf(exact, edge === 'to') === block[edge]
+    ? exact
+    : `${clockText(block[edge])}:00`;
+}
 
 /** A preset's key as a block names it: a string of the person's own, trimmed, never empty, never a control character. */
 export const isPresetKey = (value: unknown): value is string =>
@@ -88,6 +116,7 @@ function blockOf(raw: unknown): Block | undefined {
   const from = minutesOf(raw['from']);
   const to = minutesOf(raw['to'], true);
   if (from === undefined || to === undefined || to <= from) return undefined;
+  const exact = { from: exactOf(raw['from']), to: exactOf(raw['to']) };
   const data = raw['data'];
   if (data !== undefined && !isRecord(data)) return undefined;
   const rest: Record<string, Scalar> = {};
@@ -103,6 +132,14 @@ function blockOf(raw: unknown): Block | undefined {
     to,
     ...(preset !== undefined ? { preset } : {}),
     ...(Object.keys(rest).length ? { data: rest } : {}),
+    ...(exact.from || exact.to
+      ? {
+          exact: {
+            ...(exact.from ? { from: exact.from } : {}),
+            ...(exact.to ? { to: exact.to } : {}),
+          },
+        }
+      : {}),
   };
 }
 
@@ -312,7 +349,7 @@ export function nextChange(
 
 /* ---------- writing ---------- */
 
-/** One block as the helper is written: its times with their seconds, its data with its preset. */
+/** One block as the helper is written: its times with their seconds (a hand-made one's kept), its data with its preset. */
 export interface HelperBlock {
   readonly from: string;
   readonly to: string;
@@ -330,8 +367,8 @@ export function helperDays(week: Week): Record<Weekday, HelperBlock[]> {
           ...(block.preset !== undefined ? { [PRESET_KEY]: block.preset } : {}),
         };
         return {
-          from: helperTime(block.from),
-          to: helperTime(block.to),
+          from: helperTime(block, 'from'),
+          to: helperTime(block, 'to'),
           ...(Object.keys(data).length ? { data } : {}),
         };
       }),

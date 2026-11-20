@@ -105,6 +105,35 @@ describe('the week, from both of Home Assistant’s sources', () => {
     const read = helperOf({ id: 'x', name: 'x', ...days });
     expect(read && sameWeek(read.week, week)).toBe(true);
   });
+
+  it('writes a block made by hand back with its seconds while it keeps its minute, on the minute once it is moved', () => {
+    const item = helperOf({
+      ...ITEM,
+      monday: [
+        { from: '06:30:15', to: '08:00:00', data: { preset: 'comfort' } },
+        { from: '22:00:00', to: '23:59:59', data: { preset: 'comfort' } },
+      ],
+    });
+    const monday = item?.week.monday ?? [];
+    expect(monday.map((each) => [each.from, each.to])).toEqual([
+      [390, 480],
+      [1320, DAY_END],
+    ]);
+    // untouched, the helper is written as Home Assistant holds it: nothing to write
+    expect(helperDays(item!.week).monday).toEqual([
+      { from: '06:30:15', to: '08:00:00', data: { preset: 'comfort' } },
+      { from: '22:00:00', to: '23:59:59', data: { preset: 'comfort' } },
+    ]);
+    expect(sameWeek(helperOf({ ...ITEM, ...helperDays(item!.week) })!.week, item!.week)).toBe(true);
+    // its start moved in the sheet: the start on the minute, its end as it was
+    const moved = withDay(item!.week, 'monday', [{ ...monday[0]!, from: 7 * 60 }, monday[1]!]);
+    expect(helperDays(moved).monday[0]).toEqual({
+      from: '07:00:00',
+      to: '08:00:00',
+      data: { preset: 'comfort' },
+    });
+    expect(helperDays(moved).monday[1]?.to).toBe('23:59:59');
+  });
 });
 
 describe('a day’s blocks', () => {
