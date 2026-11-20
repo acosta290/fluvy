@@ -52,13 +52,13 @@ export const expanderRound = (config: LovelaceCardConfig): number =>
 
 /**
  * What turns out less than a card's padding on a surface, by `<card>:<layout>` (`cardLayout`): what stands on the page
- * by itself, with none (a tile and a set of them, the template card, a scene and the scenes, the greeting, the rooms'
- * chips, a heading, the alerts but their rows, the tile of a slider, a sensor, a chart, a clock and a calendar, a
- * room's row, a bare web page, the appliances' own cards), and the rows that pad their content by 16 (`--fv-pad`: a
- * player's and a car's mini, a remote's, a printer's and an appliance's row).
+ * by itself, with none (a tile and a set of them, the template card but in a card's look, a scene and the scenes, the
+ * greeting, the rooms' chips, a heading, the alerts but their rows, the tile of a slider, a sensor, a chart, a clock
+ * and a calendar, a room's row, a bare web page, the appliances' own cards), and the rows that pad their content by 16
+ * (`--fv-pad`: a player's and a car's mini, a remote's, a printer's and an appliance's row).
  */
 const ON_PAGE =
-  /^(tiles?|template|scenes?|hello|chips|heading):|^alerts:(?!rows$)|^(slider|sensor|chart|clock|calendar):tile$|^room:row$|^web:bare$|^appliances:cards$/;
+  /^(tiles?|scenes?|hello|chips|heading):|^template:(?!card$)|^alerts:(?!rows$)|^(slider|sensor|chart|clock|calendar):tile$|^room:row$|^web:bare$|^appliances:cards$/;
 const ROWS = /^(media|vehicle):mini$|^(remote|printer|appliance):row$/;
 
 /**

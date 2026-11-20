@@ -982,6 +982,14 @@ describe('cards for a head', () => {
     expect(tall({ ...player, variant: 'compact' }, { show_chevron: false })).toBe(
       tall({ ...player, variant: 'compact' }, { style: 'plain', show_chevron: false }),
     );
+    // a Template card in a card's look is a card: its 20 turned out into the surface's, its 84 alone
+    const look = {
+      type: 'custom:fluvy-template-card',
+      entity: 'binary_sensor.gate',
+      variant: 'card',
+    };
+    expect(tall(look)).toBe(84);
+    expect(tall({ ...look, variant: 'compact' })).toBe(20 + 76 + 20);
     // the alerts' rows are a card's
     expect(tall({ type: 'custom:fluvy-alerts-card', variant: 'rows' })).toBe(
       tall({ type: 'custom:fluvy-alerts-card', variant: 'rows' }, { style: 'plain' }),
