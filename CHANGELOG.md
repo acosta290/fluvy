@@ -16,9 +16,9 @@ turned on, so an upgrade changes no dashboard. What changes without being asked 
 - A card at 0 % opacity is clear: the house's blur no longer frosts it into a pane (#213, reported by @SentinelXS).
 - The Map card's map stands centred on its plate, in an Expander as anywhere: Home Assistant's map inside it filled a
   square under the plate, so the people sat under its middle (#220, reported by @SentinelXS).
-- A lock locks at one tap and asks before it unlocks wherever a tap toggles it (a room's quick action, a tile, its switch
-  and its circle, a `toggle` written by hand), in Home Assistant's own dialog; `confirmation: false` on the tap unlocks
-  at once as before. One tap on a locked door's round or tile opened it.
+- A lock locks at one tap and asks before it unlocks wherever a tap toggles it (a room's quick action, a tile, its
+  switch and its circle, a `toggle` written by hand), in Home Assistant's own dialog; `confirmation: false` on the tap
+  unlocks at once as before. One tap on a locked door's round or tile opened it.
 - The Water & gas card's rows give an automation, a blind, a group and a remote the switch the Entities card's rows give
   them: the two cards wrote the rule of what a stray tap may flip twice and disagreed.
 - The Chart card leaves a gap where a sensor was `unavailable`, `unknown` or said no number: its line, its area and its
@@ -30,10 +30,10 @@ turned on, so an upgrade changes no dashboard. What changes without being asked 
 - The Thermostat card's chosen mode chip is filled in its mode's colour, as its tile and its details sheet are, where it
   wore the accent (#215).
 - The Openings card at half a section puts a state too long to sit beside its name under it, as the Entities card does,
-  and a tile's state that will not fit takes a smaller size, where German "Geschlossen" and Russian "Обнаружено" ran past
-  the row at 152.
-- The Energy flow card never leaves a Chinese or Japanese character alone on a label's line: a battery's charge takes its
-  own line ("电池" over "64 %"), and a house whose battery or car says its charge keeps its diagram on a phone read at
+  and a tile's state that will not fit takes a smaller size, where German "Geschlossen" and Russian "Обнаружено" ran
+  past the row at 152.
+- The Energy flow card never leaves a Chinese or Japanese character alone on a label's line: a battery's charge takes
+  its own line ("电池" over "64 %"), and a house whose battery or car says its charge keeps its diagram on a phone read at
   125 %, where it turned into its list.
 - A Cover card's favourite that sets an angle says "Breeze · 70 %" where its words hold no row, where its chip cut the
   figure at 211 in Spanish, French, Italian, Polish, Portuguese and Slovak; a cover not read yet keeps the room of its
@@ -51,32 +51,46 @@ turned on, so an upgrade changes no dashboard. What changes without being asked 
 - Czech says what Home Assistant says where Home Assistant names the same thing: a tap is "klepnutí", a dashboard an
   "ovládací panel", solar is "Solární", the openings take their device class's "Otevření" and the greeting is formal;
   four sentences that read as English are rewritten (#227, by @DJjohn07).
+- A figure below zero on a tile's head or foot, in a row, a room's or a thermostat's reading is written with the
+  design's minus against it ("−95 dBm"), as charts and gauges already wrote it, where a gap stood after a loose hyphen
+  ("- 95 dBm").
+- An Expander whose head is a tile, a scene, a chip, a row or a Template card in a card's look, and a Swipe card holding
+  them, declare the height they draw, so the automatic dashboard keeps them their room.
+- The Helpers card declares only the ruler it draws: a counter with a minimum and a maximum, and a range of more than
+  256 steps not set to slider, stood 48 px too tall in the automatic dashboards' columns.
+- The Cover card declares the favourites it draws on a cover with no position too, as many rows as their words take.
 
 ### Added
 
 - The Rounds card: any entities as rounds, lit while on with the ring of their level, the dashed ring out of reach; a
   tap flips what is safe to flip and opens the rest, a lock locking at once and asking before it unlocks, a hold opens
-  the details; in lines from the start, the middle or edge to edge, with their names, with their states under them, or
-  a row each, under a head with "2 of 6 on" where it has a title (#224, after @twodrops's proposal).
+  the details; in lines (by default each line split evenly across the card) from the start, the middle or edge to edge,
+  with their names, with their states in keys under their glyphs (every key of a card one width, its words 12 from its
+  sides), or a row each, under a head with "2 of 6 on" where it has a title (#224, after @twodrops's proposal).
 - The Rooms card shows every room in one card: a row each with the room's icon, its name, its temperature and humidity
   and its quick actions at the end (its lights, its thermostat, its blinds or any entity), standing in columns as the
-  issue drew them, a room without blinds or a thermostat leaving that place empty; or compact rows, or tiles two a row;
-  left without a list it shows the house's rooms in their order, a tap opens the room's own path or its page on the
-  automatic dashboard (else the area's settings for an administrator), and its head says "6 rooms · 20.9° average"
-  (#225, asked by @xoatrash).
+  issue drew them, a room without blinds or a thermostat leaving that place empty (where an empty place would cut a
+  room's name, the card stands the rounds packed at that width); or compact rows, or tiles two a row; left without a
+  list it shows the house's rooms in their order, a tap opens the room's own path or its page on the automatic dashboard
+  (else the area's settings for an administrator), and its head says "6 rooms · 20.9° average" (#225, asked by
+  @xoatrash).
 - The Thermostats card shows every thermostat of the house, an area or a list in one card, a row per room with its
   temperature, what it is doing, its preset and its target and a round that opens its details, with optional minus and
   plus buttons for the target, compact rows or tiles, a count and the rooms' average in its head, and All off and the
   house's presets as chips, each unit set with its own (#230, asked by @xoatrash, with @waphbs's house-card prototype,
   #219).
-- The Heating schedule card: a room's heating week on Home Assistant's own schedule helper, a line a day in its presets'
-  colours with a marker at the time it is now, what the thermostat is doing, the preset in force and the room's
-  temperature in its head beside the schedule's switch, the presets with their temperatures under the hours, today's
-  line alone, or one row ("Comfort · 21° · Eco at 22:30"); its sheet edits a day's times, refuses two that overlap,
-  copies a day to others and sets the presets, and Save writes the helper and one automation you can see in Home
-  Assistant, so the week runs with every browser closed (#229, asked by @xoatrash).
+- The Heating schedule card: a room's heating week on Home Assistant's own schedule helper, drawn in the brightness
+  ruler's language: a line a day of hour ticks, each heating time a solid tile in its preset's colour saying its start
+  and its end where they fit, today's line highlighted with the ruler's knob at the time it is now and its needle
+  running through the week to the time in its bubble; what the thermostat is doing, the preset in force in its colour,
+  its target and the room's temperature in its head beside the schedule's switch, the presets as chips with their
+  temperatures, today's line alone, or one row ("Comfort · 21° · Eco at 22:30"); its sheet edits a day's times, refuses
+  two that overlap, copies a day to others and sets the presets, and Save writes the helper and one automation you can
+  see in Home Assistant, so the week runs with every browser closed, never over a change made there while the sheet was
+  open (it says so and offers Reload), keeping the seconds of a time made by hand (#229, asked by @xoatrash).
 - The Compass card (`custom:fluvy-compass-card`) draws a bearing on a 360° ring as Fluvy's dials are: the wind from a
-  weather station, a car's heading read from its tracker, a weather entity's wind or the sun's azimuth, marked by the
+  weather station, a car's heading read from its tracker, a weather entity's wind or the sun's azimuth, marked by an
+  arrow of its own laid across the ring and pointing in, which turns to a new bearing the short way round, or by the
   thermostat's knob, the ticks lit across it or a dot, a second bearing beside it to compare, its figure in the ring
   over the point and the degrees, the cardinal points in the page's language, `north_offset` for a window that does not
   face north, the house's thresholds and up to three readouts under the ring; `compact` puts a small ring beside its
@@ -88,15 +102,18 @@ turned on, so an upgrade changes no dashboard. What changes without being asked 
 - The Chart card draws any entity's states as a strip under its chart (`kind: states`): a switch, a door or a heat
   pump's mode on the chart's own time, on in the series' colour, unavailable and unknown striped, a state in a colour of
   its own where `state_colors` names one; the cursor runs down the strip and the legend says the state then in Home
-  Assistant's words, and a chart of states alone gives them the plot's room. A series read from a sensor's history
-  takes `stat` (`min`, `max` or `last`), so a template sensor of 0 and 100 reads 0 or 100, never a value between
-  (#228, asked by @SentinelXS, with @twodrops).
+  Assistant's words, and a chart of states alone gives them the plot's room. A series read from a sensor's history takes
+  `stat` (`min`, `max` or `last`), so a template sensor of 0 and 100 reads 0 or 100, never a value between (#228, asked
+  by @SentinelXS, with @twodrops).
 - Fluvy's icon set has 94 new glyphs in its own hand, so a wall tablet stays in one icon language: batteries and signal
   bars at every level, a valve open or shut, energy, devices, climate and air, water and safety, outdoors, home and
   twelve rooms, each as `fluvy:<name>` in Home Assistant's icon picker and in a card's `icon`; the hob, the microwave,
   the kettle, the air fryer and the toaster can be picked too. Appearance › Cards › Icons show their level, off by
   default, lets a battery show its charge, a signal its bars and a valve whether it is open or shut (#226, asked by
   @SentinelXS).
+- Home Assistant's icon picker finds the glyphs by what they draw: "sofa" finds `fluvy:living-room`, "bed" the bedroom,
+  "shower" or "bath" the bathroom, "child" the kids' room, "stove" or "pot" the kitchen, "desk" the office, "washing"
+  the laundry, "wifi" or "rssi" a signal's bars (#226).
 - Every card may set its own blur while it is see-through: `card_blur: false` keeps it clear, `card_blur: true` frosts
   it even at 0 %; a dashboard's sidebar takes the key too (#213, reported by @SentinelXS).
 - The Template card has a card's look, `variant: card`: the compact tile at a card's padding and height, standing in an
@@ -111,19 +128,14 @@ turned on, so an upgrade changes no dashboard. What changes without being asked 
   @darkimage404).
 - A wall's subview can stand with no way back at all: Back from a subview in the Wall tab offers None beside Back button
   and Header, and says how a subview is left then (#222, thanks @xoatrash).
-- A card of your own opens an entity's details as Fluvy's cards do with `window.__fluvy.openDetails(entityId, { from })`;
-  the Room lights and Room cards count an area's lamps on plugs among its lights with `lamp_switches`; the Room lights
-  card's `show_mixed` gives the room's switch a look of its own while only some lights are on; `docs/theme.md` names the
-  tone variables a card of your own wears (#219, asked by @waphbs).
+- A card of your own opens an entity's details as Fluvy's cards do with `window.__fluvy.openDetails(entityId, { from
+  })`; the Room lights and Room cards count an area's lamps on plugs among its lights with `lamp_switches`; the Room
+  lights card's `show_mixed` gives the room's switch a look of its own while only some lights are on; `docs/theme.md`
+  names the tone variables a card of your own wears (#219, asked by @waphbs).
 
 ### Fixed
 
 - The Thermostat card declares a row of content-sized mode chips at the height its icons make it take (#215).
-- An Expander whose head is a tile, a scene, a chip, a row or a Template card in a card's look, and a Swipe card holding
-  them, declare the height they draw, so the automatic dashboard keeps them their room.
-- The Cover card declares the favourites it draws on a cover with no position too, as many rows as their words take.
-- The Helpers card declares only the ruler it draws: a counter with a minimum and a maximum, and a range of more than
-  256 steps not set to slider, stood 48 px too tall in the automatic dashboards' columns.
 - The docs, the README and the package description name the cards, the languages and the automatic dashboards without
   counting them, so no page goes stale with a new card (#221, reported by @twodrops).
 
@@ -139,6 +151,7 @@ turned on, so an upgrade changes no dashboard. What changes without being asked 
 - The measurer waits for the page to settle and ends every animation before it measures, so a card whose code arrives
   late is measured whole and at rest (`MEASURE_LATE` reproduces it); its `text-clipped` rule finds words wider than the
   box that lays them out; a column off whole pixels by 1/64 is not counted against a card.
+- The icon set answers a name every object holds (`fluvy:constructor`) with no icon, where `getIcon` threw.
 - The facts guard flags any count of the cards, the languages or the automatic dashboards (#221).
 - New browser suites: `interactions-rounds`, `-rooms-card`, `-thermostats`, `-schedule`, `-compass`, `-chart-states`.
 
