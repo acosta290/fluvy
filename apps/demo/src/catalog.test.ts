@@ -51,7 +51,7 @@ describe('the demo’s cards', () => {
     for (const card of CARDS) expect(groupOf(card.short), card.short).toBeDefined();
   });
 
-  it('keeps the showcase’s families as the demo had them', () => {
+  it('keeps the showcase’s families as the demo had them, Fluvy’s icons last (1.23)', () => {
     expect(FAMILIES.map((family) => family.key)).toEqual([
       'home',
       'devices',
@@ -62,6 +62,7 @@ describe('the demo’s cards', () => {
       'media',
       'time',
       'helpers',
+      'icons',
     ]);
   });
 });
