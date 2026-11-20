@@ -60,6 +60,11 @@ turned on, so an upgrade changes no dashboard. What changes without being asked 
   256 steps not set to slider, stood 48 px too tall in the automatic dashboards' columns.
 - The Cover card declares the favourites it draws on a cover with no position too, as many rows as their words take.
 
+- Home Assistant's icon in a Fluvy card's circle, a row or a readout (an `mdi:` icon a person names) is drawn at the
+  size of the Fluvy glyph it stands beside, nine tenths of the glyph's box, where it stood about a tenth larger:
+  Material's ink fills 2 to 22 of its 24 where a Fluvy glyph's fills 3 to 21, so the two now read as one size; in Home
+  Assistant's own cards a `fluvy:` icon already stands at Material's size (#226).
+
 ### Added
 
 - The Rounds card: any entities as rounds, lit while on with the ring of their level, the dashed ring out of reach; a

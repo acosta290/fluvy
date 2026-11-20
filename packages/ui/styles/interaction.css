@@ -638,30 +638,34 @@
   min-height: 44px;
 }
 
+/* Home Assistant's icon in a glyph's place: the glyph's box, and in it the icon at nine tenths of it, centred, since
+   Material's ink fills 2..22 of its 24 where a Fluvy glyph's fills 3..21: an mdi: icon and a fluvy: glyph beside it
+   draw one size (`--fv-haicon-box` is the glyph's size where it stands) */
 .fv-haicon {
-  --mdc-icon-size: 20px;
+  --fv-haicon-box: 20px;
+  --mdc-icon-size: calc(var(--fv-haicon-box) * 0.9);
   display: inline-flex;
-  width: 20px;
-  height: 20px;
+  align-items: center;
+  justify-content: center;
+  width: var(--fv-haicon-box);
+  height: var(--fv-haicon-box);
 }
 
 .fv-ico--hero .fv-haicon {
-  --mdc-icon-size: 32px;
-  width: 32px;
-  height: 32px;
+  --fv-haicon-box: 32px;
 }
 
 /* the smaller circle's glyph is 16 (`lists.css`): Home Assistant's icon in it too */
 .fv-row--compact > .fv-ico .fv-haicon,
 .fv-ico--small .fv-haicon {
-  --mdc-icon-size: 16px;
-  width: 16px;
-  height: 16px;
+  --fv-haicon-box: 16px;
 }
 
 /* a glyph of ours Home Assistant draws for a card (`fluvy-card:router`): what it draws faint as faint as the glyph
    draws it, a signal's bars it does not reach (Home Assistant's own property, as it spells it) */
+/* a glyph of the set Home Assistant draws (`fluvy-card:`) is already at its own ink: the whole box */
 .fv-haicon--fluvy {
+  --mdc-icon-size: var(--fv-haicon-box);
   --icon-secondary-opactity: 0.3;
 }
 
