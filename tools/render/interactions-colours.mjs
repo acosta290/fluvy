@@ -978,12 +978,14 @@ for (const mode of ['light', 'dark']) {
           return { edge: cs.boxShadow, blur: cs.backdropFilter };
         });
     const [drawn, none] = [await read(printers.nth(0)), await read(printers.nth(1))];
+    // at 0 % the card is clear, the house's blur no longer frosting it (#213); under 100 % and over 0, still blurred
+    const clear = level === '0';
     check(
-      `${mode}: see-through at ${level} %, its hairline gone and what shows through still blurred`,
+      `${mode}: see-through at ${level} %, its hairline gone and what shows through ${clear ? 'clear, not frosted (#213)' : 'still blurred'}`,
       edged(drawn.edge) &&
         none.edge === 'none' &&
         none.blur === drawn.blur &&
-        /blur/.test(none.blur),
+        (clear ? none.blur === 'none' : /blur/.test(none.blur)),
       JSON.stringify({ drawn, none }),
     );
   }

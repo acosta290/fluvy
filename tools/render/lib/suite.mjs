@@ -64,7 +64,8 @@ export async function startSuite() {
    * `true` from the real time, or `{ time }` from a moment of the suite's choosing (a check that runs the clock on
    * reads the same windows whatever the hour it runs at). `reducedMotion: 'reduce'`: the cards enter at once, so a
    * page read after its wait is never read mid-entrance, however loaded the machine. `touch`: a phone in the hand (a
-   * finger, nothing that hovers), where the page is a mouse's otherwise.
+   * finger, nothing that hovers), where the page is a mouse's otherwise. `timezoneId`: the zone the page's clock
+   * reads, for a suite whose sheet draws the house's day (the house's own, `Europe/Madrid`, whatever `TZ` the run has).
    */
   const page = async (
     query,
@@ -74,12 +75,14 @@ export async function startSuite() {
       wait = 900,
       reducedMotion = 'no-preference',
       touch = false,
+      timezoneId,
     } = {},
   ) => {
     const p = await browser.newPage({
       viewport,
       reducedMotion,
       ...(touch ? { hasTouch: true, isMobile: true } : {}),
+      ...(timezoneId ? { timezoneId } : {}),
     });
     await p.addInitScript(INIT);
     if (clock) await p.clock.install(clock === true ? undefined : clock);
@@ -89,8 +92,8 @@ export async function startSuite() {
     return p;
   };
   /** A design sheet's real cards, at a frame width (the sheets' 360 by default). */
-  const sheet = (name, { width = 360, lang = 'en', clock = false, extra = '' } = {}) =>
-    page(`sheet=${name}&width=${width}&lang=${lang}${extra}`, { clock });
+  const sheet = (name, { width = 360, lang = 'en', clock = false, extra = '', timezoneId } = {}) =>
+    page(`sheet=${name}&width=${width}&lang=${lang}${extra}`, { clock, timezoneId });
   const finish = async () => {
     await browser.close();
     const failed = results.filter((r) => !r.ok);

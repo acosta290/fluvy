@@ -18,6 +18,9 @@
  */
 import { apiCalls, calls, frame, PAGE_INTERVALS, reset, settle, startSuite } from './lib/suite.mjs';
 
+/** The house's zone (the playground's `time_zone`): the sheet's week and the card's now read the day in it, whatever `TZ` the run has. */
+const HOUSE_ZONE = 'Europe/Madrid';
+
 const suite = await startSuite();
 const { check } = suite;
 
@@ -101,7 +104,7 @@ const canonical = (value) =>
 
 /* ---------- the week, the sheet, a save ---------- */
 {
-  const page = await suite.sheet('schedule', { width: 412 });
+  const page = await suite.sheet('schedule', { width: 412, timezoneId: HOUSE_ZONE });
   const card = frame(page, 'Bedroom heating plan').locator('fluvy-schedule-card');
   const sheet = card.locator('fluvy-heating-sheet');
   const dialog = sheet.locator('dialog');
@@ -277,7 +280,7 @@ const canonical = (value) =>
 
 /* ---------- a guest reads; a new plan is made ---------- */
 {
-  const page = await suite.sheet('schedule', { width: 412 });
+  const page = await suite.sheet('schedule', { width: 412, timezoneId: HOUSE_ZONE });
   const guest = frame(page, 'Guest').locator('fluvy-schedule-card');
   await guest.locator('.fv-card__title').click();
   await settle(page, 500);
@@ -348,7 +351,7 @@ const canonical = (value) =>
 
 /* ---------- the row ---------- */
 {
-  const page = await suite.sheet('schedule', { width: 1400 });
+  const page = await suite.sheet('schedule', { width: 1400, timezoneId: HOUSE_ZONE });
   const rows = frame(page, 'Row · half').locator('fluvy-schedule-card');
   const seen = await rows.evaluateAll((cards) =>
     cards.map((el) => {
