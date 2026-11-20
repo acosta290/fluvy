@@ -166,6 +166,9 @@ describe('fluvy icon set', () => {
     expect(sun.viewBox).toBe('0 0 24 24');
     expect(sun.secondaryPath).toBeUndefined();
     expect((await set!.getIcon('nope')).path).toBe('');
+    // a name an object answers of its own (a person typing `fluvy:constructor`) is no glyph either
+    for (const name of ['constructor', 'toString', '__proto__', 'hasOwnProperty'])
+      expect(await iconOutline(name), name).toEqual({ path: '', viewBox: '0 0 24 24' });
     // the first part is fetched for the names it holds, a part of the index for its own, and both are listed
     expect((await set!.getIcon('gate-open')).path).toBe(ON_DEMAND_PATHS['gate-open']);
     const router = await set!.getIcon('router');

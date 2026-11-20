@@ -22,8 +22,9 @@ interface CustomIconSet {
  */
 const onDemand = (): Promise<typeof import('./on-demand.js')> => import('./on-demand.js');
 
-/** Core's part by any name Home Assistant asks for: one it does not hold has no path. */
-const corePaths: Readonly<Record<string, string | undefined>> = ICON_PATHS;
+/** Core's part by any name Home Assistant asks for: one it does not hold (an object's own, `constructor`) has no path. */
+const corePath = (name: string): string | undefined =>
+  Object.hasOwn(ICON_PATHS, name) ? ICON_PATHS[name as keyof typeof ICON_PATHS] : undefined;
 
 /** The names Home Assistant lists for the set (every part). */
 export const iconNames = async (): Promise<readonly string[]> => [
@@ -46,7 +47,7 @@ const GLYPH_INK = '-1.33 -1.33 26.67 26.67';
  */
 export async function iconOutline(name: string, ink = false): Promise<CustomIconHelpers> {
   const outline =
-    corePaths[name] ??
+    corePath(name) ??
     (await onDemand()
       .then((part) => part.outlineOf(name))
       .catch(() => undefined)) ??
