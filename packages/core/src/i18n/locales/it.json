@@ -3694,7 +3694,8 @@
     "next": "{preset} alle {time}",
     "next_on": "{preset} {day} alle {time}",
     "paused_short": "Spento",
-    "none": "Non impostato"
+    "none": "Non impostato",
+    "changed": "Modificato in Home Assistant da quando l’hai aperto"
   },
   "rounds": {
     "rounds": "Pulsanti tondi",

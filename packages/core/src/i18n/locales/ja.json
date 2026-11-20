@@ -3694,7 +3694,8 @@
     "next": "{time}から{preset}",
     "next_on": "{day} {time}から{preset}",
     "paused_short": "オフ",
-    "none": "スケジュールなし"
+    "none": "スケジュールなし",
+    "changed": "開いてから Home Assistant で変更されました"
   },
   "rounds": {
     "rounds": "丸ボタン",

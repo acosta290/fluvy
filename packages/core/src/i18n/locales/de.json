@@ -3694,7 +3694,8 @@
     "next": "{preset} um {time}",
     "next_on": "{preset} am {day} um {time}",
     "paused_short": "Aus",
-    "none": "Kein Plan"
+    "none": "Kein Plan",
+    "changed": "Seit dem Öffnen in Home Assistant geändert"
   },
   "rounds": {
     "rounds": "Runde Tasten",

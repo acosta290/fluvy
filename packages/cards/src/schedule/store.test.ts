@@ -110,4 +110,21 @@ describe('the schedule helpers’ store', () => {
     expect(callWS.mock.calls.filter((call) => call[0]['type'] === 'call_service')).toHaveLength(1);
     expect(store.helper('schedule.study')).toBeUndefined();
   });
+
+  it('reads a helper again as Home Assistant holds it now, whatever was heard, and forgets one that is gone', async () => {
+    let listed = [
+      { id: 'bedroom_heating', name: 'Bedroom heating', ...helperDays(startWeek('eco')) },
+    ];
+    const { store } = house((message) => {
+      if (message['type'] === 'config/entity_registry/get') return { unique_id: 'bedroom_heating' };
+      if (message['type'] === 'schedule/list') return listed;
+      return undefined;
+    });
+    await store.load('schedule.bedroom_heating');
+    expect((await store.reread('schedule.bedroom_heating'))?.week.monday).toHaveLength(2);
+    expect(store.helper('schedule.bedroom_heating')?.week.monday).toHaveLength(2);
+    listed = [];
+    expect(await store.reread('schedule.bedroom_heating')).toBeUndefined();
+    expect(store.helper('schedule.bedroom_heating')).toBeUndefined();
+  });
 });

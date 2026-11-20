@@ -27,10 +27,10 @@ import type { WsTable } from '../ws.js';
  * living room's week of four presets, one of them its own; the kids' room with no schedule yet; the attic's
  * thermostat out of reach; the study's helper kept in YAML, its schedule switched off; the hall's automation edited by
  * hand in Home Assistant; each also as the row.
- * Home Assistant is answered here, in memory: the helpers' collection (`schedule/subscribe`, `create`, `update`,
- * `delete`), the registry's tie of a helper to its entity, a YAML schedule's week (`schedule.get_schedule`), what an
- * entity and an automation relate to (`search/related`) and the automations' config API, so a plan saved from the
- * sheet is written as Home Assistant would take it (every message and body recorded for the interactions suite).
+ * Home Assistant is answered here, in memory: the helpers' collection (`schedule/subscribe`, `list`, `create`,
+ * `update`, `delete`), the registry's tie of a helper to its entity, a YAML schedule's week (`schedule.get_schedule`),
+ * what an entity and an automation relate to (`search/related`) and the automations' config API, so a plan saved from
+ * the sheet is written as Home Assistant would take it (every message and body recorded for the interactions suite).
  */
 
 const LATENCY = 140;
@@ -233,6 +233,7 @@ const ws: WsTable = {
       schedule_id: id,
       item: answerOf(id),
     })),
+  'schedule/list': () => [...helpers.keys()].map(answerOf),
   'schedule/create': (message, house) => {
     const item = without(message, 'type', 'id');
     const id = slug(String(item['name']));
@@ -361,7 +362,8 @@ const guest = (hass: HomeAssistant): HomeAssistant => {
 /**
  * The heating sheet is a modal in production. Here it is docked into a frame, as the schedule sheet's is, so it can
  * be photographed and measured: the bedroom's Monday being edited (`edit`), a new plan for the kids' room (`new`), the
- * living room's read by a guest (`read`). Saving here writes nothing.
+ * living room's read by a guest (`read`), the bedroom's Save refused as its week changed in Home Assistant meanwhile
+ * (`changed`). Saving here writes nothing.
  */
 class HeatingDemo extends Card {
   protected renderCard(): TemplateResult {
@@ -384,6 +386,7 @@ class HeatingDemo extends Card {
       unit: { min: 7, max: 30, step: 0.5, unit: '°C', range: false, modes: RADIATOR.preset_modes },
       looks: (presets) => presetLooks(this.hass, undefined, presets),
       save: async () => undefined,
+      reload: () => undefined,
     };
     if (mode === 'new') {
       sheet.open({ ...common, room: 'Kids’ room', climate: 'climate.kids_room' });
@@ -399,6 +402,8 @@ class HeatingDemo extends Card {
       base: heating.base,
       ...(mode === 'read' ? { readOnly: 'guest' as const, day: today } : {}),
     });
+    // what the sheet says once Save found the week changed in Home Assistant since it opened
+    if (mode === 'changed') sheet.changed_ = true;
   }
 }
 
@@ -612,6 +617,11 @@ export const sheet: SheetSpec = {
       title: 'Sheet · read',
       width: 392,
       cards: [{ type: 'custom:pg-heating-demo', mode: 'read' }],
+    },
+    {
+      title: 'Sheet · changed in Home Assistant',
+      width: 392,
+      cards: [{ type: 'custom:pg-heating-demo', mode: 'changed' }],
     },
   ],
 };

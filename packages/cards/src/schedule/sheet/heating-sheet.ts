@@ -96,8 +96,13 @@ export interface HeatingRequest {
   readonly unit: Unit;
   /** The presets as the card draws them (their names, glyphs, tones). */
   readonly looks: (presets: readonly Pick<Preset, 'key' | 'name'>[]) => readonly PresetLook[];
-  /** Writes the plan; rejects with what Home Assistant said when it refused it. */
-  save(draft: HeatingDraft): Promise<void>;
+  /**
+   * Writes the plan; resolves `changed` where Home Assistant changed it since the sheet opened (nothing is written),
+   * rejects with what Home Assistant said where it refused it.
+   */
+  save(draft: HeatingDraft): Promise<'changed' | undefined>;
+  /** Opens the sheet again on the plan as Home Assistant holds it now, on the day shown. */
+  reload(day: Weekday): void;
 }
 
 /** A press this soon after opening is the tail of the tap that opened the sheet, not a decision. */
@@ -342,6 +347,7 @@ export class FluvyHeatingSheet extends LitElement {
     draft_: { state: true },
     busy_: { state: true },
     error_: { state: true },
+    changed_: { state: true },
     copied_: { state: true },
     leaving_: { state: true },
     editing_: { state: true },
@@ -354,6 +360,8 @@ export class FluvyHeatingSheet extends LitElement {
   declare draft_: Draft | null;
   declare busy_: boolean;
   declare error_: string;
+  /** Home Assistant changed the plan since the sheet opened: Save would undo that, the sheet offers to read it again. */
+  declare changed_: boolean;
   /** What the last copy said ("Copied to Tue–Fri"), until the next gesture. */
   declare copied_: string;
   declare leaving_: boolean;
@@ -374,6 +382,7 @@ export class FluvyHeatingSheet extends LitElement {
     this.draft_ = null;
     this.busy_ = false;
     this.error_ = '';
+    this.changed_ = false;
     this.copied_ = '';
     this.leaving_ = false;
     this.editing_ = '';
@@ -408,6 +417,7 @@ export class FluvyHeatingSheet extends LitElement {
     );
     this.busy_ = false;
     this.error_ = '';
+    this.changed_ = false;
     this.copied_ = '';
     this.leaving_ = false;
     this.editing_ = '';
@@ -420,6 +430,7 @@ export class FluvyHeatingSheet extends LitElement {
     if (this.docked) {
       this.busy_ = false;
       this.error_ = '';
+      this.changed_ = false;
       return;
     }
     this.leaving_ = true;
@@ -524,8 +535,9 @@ export class FluvyHeatingSheet extends LitElement {
     if (performance.now() - this.openedAt < GUARD_MS) return;
     this.busy_ = true;
     this.error_ = '';
+    let saved: 'changed' | undefined;
     try {
-      await request.save(out);
+      saved = await request.save(out);
     } catch (error) {
       if (this.request_ !== request) return; // closed while Home Assistant was answering
       this.busy_ = false;
@@ -535,6 +547,11 @@ export class FluvyHeatingSheet extends LitElement {
     }
     if (this.request_ !== request) return;
     this.busy_ = false;
+    if (saved === 'changed') {
+      this.changed_ = true;
+      haptic(this, 'warning');
+      return;
+    }
     haptic(this, 'success');
     this.close();
   }
@@ -994,15 +1011,26 @@ export class FluvyHeatingSheet extends LitElement {
                 >
                   ${localize(hass, 'keypad.cancel')}
                 </button>
-                <button
-                  class="fv-btn fv-btn--accent"
-                  data-control
-                  data-target
-                  ?disabled=${!whole || this.busy_}
-                  @click=${() => void this.save()}
-                >
-                  ${s(hass, 'save')}
-                </button>
+                ${
+                  this.changed_
+                    ? html`<button
+                        class="fv-btn fv-btn--accent"
+                        data-control
+                        data-target
+                        @click=${() => request.reload(draft.day)}
+                      >
+                        ${localize(hass, 'common.reload')}
+                      </button>`
+                    : html`<button
+                        class="fv-btn fv-btn--accent"
+                        data-control
+                        data-target
+                        ?disabled=${!whole || this.busy_}
+                        @click=${() => void this.save()}
+                      >
+                        ${s(hass, 'save')}
+                      </button>`
+                }
               </div>`
             : html`<div class="dv-actions dv-actions--one">
                 <button
@@ -1015,7 +1043,13 @@ export class FluvyHeatingSheet extends LitElement {
                 </button>
               </div>`
         }
-        ${this.error_ ? html`<p class="hs-error" role="alert">${this.error_}</p>` : nothing}
+        ${
+          this.changed_ || this.error_
+            ? html`<p class="hs-error" role="alert">
+                ${this.changed_ ? s(hass, 'changed') : this.error_}
+              </p>`
+            : nothing
+        }
       </div>
     </div>`;
   }

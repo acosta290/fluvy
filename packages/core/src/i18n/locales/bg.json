@@ -3694,7 +3694,8 @@
     "next": "{preset} в {time}",
     "next_on": "{preset}: {day}, {time}",
     "paused_short": "Изключен",
-    "none": "Няма график"
+    "none": "Няма график",
+    "changed": "Променен в Home Assistant, след като го отворихте"
   },
   "rounds": {
     "rounds": "Кръгли бутони",

@@ -3694,7 +3694,8 @@
     "next": "{time} 起{preset}",
     "next_on": "{day} {time} 起{preset}",
     "paused_short": "已关闭",
-    "none": "无计划"
+    "none": "无计划",
+    "changed": "打开后已在 Home Assistant 中更改"
   },
   "rounds": {
     "rounds": "圆形按钮",

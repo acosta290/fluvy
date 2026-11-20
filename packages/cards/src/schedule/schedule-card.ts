@@ -99,6 +99,10 @@ function heatingOf(config: object | undefined): Heating | undefined {
   return parsed.get(config);
 }
 
+/** Whether two plans write one automation. */
+const samePlan = (a: Heating, b: Heating): boolean =>
+  JSON.stringify(buildHeating(a)) === JSON.stringify(buildHeating(b));
+
 /** The presets a week's blocks name, in the order they first come: what a guest knows of the plan. */
 const presetsNamed = (week: Week): Preset[] => {
   const keys: string[] = [];
@@ -546,10 +550,17 @@ export class FluvyScheduleCard extends Card<ScheduleCardConfig> {
 
   /**
    * Writes the plan: the helper (made, where the thermostat has none yet, named after the room) and the automation,
-   * each only where it changed. Where the automation is refused, the helper goes back to what it was (one just made is
-   * deleted) and the sheet says so: the card stays as it was.
+   * each only where it changed. Home Assistant is read again first: where the helper's week is no longer the one the
+   * sheet opened on (`opened`), or the plan's automation is no longer the one it read, nothing is written and the
+   * sheet is told so (`changed`), so a change made there meanwhile is never undone. Where the automation is refused,
+   * the helper goes back to what it was (one just made is deleted) and the sheet says so: the card stays as it was.
    */
-  private async write(tie: Tie, id: string, draft: HeatingDraft): Promise<void> {
+  private async write(
+    tie: Tie,
+    id: string,
+    draft: HeatingDraft,
+    opened: Week | undefined,
+  ): Promise<'changed' | undefined> {
     const plans = this.plans;
     const automations = this.automations;
     const config = this.config;
@@ -557,6 +568,12 @@ export class FluvyScheduleCard extends Card<ScheduleCardConfig> {
     const view = this.entity();
     const room = this.room(view);
     let item: HelperItem | undefined = tie.schedule ? plans.helper(tie.schedule) : undefined;
+    if (tie.schedule && opened) {
+      item = await plans.reread(tie.schedule);
+      if (!item || !sameWeek(item.week, opened)) return 'changed';
+    }
+    const read = tie.configId ? heatingOf(automations.config(tie.configId)) : undefined;
+    if (tie.heating && (!read || !samePlan(read, tie.heating))) return 'changed';
     let schedule = tie.schedule;
     const before = item?.week;
     let made: HelperItem | undefined;
@@ -579,8 +596,7 @@ export class FluvyScheduleCard extends Card<ScheduleCardConfig> {
         base: draft.base,
       };
       const built = buildHeating(heating);
-      const same =
-        tie.heating && JSON.stringify(buildHeating(tie.heating)) === JSON.stringify(built);
+      const same = tie.heating && samePlan(tie.heating, heating);
       if (!same) {
         await automations.saveShape(id, built, (raw) => {
           const read = parseHeating(raw);
@@ -595,6 +611,7 @@ export class FluvyScheduleCard extends Card<ScheduleCardConfig> {
       throw error;
     }
     this.requestUpdate();
+    return undefined;
   }
 
   /** The sheet, its chunk fetched the first time: a dashboard that only shows the week never pays for it. */
@@ -622,9 +639,13 @@ export class FluvyScheduleCard extends Card<ScheduleCardConfig> {
     };
   }
 
-  /** Opens the sheet on a day (the one tapped, else today): to edit the plan, to make one, or to read it. */
-  private async openSheet(day?: Weekday): Promise<void> {
-    const openedBy = (this.renderRoot as ShadowRoot).activeElement as HTMLElement | null;
+  /**
+   * Opens the sheet on a day (the one tapped, else today): to edit the plan, to make one, or to read it; again on the
+   * plan as it is now where Home Assistant changed it since (`opener`: what had opened it, the focus's way back).
+   */
+  private async openSheet(day?: Weekday, opener?: HTMLElement): Promise<void> {
+    const openedBy =
+      opener ?? ((this.renderRoot as ShadowRoot).activeElement as HTMLElement | null);
     const tie = this.tie();
     const view = this.entity();
     const plans = this.plans;
@@ -665,7 +686,8 @@ export class FluvyScheduleCard extends Card<ScheduleCardConfig> {
         days: this.days(),
         unit: this.unit(view),
         looks: (presets) => presetLooks(this.hass, this.config?.presets, presets),
-        save: (draft) => this.write(tie, id, draft),
+        save: (draft) => this.write(tie, id, draft, week),
+        reload: (shown) => void this.openSheet(shown, openedBy ?? this),
       },
       openedBy ?? this,
     );

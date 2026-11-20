@@ -3694,7 +3694,8 @@
     "next": "{preset} à {time}",
     "next_on": "{preset} {day} à {time}",
     "paused_short": "Désactivé",
-    "none": "Aucun programme"
+    "none": "Aucun programme",
+    "changed": "Modifié dans Home Assistant depuis que vous l’avez ouvert"
   },
   "rounds": {
     "rounds": "Boutons ronds",

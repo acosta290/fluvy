@@ -83,12 +83,15 @@ interface Fixture {
   callService: ReturnType<typeof vi.fn>;
   callWS: ReturnType<typeof vi.fn>;
   configs: Map<string, unknown>;
+  /** The helpers' collection, by id: what Home Assistant holds, changed behind a card's back where a test says. */
+  items: Map<string, Record<string, unknown>>;
 }
 
 /**
  * A house on a connection of its own: Home Assistant's helpers' collection (the bedroom's, made in its interface), the
- * study's YAML schedule answered by `get_schedule`, the registry's tie of each schedule to its helper, `search/related`
- * from the configs, and the config API (`refuse`: a POST refused as Home Assistant refuses one).
+ * study's YAML schedule answered by `get_schedule`, the registry's tie of each schedule to its helper, the collection
+ * read again (`schedule/list`), `search/related` from the configs, and the config API (`refuse`: a POST refused as Home
+ * Assistant refuses one).
  */
 function house(
   options: {
@@ -143,6 +146,8 @@ function house(
       }
       case 'call_service':
         return { response: { 'schedule.study': helperDays(STUDY_WEEK) } };
+      case 'schedule/list':
+        return [...items.values()];
       case 'schedule/create': {
         const item = without(message, 'type');
         const id = 'kids_room_heating';
@@ -222,7 +227,7 @@ function house(
     localize: (key: string) => key,
     formatEntityState: (s: { state: string }) => s.state,
   } as unknown as HomeAssistant;
-  return { hass, callApi, callService, callWS, configs };
+  return { hass, callApi, callService, callWS, configs, items };
 }
 
 const settle = async (card: FluvyScheduleCard): Promise<void> => {
@@ -554,6 +559,73 @@ describe('the Heating schedule card', () => {
       'trigger',
       { skip_condition: false },
       { entity_id: 'automation.heating_bedroom' },
+    );
+  });
+
+  it('writes nothing over a week changed in Home Assistant since the sheet opened: it says so, and reloads it', async () => {
+    const fixture = house();
+    const card = await mount({}, fixture);
+    root(card).querySelector<HTMLElement>('.fv-card__tap')?.click();
+    await settle(card);
+    const sheet = await sheetOf(card);
+    // Monday edited in the sheet, while someone moves Tuesday in Home Assistant's own dialog (not yet heard)
+    const draft = sheet.draft_!;
+    sheet.draft_ = { ...draft, week: withDay(draft.week, 'monday', []) };
+    const moved = withDay(WEEK, 'tuesday', [{ from: 9 * 60, to: 11 * 60, preset: 'comfort' }]);
+    fixture.items.set('bedroom_heating', {
+      ...fixture.items.get('bedroom_heating'),
+      ...helperDays(moved),
+    });
+    await sheet.updateComplete;
+    (sheet as unknown as { openedAt: number }).openedAt = 0;
+    sheet.shadowRoot!.querySelector<HTMLElement>('.dv-actions .fv-btn--accent')?.click();
+    await settle(card);
+    const messages = fixture.callWS.mock.calls.map((call) => call[0].type);
+    expect(messages).toContain('schedule/list');
+    expect(messages).not.toContain('schedule/update');
+    expect(fixture.callApi.mock.calls.some((call) => call[0] === 'POST')).toBe(false);
+    expect(sheet.isOpen).toBe(true);
+    expect(sheet.shadowRoot!.querySelector('.hs-error')?.textContent?.trim()).toBe(
+      'Changed in Home Assistant since you opened it',
+    );
+    const reload = sheet.shadowRoot!.querySelector<HTMLElement>('.dv-actions .fv-btn--accent');
+    expect(reload?.textContent?.trim()).toBe('Reload');
+    // Reload: the week as Home Assistant holds it now, on the day shown, and Save again
+    reload?.click();
+    await settle(card);
+    expect(sheet.draft_?.week.tuesday).toEqual([{ from: 9 * 60, to: 11 * 60, preset: 'comfort' }]);
+    expect(sheet.draft_?.day).toBe(draft.day);
+    expect(sheet.shadowRoot!.querySelector('.hs-error')).toBeNull();
+  });
+
+  it('writes nothing over a plan whose automation changed in Home Assistant since the sheet opened', async () => {
+    const fixture = house();
+    const card = await mount({}, fixture);
+    root(card).querySelector<HTMLElement>('.fv-card__tap')?.click();
+    await settle(card);
+    const sheet = await sheetOf(card);
+    // Comfort set to 23 in Home Assistant's editor, heard as automations reload
+    fixture.configs.set(
+      BEDROOM.id,
+      buildHeating({
+        ...BEDROOM,
+        presets: BEDROOM.presets.map((p) => (p.key === 'comfort' ? { ...p, temperature: 23 } : p)),
+      }),
+    );
+    const { automations } = card as unknown as {
+      automations: {
+        entries: Map<string, { stale: boolean }>;
+        load(ids: readonly string[]): Promise<void>;
+      };
+    };
+    automations.entries.get(BEDROOM.id)!.stale = true;
+    await automations.load([BEDROOM.id]);
+    (sheet as unknown as { openedAt: number }).openedAt = 0;
+    sheet.shadowRoot!.querySelector<HTMLElement>('.dv-actions .fv-btn--accent')?.click();
+    await settle(card);
+    expect(fixture.callApi.mock.calls.some((call) => call[0] === 'POST')).toBe(false);
+    expect(sheet.shadowRoot!.querySelector('.hs-error')?.textContent?.trim()).toBe(
+      'Changed in Home Assistant since you opened it',
     );
   });
 

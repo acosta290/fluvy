@@ -3694,7 +3694,8 @@
     "next": "{preset} kl. {time}",
     "next_on": "{preset} {day} kl. {time}",
     "paused_short": "Av",
-    "none": "Inget schema"
+    "none": "Inget schema",
+    "changed": "Ändrat i Home Assistant sedan du öppnade det"
   },
   "rounds": {
     "rounds": "Runda knappar",

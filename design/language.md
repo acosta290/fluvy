@@ -2890,10 +2890,13 @@ is its key: renamed, the times that named it name it again). "Add a preset" open
 presets the plan has not (Home, Sleep, Boost, Activity) and "One of your own". **Between times** chooses the base;
 **Use the thermostat's own presets** (shown only where the thermostat has one of the plan's) sets its own instead of a
 temperature, the row saying "The thermostat's own". A field whose title would not hold beside its control puts the
-control under it. **Footer**: Cancel · Save (one width for both); Save writes the helper (made where the thermostat has
-none: "Bedroom heating", named after the room) and the automation, each only where it changed, closes, and runs it once;
-refused, the helper goes back to what it was (one just made is deleted), the sheet stays with Home Assistant's words
-under the footer. **Read only** for anyone but an administrator, a YAML helper or an automation edited by hand: the
+control under it. **Footer**: Cancel · Save (one width for both). Save first reads the helper again (`schedule/list`)
+and the automation as last heard: where either changed in Home Assistant since the sheet opened, nothing is written,
+"Changed in Home Assistant since you opened it" stands under the footer and Save becomes Reload (the sheet again on the
+plan as it is now, on the day shown). Otherwise Save writes the helper (made where the thermostat has none: "Bedroom
+heating", named after the room) and the automation, each only where it changed (a time made by hand with seconds is
+written back with them while it keeps its minute), closes, and runs it once; refused, the helper goes back to what it
+was (one just made is deleted), the sheet stays with Home Assistant's words under the footer. **Read only** for anyone but an administrator, a YAML helper or an automation edited by hand: the
 same sections with the times as rows (a swatch, the preset's name, its times), the presets with their temperatures
 where they can be read, the reason under the head ("Only an administrator can change the schedule"), "Open in Home
 Assistant" for the automation edited by hand, and Close.

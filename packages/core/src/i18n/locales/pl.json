@@ -3819,7 +3819,8 @@
     "next": "{preset} o {time}",
     "next_on": "{preset} {day} o {time}",
     "paused_short": "Wyłączony",
-    "none": "Brak planu"
+    "none": "Brak planu",
+    "changed": "Zmieniono w Home Assistant od otwarcia"
   },
   "rounds": {
     "rounds": "Okrągłe przyciski",

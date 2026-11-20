@@ -3694,7 +3694,8 @@
     "next": "{preset} ekkor: {time}",
     "next_on": "{preset}: {day}, {time}",
     "paused_short": "Kikapcsolva",
-    "none": "Nincs ütemterv"
+    "none": "Nincs ütemterv",
+    "changed": "A megnyitása óta módosították a Home Assistantben"
   },
   "rounds": {
     "rounds": "Kerek gombok",

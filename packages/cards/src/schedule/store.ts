@@ -23,7 +23,8 @@ import {
  *
  * Writing is an administrator's alone, as Home Assistant has it, and narrow: `create` and `update` take a week that
  * holds (`checkWeek`), build the message from it (`helperDays`) and send it only where reading it back says the same
- * week; `remove` takes a helper's id.
+ * week; `remove` takes a helper's id. Before a write the card reads the helper again (`reread`, `schedule/list`), so a
+ * change made in Home Assistant since its sheet opened is never written over.
  */
 
 /** One question about one thing: its answer, whether it is on its way, and when a failed one may be asked again. */
@@ -195,6 +196,23 @@ export class PlanStore {
         this.notify();
       });
     return asked.inflight;
+  }
+
+  /**
+   * A helper as Home Assistant holds it this moment (`schedule/list`), whatever has been heard of it: what it is now,
+   * kept, or nothing where it is gone. What a write checks first, so it never undoes a change it has not heard.
+   */
+  async reread(entity: string): Promise<HelperItem | undefined> {
+    const id = this.uniques.get(entity)?.answer;
+    if (!id) return undefined;
+    const listed = await this.hass.callWS<unknown>({ type: 'schedule/list' });
+    const item = helperOf(
+      (Array.isArray(listed) ? listed : []).find((raw) => isRecord(raw) && raw['id'] === id),
+    );
+    if (item) this.items.set(id, item);
+    else this.items.delete(id);
+    this.notify();
+    return item;
   }
 
   /* ---------- writing ---------- */

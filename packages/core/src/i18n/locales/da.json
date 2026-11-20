@@ -3694,7 +3694,8 @@
     "next": "{preset} kl. {time}",
     "next_on": "{preset} {day} kl. {time}",
     "paused_short": "Slået fra",
-    "none": "Ingen plan"
+    "none": "Ingen plan",
+    "changed": "Ændret i Home Assistant, siden du åbnede den"
   },
   "rounds": {
     "rounds": "Runde knapper",

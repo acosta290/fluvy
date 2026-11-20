@@ -3754,7 +3754,8 @@
     "next": "{preset} v {time}",
     "next_on": "{preset} {day} v {time}",
     "paused_short": "Vypnut",
-    "none": "Žádný plán"
+    "none": "Žádný plán",
+    "changed": "Od chvíle, kdy jste jej otevřeli, byl změněn v Home Assistant"
   },
   "rounds": {
     "rounds": "Kulatá tlačítka",

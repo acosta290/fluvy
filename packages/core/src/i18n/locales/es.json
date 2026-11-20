@@ -3694,7 +3694,8 @@
     "next": "{preset} a las {time}",
     "next_on": "{preset} el {day} a las {time}",
     "paused_short": "Apagado",
-    "none": "Sin horario"
+    "none": "Sin horario",
+    "changed": "Cambiado en Home Assistant desde que lo abriste"
   },
   "rounds": {
     "rounds": "Botones redondos",

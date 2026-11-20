@@ -3694,7 +3694,8 @@
     "next": "{preset} às {time}",
     "next_on": "{preset} {day} às {time}",
     "paused_short": "Desligada",
-    "none": "Sem agenda"
+    "none": "Sem agenda",
+    "changed": "Alterado no Home Assistant desde que você o abriu"
   },
   "rounds": {
     "rounds": "Botões redondos",

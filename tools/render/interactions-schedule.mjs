@@ -12,6 +12,8 @@
  * words and Save stays disabled; the switch turns the automation off, and on again with a run; a guest's sheet reads
  * the week and writes nothing; "Create a schedule" makes a helper named after the room and its automation, and the
  * card then draws the new week; Escape closes the sheet and the focus returns to the card; no interval is left behind.
+ * A week changed in Home Assistant while the sheet is open is read again on Save and never written over: the sheet
+ * says so, Reload opens it on the week as it is now, and Save then writes that.
  * The row: 76 as it declares, its line the preset in force, its target and the next change (or why it cannot say
  * them), its switch acting alone, a tap opening the sheet on today, a guest's saying no change into a preset it
  * cannot know and opening the plan to read.
@@ -275,6 +277,72 @@ const canonical = (value) =>
     focus,
   );
 
+  await page.close();
+}
+
+/* ---------- a week changed in Home Assistant while the sheet is open ---------- */
+{
+  const page = await suite.sheet('schedule', { width: 412, timezoneId: HOUSE_ZONE });
+  const card = frame(page, 'Bedroom heating plan').locator('fluvy-schedule-card');
+  const dialog = card.locator('fluvy-heating-sheet dialog');
+  await card.locator('.sc-track').first().click();
+  await settle(page, 500);
+  await dialog.getByRole('button', { name: 'Add a time' }).click();
+  await settle(page, 200);
+  // someone moves Tuesday's evening in Home Assistant's own dialog: the collection holds it, the card has not heard it
+  await card.evaluate(async (el) => {
+    const listed = await el.hass.callWS({ type: 'schedule/list' });
+    const { id, ...item } = listed.find((each) => each.id === 'bedroom_heating');
+    await el.hass.callWS({
+      type: 'schedule/update',
+      schedule_id: id,
+      ...item,
+      tuesday: [item.tuesday[0], { ...item.tuesday[1], from: '18:00:00' }],
+    });
+  });
+  await reset(page);
+  const save = dialog.locator('.dv-actions .fv-btn--accent');
+  await save.click();
+  await settle(page, 600);
+  const said = (await dialog.locator('.hs-error').textContent())?.trim();
+  check(
+    'Save reads the week again and writes nothing over a change made in Home Assistant, saying so',
+    (await ws(page, 'schedule/list')).length === 1 &&
+      (await ws(page, 'schedule/update')).length === 0 &&
+      (await apiCalls(page)).length === 0 &&
+      (await dialog.isVisible()) &&
+      said === 'Changed in Home Assistant since you opened it' &&
+      (await save.textContent())?.trim() === 'Reload',
+    said,
+  );
+  // Reload: the week as it is now, on the day shown; Save then writes that
+  await save.click();
+  await settle(page, 500);
+  await dialog.locator('.hs-days').first().locator('.fv-chip[aria-label="Tuesday"]').click();
+  await settle(page, 200);
+  const evening = await dialog
+    .locator('.hs-block')
+    .nth(1)
+    .locator('fluvy-time-field')
+    .first()
+    .evaluate((field) => field.value);
+  check(
+    'Reload opens the sheet on the week as Home Assistant holds it now',
+    evening === 18 * 60 && !(await dialog.locator('.hs-error').count()),
+    String(evening),
+  );
+  await dialog.getByRole('button', { name: 'Add a time' }).click();
+  await settle(page, 200);
+  await reset(page);
+  await save.click();
+  await settle(page, 900);
+  const [update] = await ws(page, 'schedule/update');
+  check(
+    '…and Save then writes the time added there, the change made in Home Assistant kept',
+    update?.tuesday?.map((block) => block.from).join() === '06:00:00,08:00:00,18:00:00' &&
+      !(await dialog.isVisible()),
+    JSON.stringify(update?.tuesday),
+  );
   await page.close();
 }
 

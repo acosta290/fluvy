@@ -3694,7 +3694,8 @@
     "next": "{time} itibarıyla {preset}",
     "next_on": "{day} {time} itibarıyla {preset}",
     "paused_short": "Kapalı",
-    "none": "Plan yok"
+    "none": "Plan yok",
+    "changed": "Açtığından beri Home Assistant’ta değiştirildi"
   },
   "rounds": {
     "rounds": "Yuvarlak düğmeler",

@@ -3754,7 +3754,8 @@
     "next": "{preset} o {time}",
     "next_on": "{preset} {day} o {time}",
     "paused_short": "Vypnutý",
-    "none": "Žiadny plán"
+    "none": "Žiadny plán",
+    "changed": "Od chvíle, keď ste ho otvorili, bol zmenený v Home Assistant"
   },
   "rounds": {
     "rounds": "Okrúhle tlačidlá",

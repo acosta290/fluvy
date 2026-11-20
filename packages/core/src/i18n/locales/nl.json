@@ -3694,7 +3694,8 @@
     "next": "{preset} om {time}",
     "next_on": "{preset} {day} om {time}",
     "paused_short": "Uit",
-    "none": "Geen schema"
+    "none": "Geen schema",
+    "changed": "Gewijzigd in Home Assistant sinds je het opende"
   },
   "rounds": {
     "rounds": "Ronde knoppen",
