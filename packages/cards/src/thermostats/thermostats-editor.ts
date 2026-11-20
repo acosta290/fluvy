@@ -78,6 +78,16 @@ export const keys = configKeys<ThermostatsCardConfig>()([
  * The thermostats, each a climate, a water heater or a humidifier with its own name, icon, colour, rounds and
  * actions.
  */
+/** A thermostat's own fields; its rounds only where it is a row (tiles draw none), one array per answer. */
+const THERMOSTAT_FIELDS = [
+  entityField(['climate', 'water_heater', 'humidifier']),
+  nameIconFields(),
+  fieldRow(toneField(), accentField('color', { item: 'card' })),
+  roundsField(),
+  actionFields(),
+];
+const THERMOSTAT_TILE_FIELDS = THERMOSTAT_FIELDS.filter((field) => field.name !== 'rounds');
+
 export const lists: readonly RowsListSpec[] = [
   {
     key: 'thermostats',
@@ -96,13 +106,9 @@ export const lists: readonly RowsListSpec[] = [
       'hold_action',
       'double_tap_action',
     ],
-    schema: [
-      entityField(['climate', 'water_heater', 'humidifier']),
-      nameIconFields(),
-      fieldRow(toneField(), accentField('color', { item: 'card' })),
-      roundsField(),
-      actionFields(),
-    ],
+    schema: THERMOSTAT_FIELDS,
+    schemaOf: (_item, card) =>
+      card?.['variant'] === 'tiles' ? THERMOSTAT_TILE_FIELDS : THERMOSTAT_FIELDS,
     computeLabel: (schema) =>
       schema.name === 'rounds' ? editorWord('thermostats.rounds') : undefined,
   },

@@ -629,6 +629,13 @@ describe('the Thermostats card (#230, #219)', () => {
     const tiles = shown({ thermostats: HOUSE, variant: 'tiles' });
     expect(tiles).not.toContain('control');
     expect(tiles).not.toContain('show_round');
+    // a thermostat's own rounds only where it is a row: tiles draw none
+    const [list] = thermostatsEditor.lists;
+    const itemNames = (variant?: string): string[] =>
+      shownNames(list!.schemaOf!({ entity: 'climate.living' }, { variant }) ?? list!.schema);
+    expect(itemNames()).toContain('rounds');
+    expect(itemNames('compact')).toContain('rounds');
+    expect(itemNames('tiles')).not.toContain('rounds');
     expect(shown({ thermostats: HOUSE, title: 'Heating' })).toEqual(
       expect.arrayContaining(['show_icon', 'tap_action']),
     );
