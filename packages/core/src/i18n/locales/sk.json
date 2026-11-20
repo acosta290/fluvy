@@ -2982,7 +2982,7 @@
     "cards.opacity": "Nepriehľadnosť",
     "cards.opacity_sub": "Pod 100 % presvitá pozadie",
     "cards.blur": "Rozmazať to, čo presvitá",
-    "cards.blur_sub": "Na každej priesvitnej karte, domácej aj vlastnej",
+    "cards.blur_sub": "Za každou priesvitnou kartou; pri 0 % bez rozmazania",
     "cards.border": "Okraj",
     "cards.border_sub": "Tenká čiara okolo každej karty a dlaždice",
     "cards.sheets": "Podrobnosti Fluvy",

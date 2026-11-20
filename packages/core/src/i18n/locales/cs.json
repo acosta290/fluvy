@@ -2982,7 +2982,7 @@
     "cards.opacity": "Krytí",
     "cards.opacity_sub": "Pod 100 % prosvítá pozadí",
     "cards.blur": "Rozostřit to, co prosvítá",
-    "cards.blur_sub": "Na každé průsvitné kartě, podle domu i podle karty samotné",
+    "cards.blur_sub": "Za každou průsvitnou kartou; při 0 % bez rozostření",
     "cards.border": "Okraj",
     "cards.border_sub": "Vlasová čára kolem každé karty a dlaždice",
     "cards.sheets": "Panely podrobností Fluvy",

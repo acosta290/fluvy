@@ -2655,7 +2655,7 @@
     "cards.opacity": "Krycie",
     "cards.opacity_sub": "Poniżej 100 % prześwituje tło",
     "cards.blur": "Rozmyj to, co prześwituje",
-    "cards.blur_sub": "Na każdej przezroczystej karcie, domowej lub własnej",
+    "cards.blur_sub": "Za każdą przezroczystą kartą; przy 0 % bez rozmycia",
     "cards.border": "Obramowanie",
     "cards.border_sub": "Cienka linia wokół każdej karty i kafelka",
     "cards.sheets": "Szczegóły Fluvy",

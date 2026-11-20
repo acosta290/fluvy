@@ -2924,7 +2924,7 @@
     "cards.opacity": "不透明度",
     "cards.opacity_sub": "低于 100% 时背景会透出",
     "cards.blur": "模糊透出的背景",
-    "cards.blur_sub": "应用于所有透明卡片，无论是全屋设置还是卡片自身",
+    "cards.blur_sub": "所有透明卡片的背后；0% 时不模糊",
     "cards.border": "边框",
     "cards.border_sub": "每张卡片和磁贴周围的细线",
     "cards.sheets": "Fluvy 的详情面板",

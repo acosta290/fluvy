@@ -3061,7 +3061,7 @@
     "cards.opacity": "Opacitet",
     "cards.opacity_sub": "Under 100 % syns bakgrunden igenom",
     "cards.blur": "Gör det som syns igenom oskarpt",
-    "cards.blur_sub": "På varje genomskinligt kort, hushållets eller dess eget",
+    "cards.blur_sub": "Bakom varje genomskinligt kort; ingen oskärpa vid 0 %",
     "cards.border": "Kant",
     "cards.border_sub": "Hårlinjen runt varje kort och bricka",
     "cards.sheets": "Fluvys detaljark",

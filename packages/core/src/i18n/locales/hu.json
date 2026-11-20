@@ -2999,7 +2999,7 @@
     "cards.opacity": "Átlátszatlanság",
     "cards.opacity_sub": "100 % alatt átlátszik a háttér",
     "cards.blur": "Az átlátszó háttér elmosása",
-    "cards.blur_sub": "Minden áttetsző kártyán, a házé és a sajátja is",
+    "cards.blur_sub": "Minden áttetsző kártya mögött; 0 %-nál nincs elmosás",
     "cards.border": "Keret",
     "cards.border_sub": "A vékony vonal minden kártya és csempe körül",
     "cards.sheets": "A Fluvy részletei",

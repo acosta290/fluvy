@@ -2888,7 +2888,7 @@
     "cards.opacity": "不透明度",
     "cards.opacity_sub": "100% 未満では背景が透けて見えます",
     "cards.blur": "透けて見える背景をぼかす",
-    "cards.blur_sub": "透けるすべてのカードで（家の設定でも、カード個別でも）",
+    "cards.blur_sub": "透けるすべてのカードの背後で（0% ではぼかさない）",
     "cards.border": "枠線",
     "cards.border_sub": "各カードとタイルを囲む細い線",
     "cards.sheets": "Fluvyの詳細シート",

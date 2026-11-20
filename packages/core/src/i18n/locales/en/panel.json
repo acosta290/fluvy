@@ -383,7 +383,7 @@
     "cards.opacity": "Opacity",
     "cards.opacity_sub": "Under 100 %, the background shows through",
     "cards.blur": "Blur what shows through",
-    "cards.blur_sub": "On every see-through card, the house’s or its own",
+    "cards.blur_sub": "Behind every see-through card; none at 0 %",
     "cards.border": "Border",
     "cards.border_sub": "The hairline round every card and tile",
     "cards.sheets": "Fluvy’s details sheets",

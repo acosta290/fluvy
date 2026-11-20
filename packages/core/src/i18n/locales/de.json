@@ -1557,7 +1557,7 @@
     "cards.opacity": "Deckkraft",
     "cards.opacity_sub": "Unter 100 % scheint der Hintergrund durch",
     "cards.blur": "Durchscheinendes weichzeichnen",
-    "cards.blur_sub": "Auf jeder durchscheinenden Karte, ob mit Haus- oder eigener Einstellung",
+    "cards.blur_sub": "Hinter jeder durchscheinenden Karte; bei 0 % keine Unschärfe",
     "cards.border": "Rand",
     "cards.border_sub": "Die feine Linie um jede Karte und Kachel",
     "cards.sheets": "Fluvys Detailansichten",

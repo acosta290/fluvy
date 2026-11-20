@@ -1557,7 +1557,7 @@
     "cards.opacity": "Opacité",
     "cards.opacity_sub": "Sous 100 %, le fond transparaît",
     "cards.blur": "Flouter ce qui transparaît",
-    "cards.blur_sub": "Sur chaque carte translucide, celle de la maison ou la sienne",
+    "cards.blur_sub": "Derrière chaque carte translucide ; pas de flou à 0 %",
     "cards.border": "Bordure",
     "cards.border_sub": "Le filet autour de chaque carte et tuile",
     "cards.sheets": "Détails de Fluvy",

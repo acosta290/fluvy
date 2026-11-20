@@ -1557,7 +1557,7 @@
     "cards.opacity": "Opacidad",
     "cards.opacity_sub": "Por debajo del 100 %, se ve el fondo a través",
     "cards.blur": "Desenfocar lo que se ve a través",
-    "cards.blur_sub": "En cada tarjeta translúcida, la de la casa o la suya propia",
+    "cards.blur_sub": "Detrás de cada tarjeta translúcida; sin desenfoque al 0 %",
     "cards.border": "Borde",
     "cards.border_sub": "La línea fina alrededor de cada tarjeta y mosaico",
     "cards.sheets": "Detalles de Fluvy",

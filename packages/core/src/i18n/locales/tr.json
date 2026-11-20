@@ -1557,7 +1557,7 @@
     "cards.opacity": "Opaklık",
     "cards.opacity_sub": "%100’ün altında arka plan görünür",
     "cards.blur": "Arkada görüneni bulanıklaştır",
-    "cards.blur_sub": "Her yarı saydam kartta, evinki ya da kendisininki",
+    "cards.blur_sub": "Her yarı saydam kartın arkasında; %0’da bulanıklık yok",
     "cards.border": "Kenarlık",
     "cards.border_sub": "Her kartın ve kutunun çevresindeki ince çizgi",
     "cards.sheets": "Fluvy ayrıntıları",

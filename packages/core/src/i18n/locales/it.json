@@ -1557,7 +1557,7 @@
     "cards.opacity": "Opacità",
     "cards.opacity_sub": "Sotto il 100 %, si vede lo sfondo attraverso",
     "cards.blur": "Sfoca ciò che si vede attraverso",
-    "cards.blur_sub": "Su ogni scheda trasparente, quella della casa o la sua",
+    "cards.blur_sub": "Dietro ogni scheda trasparente; niente sfocatura allo 0 %",
     "cards.border": "Bordo",
     "cards.border_sub": "La linea sottile attorno a ogni scheda e riquadro",
     "cards.sheets": "Dettagli di Fluvy",

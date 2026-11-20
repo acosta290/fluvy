@@ -3061,7 +3061,7 @@
     "cards.opacity": "Opacitet",
     "cards.opacity_sub": "Under 100 % skinner baggrunden igennem",
     "cards.blur": "Slør det, der skinner igennem",
-    "cards.blur_sub": "På alle gennemsigtige kort, husets eller kortets eget",
+    "cards.blur_sub": "Bag alle gennemsigtige kort; ingen sløring ved 0 %",
     "cards.border": "Kant",
     "cards.border_sub": "Den tynde streg om hvert kort og hver flise",
     "cards.sheets": "Fluvys detaljeark",
