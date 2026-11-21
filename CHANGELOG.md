@@ -5,6 +5,8 @@ and the versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.24.0] — 2026-11-21
+
 ### Visible on upgrade
 
 Nothing new shows by itself; what changes without being asked is a fix:
