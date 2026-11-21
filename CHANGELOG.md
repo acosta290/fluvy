@@ -5,6 +5,25 @@ and the versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Visible on upgrade
+
+Nothing new shows by itself; what changes without being asked is a fix:
+
+- The Swipe card turns to the page its mark, a key or its clock asks for in Safari, where the row stayed on the first
+  page with its marks on the next and the pages after it came up empty (#235, reported by @ramuwe).
+- The Thermostats card's − and + set the target without opening the thermostat's details, where each click, a hold, a
+  key or a tap on the figure between them also opened them; a stepper on any surface that taps keeps its presses too
+  (#236, reported by @xoatrash).
+
+### Added
+
+- The Entities card can show a row's state as an icon instead of its words: `state_display: icon` with `state_icons`
+  (for example `ok: mdi:check-circle-outline`), each icon in its state's colour (`state_colors`, or green, amber and red
+  for ok, warning and critical), on the card or on a single row; a state without an icon keeps its words (#234, asked by
+  @ramuwe).
+- Every card head that offers Lines for the name now offers 0, which hides the name while the head keeps its circle, its
+  line and its height (#237, asked by @zokmedov).
+
 ## [1.23.0] — 2026-11-20
 
 ### Visible on upgrade
