@@ -93,16 +93,18 @@ export interface FittedHead {
  */
 interface IconHost {
   readonly showIcon?: ShowIcon;
-  readonly nameLines?: 1 | 2;
+  readonly nameLines?: 0 | 1 | 2;
   readonly showBadge?: boolean;
 }
 
 /**
  * The room a name needs in the lines it may take: its own width on one; in two (`name_lines: 2`, #191) the wider of
  * its two lines where it breaks best — between its words, or between any two characters of Chinese or Japanese — so a
- * name that holds a room in two lines needs no more than that room, and one word too long for any is its whole width.
+ * name that holds a room in two lines needs no more than that room, and one word too long for any is its whole width;
+ * none hidden (`name_lines: 0`, #237).
  */
-export function nameWidth(name: string, lines: 1 | 2, width: (text: string) => number): number {
+export function nameWidth(name: string, lines: 0 | 1 | 2, width: (text: string) => number): number {
+  if (lines === 0) return 0;
   let needed = width(name);
   if (lines === 2)
     for (let at = 1; at < name.length; at++) {

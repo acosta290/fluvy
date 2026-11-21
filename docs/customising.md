@@ -28,7 +28,7 @@ entity: light.living_room_lamp
 | `card_blur` | Under 100, whether what shows through is blurred. | `card_blur: false` |
 | `unavailable` | Out of reach: `dashed` (the default) or `quiet` (as when off). The card keeps its size either way. | `unavailable: quiet` |
 | `show_icon` | The head's circle: `auto`, `always` or `never`. | `show_icon: never` |
-| `name_lines` | `2`: the name may take two lines; the head is a line taller whatever the name. | `name_lines: 2` |
+| `name_lines` | `2`: the name may take two lines; the head is a line taller whatever the name. `0` hides the name; the head keeps its circle and its line. | `name_lines: 2` |
 | `show_badge` | `false` hides the badge (a state or a count). Your own `badge` still shows. | `show_badge: false` |
 | `names` | How a list names items with no `name`: `full`, `entity`, `device`, or Home Assistant's parts. | `names: entity` |
 | `slider_style`, `slider_words` | `ruler`, `bar`, `liquid`, `fill` (a tile) or `house`; the figures under the slider: `ends` or `none`. | `slider_style: bar` |

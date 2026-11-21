@@ -34,12 +34,26 @@ export function cardLayout(config: LovelaceCardConfig | undefined): string | und
 }
 
 /**
- * What a card's head adds to its height for its name's lines: `HEAD_LINE` where its config asks for two and its
- * layout draws a head that names it (not one turned off, `show_head: false`, nor a weather without its name), else 0.
+ * Whether a card's layout draws a head that names it: not one turned off (`show_head: false`), nor a weather without
+ * its name, nor a layout whose `name_lines` is no head's (`NO_HEAD_LINES`).
  */
-export function headLines(config: LovelaceCardConfig | undefined): number {
+export function namesHead(config: LovelaceCardConfig | undefined): boolean {
   const layout = cardLayout(config);
-  if (!config || layout === undefined || !twoLines(config)) return 0;
-  if (config['show_head'] === false || config['show_name'] === false) return 0;
-  return NO_HEAD_LINES.test(layout) ? 0 : HEAD_LINE;
+  if (!config || layout === undefined) return false;
+  if (config['show_head'] === false || config['show_name'] === false) return false;
+  return !NO_HEAD_LINES.test(layout);
 }
+
+/**
+ * What a card's head adds to its height for its name's lines: `HEAD_LINE` where its config asks for two and its
+ * layout draws a head that names it (`namesHead`), else 0.
+ */
+export const headLines = (config: LovelaceCardConfig | undefined): number =>
+  twoLines(config) && namesHead(config) ? HEAD_LINE : 0;
+
+/**
+ * Whether a card's head hides its name (`name_lines: 0`, #237): its circle and its line stay where they are, the line
+ * beside the circle on its own, the head as tall as with one line; read aloud still, the head's button named by it.
+ */
+export const hidesName = (config: LovelaceCardConfig | undefined): boolean =>
+  String(config?.['name_lines']) === '0' && namesHead(config);

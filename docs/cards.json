@@ -1519,10 +1519,11 @@
         {
           "key": "name_lines",
           "label": "Lines for the name",
-          "does": "Lets the name in the card’s head take two balanced lines where one would cut it; the head is a line taller whatever the name.",
+          "does": "Lets the name in the card’s head take two balanced lines where one would cut it; the head is a line taller whatever the name. 0 hides the name: the head keeps its circle and its line.",
           "type": "choice",
           "default": "1",
           "values": {
+            "0": "0",
             "1": "1",
             "2": "2"
           }
@@ -1915,10 +1916,11 @@
         {
           "key": "name_lines",
           "label": "Lines for the name",
-          "does": "Lets the name in the card’s head take two balanced lines where one would cut it; the head is a line taller whatever the name.",
+          "does": "Lets the name in the card’s head take two balanced lines where one would cut it; the head is a line taller whatever the name. 0 hides the name: the head keeps its circle and its line.",
           "type": "choice",
           "default": "1",
           "values": {
+            "0": "0",
             "1": "1",
             "2": "2"
           }
@@ -2781,10 +2783,11 @@
         {
           "key": "name_lines",
           "label": "Lines for the name",
-          "does": "Lets the name in the card’s head take two balanced lines where one would cut it; the head is a line taller whatever the name.",
+          "does": "Lets the name in the card’s head take two balanced lines where one would cut it; the head is a line taller whatever the name. 0 hides the name: the head keeps its circle and its line.",
           "type": "choice",
           "default": "1",
           "values": {
+            "0": "0",
             "1": "1",
             "2": "2"
           }
@@ -3416,10 +3419,11 @@
         {
           "key": "name_lines",
           "label": "Lines for the name",
-          "does": "Lets the name in the card’s head take two balanced lines where one would cut it; the head is a line taller whatever the name.",
+          "does": "Lets the name in the card’s head take two balanced lines where one would cut it; the head is a line taller whatever the name. 0 hides the name: the head keeps its circle and its line.",
           "type": "choice",
           "default": "1",
           "values": {
+            "0": "0",
             "1": "1",
             "2": "2"
           }
@@ -3737,10 +3741,11 @@
         {
           "key": "name_lines",
           "label": "Lines for the name",
-          "does": "Lets the name in the card’s head take two balanced lines where one would cut it; the head is a line taller whatever the name.",
+          "does": "Lets the name in the card’s head take two balanced lines where one would cut it; the head is a line taller whatever the name. 0 hides the name: the head keeps its circle and its line.",
           "type": "choice",
           "default": "1",
           "values": {
+            "0": "0",
             "1": "1",
             "2": "2"
           }
@@ -4302,10 +4307,11 @@
         {
           "key": "name_lines",
           "label": "Lines for the name",
-          "does": "Lets the name in the card’s head take two balanced lines where one would cut it; the head is a line taller whatever the name.",
+          "does": "Lets the name in the card’s head take two balanced lines where one would cut it; the head is a line taller whatever the name. 0 hides the name: the head keeps its circle and its line.",
           "type": "choice",
           "default": "1",
           "values": {
+            "0": "0",
             "1": "1",
             "2": "2"
           }
@@ -4747,10 +4753,11 @@
         {
           "key": "name_lines",
           "label": "Lines for the name",
-          "does": "Lets the name in the card’s head take two balanced lines where one would cut it; the head is a line taller whatever the name.",
+          "does": "Lets the name in the card’s head take two balanced lines where one would cut it; the head is a line taller whatever the name. 0 hides the name: the head keeps its circle and its line.",
           "type": "choice",
           "default": "1",
           "values": {
+            "0": "0",
             "1": "1",
             "2": "2"
           }
@@ -5138,10 +5145,11 @@
         {
           "key": "name_lines",
           "label": "Lines for the name",
-          "does": "Lets the name in the card’s head take two balanced lines where one would cut it; the head is a line taller whatever the name.",
+          "does": "Lets the name in the card’s head take two balanced lines where one would cut it; the head is a line taller whatever the name. 0 hides the name: the head keeps its circle and its line.",
           "type": "choice",
           "default": "1",
           "values": {
+            "0": "0",
             "1": "1",
             "2": "2"
           }
@@ -6044,10 +6052,11 @@
         {
           "key": "name_lines",
           "label": "Lines for the name",
-          "does": "Lets the name in the card’s head take two balanced lines where one would cut it; the head is a line taller whatever the name.",
+          "does": "Lets the name in the card’s head take two balanced lines where one would cut it; the head is a line taller whatever the name. 0 hides the name: the head keeps its circle and its line.",
           "type": "choice",
           "default": "1",
           "values": {
+            "0": "0",
             "1": "1",
             "2": "2"
           }
@@ -6859,10 +6868,11 @@
         {
           "key": "name_lines",
           "label": "Lines for the name",
-          "does": "Lets the name in the card’s head take two balanced lines where one would cut it; the head is a line taller whatever the name.",
+          "does": "Lets the name in the card’s head take two balanced lines where one would cut it; the head is a line taller whatever the name. 0 hides the name: the head keeps its circle and its line.",
           "type": "choice",
           "default": "1",
           "values": {
+            "0": "0",
             "1": "1",
             "2": "2"
           }
@@ -7321,10 +7331,11 @@
         {
           "key": "name_lines",
           "label": "Lines for the name",
-          "does": "Lets the name in the card’s head take two balanced lines where one would cut it; the head is a line taller whatever the name.",
+          "does": "Lets the name in the card’s head take two balanced lines where one would cut it; the head is a line taller whatever the name. 0 hides the name: the head keeps its circle and its line.",
           "type": "choice",
           "default": "1",
           "values": {
+            "0": "0",
             "1": "1",
             "2": "2"
           }
@@ -7695,10 +7706,11 @@
         {
           "key": "name_lines",
           "label": "Lines for the name",
-          "does": "Lets the name in the card’s head take two balanced lines where one would cut it; the head is a line taller whatever the name.",
+          "does": "Lets the name in the card’s head take two balanced lines where one would cut it; the head is a line taller whatever the name. 0 hides the name: the head keeps its circle and its line.",
           "type": "choice",
           "default": "1",
           "values": {
+            "0": "0",
             "1": "1",
             "2": "2"
           }
@@ -8097,10 +8109,11 @@
         {
           "key": "name_lines",
           "label": "Lines for the name",
-          "does": "Lets the name in the card’s head take two balanced lines where one would cut it; the head is a line taller whatever the name.",
+          "does": "Lets the name in the card’s head take two balanced lines where one would cut it; the head is a line taller whatever the name. 0 hides the name: the head keeps its circle and its line.",
           "type": "choice",
           "default": "1",
           "values": {
+            "0": "0",
             "1": "1",
             "2": "2"
           }
@@ -8537,10 +8550,11 @@
         {
           "key": "name_lines",
           "label": "Lines for the name",
-          "does": "Lets the name in the card’s head take two balanced lines where one would cut it; the head is a line taller whatever the name.",
+          "does": "Lets the name in the card’s head take two balanced lines where one would cut it; the head is a line taller whatever the name. 0 hides the name: the head keeps its circle and its line.",
           "type": "choice",
           "default": "1",
           "values": {
+            "0": "0",
             "1": "1",
             "2": "2"
           }
@@ -8967,10 +8981,11 @@
         {
           "key": "name_lines",
           "label": "Lines for the name",
-          "does": "Lets the name in the card’s head take two balanced lines where one would cut it; the head is a line taller whatever the name.",
+          "does": "Lets the name in the card’s head take two balanced lines where one would cut it; the head is a line taller whatever the name. 0 hides the name: the head keeps its circle and its line.",
           "type": "choice",
           "default": "1",
           "values": {
+            "0": "0",
             "1": "1",
             "2": "2"
           }
@@ -9407,10 +9422,11 @@
         {
           "key": "name_lines",
           "label": "Lines for the name",
-          "does": "Lets the name in the card’s head take two balanced lines where one would cut it; the head is a line taller whatever the name.",
+          "does": "Lets the name in the card’s head take two balanced lines where one would cut it; the head is a line taller whatever the name. 0 hides the name: the head keeps its circle and its line.",
           "type": "choice",
           "default": "1",
           "values": {
+            "0": "0",
             "1": "1",
             "2": "2"
           }
@@ -9954,10 +9970,11 @@
         {
           "key": "name_lines",
           "label": "Lines for the name",
-          "does": "Lets the name in the card’s head take two balanced lines where one would cut it; the head is a line taller whatever the name.",
+          "does": "Lets the name in the card’s head take two balanced lines where one would cut it; the head is a line taller whatever the name. 0 hides the name: the head keeps its circle and its line.",
           "type": "choice",
           "default": "1",
           "values": {
+            "0": "0",
             "1": "1",
             "2": "2"
           }
@@ -10405,10 +10422,11 @@
         {
           "key": "name_lines",
           "label": "Lines for the name",
-          "does": "Lets the name in the card’s head take two balanced lines where one would cut it; the head is a line taller whatever the name.",
+          "does": "Lets the name in the card’s head take two balanced lines where one would cut it; the head is a line taller whatever the name. 0 hides the name: the head keeps its circle and its line.",
           "type": "choice",
           "default": "1",
           "values": {
+            "0": "0",
             "1": "1",
             "2": "2"
           }
@@ -11508,10 +11526,11 @@
         {
           "key": "name_lines",
           "label": "Lines for the name",
-          "does": "Lets the name in the card’s head take two balanced lines where one would cut it; the head is a line taller whatever the name.",
+          "does": "Lets the name in the card’s head take two balanced lines where one would cut it; the head is a line taller whatever the name. 0 hides the name: the head keeps its circle and its line.",
           "type": "choice",
           "default": "1",
           "values": {
+            "0": "0",
             "1": "1",
             "2": "2"
           }
@@ -11973,10 +11992,11 @@
         {
           "key": "name_lines",
           "label": "Lines for the name",
-          "does": "Lets the name in the card’s head take two balanced lines where one would cut it; the head is a line taller whatever the name.",
+          "does": "Lets the name in the card’s head take two balanced lines where one would cut it; the head is a line taller whatever the name. 0 hides the name: the head keeps its circle and its line.",
           "type": "choice",
           "default": "1",
           "values": {
+            "0": "0",
             "1": "1",
             "2": "2"
           }
@@ -12618,10 +12638,11 @@
         {
           "key": "name_lines",
           "label": "Lines for the name",
-          "does": "Lets the name in the card’s head take two balanced lines where one would cut it; the head is a line taller whatever the name.",
+          "does": "Lets the name in the card’s head take two balanced lines where one would cut it; the head is a line taller whatever the name. 0 hides the name: the head keeps its circle and its line.",
           "type": "choice",
           "default": "1",
           "values": {
+            "0": "0",
             "1": "1",
             "2": "2"
           }
@@ -12947,10 +12968,11 @@
         {
           "key": "name_lines",
           "label": "Lines for the name",
-          "does": "Lets the name in the card’s head take two balanced lines where one would cut it; the head is a line taller whatever the name.",
+          "does": "Lets the name in the card’s head take two balanced lines where one would cut it; the head is a line taller whatever the name. 0 hides the name: the head keeps its circle and its line.",
           "type": "choice",
           "default": "1",
           "values": {
+            "0": "0",
             "1": "1",
             "2": "2"
           }
@@ -13475,10 +13497,11 @@
         {
           "key": "name_lines",
           "label": "Lines for the name",
-          "does": "Lets the name in the card’s head take two balanced lines where one would cut it; the head is a line taller whatever the name.",
+          "does": "Lets the name in the card’s head take two balanced lines where one would cut it; the head is a line taller whatever the name. 0 hides the name: the head keeps its circle and its line.",
           "type": "choice",
           "default": "1",
           "values": {
+            "0": "0",
             "1": "1",
             "2": "2"
           }
@@ -14343,10 +14366,11 @@
         {
           "key": "name_lines",
           "label": "Lines for the name",
-          "does": "Lets the name in the card’s head take two balanced lines where one would cut it; the head is a line taller whatever the name.",
+          "does": "Lets the name in the card’s head take two balanced lines where one would cut it; the head is a line taller whatever the name. 0 hides the name: the head keeps its circle and its line.",
           "type": "choice",
           "default": "1",
           "values": {
+            "0": "0",
             "1": "1",
             "2": "2"
           }
@@ -14739,10 +14763,11 @@
         {
           "key": "name_lines",
           "label": "Lines for the name",
-          "does": "Lets the name in the card’s head take two balanced lines where one would cut it; the head is a line taller whatever the name.",
+          "does": "Lets the name in the card’s head take two balanced lines where one would cut it; the head is a line taller whatever the name. 0 hides the name: the head keeps its circle and its line.",
           "type": "choice",
           "default": "1",
           "values": {
+            "0": "0",
             "1": "1",
             "2": "2"
           }
@@ -15377,10 +15402,11 @@
         {
           "key": "name_lines",
           "label": "Lines for the name",
-          "does": "Lets the name in the card’s head take two balanced lines where one would cut it; the head is a line taller whatever the name.",
+          "does": "Lets the name in the card’s head take two balanced lines where one would cut it; the head is a line taller whatever the name. 0 hides the name: the head keeps its circle and its line.",
           "type": "choice",
           "default": "1",
           "values": {
+            "0": "0",
             "1": "1",
             "2": "2"
           }
@@ -16844,10 +16870,11 @@
         {
           "key": "name_lines",
           "label": "Lines for the name",
-          "does": "Lets the name in the card’s head take two balanced lines where one would cut it; the head is a line taller whatever the name.",
+          "does": "Lets the name in the card’s head take two balanced lines where one would cut it; the head is a line taller whatever the name. 0 hides the name: the head keeps its circle and its line.",
           "type": "choice",
           "default": "1",
           "values": {
+            "0": "0",
             "1": "1",
             "2": "2"
           }
@@ -17267,10 +17294,11 @@
         {
           "key": "name_lines",
           "label": "Lines for the name",
-          "does": "Lets the name in the card’s head take two balanced lines where one would cut it; the head is a line taller whatever the name.",
+          "does": "Lets the name in the card’s head take two balanced lines where one would cut it; the head is a line taller whatever the name. 0 hides the name: the head keeps its circle and its line.",
           "type": "choice",
           "default": "1",
           "values": {
+            "0": "0",
             "1": "1",
             "2": "2"
           }
@@ -18106,10 +18134,11 @@
         {
           "key": "name_lines",
           "label": "Lines for the name",
-          "does": "Lets the name in the card’s head take two balanced lines where one would cut it; the head is a line taller whatever the name.",
+          "does": "Lets the name in the card’s head take two balanced lines where one would cut it; the head is a line taller whatever the name. 0 hides the name: the head keeps its circle and its line.",
           "type": "choice",
           "default": "1",
           "values": {
+            "0": "0",
             "1": "1",
             "2": "2"
           }
@@ -18611,10 +18640,11 @@
         {
           "key": "name_lines",
           "label": "Lines for the name",
-          "does": "Lets the name in the card’s head take two balanced lines where one would cut it; the head is a line taller whatever the name.",
+          "does": "Lets the name in the card’s head take two balanced lines where one would cut it; the head is a line taller whatever the name. 0 hides the name: the head keeps its circle and its line.",
           "type": "choice",
           "default": "1",
           "values": {
+            "0": "0",
             "1": "1",
             "2": "2"
           }
@@ -19452,10 +19482,11 @@
         {
           "key": "name_lines",
           "label": "Lines for the name",
-          "does": "Lets the name in the card’s head take two balanced lines where one would cut it; the head is a line taller whatever the name.",
+          "does": "Lets the name in the card’s head take two balanced lines where one would cut it; the head is a line taller whatever the name. 0 hides the name: the head keeps its circle and its line.",
           "type": "choice",
           "default": "1",
           "values": {
+            "0": "0",
             "1": "1",
             "2": "2"
           }
@@ -19762,10 +19793,11 @@
         {
           "key": "name_lines",
           "label": "Lines for the name",
-          "does": "Lets the name in the card’s head take two balanced lines where one would cut it; the head is a line taller whatever the name.",
+          "does": "Lets the name in the card’s head take two balanced lines where one would cut it; the head is a line taller whatever the name. 0 hides the name: the head keeps its circle and its line.",
           "type": "choice",
           "default": "1",
           "values": {
+            "0": "0",
             "1": "1",
             "2": "2"
           }
@@ -20114,10 +20146,11 @@
         {
           "key": "name_lines",
           "label": "Lines for the name",
-          "does": "Lets the name in the card’s head take two balanced lines where one would cut it; the head is a line taller whatever the name.",
+          "does": "Lets the name in the card’s head take two balanced lines where one would cut it; the head is a line taller whatever the name. 0 hides the name: the head keeps its circle and its line.",
           "type": "choice",
           "default": "1",
           "values": {
+            "0": "0",
             "1": "1",
             "2": "2"
           }
@@ -20348,10 +20381,11 @@
         {
           "key": "name_lines",
           "label": "Lines for the name",
-          "does": "Lets the name in the card’s head take two balanced lines where one would cut it; the head is a line taller whatever the name.",
+          "does": "Lets the name in the card’s head take two balanced lines where one would cut it; the head is a line taller whatever the name. 0 hides the name: the head keeps its circle and its line.",
           "type": "choice",
           "default": "1",
           "values": {
+            "0": "0",
             "1": "1",
             "2": "2"
           }
@@ -20565,10 +20599,11 @@
         {
           "key": "name_lines",
           "label": "Lines for the name",
-          "does": "Lets the name in the card’s head take two balanced lines where one would cut it; the head is a line taller whatever the name.",
+          "does": "Lets the name in the card’s head take two balanced lines where one would cut it; the head is a line taller whatever the name. 0 hides the name: the head keeps its circle and its line.",
           "type": "choice",
           "default": "1",
           "values": {
+            "0": "0",
             "1": "1",
             "2": "2"
           }
@@ -20885,10 +20920,11 @@
         {
           "key": "name_lines",
           "label": "Lines for the name",
-          "does": "Lets the name in the card’s head take two balanced lines where one would cut it; the head is a line taller whatever the name.",
+          "does": "Lets the name in the card’s head take two balanced lines where one would cut it; the head is a line taller whatever the name. 0 hides the name: the head keeps its circle and its line.",
           "type": "choice",
           "default": "1",
           "values": {
+            "0": "0",
             "1": "1",
             "2": "2"
           }
@@ -21548,10 +21584,11 @@
         {
           "key": "name_lines",
           "label": "Lines for the name",
-          "does": "Lets the name in the card’s head take two balanced lines where one would cut it; the head is a line taller whatever the name.",
+          "does": "Lets the name in the card’s head take two balanced lines where one would cut it; the head is a line taller whatever the name. 0 hides the name: the head keeps its circle and its line.",
           "type": "choice",
           "default": "1",
           "values": {
+            "0": "0",
             "1": "1",
             "2": "2"
           }
@@ -22140,10 +22177,11 @@
         {
           "key": "name_lines",
           "label": "Lines for the name",
-          "does": "Lets the name in the card’s head take two balanced lines where one would cut it; the head is a line taller whatever the name.",
+          "does": "Lets the name in the card’s head take two balanced lines where one would cut it; the head is a line taller whatever the name. 0 hides the name: the head keeps its circle and its line.",
           "type": "choice",
           "default": "1",
           "values": {
+            "0": "0",
             "1": "1",
             "2": "2"
           }
@@ -22778,10 +22816,11 @@
         {
           "key": "name_lines",
           "label": "Lines for the name",
-          "does": "Lets the name in the card’s head take two balanced lines where one would cut it; the head is a line taller whatever the name.",
+          "does": "Lets the name in the card’s head take two balanced lines where one would cut it; the head is a line taller whatever the name. 0 hides the name: the head keeps its circle and its line.",
           "type": "choice",
           "default": "1",
           "values": {
+            "0": "0",
             "1": "1",
             "2": "2"
           }
@@ -23381,10 +23420,11 @@
         {
           "key": "name_lines",
           "label": "Lines for the name",
-          "does": "Lets the name in the card’s head take two balanced lines where one would cut it; the head is a line taller whatever the name.",
+          "does": "Lets the name in the card’s head take two balanced lines where one would cut it; the head is a line taller whatever the name. 0 hides the name: the head keeps its circle and its line.",
           "type": "choice",
           "default": "1",
           "values": {
+            "0": "0",
             "1": "1",
             "2": "2"
           }
@@ -23775,10 +23815,11 @@
         {
           "key": "name_lines",
           "label": "Lines for the name",
-          "does": "Lets the name in the card’s head take two balanced lines where one would cut it; the head is a line taller whatever the name.",
+          "does": "Lets the name in the card’s head take two balanced lines where one would cut it; the head is a line taller whatever the name. 0 hides the name: the head keeps its circle and its line.",
           "type": "choice",
           "default": "1",
           "values": {
+            "0": "0",
             "1": "1",
             "2": "2"
           }
@@ -24106,10 +24147,11 @@
         {
           "key": "name_lines",
           "label": "Lines for the name",
-          "does": "Lets the name in the card’s head take two balanced lines where one would cut it; the head is a line taller whatever the name.",
+          "does": "Lets the name in the card’s head take two balanced lines where one would cut it; the head is a line taller whatever the name. 0 hides the name: the head keeps its circle and its line.",
           "type": "choice",
           "default": "1",
           "values": {
+            "0": "0",
             "1": "1",
             "2": "2"
           }
@@ -24424,10 +24466,11 @@
         {
           "key": "name_lines",
           "label": "Lines for the name",
-          "does": "Lets the name in the card’s head take two balanced lines where one would cut it; the head is a line taller whatever the name.",
+          "does": "Lets the name in the card’s head take two balanced lines where one would cut it; the head is a line taller whatever the name. 0 hides the name: the head keeps its circle and its line.",
           "type": "choice",
           "default": "1",
           "values": {
+            "0": "0",
             "1": "1",
             "2": "2"
           }
@@ -24713,10 +24756,11 @@
         {
           "key": "name_lines",
           "label": "Lines for the name",
-          "does": "Lets the name in the card’s head take two balanced lines where one would cut it; the head is a line taller whatever the name.",
+          "does": "Lets the name in the card’s head take two balanced lines where one would cut it; the head is a line taller whatever the name. 0 hides the name: the head keeps its circle and its line.",
           "type": "choice",
           "default": "1",
           "values": {
+            "0": "0",
             "1": "1",
             "2": "2"
           }
@@ -25000,10 +25044,11 @@
         {
           "key": "name_lines",
           "label": "Lines for the name",
-          "does": "Lets the name in the card’s head take two balanced lines where one would cut it; the head is a line taller whatever the name.",
+          "does": "Lets the name in the card’s head take two balanced lines where one would cut it; the head is a line taller whatever the name. 0 hides the name: the head keeps its circle and its line.",
           "type": "choice",
           "default": "1",
           "values": {
+            "0": "0",
             "1": "1",
             "2": "2"
           }
@@ -25270,10 +25315,11 @@
         {
           "key": "name_lines",
           "label": "Lines for the name",
-          "does": "Lets the name in the card’s head take two balanced lines where one would cut it; the head is a line taller whatever the name.",
+          "does": "Lets the name in the card’s head take two balanced lines where one would cut it; the head is a line taller whatever the name. 0 hides the name: the head keeps its circle and its line.",
           "type": "choice",
           "default": "1",
           "values": {
+            "0": "0",
             "1": "1",
             "2": "2"
           }
@@ -25736,10 +25782,11 @@
         {
           "key": "name_lines",
           "label": "Lines for the name",
-          "does": "Lets the name in the card’s head take two balanced lines where one would cut it; the head is a line taller whatever the name.",
+          "does": "Lets the name in the card’s head take two balanced lines where one would cut it; the head is a line taller whatever the name. 0 hides the name: the head keeps its circle and its line.",
           "type": "choice",
           "default": "1",
           "values": {
+            "0": "0",
             "1": "1",
             "2": "2"
           }
@@ -26203,10 +26250,11 @@
         {
           "key": "name_lines",
           "label": "Lines for the name",
-          "does": "Lets the name in the card’s head take two balanced lines where one would cut it; the head is a line taller whatever the name.",
+          "does": "Lets the name in the card’s head take two balanced lines where one would cut it; the head is a line taller whatever the name. 0 hides the name: the head keeps its circle and its line.",
           "type": "choice",
           "default": "1",
           "values": {
+            "0": "0",
             "1": "1",
             "2": "2"
           }
@@ -26705,10 +26753,11 @@
         {
           "key": "name_lines",
           "label": "Lines for the name",
-          "does": "Lets the name in the card’s head take two balanced lines where one would cut it; the head is a line taller whatever the name.",
+          "does": "Lets the name in the card’s head take two balanced lines where one would cut it; the head is a line taller whatever the name. 0 hides the name: the head keeps its circle and its line.",
           "type": "choice",
           "default": "1",
           "values": {
+            "0": "0",
             "1": "1",
             "2": "2"
           }
@@ -27319,10 +27368,11 @@
         {
           "key": "name_lines",
           "label": "Lines for the name",
-          "does": "Lets the name in the card’s head take two balanced lines where one would cut it; the head is a line taller whatever the name.",
+          "does": "Lets the name in the card’s head take two balanced lines where one would cut it; the head is a line taller whatever the name. 0 hides the name: the head keeps its circle and its line.",
           "type": "choice",
           "default": "1",
           "values": {
+            "0": "0",
             "1": "1",
             "2": "2"
           }
@@ -27772,10 +27822,11 @@
         {
           "key": "name_lines",
           "label": "Lines for the name",
-          "does": "Lets the name in the card’s head take two balanced lines where one would cut it; the head is a line taller whatever the name.",
+          "does": "Lets the name in the card’s head take two balanced lines where one would cut it; the head is a line taller whatever the name. 0 hides the name: the head keeps its circle and its line.",
           "type": "choice",
           "default": "1",
           "values": {
+            "0": "0",
             "1": "1",
             "2": "2"
           }
@@ -28519,10 +28570,11 @@
         {
           "key": "name_lines",
           "label": "Lines for the name",
-          "does": "Lets the name in the card’s head take two balanced lines where one would cut it; the head is a line taller whatever the name.",
+          "does": "Lets the name in the card’s head take two balanced lines where one would cut it; the head is a line taller whatever the name. 0 hides the name: the head keeps its circle and its line.",
           "type": "choice",
           "default": "1",
           "values": {
+            "0": "0",
             "1": "1",
             "2": "2"
           }
@@ -29339,10 +29391,11 @@
         {
           "key": "name_lines",
           "label": "Lines for the name",
-          "does": "Lets the name in the card’s head take two balanced lines where one would cut it; the head is a line taller whatever the name.",
+          "does": "Lets the name in the card’s head take two balanced lines where one would cut it; the head is a line taller whatever the name. 0 hides the name: the head keeps its circle and its line.",
           "type": "choice",
           "default": "1",
           "values": {
+            "0": "0",
             "1": "1",
             "2": "2"
           }
@@ -29792,10 +29845,11 @@
         {
           "key": "name_lines",
           "label": "Lines for the name",
-          "does": "Lets the name in the card’s head take two balanced lines where one would cut it; the head is a line taller whatever the name.",
+          "does": "Lets the name in the card’s head take two balanced lines where one would cut it; the head is a line taller whatever the name. 0 hides the name: the head keeps its circle and its line.",
           "type": "choice",
           "default": "1",
           "values": {
+            "0": "0",
             "1": "1",
             "2": "2"
           }
@@ -30188,10 +30242,11 @@
         {
           "key": "name_lines",
           "label": "Lines for the name",
-          "does": "Lets the name in the card’s head take two balanced lines where one would cut it; the head is a line taller whatever the name.",
+          "does": "Lets the name in the card’s head take two balanced lines where one would cut it; the head is a line taller whatever the name. 0 hides the name: the head keeps its circle and its line.",
           "type": "choice",
           "default": "1",
           "values": {
+            "0": "0",
             "1": "1",
             "2": "2"
           }
@@ -30830,10 +30885,11 @@
         {
           "key": "name_lines",
           "label": "Lines for the name",
-          "does": "Lets the name in the card’s head take two balanced lines where one would cut it; the head is a line taller whatever the name.",
+          "does": "Lets the name in the card’s head take two balanced lines where one would cut it; the head is a line taller whatever the name. 0 hides the name: the head keeps its circle and its line.",
           "type": "choice",
           "default": "1",
           "values": {
+            "0": "0",
             "1": "1",
             "2": "2"
           }

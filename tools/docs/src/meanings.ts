@@ -181,7 +181,7 @@ export const MEANINGS: Readonly<Record<string, string>> = {
   motion: 'How the flows move: fully, calmly, or not at all.',
   name: 'The name the card shows, in place of the entity’s own.',
   name_lines:
-    'Lets the name in the card’s head take two balanced lines where one would cut it; the head is a line taller whatever the name.',
+    'Lets the name in the card’s head take two balanced lines where one would cut it; the head is a line taller whatever the name. 0 hides the name: the head keeps its circle and its line.',
   name_position: 'Where the photo carries the room’s name: at its foot, or at its top.',
   nav: 'Which keys stand round the arrow pad, in this order.',
   names:

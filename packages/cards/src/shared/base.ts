@@ -16,8 +16,8 @@ import type { ShowIcon } from '../energy/head.js';
 import { loadChartEngine } from './chart-load.js';
 import { COMMON_ALIASES, normaliseConfig, type AliasSpec, type KnownKeys } from './config.js';
 import { FontsSettled } from './fonts.js';
-import { headLines } from './head-lines.js';
-import type { NameLines } from './heights.js';
+import { headLines, hidesName } from './head-lines.js';
+import type { HeadNameLines } from './heights.js';
 import type { EditorChoices, EditorDefaults, RowsListSpec } from './rows-editor.js';
 import { ownLine, type OwnLine } from './secondary.js';
 import { isTemplate, TemplateTexts } from './templates.js';
@@ -31,7 +31,7 @@ import type { Band, Thresholds } from './thresholds.js';
  */
 export interface HeadConfig {
   show_icon?: ShowIcon;
-  name_lines?: NameLines;
+  name_lines?: HeadNameLines;
   show_badge?: boolean;
   icon_tap_action?: ActionConfig;
   icon_hold_action?: ActionConfig;
@@ -320,8 +320,10 @@ export abstract class Card<C extends FluvyCardConfig = FluvyCardConfig> extends 
   protected override willUpdate(changed: PropertyValues): void {
     super.willUpdate(changed);
     this.ownNamed.clear(); // the render names them again
-    // a head's name in two lines: the head's sheet takes it from the host (fluvy/surfaces.css)
-    this.toggleAttribute('name-lines', this.nameLines === 2);
+    // a head's name in two lines, or none: the head's sheet takes it from the host (fluvy/surfaces.css)
+    const lines = this.nameLines;
+    if (lines === 1) this.removeAttribute('name-lines');
+    else this.setAttribute('name-lines', String(lines));
   }
 
   /**
@@ -368,10 +370,11 @@ export abstract class Card<C extends FluvyCardConfig = FluvyCardConfig> extends 
 
   /**
    * The lines the head's name may take (`name_lines`, #191): two where its config asks and the card has a head whose
-   * name they are (`headLines`: a room's and its lights' are their tiles'), else one.
+   * name they are (`headLines`: a room's and its lights' are their tiles'), none where it asks for none (#237:
+   * `hidesName`), else one.
    */
-  get nameLines(): 1 | 2 {
-    return headLines(this.config) ? 2 : 1;
+  get nameLines(): 0 | 1 | 2 {
+    return headLines(this.config) ? 2 : hidesName(this.config) ? 0 : 1;
   }
 
   /** An action as a surface runs it for `entityId`, where it can (`actionRuns`): none where it is unset. */

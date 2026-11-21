@@ -24,7 +24,7 @@ import {
   UNAVAILABLE_LOOKS,
 } from '@fluvy/core';
 import { TONES } from '@fluvy/ui';
-import { headLines } from './head-lines.js';
+import { namesHead } from './head-lines.js';
 import type { EditorChoices, RowsListSpec, SelectOption } from './rows-editor.js';
 import { asksGroups, statesOf } from './lists.js';
 import { pretty } from './mode-words.js';
@@ -749,9 +749,10 @@ export const whenOffField = (): HaFormSchemaItem => selectField('when_off', ['al
 
 /**
  * A name, a small tile's (#100) or a head's (#191), in one line (the default) or two where one would cut it
- * (`name_lines`).
+ * (`name_lines`); a head's hidden too (`none`: 0, #237).
  */
-export const nameLinesField = (): HaFormSchemaItem => selectField('name_lines', ['1', '2']);
+export const nameLinesField = (none = false): HaFormSchemaItem =>
+  selectField('name_lines', none ? ['0', '1', '2'] : ['1', '2']);
 
 /**
  * What ends a large tile's head where its entity switches (`show_switch`, #160), as its config writes it: its switch
@@ -908,20 +909,20 @@ export const holdsDevice =
 export const showIconField = (): HaFormSchemaItem =>
   selectField('show_icon', ['auto', 'always', 'never']);
 
-/** Whether a config's layout draws a head that names the card: where its name may take two lines (`headLines`). */
-const namesHead = (data: Readonly<Record<string, unknown>>): boolean =>
-  headLines({ ...data, type: String(data['type']), name_lines: 2 }) > 0;
+/** Whether a config's layout draws a head that names the card (`namesHead`): where its name's lines are the head's. */
+const namesCard = (data: Readonly<Record<string, unknown>>): boolean =>
+  namesHead({ ...data, type: String(data['type']) });
 
 /**
  * A card's head: whether it shows its circle, whether it shows its own badge where it carries one (`badge`:
- * `show_badge`, #203), and — where its layout draws a head that names it — its name in one line (the default) or two
- * where one would cut it (`name_lines`, #191: the head a line taller), on one row.
+ * `show_badge`, #203), and — where its layout draws a head that names it — its name in one line (the default), two
+ * where one would cut it (`name_lines`, #191: the head a line taller) or none (#237), on one row.
  */
 export const headFields = ({ badge = false } = {}): HaFormSchemaItem =>
   fieldRow(
     showIconField(),
     ...(badge ? [boolField('show_badge')] : []),
-    onlyWhen(namesHead, nameLinesField()),
+    onlyWhen(namesCard, nameLinesField(true)),
   );
 
 /** What a card of a list says while the list has nothing to show, and whether it hides then (`EmptyList`). */

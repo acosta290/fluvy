@@ -1030,7 +1030,7 @@ export class FluvyApplianceCard extends Card<ApplianceCardConfig> {
         min-height: 64px;
         gap: 16px;
       }
-      :host([name-lines]) .fv-card__head.ap-head {
+      :host([name-lines='2']) .fv-card__head.ap-head {
         height: auto;
         min-height: 88px;
       }

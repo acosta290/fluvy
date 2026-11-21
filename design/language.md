@@ -223,6 +223,11 @@ key hold.
   the weather's hero) has none to take, and the editor offers it only where it acts (`headLines`, the one rule of the
   drawing, the declared height and the form); a room's and the room lights' `name_lines` is their tiles'. The automatic
   dashboards' *Long names* (`name_lines: 2`) writes it on the cards they name after the house's entities.
+- **A name hidden (1.24, #237):** `name_lines: 0` on the same heads hides the name: the circle, the line and what
+  trails them keep their places, the line centred beside the circle on its own, and the head stays 44 (its declared
+  height is one line's), so cards side by side stay level. The name is drawn at no size, still read aloud and still
+  the head's button, whose overlay is the head's whole row; it needs no room, so the badge and the circle keep theirs
+  (`nameWidth` 0). The editor offers 0 only where the head names the card (`namesHead`): a tile's name is its tile's.
 - **A badge asked away (1.22, #203):** `show_badge: false` on every head card whose head carries a badge of the
   card's own (a state, what it is doing, a count, a total), honoured once in `HeadFit`, read through the card as
   `show_icon` is (`Card.showBadge`): no badge, and no word stepping down into the line either; its room is the name's

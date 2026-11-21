@@ -144,16 +144,24 @@
 /* a name in two lines where one would end it in an ellipsis (`name_lines: 2`, 1.22, #191; the card marks its host):
    balanced, an ellipsis only past the second; the head a line taller whatever the name says — 68, the two lines and
    the line under them 4 from its edges, the circle 12 — so a row of cards stays level */
-:host([name-lines]) .fv-card__head {
+:host([name-lines='2']) .fv-card__head {
   height: 68px;
 }
 
-:host([name-lines]) .fv-card__head :is(.fv-card__title, .fv-card__tap) {
+:host([name-lines='2']) .fv-card__head :is(.fv-card__title, .fv-card__tap) {
   display: -webkit-box;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
   white-space: normal;
   text-wrap: balance;
+}
+
+/* a head that hides its name (`name_lines: 0`, #237): its circle and its line keep their places, the line centred
+   beside the circle, the head 44 still; the name drawn at no size, still read aloud and still the head's button, whose
+   overlay is the head's whole row */
+:host([name-lines='0']) .fv-card__head .fv-card__title {
+  font-size: 0;
+  line-height: 0;
 }
 
 .fv-card__sub {

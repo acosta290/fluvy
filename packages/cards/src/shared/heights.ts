@@ -37,6 +37,8 @@ export function columnOf(config: LovelaceCardConfig): number {
 
 /** The lines a name may take (`name_lines`): YAML's figure, or the editor's word for it. */
 export type NameLines = 1 | 2 | '1' | '2';
+/** The lines a head's name may take: none too (`0`, #237), the name hidden. */
+export type HeadNameLines = NameLines | 0 | '0';
 
 /**
  * A small tile's name in two lines where one would end it in an ellipsis (`name_lines: 2`, #100; the editor writes

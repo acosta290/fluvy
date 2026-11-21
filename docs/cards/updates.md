@@ -86,7 +86,7 @@ hide_empty: false
 | --- | --- | --- |
 | `show_icon` | `auto` | Shows the icon, hides it, or lets the card decide. `auto` · `always` · `never`. |
 | `show_badge` | `true` | Shows the badge at the end of the head, such as the card’s state or a count. |
-| `name_lines` | `1` | Lets the name in the card’s head take two balanced lines where one would cut it; the head is a line taller whatever the name. `1` · `2`. |
+| `name_lines` | `1` | Lets the name in the card’s head take two balanced lines where one would cut it; the head is a line taller whatever the name. 0 hides the name: the head keeps its circle and its line. `0` · `1` · `2`. |
 | `tone` | the card’s own | The card’s colour from the palette’s tones; left out, the tone of what it shows. `accent` · `light` · `heat` · `cool` · `dry` · `fan` · `water` · `solar` · `grid` · `media` · `presence` · `armed` · `battery` · `house` · `gas` · `vehicle` (Car) · `neutral` · `ok` (Good) · `warning` · `danger`. |
 | `color` |  | The card’s colour: its circle, its accents and its tints wear it. Left out, the colour of what it shows. |
 | `card_color` |  | Paints the card’s surface in a colour of your own. |

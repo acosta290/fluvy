@@ -13,7 +13,7 @@ import { sheet as solar } from './solar.js';
  * the head a line taller whatever the name says, so a row of cards stays level — the reporter's two inverter arrays,
  * cut alike on one line and read apart on two, in English and as his house names them; every kind of head under a
  * long name as a full card and in half a section; and the player whose column lets its art go, its head the three
- * lines' 64 (#191.1).
+ * lines' 64 (#191.1). Every head with its name hidden (`name_lines: 0`, #237), its circle and its line kept.
  */
 
 /** A card of another sheet's frame, as that sheet draws it, its own columns left to this sheet. */
@@ -71,6 +71,9 @@ const HEADS: readonly LovelaceCardConfig[] = [
   },
 ].map((card) => ({ ...card, name_lines: 2 }));
 
+/** Each kind of head with its name hidden (#237): its circle, its line and what trails them where they were. */
+const NAMELESS: readonly LovelaceCardConfig[] = HEADS.map((card) => ({ ...card, name_lines: 0 }));
+
 /** In half a section, two on a phone's line: the arrays, a lock and a blind, each compact. */
 const HALF: readonly LovelaceCardConfig[] = [
   ...arrays(2),
@@ -91,6 +94,13 @@ const frames: FrameSpec[] = [
   { title: 'Two arrays · two lines, in Chinese', width: 288, cards: arrays(2, 2) },
   { title: 'Every head · two lines', cards: [...HEADS] },
   { title: 'Half a section · two lines', cards: [...HALF], heights: [152, 172] },
+  // #237: the same heads with no name, each its 44 still, beside the same cards with theirs
+  { title: 'Every head · no name', cards: [...NAMELESS] },
+  {
+    title: 'Half a section · no name',
+    cards: HALF.map((card) => ({ ...card, name_lines: 0 })),
+    heights: [152, 172],
+  },
   // a column under 296 lets the player's art go: its head is its three lines' 64, the round centred on them
   { title: 'Media · a narrow column', width: 288, cards: [from(media, 'Playing')] },
   { title: 'Media · a narrow column, off', width: 288, cards: [from(media, 'Off')] },

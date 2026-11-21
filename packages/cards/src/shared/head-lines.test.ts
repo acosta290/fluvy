@@ -1,12 +1,12 @@
 // @vitest-environment happy-dom
 import type { HomeAssistant, LovelaceCardConfig } from '@fluvy/core';
-import { describe, expect, it } from 'vitest';
-import { nameWidth } from '../energy/head.js';
+import { describe, expect, it, vi } from 'vitest';
+import { nameWidth, type HeadFit } from '../energy/head.js';
 import { expanderHeight } from '../expander-family.js';
 import { houseHeightOf } from '../house-heights.js';
 import { catalogue } from '../index.js';
 import { visibleFields } from './form.js';
-import { HEAD_LINE, headLines } from './head-lines.js';
+import { HEAD_LINE, headLines, hidesName } from './head-lines.js';
 
 /*
  * A head's name in two lines (`name_lines: 2`, #191): one rule for what a card draws, what it declares and what its
@@ -172,5 +172,116 @@ describe('the editors (#191)', () => {
     expect(offered('fluvy-weather-card', { variant: 'compact' })).toBe(true);
     expect(offered('fluvy-printer-card', { variant: 'row' })).toBe(false);
     expect(offered('fluvy-lock-card', {})).toBe(true);
+  });
+});
+
+/*
+ * A head's name hidden (`name_lines: 0`, #237): the same heads, the same rule of where it acts; the head keeps its 44
+ * (declared and drawn), its name needs no room, and the editor offers it on a head's dropdown alone.
+ */
+describe('a head’s name hidden (#237)', () => {
+  it('hides it where a head names the card, in YAML’s figure or the editor’s word, and nowhere else', () => {
+    for (const card of ['energy', 'lock', 'light', 'thermostat', 'sensor', 'gauge', 'entities'])
+      expect(hidesName(config(card, { name_lines: 0 })), card).toBe(true);
+    expect(hidesName(config('lock', { name_lines: '0' }))).toBe(true);
+    expect(hidesName(config('lock', { name_lines: 1 }))).toBe(false);
+    expect(hidesName({ type: 'custom:fluvy-lock-card' })).toBe(false);
+    for (const card of ['tile', 'tiles', 'template', 'lights', 'room'])
+      expect(hidesName(config(card, { name_lines: 0 })), card).toBe(false);
+    expect(hidesName(config('chart', { name_lines: 0, show_head: false }))).toBe(false);
+  });
+
+  it('keeps the head’s height: one line’s, declared wherever a card’s height is read', () => {
+    const lock = { type: 'custom:fluvy-lock-card', entity: 'lock.front_door', variant: 'compact' };
+    expect(headLines({ ...lock, name_lines: 0 })).toBe(0);
+    expect(houseHeightOf({ ...lock, name_lines: 0 }, -1)).toBe(houseHeightOf(lock, -1));
+    const entities = { type: 'custom:fluvy-entities-card', title: 'Rooms', rows: ['lock.a'] };
+    expect(houseHeightOf({ ...entities, name_lines: 0 }, -1)).toBe(houseHeightOf(entities, -1));
+  });
+
+  it('marks the host with none, two or nothing, as the head’s sheet reads them', async () => {
+    const drawn = async (tag: string, more: Record<string, unknown>) => {
+      const el = document.createElement(tag) as HTMLElement & {
+        setConfig(config: LovelaceCardConfig): void;
+        hass: HomeAssistant;
+        updateComplete: Promise<boolean>;
+      };
+      el.setConfig({ type: `custom:${tag}`, ...more });
+      el.hass = { states: {}, entities: {}, devices: {}, areas: {}, language: 'en' } as never;
+      document.body.append(el);
+      await el.updateComplete;
+      const marked = el.getAttribute('name-lines');
+      el.remove();
+      return marked;
+    };
+    expect(await drawn('fluvy-lock-card', { entity: 'lock.a', name_lines: 0 })).toBe('0');
+    expect(await drawn('fluvy-lock-card', { entity: 'lock.a', name_lines: 2 })).toBe('2');
+    expect(await drawn('fluvy-lock-card', { entity: 'lock.a', name_lines: 1 })).toBeNull();
+    expect(await drawn('fluvy-lights-card', { lights: ['light.a'], name_lines: 0 })).toBeNull();
+  });
+
+  it('needs no room for the name: the badge and the circle keep theirs beside a long one', async () => {
+    expect(nameWidth('Inverter E1 North MPPT total power', 0, (text) => text.length * 10)).toBe(0);
+    const head = async (name_lines: number) => {
+      const el = document.createElement('fluvy-entities-card') as HTMLElement & {
+        setConfig(config: LovelaceCardConfig): void;
+        hass: HomeAssistant;
+        width: number;
+        updateComplete: Promise<boolean>;
+        head: HeadFit;
+      };
+      vi.spyOn(el.head.ruler, 'width').mockImplementation((_cls, text) => text.length * 8);
+      el.width = 212;
+      el.setConfig({
+        type: 'custom:fluvy-entities-card',
+        title: 'Living room and the garden doors',
+        show_count: true,
+        rows: ['switch.a'],
+        name_lines,
+      });
+      el.hass = {
+        states: { 'switch.a': { entity_id: 'switch.a', state: 'on', attributes: {} } },
+        entities: {},
+        devices: {},
+        areas: {},
+        language: 'en',
+      } as never;
+      document.body.append(el);
+      await el.updateComplete;
+      const root = el.shadowRoot!;
+      const kept = {
+        badge: root.querySelector('.fv-card__head .fv-badge') !== null,
+        circle: root.querySelector('.fv-card__head .fv-ico') !== null,
+        // read aloud still
+        title: root.querySelector('.fv-card__head .fv-card__title')?.textContent?.trim(),
+      };
+      el.remove();
+      return kept;
+    };
+    expect(await head(1)).toMatchObject({ badge: false });
+    expect(await head(0)).toEqual({
+      badge: true,
+      circle: true,
+      title: 'Living room and the garden doors',
+    });
+  });
+
+  it('is offered on a head’s dropdown, never on a tile’s', () => {
+    type Field = {
+      name?: string;
+      schema?: Field[];
+      selector?: { select?: { options: { value: string }[] } };
+    };
+    const field = (schema: readonly Field[]): Field | undefined =>
+      schema
+        .flatMap((item) => (item.schema ? item.schema : [item]))
+        .find((item) => item.name === 'name_lines');
+    const values = (tag: string) =>
+      field(
+        forms.find((f) => f.tag === tag)!.form.schema as Field[],
+      )?.selector?.select?.options.map((option) => option.value);
+    expect(values('fluvy-lock-card')).toEqual(['0', '1', '2']);
+    expect(values('fluvy-entities-card')).toEqual(['0', '1', '2']);
+    expect(values('fluvy-tile-card')).toEqual(['1', '2']);
   });
 });

@@ -90,7 +90,7 @@ hide_empty: false
 | Option | Default | What it does |
 | --- | --- | --- |
 | `show_icon` | `auto` | Shows the icon, hides it, or lets the card decide. `auto` · `always` · `never`. |
-| `name_lines` | `1` | Lets the name in the card’s head take two balanced lines where one would cut it; the head is a line taller whatever the name. `1` · `2`. |
+| `name_lines` | `1` | Lets the name in the card’s head take two balanced lines where one would cut it; the head is a line taller whatever the name. 0 hides the name: the head keeps its circle and its line. `0` · `1` · `2`. |
 | `color` |  | The card’s colour: its circle, its accents and its tints wear it. Left out, the colour of what it shows. |
 | `card_color` |  | Paints the card’s surface in a colour of your own. |
 | `card_opacity` | `100` | How solid the card’s surface is, in percent: under 100 the view’s background shows through. Left out, the house’s. 0 % to 100 %, in steps of 5. |
