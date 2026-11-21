@@ -3393,6 +3393,13 @@ The Items card (#66) lists the items of one sensor's list attribute — the airc
   have gone (half a section).
 - **The value's glyph** is a `listRow` option of its own (`valueGlyph`): a 16 glyph before the figure, the two centred
   on the value's line 4 apart (`.fv-row__value--glyph`), weighed with the value wherever a row fits its words.
+- **A state as its icon (1.24, #234):** an entities row whose end is its state may say it as the icon its state names
+  (`state_display: icon`, `state_icons`, the row's own else the card's), a `listRow` option of its own (`valueIcon`):
+  the 20 glyph at the row's end, its ink on the column's edge as a value's words are (`.fv-row__state`), in the
+  state's tone (`state_colors`; ok, warning and critical say theirs) through the value's `data-ink`, else in the
+  value's ink; read aloud in its words. It is an end of its own width (20), counted as every end is, so the name and
+  the line have the rest; a state with no icon keeps its words, and a switch, a dropdown or a number's control stays
+  what ends its row.
 - **Heights.** `max_rows` (1–20, five) is the card's height, never the list's length: HEAD + 60 × n (five → 400),
   HEAD + 48 × n, HEAD + rows × 76 + 8 between (`itemsList`). The list's box holds that height at every width whatever
   it shows: fewer items, the empty panel — as tall as its words lay out across the card (120 at least: a German "Keine

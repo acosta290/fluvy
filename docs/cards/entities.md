@@ -66,6 +66,7 @@ rows:
 # show_rows_when:
 names: full
 show_count: true
+state_display: text
 # more:
 # more_path:
 # empty_text:
@@ -96,6 +97,9 @@ hide_empty: false
 | `names` | `full` | How a row is named where it has no name of its own: the entity’s full name, its own, or its device’s. `full` · `entity` · `device`. |
 | `show_count` | `false` | Says on the head’s line how many are on. |
 | `number_control` | `value` | How a number’s row ends: its value, its value between − and +, or a value you tap to type. `value` (As a value) · `stepper` (With − and +) · `entry` (Typed). |
+| `state_display` | `text` | How a row that ends in its state says it: in words, or as the icon its state names in Icons by state. `text` (Words) · `icon`. |
+| `state_icons` |  | An icon for each state, by the state as Home Assistant writes it (ok: mdi:check-circle-outline); a state left out keeps its words. |
+| `state_colors` |  | The colour of each state’s icon: a tone, a colour of your own, or none; ok, warning and critical have theirs. |
 | `light_colors` | `false` | Shows each light that is on in its bulb’s own colour. |
 | `light_whites` | `temperature` | Draws a lit white by its colour temperature, or as the palette’s light. `palette` (The theme’s light) · `temperature` (The bulb’s white). |
 | `more` |  | How many more entities the "More" row says there are. 1 to 999. |
@@ -144,6 +148,9 @@ An item is an entity id, or a map with `entity` and any of these fields. Between
 | `secondary` | The line under the item’s name. `area` · `last-changed` · `state` · `none`, or your own. |
 | `since` | Where the time of the last change is read from. |
 | `number_control` | How this number’s row ends, whatever the card says. `value` (As a value) · `stepper` (With − and +) · `entry` (Typed). |
+| `state_display` | How this row says its state, whatever the card says. `text` (Words) · `icon`. |
+| `state_icons` | This row’s icon for each state, before the card’s. |
+| `state_colors` | This row’s colour for each state’s icon, before the card’s. |
 | `options` | The select’s options offered, in this order. A list. |
 | `labels` | Names of your own for the options. |
 | `tone` | The item’s colour from the palette’s tones. `accent` · `light` · `heat` · `cool` · `dry` · `fan` · `water` · `solar` · `grid` · `media` · `presence` · `armed` · `battery` · `house` · `gas` · `vehicle` (Car) · `neutral` · `ok` (Good) · `warning` · `danger`. |

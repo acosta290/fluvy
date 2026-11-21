@@ -742,6 +742,8 @@ export interface ListRowOptions {
   readonly value?: string;
   /** A 16 glyph before the value (a trend's arrow). */
   readonly valueGlyph?: IconRef | undefined;
+  /** The value said as an icon (20, a state's, #234) in its `valueInk`: its words are what a reader hears. */
+  readonly valueIcon?: IconRef | string | undefined;
   /** The value is a state in words, not a figure: the secondary ink (a person's zone, a view that is always shown). */
   readonly quiet?: boolean;
   /** The word on the small quiet button at the row's end (`trailing: 'button'`); the row's tap is the action. */
@@ -811,20 +813,28 @@ export function listRow(o: ListRowOptions): TemplateResult {
             o.title,
             (o.unavailable ?? false) || (o.readonly ? 'readonly' : false),
           )
-        : trailing === 'value'
+        : trailing === 'value' && o.valueIcon
           ? html`<span
-              class="fv-row__value ${o.valueTone ? `fv-row__value--${o.valueTone}` : ''} ${o.quiet ? 'fv-row__value--quiet' : ''} ${o.valueGlyph ? 'fv-row__value--glyph' : ''} ${wordsClass(o.value)} ${o.valueWidth ? 'fv-row__value--wrap' : ''} ${o.valueSize ? `fv-row__value--${o.valueSize}` : ''}"
-              style=${o.valueWidth ? `width:${o.valueWidth}px` : nothing}
+              class="fv-row__state"
+              role="img"
+              aria-label=${o.value ?? ''}
               data-ink=${o.valueInk ?? nothing}
-              >${o.valueGlyph ? icon(o.valueGlyph) : nothing}${o.value ?? ''}</span
+              >${icon(o.valueIcon)}</span
             >`
-          : trailing === 'chevron'
-            ? html`<span class="fv-row__chevron">${glyph('chevron')}</span>`
-            : trailing === 'button'
-              ? html`<span class="fv-btn fv-btn--quiet fv-row__btn" data-fit="28"
-                  >${o.button ?? ''}</span
-                >`
-              : nothing;
+          : trailing === 'value'
+            ? html`<span
+                class="fv-row__value ${o.valueTone ? `fv-row__value--${o.valueTone}` : ''} ${o.quiet ? 'fv-row__value--quiet' : ''} ${o.valueGlyph ? 'fv-row__value--glyph' : ''} ${wordsClass(o.value)} ${o.valueWidth ? 'fv-row__value--wrap' : ''} ${o.valueSize ? `fv-row__value--${o.valueSize}` : ''}"
+                style=${o.valueWidth ? `width:${o.valueWidth}px` : nothing}
+                data-ink=${o.valueInk ?? nothing}
+                >${o.valueGlyph ? icon(o.valueGlyph) : nothing}${o.value ?? ''}</span
+              >`
+            : trailing === 'chevron'
+              ? html`<span class="fv-row__chevron">${glyph('chevron')}</span>`
+              : trailing === 'button'
+                ? html`<span class="fv-btn fv-btn--quiet fv-row__btn" data-fit="28"
+                    >${o.button ?? ''}</span
+                  >`
+                : nothing;
   return html`<div
     class="fv-row ${o.onTap ? 'fv-row--tap' : ''} ${o.unavailable ? 'is-unavailable' : ''} ${o.compact ? 'fv-row--compact' : ''} ${o.icon === null ? 'fv-row--bare' : ''} ${o.stack ? 'fv-row--stack' : ''} ${o.open ? 'is-open' : ''}"
     data-accent=${o.accent ?? nothing}

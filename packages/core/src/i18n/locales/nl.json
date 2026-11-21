@@ -681,7 +681,11 @@
     "lamp_switches_help": "Een schakelaar waarvan de naam zegt dat het een lamp is, zoals Werkplaatslamp, telt mee als een van de lampen van de kamer.",
     "focus": "Groot getal",
     "card_blur": "Wat doorschijnt vervagen",
-    "card_blur_helper": "Onaangeroerd: die van alle kaarten, uit de instellingen van Fluvy; geen vervaging bij 0 %"
+    "card_blur_helper": "Onaangeroerd: die van alle kaarten, uit de instellingen van Fluvy; geen vervaging bij 0 %",
+    "state_display": "Status getoond als",
+    "state_icons": "Iconen per status",
+    "state_icons_helper": "Per regel een status en zijn icoon (ok: mdi:check-circle-outline); een status die er niet staat, houdt zijn woorden",
+    "state_icon_colors_helper": "Per regel een status en zijn tint of kleur (warning: warning)"
   },
   "strategy": {
     "home": "Thuis",
@@ -2294,7 +2298,9 @@
     "icons": "Iconen",
     "target": "Het doel",
     "room": "De kamer",
-    "card": "Kaart"
+    "card": "Kaart",
+    "text": "Woorden",
+    "icon": "Icoon"
   },
   "tone": {
     "accent": "Accent",

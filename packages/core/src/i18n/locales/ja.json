@@ -631,7 +631,11 @@
     "lamp_switches_help": "名前がランプを示すスイッチ（「作業場のランプ」など）を部屋の照明として数えます。",
     "focus": "大きく表示する値",
     "card_blur": "透けて見える背景をぼかす",
-    "card_blur_helper": "変更しないときは Fluvy の設定のすべてのカードの値（0% ではぼかさない）"
+    "card_blur_helper": "変更しないときは Fluvy の設定のすべてのカードの値（0% ではぼかさない）",
+    "state_display": "状態の表示",
+    "state_icons": "状態ごとのアイコン",
+    "state_icons_helper": "1行に状態とそのアイコン（ok: mdi:check-circle-outline）。書かれていない状態は文字のまま",
+    "state_icon_colors_helper": "1行に状態とそのトーンまたは色（warning: warning）"
   },
   "strategy": {
     "home": "ホーム",
@@ -1099,7 +1103,9 @@
     "icons": "アイコン",
     "target": "設定値",
     "room": "室内",
-    "card": "カード"
+    "card": "カード",
+    "text": "文字",
+    "icon": "アイコン"
   },
   "tone": {
     "accent": "アクセント",

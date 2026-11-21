@@ -26,8 +26,9 @@ import {
 } from '../shared/form.js';
 import type { EditorDefaults, RowsListSpec } from '../shared/rows-editor.js';
 import { configKeys } from '../shared/config.js';
+import { SELECTS } from '../shared/dropdown.js';
 import { EMPTY_KEYS } from '../shared/lists.js';
-import type { EntitiesCardConfig } from './entities-card.js';
+import { READ_OUT, type EntitiesCardConfig } from './entities-card.js';
 
 /** The entities card's editor: fetched by its `editor()` the first time the card is edited, never by a dashboard. */
 
@@ -61,6 +62,9 @@ export const keys = configKeys<EntitiesCardConfig>()([
   'more_path',
   'show_rows_when',
   'number_control',
+  'state_display',
+  'state_icons',
+  'state_colors',
   ...EMPTY_KEYS,
 ]);
 
@@ -75,20 +79,52 @@ const numberControlField = (): HaFormSchemaItem =>
     ['entry', 'editor.number_typed'],
   ]);
 
+/** The domains whose rows end in their state's words (a select's opens its dropdown), which an icon may say (#234). */
+const STATE_DOMAINS = ['sensor', ...READ_OUT].filter((domain) => !SELECTS.has(domain));
+
+/** How the rows say their state (#234): in words, or as the icon their state names. */
+const stateDisplayField = (): HaFormSchemaItem => selectField('state_display', ['text', 'icon']);
+
+/** The states' icons and their icons' colours, by the state as Home Assistant writes it (#234). */
+const STATE_ICON_FIELDS: readonly HaFormSchemaItem[] = [
+  { name: 'state_icons', selector: { object: {} }, helper: 'editor.state_icons_helper' },
+  { name: 'state_colors', selector: { object: {} }, helper: 'editor.state_icon_colors_helper' },
+];
+
+/** What a row's own say is shown with: empty until chosen, the card's then. */
+const ROW_OWN = { helper: 'editor.item_show_switch_helper' } as const;
+
 const ROWS = rowItems(true, true);
-/** A row's fields with its number's control after where its time is read from: empty until chosen, the card's then. */
-const withControl = (schema: readonly HaFormSchemaItem[]): HaFormSchemaItem[] => {
+/** A row's fields with `fields` after where its time is read from. */
+const afterSince = (
+  schema: readonly HaFormSchemaItem[],
+  fields: readonly HaFormSchemaItem[],
+): HaFormSchemaItem[] => {
   const at = schema.findIndex((item) => item.name === 'since') + 1;
-  return [
-    ...schema.slice(0, at),
-    { ...numberControlField(), helper: 'editor.item_show_switch_helper' },
-    ...schema.slice(at),
-  ];
+  return [...schema.slice(0, at), ...fields, ...schema.slice(at)];
 };
+const PLAIN = ROWS.schemaOf?.({}) ?? ROWS.schema;
 /** A number's row: what every row shows, and how it ends. */
-const NUMBER_ROW = withControl(ROWS.schemaOf?.({}) ?? ROWS.schema);
-const isNumberRow = (item: Readonly<Record<string, unknown>>): boolean =>
-  (NUMBER_DOMAINS as readonly string[]).includes(String(item['entity']).split('.')[0] ?? '');
+const NUMBER_ROW = afterSince(PLAIN, [{ ...numberControlField(), ...ROW_OWN }]);
+/** A row that ends in its state: what every row shows, and how its state is said, with its icons where they are. */
+const STATE_ROW = afterSince(PLAIN, [{ ...stateDisplayField(), ...ROW_OWN }]);
+const STATE_ICON_ROW = afterSince(PLAIN, [
+  { ...stateDisplayField(), ...ROW_OWN },
+  ...STATE_ICON_FIELDS,
+]);
+const domainIn =
+  (domains: readonly string[]) =>
+  (item: Readonly<Record<string, unknown>>): boolean =>
+    domains.includes(String(item['entity']).split('.')[0] ?? '');
+const isNumberRow = domainIn(NUMBER_DOMAINS);
+const isStateRow = domainIn(STATE_DOMAINS);
+/** Whether a row says its state as an icon: its own say, else the card's. */
+const iconic = (
+  item: Readonly<Record<string, unknown>>,
+  card: Readonly<Record<string, unknown>> | undefined,
+): boolean => (item['state_display'] ?? card?.['state_display']) === 'icon';
+/** Whether the card's rows hold one that ends in its state. */
+const holdsState = holdsDomain(STATE_DOMAINS, 'rows', 'entities');
 
 /** The rows, with a section's label or a divider between them, each shown always or on a condition of its own. */
 export const lists: readonly RowsListSpec[] = [
@@ -100,10 +136,21 @@ export const lists: readonly RowsListSpec[] = [
     // the condition every row keeps to stands over the rows, and how those that say no name are named
     fields: ['show_rows_when', 'names'],
     ...ROWS,
-    keys: [...ROWS.keys!, 'number_control'],
-    schema: withControl(ROWS.schema),
-    // a number's row says how it ends (#218)
-    schemaOf: (item) => (isNumberRow(item) ? NUMBER_ROW : (ROWS.schemaOf?.(item) ?? ROWS.schema)),
+    keys: [...ROWS.keys!, 'number_control', 'state_display', 'state_icons', 'state_colors'],
+    schema: afterSince(ROWS.schema, [
+      { ...numberControlField(), ...ROW_OWN },
+      { ...stateDisplayField(), ...ROW_OWN },
+      ...STATE_ICON_FIELDS,
+    ]),
+    // a number's row says how it ends (#218), a row that ends in its state how it says it (#234)
+    schemaOf: (item, card) =>
+      isNumberRow(item)
+        ? NUMBER_ROW
+        : isStateRow(item)
+          ? iconic(item, card)
+            ? STATE_ICON_ROW
+            : STATE_ROW
+          : (ROWS.schemaOf?.(item) ?? ROWS.schema),
   },
 ];
 
@@ -114,6 +161,7 @@ export const defaults: EditorDefaults = () => ({
   light_colors: lightDefaults().colors,
   light_whites: 'temperature',
   number_control: 'value',
+  state_display: 'text',
 });
 
 export function getConfigForm(): LovelaceConfigForm {
@@ -132,6 +180,11 @@ export function getConfigForm(): LovelaceConfigForm {
         ...numberControlField(),
         helper: 'editor.number_control_helper',
       }),
+      // how the rows say their state (#234): while they hold one that ends in it; its icons once they say it so
+      onlyWhen(holdsState, stateDisplayField()),
+      ...STATE_ICON_FIELDS.map((field) =>
+        onlyWhen((data) => holdsState(data) && iconic(data, undefined), field),
+      ),
       // a light's colours where the rows hold a light
       onlyWhen(holdsLight('rows', 'entities'), lightColourFields()),
       // a last row to where the rest of the list is

@@ -681,7 +681,11 @@
     "lamp_switches_help": "Ein Schalter, dessen Name sagt, dass er eine Lampe ist, etwa Werkstattlampe, zählt zu den Lichtern des Raums.",
     "focus": "Großer Wert",
     "card_blur": "Durchscheinendes weichzeichnen",
-    "card_blur_helper": "Unverändert: wie in den Fluvy-Einstellungen für alle Karten; bei 0 % keine Unschärfe"
+    "card_blur_helper": "Unverändert: wie in den Fluvy-Einstellungen für alle Karten; bei 0 % keine Unschärfe",
+    "state_display": "Zustand anzeigen als",
+    "state_icons": "Symbole nach Zustand",
+    "state_icons_helper": "Pro Zeile ein Zustand und sein Symbol (ok: mdi:check-circle-outline); ein nicht genannter Zustand bleibt in Worten",
+    "state_icon_colors_helper": "Pro Zeile ein Zustand und sein Farbton oder seine Farbe (warning: warning)"
   },
   "strategy": {
     "home": "Zuhause",
@@ -2294,7 +2298,9 @@
     "icons": "Symbole",
     "target": "Das Ziel",
     "room": "Der Raum",
-    "card": "Karte"
+    "card": "Karte",
+    "text": "Wörter",
+    "icon": "Symbol"
   },
   "tone": {
     "accent": "Akzent",

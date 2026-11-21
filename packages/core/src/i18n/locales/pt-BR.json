@@ -681,7 +681,11 @@
     "lamp_switches_help": "Um interruptor cujo nome diz que é uma luminária, como Luminária da oficina, conta como uma das luzes do cômodo.",
     "focus": "Valor em destaque",
     "card_blur": "Desfocar o que aparece por trás",
-    "card_blur_helper": "Sem mexer, o de todos os cartões nas configurações do Fluvy; sem desfoque em 0 %"
+    "card_blur_helper": "Sem mexer, o de todos os cartões nas configurações do Fluvy; sem desfoque em 0 %",
+    "state_display": "Estado mostrado como",
+    "state_icons": "Ícones por estado",
+    "state_icons_helper": "Um estado e seu ícone em cada linha (ok: mdi:check-circle-outline); um estado não listado mantém suas palavras",
+    "state_icon_colors_helper": "Um estado e seu tom ou cor em cada linha (warning: warning)"
   },
   "strategy": {
     "home": "Início",
@@ -2294,7 +2298,9 @@
     "icons": "Ícones",
     "target": "O alvo",
     "room": "O cômodo",
-    "card": "Cartão"
+    "card": "Cartão",
+    "text": "Palavras",
+    "icon": "Ícone"
   },
   "tone": {
     "accent": "Destaque",

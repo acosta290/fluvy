@@ -1,5 +1,59 @@
+import type { StateSeed } from '../hass.js';
 import type { SheetSpec } from '../scenes.js';
 import { OVEN_MODE } from './inputs.js';
+
+/** A room's state as an icon (#234): its own icon at the row's end, its climate under its name. */
+const STATUS_ICONS = {
+  ok: 'mdi:check-circle-outline',
+  warning: 'mdi:alert-outline',
+  critical: 'mdi:alert-circle-outline',
+};
+const climateLine = (room: string): string =>
+  `{{ states('sensor.ls_${room}_temperature') | round(1) }} °C · {{ states('sensor.ls_${room}_humidity') }} %`;
+const STATUS_ROWS = [
+  {
+    entity: 'sensor.ls_living_status',
+    name: 'Living room',
+    icon: 'mdi:sofa',
+    secondary: climateLine('living'),
+  },
+  {
+    entity: 'sensor.ls_kitchen_status',
+    name: 'Kitchen',
+    icon: 'mdi:stove',
+    secondary: climateLine('kitchen'),
+  },
+  {
+    entity: 'sensor.ls_bath_status',
+    name: 'Bathroom',
+    icon: 'mdi:shower',
+    secondary: climateLine('bath'),
+  },
+];
+/** A room's status, worded as its template sensor writes it (#234), and its climate. */
+const ROOM_STATES = (
+  [
+    ['living', 'Living room', 'ok', '21.8', '48'],
+    ['kitchen', 'Kitchen', 'warning', '23.6', '67'],
+    ['bath', 'Bathroom', 'critical', '20.4', '84'],
+  ] as const
+).flatMap(([room, name, status, temperature, humidity]): StateSeed[] => [
+  [`sensor.ls_${room}_status`, status, { friendly_name: `${name} status` }],
+  [
+    `sensor.ls_${room}_temperature`,
+    temperature,
+    {
+      friendly_name: `${name} temperature`,
+      unit_of_measurement: '°C',
+      device_class: 'temperature',
+    },
+  ],
+  [
+    `sensor.ls_${room}_humidity`,
+    humidity,
+    { friendly_name: `${name} humidity`, unit_of_measurement: '%', device_class: 'humidity' },
+  ],
+]);
 
 /** A select's row on the entities card (#96): the oven's thirty modes, a part of them in its own words, its tap. */
 const OVEN_ROWS = [
@@ -99,6 +153,7 @@ export const sheet: SheetSpec = {
         days_since_watered: 3.2,
       },
     ],
+    ...ROOM_STATES,
   ],
   frames: [
     {
@@ -195,6 +250,42 @@ export const sheet: SheetSpec = {
                 "{{ state_attr('climate.ls_living', 'current_temperature') | round(1) }} °C",
             },
           ],
+        },
+      ],
+    },
+    // #234: each room's status as its icon in its tone, its climate under its name; in half a section, and compact
+    {
+      title: 'Entities · room status as icons',
+      cards: [
+        {
+          type: 'custom:fluvy-entities-card',
+          title: 'Rooms',
+          icon: 'mdi:home-outline',
+          state_display: 'icon',
+          state_icons: STATUS_ICONS,
+          rows: STATUS_ROWS,
+        },
+      ],
+    },
+    {
+      title: 'Entities · room status as icons, half a section',
+      cards: [
+        {
+          type: 'custom:fluvy-entities-card',
+          title: 'Rooms',
+          cols: 6,
+          state_display: 'icon',
+          state_icons: STATUS_ICONS,
+          rows: STATUS_ROWS,
+        },
+        {
+          type: 'custom:fluvy-entities-card',
+          title: 'Rooms',
+          cols: 6,
+          variant: 'compact',
+          state_display: 'icon',
+          state_icons: STATUS_ICONS,
+          rows: STATUS_ROWS,
         },
       ],
     },

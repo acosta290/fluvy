@@ -631,7 +631,11 @@
     "lamp_switches_help": "Az a kapcsoló, amelynek a neve szerint lámpa, például Műhelylámpa, a szoba lámpái közé számít.",
     "focus": "Nagy érték",
     "card_blur": "Az átlátszó háttér elmosása",
-    "card_blur_helper": "Érintetlenül: az összes kártyáé, a Fluvy beállításaiból; 0 %-nál nincs elmosás"
+    "card_blur_helper": "Érintetlenül: az összes kártyáé, a Fluvy beállításaiból; 0 %-nál nincs elmosás",
+    "state_display": "Állapot megjelenítése",
+    "state_icons": "Ikonok állapot szerint",
+    "state_icons_helper": "Soronként egy állapot és az ikonja (ok: mdi:check-circle-outline); a fel nem sorolt állapot szavakkal marad",
+    "state_icon_colors_helper": "Soronként egy állapot és a tónusa vagy színe (warning: warning)"
   },
   "strategy": {
     "home": "Otthon",
@@ -1099,7 +1103,9 @@
     "icons": "Ikonok",
     "target": "A cél",
     "room": "A szoba",
-    "card": "Kártya"
+    "card": "Kártya",
+    "text": "Szavak",
+    "icon": "Ikon"
   },
   "tone": {
     "accent": "Kiemelés",

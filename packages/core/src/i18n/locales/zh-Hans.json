@@ -1516,7 +1516,9 @@
     "icons": "图标",
     "target": "目标",
     "room": "室内",
-    "card": "卡片"
+    "card": "卡片",
+    "text": "文字",
+    "icon": "图标"
   },
   "tone": {
     "accent": "强调色",
@@ -2026,7 +2028,11 @@
     "lamp_switches_help": "名称表明是灯的开关（例如“工作室 电灯”）会计入房间的灯光。",
     "focus": "大字显示",
     "card_blur": "模糊透出的背景",
-    "card_blur_helper": "未设置：沿用 Fluvy 设置中所有卡片的值；0% 时不模糊"
+    "card_blur_helper": "未设置：沿用 Fluvy 设置中所有卡片的值；0% 时不模糊",
+    "state_display": "状态显示为",
+    "state_icons": "按状态设置图标",
+    "state_icons_helper": "每行一个状态及其图标（ok: mdi:check-circle-outline）；未列出的状态仍显示文字",
+    "state_icon_colors_helper": "每行一个状态及其色调或颜色（warning: warning）"
   },
   "energy-period-card": {
     "name": "能源周期",

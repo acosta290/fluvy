@@ -3863,6 +3863,31 @@
           }
         },
         {
+          "key": "state_display",
+          "label": "State shown as",
+          "does": "How a row that ends in its state says it: in words, or as the icon its state names in Icons by state.",
+          "type": "choice",
+          "default": "text",
+          "values": {
+            "text": "Words",
+            "icon": "Icon"
+          }
+        },
+        {
+          "key": "state_icons",
+          "label": "Icons by state",
+          "does": "An icon for each state, by the state as Home Assistant writes it (ok: mdi:check-circle-outline); a state left out keeps its words.",
+          "helper": "A state and its icon on each line (ok: mdi:check-circle-outline); a state left out keeps its words",
+          "type": "object"
+        },
+        {
+          "key": "state_colors",
+          "label": "Colours by state",
+          "does": "The colour of each state’s icon: a tone, a colour of your own, or none; ok, warning and critical have theirs.",
+          "helper": "A state and its tone or colour on each line (warning: warning)",
+          "type": "object"
+        },
+        {
           "key": "light_colors",
           "label": "Each light on in its bulb’s colour",
           "does": "Shows each light that is on in its bulb’s own colour.",
@@ -4009,6 +4034,31 @@
                 "stepper": "With − and +",
                 "entry": "Typed"
               }
+            },
+            {
+              "key": "state_display",
+              "label": "State shown as",
+              "does": "How this row says its state, whatever the card says.",
+              "helper": "Empty: the card’s",
+              "type": "choice",
+              "values": {
+                "text": "Words",
+                "icon": "Icon"
+              }
+            },
+            {
+              "key": "state_icons",
+              "label": "Icons by state",
+              "does": "This row’s icon for each state, before the card’s.",
+              "helper": "A state and its icon on each line (ok: mdi:check-circle-outline); a state left out keeps its words",
+              "type": "object"
+            },
+            {
+              "key": "state_colors",
+              "label": "Colours by state",
+              "does": "This row’s colour for each state’s icon, before the card’s.",
+              "helper": "A state and its tone or colour on each line (warning: warning)",
+              "type": "object"
             },
             {
               "key": "options",

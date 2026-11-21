@@ -1369,7 +1369,11 @@
     "lamp_switches_help": "Przełącznik, którego nazwa mówi, że to lampa, na przykład Lampa w warsztacie, liczy się jako jedno ze świateł pomieszczenia.",
     "focus": "Duża wartość",
     "card_blur": "Rozmyj to, co prześwituje",
-    "card_blur_helper": "Nieustawione: wspólne dla wszystkich kart, z ustawień Fluvy; przy 0 % bez rozmycia"
+    "card_blur_helper": "Nieustawione: wspólne dla wszystkich kart, z ustawień Fluvy; przy 0 % bez rozmycia",
+    "state_display": "Stan pokazany jako",
+    "state_icons": "Ikony według stanu",
+    "state_icons_helper": "W każdym wierszu stan i jego ikona (ok: mdi:check-circle-outline); stan niewymieniony zostaje słowami",
+    "state_icon_colors_helper": "W każdym wierszu stan i jego ton lub kolor (warning: warning)"
   },
   "energy": {
     "solar": "PV",
@@ -2225,7 +2229,9 @@
     "icons": "Ikony",
     "target": "Cel",
     "room": "Pokój",
-    "card": "Karta"
+    "card": "Karta",
+    "text": "Słowa",
+    "icon": "Ikona"
   },
   "page": {
     "menu": "Otwórz menu",

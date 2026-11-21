@@ -681,7 +681,11 @@
     "lamp_switches_help": "Un interruttore il cui nome dice che è una lampada, come Lampada del laboratorio, conta tra le luci della stanza.",
     "focus": "Cifra grande",
     "card_blur": "Sfoca ciò che si vede attraverso",
-    "card_blur_helper": "Invariato, quello di tutte le schede nelle impostazioni di Fluvy; niente sfocatura allo 0 %"
+    "card_blur_helper": "Invariato, quello di tutte le schede nelle impostazioni di Fluvy; niente sfocatura allo 0 %",
+    "state_display": "Stato mostrato come",
+    "state_icons": "Icone per stato",
+    "state_icons_helper": "Uno stato e la sua icona per riga (ok: mdi:check-circle-outline); uno stato non elencato resta in parole",
+    "state_icon_colors_helper": "Uno stato e il suo tono o colore per riga (warning: warning)"
   },
   "strategy": {
     "home": "Casa",
@@ -2294,7 +2298,9 @@
     "icons": "Icone",
     "target": "L’obiettivo",
     "room": "La stanza",
-    "card": "Scheda"
+    "card": "Scheda",
+    "text": "Parole",
+    "icon": "Icona"
   },
   "tone": {
     "accent": "Accento",

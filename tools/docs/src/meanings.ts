@@ -452,6 +452,12 @@ export const MEANINGS: Readonly<Record<string, string>> = {
   'entities.number_control':
     'How a number’s row ends: its value, its value between − and +, or a value you tap to type.',
   'entities.show_count': 'Says on the head’s line how many are on.',
+  'entities.state_display':
+    'How a row that ends in its state says it: in words, or as the icon its state names in Icons by state.',
+  'entities.state_icons':
+    'An icon for each state, by the state as Home Assistant writes it (ok: mdi:check-circle-outline); a state left out keeps its words.',
+  'entities.state_colors':
+    'The colour of each state’s icon: a tone, a colour of your own, or none; ok, warning and critical have theirs.',
   'ev-charger.entity': 'The charger’s power sensor, positive while it charges the car.',
   'ev-charger.invert':
     'Reads the charger’s sensor the other way round, for one that counts charging as negative.',
@@ -884,6 +890,9 @@ export const MEANINGS: Readonly<Record<string, string>> = {
   'energy-usage.meters[].entity': 'The meter’s statistic.',
   'energy-usage.sources[].show': 'Draws this source.',
   'entities.rows[].number_control': 'How this number’s row ends, whatever the card says.',
+  'entities.rows[].state_display': 'How this row says its state, whatever the card says.',
+  'entities.rows[].state_icons': 'This row’s icon for each state, before the card’s.',
+  'entities.rows[].state_colors': 'This row’s colour for each state’s icon, before the card’s.',
   'history-bars.facts[].kind': 'What the fact says.',
   'history-bars.facts[].name': 'The fact’s name.',
   'history-bars.head[].kind': 'What the figure says.',

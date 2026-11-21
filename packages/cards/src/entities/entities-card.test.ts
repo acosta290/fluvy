@@ -857,3 +857,127 @@ describe('a number set in its row (#218)', () => {
     expect(named({ entity: 'lock.front_door' })).not.toContain('number_control');
   });
 });
+
+/**
+ * A row's state said as an icon (#234): the icon its state names (`state_icons`), the row's own or the card's, in its
+ * state's tone (`state_colors`, else a status word's), a state with none keeping its words; never on a row that ends
+ * in a switch, and nothing changes where nothing asks.
+ */
+describe('a row’s state as an icon (#234)', () => {
+  afterEach(() => document.body.replaceChildren());
+
+  const room = (entity_id: string, state: string) => ({
+    [entity_id]: {
+      entity_id,
+      state,
+      attributes: { friendly_name: entity_id.split('.')[1] },
+      last_changed: '',
+      last_updated: '',
+    },
+  });
+  const house = {
+    ...hass,
+    states: {
+      ...hass.states,
+      ...room('sensor.living_status', 'ok'),
+      ...room('sensor.kitchen_status', 'warning'),
+      ...room('sensor.bath_status', 'critical'),
+      ...room('sensor.attic_status', 'unknown_word'),
+      ...room('switch.fan', 'on'),
+    },
+  } as unknown as HomeAssistant;
+  const ICONS = {
+    ok: 'mdi:check-circle-outline',
+    warning: 'mdi:alert-outline',
+    critical: 'mdi:alert-circle-outline',
+  };
+  const ends = (root: ShadowRoot) =>
+    [...root.querySelectorAll<HTMLElement>('.fv-rows > .fv-row')].map((row) =>
+      row.querySelector<HTMLElement>(
+        '.fv-row__state, .fv-row__value, .fv-switch, .fv-row__chevron',
+      )!,
+    );
+  const iconOf = (end: HTMLElement | undefined) =>
+    (end?.querySelector('ha-icon') as (HTMLElement & { icon: string }) | null)?.icon;
+  const STATUS = [
+    'sensor.living_status',
+    'sensor.kitchen_status',
+    'sensor.bath_status',
+    'sensor.attic_status',
+  ];
+
+  it('says the state in words where nothing asks, as before', async () => {
+    const root = await mount({ rows: STATUS, state_icons: ICONS }, house);
+    expect(root.querySelector('.fv-row__state')).toBeNull();
+  });
+
+  it('says each state as its icon in its status word’s tone, read in its words; a state with none keeps them', async () => {
+    const root = await mount({ rows: STATUS, state_display: 'icon', state_icons: ICONS }, house);
+    const [ok, warning, critical, other] = ends(root);
+    expect(ok!.className).toBe('fv-row__state');
+    expect(iconOf(ok)).toBe(ICONS.ok);
+    expect(ok!.getAttribute('role')).toBe('img');
+    expect(ok!.getAttribute('aria-label')).toBeTruthy();
+    // ok, warning and critical each in its own tone
+    const inks = [ok, warning, critical].map((end) => end!.dataset['ink']);
+    expect(inks.every(Boolean)).toBe(true);
+    expect(new Set(inks).size).toBe(3);
+    // a state with no icon keeps its words
+    expect(other!.classList.contains('fv-row__value')).toBe(true);
+  });
+
+  it('takes a row’s own say and its own colours before the card’s, and leaves a switch its switch', async () => {
+    const root = await mount(
+      {
+        state_display: 'icon',
+        state_icons: ICONS,
+        rows: [
+          { entity: 'sensor.living_status', state_display: 'text' },
+          { entity: 'sensor.kitchen_status', state_colors: { warning: 'none' } },
+          { entity: 'sensor.bath_status', state_icons: { critical: 'mdi:fire' } },
+          'switch.fan',
+        ],
+      },
+      house,
+    );
+    const [living, kitchen, bath, fan] = ends(root);
+    expect(living!.classList.contains('fv-row__value')).toBe(true);
+    expect(kitchen!.className).toBe('fv-row__state');
+    expect(kitchen!.dataset['ink']).toBeUndefined();
+    expect(iconOf(bath)).toBe('mdi:fire');
+    expect(fan!.classList.contains('fv-row__state')).toBe(false);
+  });
+
+  it('keeps its rows of 60, whatever its states say', () => {
+    const config = { type: 'custom:fluvy-entities-card', rows: STATUS };
+    expect(FluvyEntitiesCard.layoutHeight({ ...config, state_display: 'icon' })).toBe(
+      FluvyEntitiesCard.layoutHeight(config),
+    );
+  });
+
+  it('offers how the rows say their state while they hold one that ends in it, and its icons once they say it so', async () => {
+    const { getConfigForm, lists } = await import('./entities-editor.js');
+    const fields = getConfigForm().schema.flatMap((item) => item.schema ?? [item]);
+    const field = (name: string) => fields.find((item) => item.name === name)!;
+    expect(field('state_display').when?.({ rows: ['switch.fan'] })).toBe(false);
+    expect(field('state_display').when?.({ rows: ['sensor.living_status'] })).toBe(true);
+    expect(field('state_icons').when?.({ rows: ['sensor.living_status'] })).toBe(false);
+    expect(
+      field('state_icons').when?.({ rows: ['sensor.living_status'], state_display: 'icon' }),
+    ).toBe(true);
+    const rows = lists[0]!;
+    const named = (item: Record<string, unknown>, card?: Record<string, unknown>) =>
+      rows.schemaOf!(item, card)
+        .flatMap((one) => (one.schema ? one.schema : [one]))
+        .map((one) => one.name);
+    expect(named({ entity: 'switch.fan' })).not.toContain('state_display');
+    expect(named({ entity: 'sensor.living_status' })).toContain('state_display');
+    expect(named({ entity: 'sensor.living_status' })).not.toContain('state_icons');
+    expect(named({ entity: 'sensor.living_status', state_display: 'icon' })).toContain(
+      'state_icons',
+    );
+    expect(named({ entity: 'sensor.living_status' }, { state_display: 'icon' })).toContain(
+      'state_colors',
+    );
+  });
+});

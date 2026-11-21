@@ -681,7 +681,11 @@
     "lamp_switches_help": "Adı onun bir lamba olduğunu söyleyen bir anahtar, örneğin Atölye lambası, odanın ışıklarından biri sayılır.",
     "focus": "Büyük değer",
     "card_blur": "Arkada görüneni bulanıklaştır",
-    "card_blur_helper": "Dokunulmazsa, Fluvy ayarlarındaki tüm kartlarınki; %0’da bulanıklık yok"
+    "card_blur_helper": "Dokunulmazsa, Fluvy ayarlarındaki tüm kartlarınki; %0’da bulanıklık yok",
+    "state_display": "Durum gösterimi",
+    "state_icons": "Duruma göre simgeler",
+    "state_icons_helper": "Her satırda bir durum ve simgesi (ok: mdi:check-circle-outline); listede olmayan durum sözcükleriyle kalır",
+    "state_icon_colors_helper": "Her satırda bir durum ve tonu ya da rengi (warning: warning)"
   },
   "strategy": {
     "home": "Ana sayfa",
@@ -2294,7 +2298,9 @@
     "icons": "Simgeler",
     "target": "Hedef",
     "room": "Oda",
-    "card": "Kart"
+    "card": "Kart",
+    "text": "Sözcükler",
+    "icon": "Simge"
   },
   "tone": {
     "accent": "Vurgu",

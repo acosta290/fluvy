@@ -742,7 +742,9 @@
     "icons": "Ikoner",
     "target": "Målet",
     "room": "Rummet",
-    "card": "Kort"
+    "card": "Kort",
+    "text": "Ord",
+    "icon": "Ikon"
   },
   "tone": {
     "accent": "Accent",
@@ -2130,7 +2132,11 @@
     "lamp_switches_help": "En kontakt, hvis navn siger, at den er en lampe, som Værkstedslampe, tæller som et af rummets lys.",
     "focus": "Stort tal",
     "card_blur": "Slør det, der skinner igennem",
-    "card_blur_helper": "Uberørt: alle korts, fra Fluvys indstillinger; ingen sløring ved 0 %"
+    "card_blur_helper": "Uberørt: alle korts, fra Fluvys indstillinger; ingen sløring ved 0 %",
+    "state_display": "Tilstand vist som",
+    "state_icons": "Ikoner efter tilstand",
+    "state_icons_helper": "En tilstand og dens ikon på hver linje (ok: mdi:check-circle-outline); en tilstand, der ikke er nævnt, beholder sine ord",
+    "state_icon_colors_helper": "En tilstand og dens tone eller farve på hver linje (warning: warning)"
   },
   "energy-period-card": {
     "name": "Energiperiode",

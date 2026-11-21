@@ -1430,7 +1430,11 @@
     "lamp_switches_help": "Spínač, jehož název říká, že jde o lampu, například Lampa v dílně, se počítá mezi světla místnosti.",
     "focus": "Velká hodnota",
     "card_blur": "Rozostřit to, co prosvítá",
-    "card_blur_helper": "Beze změny: podle nastavení Fluvy pro všechny karty; při 0 % bez rozostření"
+    "card_blur_helper": "Beze změny: podle nastavení Fluvy pro všechny karty; při 0 % bez rozostření",
+    "state_display": "Stav zobrazit jako",
+    "state_icons": "Ikony podle stavu",
+    "state_icons_helper": "Na každém řádku stav a jeho ikona (ok: mdi:check-circle-outline); neuvedený stav zůstane slovy",
+    "state_icon_colors_helper": "Na každém řádku stav a jeho tón nebo barva (warning: warning)"
   },
   "page": {
     "menu": "Otevřít nabídku",
@@ -1836,7 +1840,9 @@
     "icons": "Ikony",
     "target": "Cíl",
     "room": "Místnost",
-    "card": "Karta"
+    "card": "Karta",
+    "text": "Slova",
+    "icon": "Ikona"
   },
   "tone": {
     "accent": "Akcent",

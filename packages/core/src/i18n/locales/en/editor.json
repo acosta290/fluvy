@@ -273,6 +273,10 @@
     "lamp_switches_help": "A switch whose name says it is a lamp, such as Workshop lamp, counts as one of the room’s lights.",
     "focus": "Large figure",
     "card_blur": "Blur what shows through",
-    "card_blur_helper": "Untouched: every card’s, from Fluvy’s settings; none at 0 %"
+    "card_blur_helper": "Untouched: every card’s, from Fluvy’s settings; none at 0 %",
+    "state_display": "State shown as",
+    "state_icons": "Icons by state",
+    "state_icons_helper": "A state and its icon on each line (ok: mdi:check-circle-outline); a state left out keeps its words",
+    "state_icon_colors_helper": "A state and its tone or colour on each line (warning: warning)"
   }
 }

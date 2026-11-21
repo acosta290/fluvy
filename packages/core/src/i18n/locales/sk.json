@@ -1430,7 +1430,11 @@
     "lamp_switches_help": "Spínač, ktorého názov hovorí, že ide o lampu, napríklad Lampa v dielni, sa počíta medzi svetlá miestnosti.",
     "focus": "Veľká hodnota",
     "card_blur": "Rozmazať to, čo presvitá",
-    "card_blur_helper": "Bez zmeny: ako pri všetkých kartách v nastaveniach Fluvy; pri 0 % bez rozmazania"
+    "card_blur_helper": "Bez zmeny: ako pri všetkých kartách v nastaveniach Fluvy; pri 0 % bez rozmazania",
+    "state_display": "Stav zobraziť ako",
+    "state_icons": "Ikony podľa stavu",
+    "state_icons_helper": "Na každom riadku stav a jeho ikona (ok: mdi:check-circle-outline); neuvedený stav zostane slovami",
+    "state_icon_colors_helper": "Na každom riadku stav a jeho tón alebo farba (warning: warning)"
   },
   "page": {
     "menu": "Otvoriť ponuku",
@@ -1836,7 +1840,9 @@
     "icons": "Ikony",
     "target": "Cieľ",
     "room": "Miestnosť",
-    "card": "Karta"
+    "card": "Karta",
+    "text": "Slová",
+    "icon": "Ikona"
   },
   "tone": {
     "accent": "Zvýraznenie",

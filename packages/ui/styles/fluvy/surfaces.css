@@ -434,10 +434,11 @@
 
 /* a reading past a threshold says its figure in its band's colour (1.22, #204): core writes the band's ink as a
    figure's words on its `data-ink` (`--fv-ink`: 4.5 on the card, the page and the band's own wash), its unit staying
-   the secondary ink; a stat tile's glyph takes it too, and the band's words after a name (`banded`), where a tile
+   the secondary ink; a stat tile's glyph takes it too, a row's state said as its icon (#234), and the band's words after a name (`banded`), where a tile
    filled in the band (`is-active`) keeps its fill's inks */
 .fv-readout[data-ink] > .fv-readout__value > :first-child,
 .fv-row__value[data-ink],
+.fv-row__state[data-ink],
 .fv-option[data-ink]:not(.is-active) :is(.fv-option__glyph, .fv-option__value),
 [data-ink]:not(.is-active) :is(.fv-banded__icon, .fv-banded__words) {
   color: var(--fv-ink);

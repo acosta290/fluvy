@@ -14,7 +14,7 @@ import {
   type LovelaceGridOptions,
 } from '@fluvy/core';
 
-import { head, listRow, wordsClass } from '@fluvy/ui';
+import { head, listRow, wordsClass, type Tone } from '@fluvy/ui';
 
 import {
   css,
@@ -33,6 +33,7 @@ import type { RowConfig } from '../lock/rows.js';
 import { ITEM_ALIASES, type AliasSpec } from '../shared/config.js';
 import { statusToneOf, toneOf, type LightColours } from '../shared/colour.js';
 import { lightLook, litColour, withMembers } from '../shared/light.js';
+import { stateLook } from '../shared/state-tint.js';
 import {
   buttonWidth,
   fitValue,
@@ -71,14 +72,28 @@ import type { NumberEnd } from '../shared/number-controls.js';
 export type NumberControl = 'value' | 'stepper' | 'entry';
 
 /**
- * A row of the card: the rows every list shares (`RowConfig`), shown while its condition holds (`show_when`, #157),
- * a number's as it asks (`number_control`, the card's where it says none).
+ * How a row whose end is its value says its state (#234): in words (`text`, the default), or as the icon its state
+ * names (`icon`) — a row's own, else the card's, for the state as Home Assistant writes it.
  */
-export type EntityRowConfig = RowConfig & ConditionalRow & { number_control?: NumberControl };
+export interface StateIcons {
+  state_display?: 'text' | 'icon';
+  /** A state's icon (`ok: mdi:check-circle-outline`); a state left out keeps its words. */
+  state_icons?: Readonly<Record<string, string>>;
+  /** A state's icon's colour (`warning: warning`): a tone's name, a colour, or `none`; the row's own, else the card's. */
+  state_colors?: Readonly<Record<string, string>>;
+}
 
-/** `show_rows_when`: one condition for every row that names none. */
+/**
+ * A row of the card: the rows every list shares (`RowConfig`), shown while its condition holds (`show_when`, #157),
+ * a number's as it asks (`number_control`, the card's where it says none), its state as it asks (`StateIcons`).
+ */
+export type EntityRowConfig = RowConfig &
+  ConditionalRow &
+  StateIcons & { number_control?: NumberControl };
+
+/** `show_rows_when`: one condition for every row that names none; the state as an icon for every row that says none. */
 export interface EntitiesCardConfig
-  extends FluvyCardConfig, EmptyList, ConditionalRows, LightColours {
+  extends FluvyCardConfig, EmptyList, ConditionalRows, LightColours, StateIcons {
   title?: string;
   subtitle?: string;
   /** The entities, with a section's label or a hairline between them where the list is in parts (`SectionEntry`). */
@@ -102,6 +117,66 @@ const moreOf = (config: EntitiesCardConfig | undefined): { count: number; path: 
   const count = Math.floor(Number(config?.more));
   const path = config?.more_path;
   return count >= 1 && typeof path === 'string' && path ? { count, path } : null;
+};
+
+/** The domains whose row ends in their state (a sensor's too, and any number's), where nothing else ends it. */
+export const READ_OUT: ReadonlySet<string> = new Set([
+  'binary_sensor',
+  'person',
+  'sun',
+  'weather',
+  'input_select',
+  'select',
+  'lock',
+  'vacuum',
+  'media_player',
+]);
+
+/** The width of a state said as its icon (#234): its 20 glyph at the row's end. */
+const STATE_ICON = 20;
+
+/** The tones of the status words a state's icon wears with no colour of its own (#234). */
+const STATUS_TONES: Readonly<Record<string, Tone>> = {
+  ok: 'ok',
+  good: 'ok',
+  normal: 'ok',
+  warning: 'warning',
+  critical: 'danger',
+  error: 'danger',
+};
+
+/**
+ * The icon a row says `state` with (#234): the row's, else the card's, where the row (else the card) asks for its state
+ * as an icon; none where it asks for words, or names no icon for the state, which then keeps its words.
+ */
+export function stateIconOf(
+  row: StateIcons,
+  card: StateIcons | undefined,
+  state: string,
+): string | undefined {
+  if ((row.state_display ?? card?.state_display) !== 'icon') return undefined;
+  const icon = row.state_icons?.[state] ?? card?.state_icons?.[state];
+  return typeof icon === 'string' && icon ? icon : undefined;
+}
+
+/**
+ * The tone a state's icon wears (#234): the one the row (else the card) gives the state (`state_colors`: a tone, a
+ * colour, `none`); else a status word's (ok, warning, critical), or `usual` (a window open, the warning's).
+ */
+export const stateIconTone = (
+  accents: Parameters<typeof stateLook>[0],
+  row: StateIcons,
+  card: StateIcons | undefined,
+  state: string,
+  usual: Tone,
+): ReturnType<typeof stateLook> => {
+  const own = row.state_colors?.[state] ?? card?.state_colors?.[state];
+  return stateLook(
+    accents,
+    own ? { state_colors: { [state]: own } } : undefined,
+    state,
+    STATUS_TONES[state] ?? usual,
+  );
 };
 
 /** Whether a row (or the card, for the rows that say none) sets its number in place (#218). */
@@ -370,17 +445,7 @@ export class FluvyEntitiesCard extends Card<EntitiesCardConfig> {
           ? 'number'
           : canToggle
             ? 'switch'
-            : usable &&
-                (measured ||
-                  view.domain === 'binary_sensor' ||
-                  view.domain === 'person' ||
-                  view.domain === 'sun' ||
-                  view.domain === 'weather' ||
-                  view.domain === 'input_select' ||
-                  view.domain === 'select' ||
-                  view.domain === 'lock' ||
-                  view.domain === 'vacuum' ||
-                  view.domain === 'media_player')
+            : usable && (measured || READ_OUT.has(view.domain))
               ? 'value'
               : 'chevron';
       const parts = valueParts(this.hass, view);
@@ -395,8 +460,11 @@ export class FluvyEntitiesCard extends Card<EntitiesCardConfig> {
               : view.number !== null
                 ? `${parts.value}${parts.unit ? ` ${parts.unit}` : ''}`
                 : stateText(this.hass, view);
+      // a value said as its state's icon (#234), where the row asks for one and names one for the state
+      const glyph =
+        trailing === 'value' ? stateIconOf(row, this.config, this.stateOf(view)) : undefined;
       // the end's own width where it is not a value's words: a switch's 56, a chevron's 44, a dropdown's button, a
-      // number's control
+      // number's control, a state's icon
       const end =
         trailing === 'switch'
           ? SWITCH_SLOT
@@ -404,7 +472,9 @@ export class FluvyEntitiesCard extends Card<EntitiesCardConfig> {
             ? 44
             : menu
               ? buttonWidth(this.head.ruler, value, true)
-              : number?.width;
+              : glyph
+                ? STATE_ICON
+                : number?.width;
       // the row's line in its forms: whole, short, and the least it says
       const lines = rowLine(
         this.hass,
@@ -414,7 +484,7 @@ export class FluvyEntitiesCard extends Card<EntitiesCardConfig> {
         this.texts,
         row.since,
       );
-      return { view, usable, trailing, title, value, end, lines, number };
+      return { view, usable, trailing, title, value, end, lines, number, glyph };
     });
     // the "N more" row says it in words where they hold beside its chevron, else as "+N"
     const moreWords = more ? this.t('common.more_count', { count: more.count }) : '';
@@ -478,7 +548,7 @@ export class FluvyEntitiesCard extends Card<EntitiesCardConfig> {
       <div class="fv-rows ${this.config?.title ? '' : 'fv-rows--bare'}">
         ${panel}
         ${withSections(drawn, (row, i) => {
-          const { view, usable, trailing, title, value, number } = laid[i]!;
+          const { view, usable, trailing, title, value, number, glyph } = laid[i]!;
           const state = this.stateOf(view);
           const on =
             state === view.state ? isActive(view) : !['off', 'closed', 'locked'].includes(state);
@@ -493,6 +563,10 @@ export class FluvyEntitiesCard extends Card<EntitiesCardConfig> {
                   glows ? litColour(view, on, this.config?.light_whites, this.hass) : undefined,
                 )
               : ([row.color, statusToneOf(row, toneFor(view))] as const);
+          // a state said as its icon wears its state's tone (#234), a warning's where it says none
+          const look = glyph
+            ? stateIconTone(this.accents, row, this.config, state, warn ? 'warning' : 'neutral')
+            : undefined;
           const fit = fits[i]!;
           const sub = line(i);
           const whole = laid[i]!.lines.forms[0];
@@ -549,6 +623,11 @@ export class FluvyEntitiesCard extends Card<EntitiesCardConfig> {
             accent: this.accents.item(colour),
             switchTone: rowTone === 'warning' ? 'accent' : rowTone,
             value,
+            valueIcon: glyph,
+            valueInk:
+              look && look.tone !== 'neutral'
+                ? this.accents.ink(look.accent ?? look.tone)
+                : undefined,
             valueTone: warn ? 'warning' : '',
             unavailable: !usable,
             // out of reach, a row whose end sets its entity opens its details

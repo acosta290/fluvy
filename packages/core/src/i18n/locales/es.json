@@ -681,7 +681,11 @@
     "lamp_switches_help": "Un interruptor cuyo nombre dice que es una lámpara, como Lámpara del taller, cuenta entre las luces de la estancia.",
     "focus": "Cifra grande",
     "card_blur": "Desenfocar lo que se ve a través",
-    "card_blur_helper": "Sin tocar, el de todas las tarjetas en los ajustes de Fluvy; sin desenfoque al 0 %"
+    "card_blur_helper": "Sin tocar, el de todas las tarjetas en los ajustes de Fluvy; sin desenfoque al 0 %",
+    "state_display": "Estado mostrado como",
+    "state_icons": "Iconos por estado",
+    "state_icons_helper": "Un estado y su icono en cada línea (ok: mdi:check-circle-outline); un estado no indicado conserva sus palabras",
+    "state_icon_colors_helper": "Un estado y su tono o color en cada línea (warning: warning)"
   },
   "strategy": {
     "home": "Inicio",
@@ -2294,7 +2298,9 @@
     "icons": "Iconos",
     "target": "El objetivo",
     "room": "La habitación",
-    "card": "Tarjeta"
+    "card": "Tarjeta",
+    "text": "Palabras",
+    "icon": "Icono"
   },
   "tone": {
     "accent": "Acento",

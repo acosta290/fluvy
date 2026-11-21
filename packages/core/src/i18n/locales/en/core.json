@@ -742,7 +742,9 @@
     "icons": "Icons",
     "target": "The target",
     "room": "The room",
-    "card": "Card"
+    "card": "Card",
+    "text": "Words",
+    "icon": "Icon"
   },
   "tone": {
     "accent": "Accent",

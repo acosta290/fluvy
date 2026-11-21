@@ -1,5 +1,7 @@
 import {
   mdiAirplane,
+  mdiAlertCircleOutline,
+  mdiAlertOutline,
   mdiArchive,
   mdiBattery,
   mdiBatteryAlert,
@@ -8,6 +10,7 @@ import {
   mdiBed,
   mdiBedKing,
   mdiBriefcase,
+  mdiCheckCircleOutline,
   mdiCoatRack,
   mdiCropPortrait,
   mdiDesk,
@@ -73,11 +76,14 @@ import { CARD_ICONS } from '@fluvy/ui';
  */
 const MDI: Readonly<Record<string, string>> = {
   'mdi:airplane': mdiAirplane,
+  'mdi:alert-circle-outline': mdiAlertCircleOutline,
+  'mdi:alert-outline': mdiAlertOutline,
   'mdi:archive': mdiArchive,
   'mdi:battery-alert': mdiBatteryAlert,
   'mdi:bed': mdiBed,
   'mdi:bed-king': mdiBedKing,
   'mdi:briefcase': mdiBriefcase,
+  'mdi:check-circle-outline': mdiCheckCircleOutline,
   'mdi:coat-rack': mdiCoatRack,
   'mdi:desk': mdiDesk,
   'mdi:desk-lamp': mdiDeskLamp,
