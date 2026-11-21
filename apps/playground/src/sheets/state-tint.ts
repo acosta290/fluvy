@@ -1,4 +1,5 @@
 import type { LovelaceCardConfig } from '@fluvy/core';
+import type { StateSeed } from '../hass.js';
 import type { FrameSpec, SheetSpec } from '../scenes.js';
 import { BLUE } from './glass.js';
 import { LINE } from './line.js';
@@ -10,7 +11,9 @@ import { LINE } from './line.js';
  * there. Then the six device cards shown in their state's tone beyond the circle, as asked (`tint`: never, when
  * active, always; `tint_style`: a wash, the card's edge, the control alone — the lock's knob, the reporter's mock-up),
  * the reporter's own colours by state (`state_colors`: unlocked in the danger's, locked in what is good), see-through
- * on a view's background, and on a surface read by its edges (E-ink).
+ * on a view's background, and on a surface read by its edges (E-ink). And a room's status said as its icon in its
+ * state's tone on the Entities card (#234), its climate under its name: here, not on the lists sheet, whose template
+ * rows a suite counts.
  */
 
 const LOCK = 'custom:fluvy-lock-card';
@@ -44,6 +47,59 @@ const unsaid = (more: Record<string, unknown> = {}): FrameSpec['cards'] =>
     { type: COVER, entity: 'cover.st_blind', variant: 'compact' },
     { type: VACUUM, entity: 'vacuum.st_robot', variant: 'compact' },
   ].map((card) => ({ ...card, ...more, cols: 6 }));
+
+/** A room's state as an icon (#234): its own icon at the row's end, its climate under its name. */
+const STATUS_ICONS = {
+  ok: 'mdi:check-circle-outline',
+  warning: 'mdi:alert-outline',
+  critical: 'mdi:alert-circle-outline',
+};
+const climateLine = (room: string): string =>
+  `{{ states('sensor.st_${room}_temperature') | round(1) }} °C · {{ states('sensor.st_${room}_humidity') }} %`;
+const STATUS_ROWS = [
+  {
+    entity: 'sensor.st_living_status',
+    name: 'Living room',
+    icon: 'mdi:sofa',
+    secondary: climateLine('living'),
+  },
+  {
+    entity: 'sensor.st_kitchen_status',
+    name: 'Kitchen',
+    icon: 'mdi:stove',
+    secondary: climateLine('kitchen'),
+  },
+  {
+    entity: 'sensor.st_bath_status',
+    name: 'Bathroom',
+    icon: 'mdi:shower',
+    secondary: climateLine('bath'),
+  },
+];
+/** A room's status, worded as its template sensor writes it (#234), and its climate. */
+const ROOM_STATES = (
+  [
+    ['living', 'Living room', 'ok', '21.8', '48'],
+    ['kitchen', 'Kitchen', 'warning', '23.6', '67'],
+    ['bath', 'Bathroom', 'critical', '20.4', '84'],
+  ] as const
+).flatMap(([room, name, status, temperature, humidity]): StateSeed[] => [
+  [`sensor.st_${room}_status`, status, { friendly_name: `${name} status` }],
+  [
+    `sensor.st_${room}_temperature`,
+    temperature,
+    {
+      friendly_name: `${name} temperature`,
+      unit_of_measurement: '°C',
+      device_class: 'temperature',
+    },
+  ],
+  [
+    `sensor.st_${room}_humidity`,
+    humidity,
+    { friendly_name: `${name} humidity`, unit_of_measurement: '%', device_class: 'humidity' },
+  ],
+]);
 
 export const sheet: SheetSpec = {
   states: [
@@ -144,6 +200,7 @@ export const sheet: SheetSpec = {
         hvac_action: 'cooling',
       },
     ],
+    ...ROOM_STATES,
   ],
   frames: [
     // the fix, for everyone: the state leads the line where its badge has no room beside the name
@@ -365,6 +422,42 @@ export const sheet: SheetSpec = {
           tint: 'on',
           tint_style: 'edge',
           cols: 6,
+        },
+      ],
+    },
+    // #234: each room's status as its icon in its tone, its climate under its name; in half a section, and compact
+    {
+      title: 'Entities · room status as icons',
+      cards: [
+        {
+          type: 'custom:fluvy-entities-card',
+          title: 'Rooms',
+          icon: 'mdi:home-outline',
+          state_display: 'icon',
+          state_icons: STATUS_ICONS,
+          rows: STATUS_ROWS,
+        },
+      ],
+    },
+    {
+      title: 'Entities · room status as icons, half a section',
+      cards: [
+        {
+          type: 'custom:fluvy-entities-card',
+          title: 'Rooms',
+          cols: 6,
+          state_display: 'icon',
+          state_icons: STATUS_ICONS,
+          rows: STATUS_ROWS,
+        },
+        {
+          type: 'custom:fluvy-entities-card',
+          title: 'Rooms',
+          cols: 6,
+          variant: 'compact',
+          state_display: 'icon',
+          state_icons: STATUS_ICONS,
+          rows: STATUS_ROWS,
         },
       ],
     },

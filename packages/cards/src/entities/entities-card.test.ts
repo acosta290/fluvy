@@ -948,6 +948,48 @@ describe('a row’s state as an icon (#234)', () => {
     expect(fan!.classList.contains('fv-row__state')).toBe(false);
   });
 
+  it('asks no template of its own: one subscription per row’s line, kept through a change, released with the card', async () => {
+    const open: { message: Record<string, unknown>; released: boolean }[] = [];
+    const connection = {
+      subscribeMessage: (_callback: unknown, message: Record<string, unknown>) => {
+        const entry = { message, released: false };
+        open.push(entry);
+        return Promise.resolve(() => {
+          entry.released = true;
+        });
+      },
+    };
+    const live = () => open.filter((entry) => !entry.released).length;
+    const line = "{{ states('sensor.living_status') }}";
+    const rows = STATUS.slice(0, 3).map((entity) => ({ entity, secondary: line }));
+    const card = document.createElement('fluvy-entities-card') as FluvyEntitiesCard;
+    card.setConfig({
+      type: 'custom:fluvy-entities-card',
+      rows,
+      state_display: 'icon',
+      state_icons: ICONS,
+    });
+    card.hass = { ...house, connection, user: { name: 'Marta' } } as unknown as HomeAssistant;
+    document.body.append(card);
+    await card.updateComplete;
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    // one template, three entities: three pairs, nothing for the icons
+    expect(open.map((entry) => entry.message['type'])).toEqual(Array(3).fill('render_template'));
+    expect(live()).toBe(3);
+    // a state that changes its icon opens nothing more
+    card.hass = {
+      ...card.hass,
+      states: { ...card.hass.states, ...room('sensor.living_status', 'critical') },
+    } as HomeAssistant;
+    await card.updateComplete;
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(live()).toBe(3);
+    expect(open.length).toBe(3);
+    card.remove();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(live()).toBe(0);
+  });
+
   it('keeps its rows of 60, whatever its states say', () => {
     const config = { type: 'custom:fluvy-entities-card', rows: STATUS };
     expect(FluvyEntitiesCard.layoutHeight({ ...config, state_display: 'icon' })).toBe(
