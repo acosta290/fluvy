@@ -1128,12 +1128,16 @@ export class FluvyRowsEditor extends LitElement {
     this.commit(withList(this.config, list, [...this.written(list), { type }]));
   }
 
-  /** An item's field is named by its list, else by the card, else by the shared item words. */
+  /**
+   * An item's field is named by its list, else by the card, else by the shared item words, told Home Assistant's own
+   * words as `cardLabel` is (`hass.localize`). A form hands its labeler the item's data second, not a localize.
+   */
   private labeler(list: RowsListSpec): Labeler {
     let labeler = this.labelers.get(list);
     if (!labeler) {
       const own = this.spec?.computeLabel;
-      labeler = (schema, localize) =>
+      const localize = (key: string): string => this.hass?.localize?.(key) ?? '';
+      labeler = (schema) =>
         list.computeLabel?.(schema, localize) ??
         own?.(schema, localize) ??
         itemLabels(schema, localize);
@@ -1176,7 +1180,7 @@ export class FluvyRowsEditor extends LitElement {
               .hass=${this.hass}
               .data=${card.data}
               .schema=${head}
-              .computeLabel=${this.spec?.computeLabel}
+              .computeLabel=${this.cardLabel}
               .computeHelper=${card.helper}
               @value-changed=${this.onCard}
             ></ha-form>`

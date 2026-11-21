@@ -5,6 +5,13 @@ and the versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Fixed
+
+- A list's items in a card's editor draw their fields again: the Chart card's Series rows came up blank in 1.24.0, each
+  throwing `t is not a function`, because Home Assistant's form hands a labeler the item's data where the editor's
+  labelers expected its words (`localize`); a list's head fields (the card's own, shown above its items) are named the
+  same way.
+
 ## [1.24.0] — 2026-11-21
 
 ### Visible on upgrade
