@@ -240,6 +240,24 @@ describe('the card', () => {
     expect(held(card)).toEqual([1, 2, 3]);
   });
 
+  it('glides to the next page once the cards round it stand in the row, never in the frame they change (#235)', async () => {
+    const { card, root } = await drawn();
+    const track = root.querySelector<HTMLElement>('.sw-track') as HTMLElement;
+    // what was in the row as each glide began
+    const glides: number[][] = [];
+    track.scrollTo = (() => glides.push(held(card))) as typeof track.scrollTo;
+    marks(root)[1]?.click();
+    expect(glides).toEqual([]);
+    await card.updateComplete;
+    expect(glides).toEqual([[0, 1, 2]]);
+    marks(root)[2]?.click();
+    await card.updateComplete;
+    expect(glides).toEqual([
+      [0, 1, 2],
+      [1, 2, 3],
+    ]);
+  });
+
   it('draws no marks where asked, nor for one stop', async () => {
     expect(marks((await drawn({ cards: PAGES, show_indicators: false })).root)).toHaveLength(0);
     expect(marks((await drawn({ cards: PAGES.slice(0, 1) })).root)).toHaveLength(0);

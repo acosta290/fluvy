@@ -529,9 +529,10 @@ export class FluvySwipeCard extends Card<SwipeCardConfig> {
 
   /**
    * A person turns it to `page`, which is the page it is on from then (its mark lit, its neighbours built, the focus
-   * free to go to it): the next page glides in (at once with reduced motion); one further fades the row out, stands
-   * it there with that page and its neighbours in the page, and fades it in — never a long slide past pages that are
-   * not there.
+   * free to go to it): the next page glides in (at once with reduced motion) once the cards round it stand in the
+   * row, since WebKit drops a glide begun in the frame its pages change and the row stayed where it was, its marks on
+   * the next page, the page it left emptied a turn later (#235); one further fades the row out, stands it there with
+   * that page and its neighbours in the page, and fades it in — never a long slide past pages that are not there.
    */
   private go(page: number): void {
     if (page === this.at_ || !this.track || this.jumping) return;
@@ -539,9 +540,9 @@ export class FluvySwipeCard extends Card<SwipeCardConfig> {
       void this.jump(page);
       return;
     }
-    this.toPage(page, reducedMotion() ? 'instant' : 'smooth');
     this.at_ = page;
     this.head(page);
+    void this.updateComplete.then(() => this.toPage(page, reducedMotion() ? 'instant' : 'smooth'));
   }
 
   /** The row glides to `page` (none: it is the person's again), and says nothing on the way. */

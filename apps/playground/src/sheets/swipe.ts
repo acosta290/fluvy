@@ -1,5 +1,6 @@
 import { FluvyBatteriesCard } from '../../../../packages/cards/src/batteries/batteries-card.js';
 import { FluvyCameraCard } from '../../../../packages/cards/src/camera/camera-card.js';
+import { FluvyChartCard } from '../../../../packages/cards/src/chart/chart-card.js';
 import { FluvyChipsCard } from '../../../../packages/cards/src/chips/chips-card.js';
 import { FluvyGridCard } from '../../../../packages/cards/src/grid/grid-card.js';
 import { FluvyLightCard } from '../../../../packages/cards/src/light/light-card.js';
@@ -24,6 +25,7 @@ const define = (tag: string, element: CustomElementConstructor): void => {
 define('fluvy-swipe-card', FluvySwipeCard);
 define('fluvy-room-card', FluvyRoomCard);
 define('fluvy-camera-card', FluvyCameraCard);
+define('fluvy-chart-card', FluvyChartCard);
 define('fluvy-grid-card', FluvyGridCard);
 define('fluvy-batteries-card', FluvyBatteriesCard);
 define('fluvy-light-card', FluvyLightCard);
@@ -141,20 +143,107 @@ const ONE_EACH = [
   'switch.sw_fan',
 ].map((entity) => ({ type: 'custom:fluvy-tile-card', entity, size: 'compact' }));
 
+/** A day of a room's readings, half an hour a reading up to the evening: a base, an afternoon's swing, a night's dip. */
+const day = (base: number, swing: number, decimals = 1): number[] =>
+  Array.from({ length: 44 }, (_unused, i) => {
+    const hour = i / 2;
+    const v =
+      base +
+      swing * Math.exp(-((hour - 16) ** 2) / 10) -
+      0.25 * swing * Math.exp(-((hour - 5) ** 2) / 6);
+    return Math.round(v * 10 ** decimals) / 10 ** decimals;
+  });
+const sensor = (unit: string, deviceClass?: string) => ({
+  unit_of_measurement: unit,
+  ...(deviceClass ? { device_class: deviceClass } : {}),
+  state_class: 'measurement',
+});
+/** The house's rooms, each with a thermometer and a hygrometer, and the office's CO₂. */
+const CLIMATE_ROOMS = [
+  ['living', 'Living room', 21.4, 1.8, 48, 6],
+  ['kitchen', 'Kitchen', 20.6, 2.4, 55, 9],
+  ['office', 'Office', 22.1, 1.2, 44, 4],
+  ['bedroom', 'Bedroom', 18.9, 0.9, 52, 5],
+] as const;
+const CLIMATE_STATES: StateSeed[] = [
+  ...CLIMATE_ROOMS.flatMap(([id, name, t, , h]): StateSeed[] => [
+    [
+      `sensor.sw_${id}_temperature`,
+      String(t),
+      { friendly_name: `${name} temperature`, ...sensor('°C', 'temperature') },
+    ],
+    [
+      `sensor.sw_${id}_humidity`,
+      String(h),
+      { friendly_name: `${name} humidity`, ...sensor('%', 'humidity') },
+    ],
+    [
+      `sensor.sw_${id}_absolute`,
+      String(Math.round(h * 0.18 * 10) / 10),
+      { friendly_name: `${name} absolute humidity`, ...sensor('g/m³') },
+    ],
+  ]),
+  [
+    'sensor.sw_office_co2',
+    '812',
+    { friendly_name: 'Office CO₂', ...sensor('ppm', 'carbon_dioxide') },
+  ],
+];
+const CLIMATE_HISTORY: Record<string, readonly number[]> = {
+  ...Object.fromEntries(
+    CLIMATE_ROOMS.flatMap(([id, , t, swing, h, wet]) => [
+      [`sensor.sw_${id}_temperature`, day(t - swing / 2, swing)],
+      [`sensor.sw_${id}_humidity`, day(h + wet / 2, -wet, 0)],
+      [`sensor.sw_${id}_absolute`, day(h * 0.18, 1.1)],
+    ]),
+  ),
+  'sensor.sw_office_co2': day(620, 380, 0),
+};
+/** A chart of the house's air, as #235's reporter keeps one a page: its rooms' lines (or the office's CO₂), no figure. */
+const chart = (title: string, icon: string, series: readonly string[]) => ({
+  type: 'custom:fluvy-chart-card',
+  _now: NOW,
+  title,
+  icon,
+  show_head: false,
+  show_grid: 'both',
+  series: series.map((entity) => ({
+    entity,
+    name: CLIMATE_ROOMS.find(([id]) => entity.startsWith(`sensor.sw_${id}_`))?.[1],
+    fill: 'none',
+  })),
+});
+/** A reading of every room, by its kind. */
+const inEachRoom = (kind: string): string[] =>
+  CLIMATE_ROOMS.map(([id]) => `sensor.sw_${id}_${kind}`);
+const CHARTS = [
+  chart('Temperatures', 'thermo', inEachRoom('temperature')),
+  chart('Relative humidity', 'humid', inEachRoom('humidity')),
+  chart('Absolute humidity', 'humid', inEachRoom('absolute')),
+  chart('CO₂', 'mdi:molecule-co2', ['sensor.sw_office_co2']),
+];
+
 /** A view's background behind see-through cards: dusk over the garden. */
 const DUSK = 'linear-gradient(160deg, #1f2f4f 0%, #6f5a86 52%, #e39a72 100%)';
 
 /**
  * The Swipe card (#206): any cards, one a page, turned by a finger or a trackpad — on one surface, the cards drawing
  * none of their own, or each on its own with the marks on the page; the flat's rooms, its cameras going round, the
- * #19 house's energy; side by side on a desktop; opening on another page; the counter where the marks would not fit;
+ * #19 house's energy; the house's air a chart a page; side by side on a desktop; opening on another page; the counter where the marks would not fit;
  * no marks; a ruler and a row of chips that keep their drags; a page that is no page while its card hides; no cards
  * yet; see-through over a view's background; in a section's halves; tiles on its surface.
  */
 export const sheet: SheetSpec = {
-  states: [...STATES, ...rooms.states, ...cameras.states, ...balance.states, ...storage.states],
+  states: [
+    ...STATES,
+    ...CLIMATE_STATES,
+    ...rooms.states,
+    ...cameras.states,
+    ...balance.states,
+    ...storage.states,
+  ],
   // the grid's day as the balance sheet's Energy dashboard has it: what its totals are read from
-  ...(balance.history ? { history: balance.history } : {}),
+  history: { ...balance.history, ...CLIMATE_HISTORY },
   ...(balance.ws ? { ws: balance.ws } : {}),
   registry: {
     entities: { ...rooms.registry?.entities, ...cameras.registry?.entities },
@@ -172,6 +261,9 @@ export const sheet: SheetSpec = {
     { title: 'Cameras · plain', cards: [swipe(CAMERAS, { style: 'plain', loop: true })] },
     // a wall's cameras, a page every four seconds, held while a finger, the pointer or the focus is on them
     { title: 'Cameras · by themselves', cards: [swipe(CAMERAS, { loop: true, autoplay: 4 })] },
+    // the house's air a chart a page (#235): turned by its marks, each page its own chart, where Safari stayed on the
+    // first, its marks on the next, and the pages after it came up empty
+    { title: 'Charts · a page each', cards: [swipe(CHARTS, { gap: 8 })] },
     // the energy of the house, a card a page
     { title: 'Energy', cards: [swipe(ENERGY)] },
     // across a desktop: two cameras and two energy cards side by side, a page further each time
