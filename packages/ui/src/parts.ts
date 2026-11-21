@@ -125,6 +125,8 @@ export const clickOwn = (event: MouseEvent): void => {
   event.stopPropagation();
   clickPress(event);
 };
+/** A press on a control that presses nothing else (a stepper): it goes no further than the control. */
+const keepOwn = (event: Event): void => event.stopPropagation();
 
 /**
  * A circle; with a tap or a hold, a button of its own (#179: a tile's or a head's circle with actions of its own, a
@@ -395,7 +397,9 @@ export interface StepperOptions {
 
 /**
  * − | + pill (96 × 44); with its value, − 21.5° + (its halves at 44, the value's room between them). Holding a half
- * repeats the step, always through the latest `onStep`.
+ * repeats the step, always through the latest `onStep`. A press on it is its own (a finger's, a mouse's, a key's; on
+ * a half, a disabled one or the value between them): never a tap or a hold of the surface it stands on, a row that
+ * opens its details (#236).
  */
 export function stepper(
   onStep: (direction: 1 | -1) => void,
@@ -425,6 +429,8 @@ export function stepper(
   return html`<div
     class="fv-stepper ${valued ? 'fv-stepper--value' : ''} ${options.className ?? ''}"
     data-control
+    @pointerdown=${keepOwn}
+    @click=${keepOwn}
   >
     ${half(-1, options.decrease ?? '−', 'minus')}${
       valued

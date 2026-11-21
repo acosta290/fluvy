@@ -37,6 +37,30 @@ describe('a stepper', () => {
     expect(value?.getAttribute('aria-live')).toBe('polite');
     expect((minus as HTMLButtonElement).disabled).toBe(true);
   });
+
+  it('keeps its presses: a key’s step, a finger on a half or on its value reach no row under it (#236)', () => {
+    const steps: number[] = [];
+    const heard: string[] = [];
+    const row = drawn(
+      html`<div @click=${() => heard.push('click')} @pointerdown=${() => heard.push('pointerdown')}>
+        ${stepper((direction) => steps.push(direction), { value: '21.5°' })}
+      </div>`,
+    );
+    const [minus, value, plus] = [...row.querySelector('.fv-stepper')!.children] as HTMLElement[];
+    // a key's click (detail 0) steps; a pointer's steps at its press, its click after it is nothing more
+    plus?.dispatchEvent(new MouseEvent('click', { bubbles: true, composed: true, detail: 0 }));
+    for (const target of [minus, value])
+      for (const type of ['pointerdown', 'click'])
+        target?.dispatchEvent(
+          new (type === 'click' ? MouseEvent : PointerEvent)(type, {
+            bubbles: true,
+            composed: true,
+            detail: 1,
+          }),
+        );
+    expect(steps).toEqual([1]);
+    expect(heard).toEqual([]);
+  });
 });
 
 describe('option tiles in their icon form (#215)', () => {

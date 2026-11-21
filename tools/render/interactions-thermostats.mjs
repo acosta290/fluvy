@@ -5,7 +5,8 @@
  *   PLAYGROUND=http://127.0.0.1:5183/ node interactions-thermostats.mjs
  * What it proves: the house's heating draws a row each, named by its room, the bathroom's valve out of reach in the
  * dashed ring and taking no tap; a row's tap opens its details. A finger on the bedroom's + steps its own half degree,
- * drawn at once, and one call goes to that valve alone once the taps settle, as the heat pump's + a whole degree. All
+ * drawn at once, and one call goes to that valve alone once the taps settle, as the heat pump's + a whole degree; no
+ * press on a stepper opens its row's details (#236: a step, a hold past the row's, a key, a still half, its figure). All
  * off asks Home Assistant first, nothing turned off before its yes, then turns off each one that is on as it takes it
  * (the heat pump by its own off, the valves by their Off mode), never the office that is off nor the bathroom out of
  * reach. A preset chip sets each one that is on and offers it to its own preset, never one that has none or is off.
@@ -80,6 +81,33 @@ check(
     said(await calls(page)).join() ===
       'climate.set_temperature {"temperature":20} climate.ts_bedroom',
   `${shown} · ${said(await calls(page)).join()}`,
+);
+check(
+  'a step opens nothing: the row’s tap is not the stepper’s (#236)',
+  (await moreInfo(page)).length === 0,
+  JSON.stringify(await moreInfo(page)),
+);
+// held past a row's hold (500 ms): the repeat steps, the row's hold opens nothing; a key on − steps alone too, and a
+// press on a still half or on the figure between them opens nothing either
+await reset(page);
+const minus = (index) => pills.nth(index).locator('.fv-stepper__half').nth(0);
+await minus(1).scrollIntoViewIfNeeded();
+const held = await minus(1).boundingBox();
+await page.mouse.move(held.x + held.width / 2, held.y + held.height / 2);
+await page.mouse.down();
+await page.waitForTimeout(700);
+await page.mouse.up();
+await minus(2).focus();
+await page.keyboard.press('Enter');
+await press(page, minus(3));
+await press(page, pills.nth(1).locator('.fv-stepper__value'));
+await settle(page, 800);
+check(
+  'held past the row’s hold, a key on −, a still half or the figure: steps alone, never the details',
+  (await moreInfo(page)).length === 0 &&
+    (await calls(page)).map((call) => `${call.s} ${call.t?.entity_id}`).join() ===
+      'climate.set_temperature climate.ts_bedroom,climate.set_temperature climate.ts_kids_room',
+  `${JSON.stringify(await moreInfo(page))} · ${said(await calls(page)).join()}`,
 );
 await reset(page);
 await press(page, plus(0));
