@@ -1,6 +1,13 @@
 // @vitest-environment happy-dom
-import { CHART_DEFAULTS, setChartDefaults, type HomeAssistant } from '@fluvy/core';
+import {
+  CHART_DEFAULTS,
+  setChartDefaults,
+  type HaFormSchemaItem,
+  type HassConnection,
+  type HomeAssistant,
+} from '@fluvy/core';
 import { afterEach, describe, expect, it } from 'vitest';
+import { visibleFields } from '../shared/form.js';
 import { FluvyBarsCard, type BarsCardConfig } from './bars-card.js';
 
 if (!customElements.get('fluvy-bars-card')) customElements.define('fluvy-bars-card', FluvyBarsCard);
@@ -276,5 +283,264 @@ describe('a list in parts, and rows on a condition (#157)', () => {
     expect(
       card.shadowRoot!.querySelector<HTMLElement>('.fv-bar__fill')!.getAttribute('style'),
     ).toContain('100%');
+  });
+});
+
+describe('a band’s ends and the badge from the house (#253)', () => {
+  /**
+   * A socket that answers each template it has words for a moment after it is asked, and again when `say` changes
+   * them; one it has none for is refused, as Home Assistant refuses a broken one. `live`: its open subscriptions;
+   * `asked`: every subscription it was ever asked for.
+   */
+  const socket = (answers: Record<string, string>) => {
+    const open = new Map<string, (event: unknown) => void>();
+    let asked = 0;
+    const connection = {
+      subscribeMessage: (callback: (event: unknown) => void, message: Record<string, unknown>) => {
+        const template = String(message['template']);
+        if (answers[template] === undefined) return Promise.reject(new Error('TemplateError'));
+        const entity = (message['variables'] as { entity?: string } | undefined)?.entity;
+        const key = `${entity ?? ''} ${template}`;
+        asked += 1;
+        open.set(key, callback);
+        setTimeout(() => callback({ result: answers[template] }), 5);
+        return Promise.resolve(() => open.delete(key));
+      },
+    } as unknown as HassConnection;
+    return {
+      connection,
+      live: () => open.size,
+      asked: () => asked,
+      say: (template: string, result: string) => {
+        answers[template] = result;
+        for (const [key, callback] of open) if (key.endsWith(` ${template}`)) callback({ result });
+      },
+    };
+  };
+
+  const HIGH = "{{ states('input_number.humidity_high') }}";
+  const BATHROOM_HIGH = "{{ states('input_number.humidity_high') | int + 10 }}";
+  const DRYING = "{{ 'Drying' if is_state('switch.dehumidifier', 'on') else '' }}";
+  const FINE = "{{ 'Fresh air' }}";
+
+  /** The house's rooms at their humidity, their low limit in a helper (40 %), an inverter's limit and more. */
+  const rooms = (low = '40', more: Record<string, unknown> = {}): HomeAssistant => {
+    const hass = house();
+    return {
+      ...hass,
+      states: {
+        ...hass.states,
+        ...reading('sensor.living_humidity', '47', percent('Living room', 'humidity')),
+        ...reading('sensor.bedroom_humidity', '63', percent('Bedroom', 'humidity')),
+        ...reading('sensor.bathroom_humidity', '74', percent('Bathroom', 'humidity')),
+        ...reading('sensor.study_humidity', '36', percent('Study', 'humidity')),
+        ...reading('input_number.humidity_low', low, { unit_of_measurement: '%' }),
+        ...reading('input_text.air', 'Fresh', { friendly_name: 'Air' }),
+        ...reading('sensor.inverter_limit', '1.8', { unit_of_measurement: 'kW' }),
+        ...more,
+      },
+    } as HomeAssistant;
+  };
+
+  /** A bars card in `hass` on a socket that answers `answers`; `rehouse` hands it the house again, a state changed. */
+  async function draw(
+    config: Partial<BarsCardConfig>,
+    answers: Record<string, string> = {},
+    hass = rooms(),
+  ) {
+    const wire = socket({ ...answers });
+    const card = document.createElement('fluvy-bars-card') as FluvyBarsCard;
+    card.setConfig({ type: 'custom:fluvy-bars-card', ...config });
+    card.hass = { ...hass, connection: wire.connection };
+    document.body.append(card);
+    await card.updateComplete;
+    const rehouse = async (next: HomeAssistant): Promise<void> => {
+      card.hass = { ...next, connection: wire.connection };
+      await card.updateComplete;
+    };
+    return { card, ...wire, rehouse };
+  }
+  /** Lets the answers land and the card draw them. */
+  const settle = async (card: FluvyBarsCard): Promise<void> => {
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    await card.updateComplete;
+  };
+  const warned = (card: FluvyBarsCard): string[] =>
+    [...card.shadowRoot!.querySelectorAll('.fv-row')]
+      .filter((row) => row.querySelector('.fv-row__value--warning'))
+      .map((row) => row.querySelector('.fv-row__title')!.textContent!.trim());
+  const badge = (card: FluvyBarsCard): string | null =>
+    card.shadowRoot!.querySelector('.fv-badge')?.textContent?.trim() ?? null;
+  const fills = (card: FluvyBarsCard): string[] =>
+    [...card.shadowRoot!.querySelectorAll<HTMLElement>('.fv-bar__fill')].map(
+      (fill) => fill.getAttribute('style') ?? '',
+    );
+
+  const HUMIDITY: BarsCardConfig['rows'] = [
+    { entity: 'sensor.living_humidity', low: 'input_number.humidity_low', high: HIGH },
+    { entity: 'sensor.bedroom_humidity', low: 'input_number.humidity_low', high: HIGH },
+    {
+      entity: 'sensor.bathroom_humidity',
+      low: 'input_number.humidity_low',
+      high: BATHROOM_HIGH,
+    },
+    { entity: 'sensor.study_humidity', low: 'input_number.humidity_low', high: HIGH },
+  ];
+
+  it('reads a row’s limits from an entity and a template, live: one still to come warns of nothing', async () => {
+    const { card, say, rehouse } = await draw(
+      { rows: HUMIDITY },
+      { [HIGH]: '60', [BATHROOM_HIGH]: '70' },
+    );
+    // the helper's 40 % is read at once; the highs wait for Home Assistant, and the badge's count with them
+    expect(warned(card)).toEqual(['Study']);
+    expect(badge(card)).toBeNull();
+    await settle(card);
+    expect(warned(card)).toEqual(['Bedroom', 'Bathroom', 'Study']);
+    expect(badge(card)).toBe('3 low');
+    // the helper moves: the living room is low at 50 %, the study is fine at 30 %
+    await rehouse(rooms('50'));
+    expect(warned(card)).toEqual(['Living room', 'Bedroom', 'Bathroom', 'Study']);
+    await rehouse(rooms('30'));
+    expect(warned(card)).toEqual(['Bedroom', 'Bathroom']);
+    // the templates' answers move: a damp summer's 65 % is fine for the bedroom, 75 % for the bathroom
+    say(HIGH, '65');
+    say(BATHROOM_HIGH, '75');
+    await card.updateComplete;
+    expect(warned(card)).toEqual([]);
+    expect(badge(card)).toBe('All good');
+  });
+
+  it('takes a limit that says nothing as its default: a battery still warns under 20 %', async () => {
+    const NOWHERE = "{{ states('sensor.nowhere') }}";
+    const { card } = await draw(
+      {
+        rows: [
+          { entity: 'sensor.remote_battery', low: '{{ nonsense( }}' },
+          { entity: 'sensor.fern_moisture', low: NOWHERE },
+          { entity: 'sensor.cpu', low: 'input_number.away' },
+          { entity: 'sensor.attic_humidity', low: '' },
+        ],
+      },
+      { [NOWHERE]: 'unknown' },
+    );
+    await settle(card);
+    // a template refused and one that says no figure: the battery's and the soil's 20; none for the others
+    expect(warned(card)).toEqual(['Remote', 'Fern']);
+    expect(badge(card)).toBe('2 low');
+  });
+
+  it('draws a bar against a range from the house, its entity’s unit converted; empty while a bound is to come', async () => {
+    const MAX = '{{ 3600 }}';
+    const { card } = await draw(
+      {
+        rows: [
+          { entity: 'sensor.east', max: 'sensor.inverter_limit' },
+          { entity: 'sensor.east', max: MAX },
+        ],
+      },
+      { [MAX]: '3600' },
+    );
+    // the inverter's 1.8 kW is 1 800 of the row's watts: 1 400 W fills 78 %; the template's bound not there yet: empty
+    expect(fills(card)).toEqual(['width:78%', 'width:0%']);
+    await settle(card);
+    expect(fills(card)).toEqual(['width:78%', 'width:39%']);
+  });
+
+  it('says the person’s badge, an entity’s state or a template’s answer, {count} filled; none while it waits', async () => {
+    const STUDY: BarsCardConfig['rows'] = [
+      { entity: 'sensor.study_humidity', low: 'input_number.humidity_low' },
+    ];
+    const drying = await draw({ rows: STUDY, badge: DRYING }, { [DRYING]: 'Drying' });
+    expect(badge(drying.card)).toBeNull();
+    await settle(drying.card);
+    expect(badge(drying.card)).toBe('Drying');
+    expect(drying.card.shadowRoot!.querySelector('.fv-badge--warning')).not.toBeNull();
+    // the dehumidifier off: the badge says nothing, and the card's own words stand in
+    drying.say(DRYING, '');
+    await drying.card.updateComplete;
+    expect(badge(drying.card)).toBe('1 low');
+
+    const COUNT = "{{ '{count} to air' }}";
+    const counted = await draw({ rows: STUDY, badge_warn: COUNT }, { [COUNT]: '{count} to air' });
+    await settle(counted.card);
+    expect(badge(counted.card)).toBe('1 to air');
+    const fresh = await draw({ rows: ['sensor.living_humidity'], badge_ok: 'input_text.air' });
+    expect(badge(fresh.card)).toBe('Fresh');
+    // words written as nothing: no badge, never an empty pill
+    const none = await draw({ rows: ['sensor.living_humidity'], badge_ok: '' });
+    expect(badge(none.card)).toBeNull();
+  });
+
+  it('keeps a hidden row’s templates and both badges’ live, and lets them go when the card leaves', async () => {
+    const guests = (on: boolean): HomeAssistant =>
+      rooms('40', reading('input_boolean.guests', on ? 'on' : 'off', {}));
+    const { card, rehouse, asked } = await draw(
+      {
+        rows: [
+          'sensor.living_humidity',
+          {
+            entity: 'sensor.bedroom_humidity',
+            high: HIGH,
+            show_when: { entity: 'input_boolean.guests', state: 'on' },
+          },
+        ],
+        badge_ok: FINE,
+        badge_warn: DRYING,
+      },
+      { [HIGH]: '60', [FINE]: 'Fresh air', [DRYING]: 'Drying' },
+      guests(false),
+    );
+    await settle(card);
+    expect(badge(card)).toBe('Fresh air');
+    // the hidden bedroom's high and the badge that does not show are kept: three, each asked once
+    expect(asked()).toBe(3);
+    await rehouse(guests(true));
+    // the guests are here: the bedroom shows, its limit already known, and warns at once
+    expect(warned(card)).toEqual(['Bedroom']);
+    expect(badge(card)).toBe('Drying');
+    expect(asked()).toBe(3);
+  });
+
+  it('lets every template go when the card leaves the page', async () => {
+    const { card, live } = await draw(
+      { rows: HUMIDITY, badge: DRYING },
+      { [HIGH]: '60', [BATHROOM_HIGH]: '70', [DRYING]: 'Drying' },
+    );
+    await settle(card);
+    // each row asks its high with its own entity, and the badge its words: five
+    expect(live()).toBe(5);
+    card.remove();
+    expect(live()).toBe(0);
+  });
+});
+
+describe('the editor (#253)', () => {
+  it('takes a row’s range and limits as typed figures, entities or templates, and the badges as the person’s words', async () => {
+    const editor = await FluvyBarsCard.editor();
+    const fields = (schema: readonly HaFormSchemaItem[]): HaFormSchemaItem[] =>
+      schema.flatMap((item) => (item.schema ? fields(item.schema) : [item]));
+    const rows = editor.lists?.find(({ key }) => key === 'rows');
+    const limits = fields(rows!.schema).filter(({ name }) =>
+      ['min', 'max', 'low', 'high'].includes(name),
+    );
+    expect(limits.map(({ name, selector, helper }) => [name, selector, helper])).toEqual(
+      ['min', 'max', 'low', 'high'].map((name) => [name, { text: {} }, 'editor.threshold_helper']),
+    );
+    const form = editor.getConfigForm();
+    const badges = (data: Record<string, unknown>) =>
+      fields(visibleFields(form.schema, data))
+        .filter(({ name }) => name.startsWith('badge'))
+        .map(({ name, helper }) => [name, helper]);
+    expect(badges({})).toEqual([
+      ['badge', 'editor.own_text_helper'],
+      ['badge_ok', 'editor.own_text_helper'],
+      ['badge_warn', 'editor.own_text_helper'],
+    ]);
+    // a badge asked away has no words to say
+    expect(badges({ show_badge: false })).toEqual([]);
+    expect(form.computeLabel?.({ name: 'badge' } as HaFormSchemaItem, (key) => key)).toBe(
+      'Badge text',
+    );
   });
 });

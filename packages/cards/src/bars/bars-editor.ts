@@ -3,7 +3,6 @@ import { ACTIONS_BASE, ICON_ACTIONS_BASE, type BaseKey } from '../shared/base.js
 import {
   accentField,
   actionFields,
-  anyNumberField,
   boolField,
   colourFields,
   editorLabels,
@@ -11,6 +10,7 @@ import {
   entitiesField,
   entityField,
   fieldRow,
+  figureField,
   formLabels,
   holdsDevice,
   iconField,
@@ -18,6 +18,7 @@ import {
   nameIconFields,
   namesField,
   onlyWhen,
+  ownTextField,
   rowWhenField,
   selectField,
   headFields,
@@ -37,6 +38,10 @@ import type { BarsCardConfig, BarsVariant } from './bars-card.js';
 const strings = words('bars');
 
 const VARIANTS: readonly BarsVariant[] = ['full', 'compact'];
+
+/** Whether the head's badge shows (`show_badge`): what its words act on. */
+const badgeShown = (data: Readonly<Record<string, unknown>>): boolean =>
+  data['show_badge'] !== false;
 
 /** A list of many sensors has no entity of its own: its head's icon, tone and colour, and its actions on the head. */
 export const base: readonly BaseKey[] = [
@@ -61,6 +66,7 @@ export const keys = configKeys<BarsCardConfig>()([
   'subtitle',
   'rows',
   'variant',
+  'badge',
   'badge_ok',
   'badge_warn',
   'chart',
@@ -100,8 +106,8 @@ export const lists: readonly RowsListSpec[] = [
       textField('secondary'),
       entitiesField('sub_entity'),
       fieldRow(toneField(), accentField('color', { item: 'own' })),
-      fieldRow(anyNumberField('min'), anyNumberField('max')),
-      fieldRow(anyNumberField('low'), anyNumberField('high')),
+      fieldRow(figureField('min'), figureField('max')),
+      fieldRow(figureField('low'), figureField('high')),
       boolField('plain'),
       actionFields(),
       rowWhenField(),
@@ -126,11 +132,17 @@ export function getConfigForm(): LovelaceConfigForm {
       entitiesField('rows', undefined, true),
       whenField('show_rows_when'),
       onlyWhen(holdsDevice('rows'), namesField()),
-      fieldRow(textField('badge_ok'), textField('badge_warn')),
+      // the head's badge in the person's own words while it shows: one whatever the rows say, else one for each case
+      onlyWhen(badgeShown, ownTextField('badge')),
+      onlyWhen(badgeShown, fieldRow(ownTextField('badge_ok'), ownTextField('badge_warn'))),
       emptyFields(),
       actionFields({ icon: true, many: true }),
     ],
     ...idsOnly('rows'),
-    ...editorLabels(strings, { rows: 'rows', badge_ok: 'badge_ok', badge_warn: 'badge_warn' }, {}),
+    ...editorLabels(
+      strings,
+      { rows: 'rows', badge_ok: 'badge_ok', badge_warn: 'badge_warn' },
+      { badge: 'gauge.badge' },
+    ),
   };
 }

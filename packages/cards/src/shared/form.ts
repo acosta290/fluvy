@@ -144,6 +144,14 @@ export const ownTextField = (name: string): HaFormSchemaItem => ({
   ...textField(name),
   helper: 'editor.own_text_helper',
 });
+/**
+ * A figure of the card's own (`Card.ownFigure`, #253): a number, an entity's id or a template, typed, as its helper
+ * says (Home Assistant's number box takes neither of the others).
+ */
+export const figureField = (name: string): HaFormSchemaItem => ({
+  ...textField(name),
+  helper: 'editor.threshold_helper',
+});
 export const iconField = (name = 'icon'): HaFormSchemaItem => ({ name, selector: { icon: {} } });
 /** An area of the house, from Home Assistant's own picker. */
 export const areaField = (name = 'area'): HaFormSchemaItem => ({
@@ -162,7 +170,7 @@ export const numberField = (
   name,
   selector: { number: { min, ...(max === undefined ? {} : { max }), step, mode: 'box' } },
 });
-/** A number of any size and sign typed in a box (a bar's range, a condition's bound). */
+/** A number of any size and sign typed in a box (a condition's bound). */
 export const anyNumberField = (name: string): HaFormSchemaItem => ({
   name,
   selector: { number: { mode: 'box', step: 'any' } },

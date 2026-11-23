@@ -24,8 +24,10 @@ export const MEANINGS: Readonly<Record<string, string>> = {
   attribute: 'The attribute of the sensor that holds the list of items.',
   badge_entity: 'An entity whose value the head’s badge shows.',
   badge_label: 'The words before the badge entity’s value ("Health 92 %").',
-  badge_ok: 'The head’s badge while no row is outside its range.',
-  badge_warn: 'The head’s badge while rows are outside their range; {count} is how many.',
+  badge_ok:
+    'The head’s badge while no row is outside its range: your own words, an entity’s state or a template.',
+  badge_warn:
+    'The head’s badge while rows are outside their range, as `badge_ok`; {count} is how many.',
   battery_entity: 'The battery sensor the card reads its charge from.',
   camera_view: 'Shows still pictures that refresh by themselves, or Home Assistant’s live stream.',
   card_blur:
@@ -414,6 +416,8 @@ export const MEANINGS: Readonly<Record<string, string>> = {
   'automations.show': 'Lists every automation, or only Fluvy’s schedules.',
   'automations.show_switch': 'Shows each automation’s switch.',
   'automations.sort': 'Orders the automations by name, by the next run, or by the last.',
+  'bars.badge':
+    'The head’s badge whatever the rows say: your own words, an entity’s state or a template; {count} is how many rows are outside their range. Where it says nothing, `badge_ok` or `badge_warn` does.',
   'bars.chart': 'The bars’ style.',
   'batteries.mode': 'A select entity of the batteries’ mode, shown as tiles to choose from.',
   'calendar.days': 'How many days ahead the agenda shows.',
@@ -779,7 +783,7 @@ export const MEANINGS: Readonly<Record<string, string>> = {
   '[].group':
     'What the quick action acts on: the room’s lights, covers, fans or media, or one entity.',
   '[].hidden': 'Counts hidden entities too.',
-  '[].high': 'Above this value the row turns to a warning.',
+  '[].high': 'Above this value the row turns to a warning: a figure, an entity or a template.',
   '[].highlight': 'Fills the tile with its tone: the one figure that matters most.',
   '[].hold_action': 'What a long press on the item does.',
   '[].icon': 'The item’s own icon, in place of the one the card would give it.',
@@ -798,10 +802,10 @@ export const MEANINGS: Readonly<Record<string, string>> = {
     'What the band is called, said beside the reading so that colour is never all that says it.',
   '[].labels': 'Names of your own for the options.',
   '[].level': 'A sensor of its state of charge.',
-  '[].low': 'Below this value the row turns to a warning.',
+  '[].low': 'Below this value the row turns to a warning: a figure, an entity or a template.',
   '[].match': 'Further groups of conditions, any of which may match.',
-  '[].max': 'The top of the row’s bar.',
-  '[].min': 'The bottom of the row’s bar.',
+  '[].max': 'The top of the row’s bar: a figure, an entity or a template.',
+  '[].min': 'The bottom of the row’s bar: a figure, an entity or a template.',
   '[].min_count': 'Shows the alert from this many matches up.',
   '[].motion': 'The motion sensor the camera’s line reads.',
   '[].name': 'The item’s own name, in place of the one the card would give it.',

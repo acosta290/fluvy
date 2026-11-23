@@ -29509,15 +29509,24 @@
           }
         },
         {
+          "key": "badge",
+          "label": "Badge text",
+          "does": "The head’s badge whatever the rows say: your own words, an entity’s state or a template; {count} is how many rows are outside their range. Where it says nothing, `badge_ok` or `badge_warn` does.",
+          "helper": "Your own words, an entity (its state), or a template such as {{ states('sensor.x') }}",
+          "type": "text"
+        },
+        {
           "key": "badge_ok",
           "label": "Badge when all is well",
-          "does": "The head’s badge while no row is outside its range.",
+          "does": "The head’s badge while no row is outside its range: your own words, an entity’s state or a template.",
+          "helper": "Your own words, an entity (its state), or a template such as {{ states('sensor.x') }}",
           "type": "text"
         },
         {
           "key": "badge_warn",
           "label": "Badge with warnings, e.g. \"{count} low\"",
-          "does": "The head’s badge while rows are outside their range; {count} is how many.",
+          "does": "The head’s badge while rows are outside their range, as `badge_ok`; {count} is how many.",
+          "helper": "Your own words, an entity (its state), or a template such as {{ states('sensor.x') }}",
           "type": "text"
         },
         {
@@ -29657,26 +29666,30 @@
             {
               "key": "min",
               "label": "Minimum",
-              "does": "The bottom of the row’s bar.",
-              "type": "number"
+              "does": "The bottom of the row’s bar: a figure, an entity or a template.",
+              "helper": "A figure, an entity or a template",
+              "type": "text"
             },
             {
               "key": "max",
               "label": "Maximum",
-              "does": "The top of the row’s bar.",
-              "type": "number"
+              "does": "The top of the row’s bar: a figure, an entity or a template.",
+              "helper": "A figure, an entity or a template",
+              "type": "text"
             },
             {
               "key": "low",
               "label": "Warn below",
-              "does": "Below this value the row turns to a warning.",
-              "type": "number"
+              "does": "Below this value the row turns to a warning: a figure, an entity or a template.",
+              "helper": "A figure, an entity or a template",
+              "type": "text"
             },
             {
               "key": "high",
               "label": "Warn above",
-              "does": "Above this value the row turns to a warning.",
-              "type": "number"
+              "does": "Above this value the row turns to a warning: a figure, an entity or a template.",
+              "helper": "A figure, an entity or a template",
+              "type": "text"
             },
             {
               "key": "plain",

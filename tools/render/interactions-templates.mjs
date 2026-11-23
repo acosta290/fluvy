@@ -3,8 +3,10 @@
  * Interaction tests for templates in a row's text: a template renders to its text (never to itself), follows a state
  * change, two rows that ask the same template for the same entity share one subscription, a template Home Assistant
  * refuses says nothing, removing the cards releases every subscription, and a row whose answer is still to come keeps
- * its line, so nothing moves when the words land; and the chips card's chips (#87), whose words, icon and colour are
- * templates, counted live, a chip stepping in and out of the row as it has something to say.
+ * its line, so nothing moves when the words land; the chips card's chips (#87), whose words, icon and colour are
+ * templates, counted live, a chip stepping in and out of the row as it has something to say; and the Bars card's
+ * limits and badge read from the house (#253), an entity's and a template's, live, one still to come warning of
+ * nothing.
  * Real cards on the playground's simulated hass. Exit code 1 on any failure.
  *   PLAYGROUND=http://127.0.0.1:5187/ node interactions-templates.mjs
  */
@@ -198,6 +200,92 @@ const bars = frame(page, 'Bars · template').locator('fluvy-bars-card');
     `${before} → ${left}`,
   );
   await home.close();
+}
+
+/* ---------- a bar's limits and the badge from the house (#253) ---------- */
+{
+  const HUMIDITY = 'Bars · limits from the house (#253)';
+  /** The rows of a card that warn, by name, and its badge's words ('' with none). */
+  const look = (card) =>
+    card.evaluate((el) => ({
+      warned: [...(el.shadowRoot?.querySelectorAll('.fv-row') ?? [])]
+        .filter((row) => row.querySelector('.fv-row__value--warning'))
+        .map((row) => row.querySelector('.fv-row__title')?.textContent?.trim()),
+      badge: el.shadowRoot?.querySelector('.fv-badge')?.textContent?.trim() ?? '',
+    }));
+
+  // the answers held for three seconds: the helper's low is read at once, the template's high is still to come
+  const slow = await suite.sheet('bars', { extra: '&template_delay=3000' });
+  const waiting = frame(slow, HUMIDITY).locator('fluvy-bars-card');
+  const held = await look(waiting);
+  check(
+    'bars: a limit still to come warns of nothing, and the badge waits for the count',
+    JSON.stringify(held) === JSON.stringify({ warned: ['Study'], badge: '' }),
+    JSON.stringify(held),
+  );
+  await slow.waitForTimeout(3000);
+  const landed = await look(waiting);
+  check(
+    'bars: …and once the answers land, the high warns and the badge says its template',
+    JSON.stringify(landed) ===
+      JSON.stringify({ warned: ['Bedroom', 'Bathroom', 'Study'], badge: 'Drying' }),
+    JSON.stringify(landed),
+  );
+  await slow.close();
+
+  const bars = await suite.sheet('bars');
+  const card = frame(bars, HUMIDITY).locator('fluvy-bars-card');
+  const count = () => bars.evaluate(() => window.fluvyMock.templates());
+  // each full Humidity card (three) asks a high and a line for each of its rooms, and its badge (11); the compact one
+  // no lines (6); the batteries' two limits that fail stay asked, as Home Assistant keeps listening
+  const open = await count();
+  check(
+    'bars: the sheet holds one subscription per template · row pair',
+    open === 41,
+    String(open),
+  );
+  const set = async (id, state) => {
+    await bars.evaluate(([entity, value]) => window.fluvyMock.set(entity, value), [id, state]);
+    await settle(bars);
+  };
+  await set('input_number.bt_humidity_high', '70');
+  const raised = await look(card);
+  check(
+    'bars: a template’s high moves with its helper: the bedroom and the bathroom are fine',
+    JSON.stringify(raised) === JSON.stringify({ warned: ['Study'], badge: 'Drying' }),
+    JSON.stringify(raised),
+  );
+  await set('switch.bt_dehumidifier', 'off');
+  const resting = await look(card);
+  check(
+    'bars: a badge that says nothing leaves the card’s words, its count filled',
+    resting.badge === '1 to air',
+    resting.badge,
+  );
+  await set('input_number.bt_humidity_high', '60');
+  const lowered = await look(card);
+  check(
+    'bars: the template’s high lowered again flips the bedroom and the bathroom to warn',
+    JSON.stringify(lowered) ===
+      JSON.stringify({ warned: ['Bedroom', 'Bathroom', 'Study'], badge: '3 to air' }),
+    JSON.stringify(lowered),
+  );
+  await set('input_number.bt_humidity_low', '30');
+  const study = await look(card);
+  check(
+    'bars: an entity’s low moves with it: the study is fine at 30 %',
+    JSON.stringify(study.warned) === JSON.stringify(['Bedroom', 'Bathroom']),
+    JSON.stringify(study),
+  );
+  const after = await count();
+  check('bars: the changes opened no further subscription', after === open, `${open} → ${after}`);
+  await bars.evaluate(() =>
+    document.querySelectorAll('fluvy-bars-card').forEach((el) => el.remove()),
+  );
+  await settle(bars);
+  const left = await count();
+  check('bars: removing the cards releases every subscription', left === 0, String(left));
+  await bars.close();
 }
 
 await suite.finish();

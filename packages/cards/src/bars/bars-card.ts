@@ -22,6 +22,7 @@ import { softIn, type ChartKeys } from '../shared/chart-config.js';
 import { baseOf, figureText, scaleFor, toBase } from '../gauge/units.js';
 
 import { Card, type CardEditor } from '../shared/base.js';
+import type { Own } from '../shared/own-values.js';
 
 import { iconOf, stateWord } from '../shared/domain.js';
 import { ITEM_ALIASES, type AliasSpec } from '../shared/config.js';
@@ -40,7 +41,7 @@ import {
   type RowWhen,
   type SectionEntry,
 } from '../shared/lists.js';
-import { PENDING_LINE, TemplateTexts } from '../shared/templates.js';
+import { PENDING_LINE } from '../shared/templates.js';
 
 const strings = words('bars');
 
@@ -54,16 +55,20 @@ export interface BarRowConfig {
   secondary?: string;
   /** One or more entities read into the row's secondary line (a string's temperature, a plant's note). */
   sub_entity?: string | readonly string[];
-  /** The bar's range, in the entity's unit. Defaults: 0–100 for a percentage, 0–largest row otherwise. */
-  min?: number;
-  max?: number;
+  /**
+   * The bar's range, in the entity's unit. Defaults: 0–100 for a percentage, 0–largest row otherwise. This and the
+   * limits below are each a figure, an entity whose reading it is (another unit of its family converted), or a template
+   * whose answer it is, the row's entity its `entity` (#253); one that says nothing is its default.
+   */
+  min?: Limit;
+  max?: Limit;
   /**
    * Below this the row turns warning and counts towards the head badge. Default: 20 for a battery and a soil's moisture
    * (what runs low and wants a hand), none for any other reading.
    */
-  low?: number;
+  low?: Limit;
   /** Above this the row turns warning and counts towards the head badge. */
-  high?: number;
+  high?: Limit;
   /** Fills the icon circle and colours the bar. Without it the circle stays neutral and the bar takes the measure's tone. */
   tone?: Tone;
   /** No bar: a plain 60 px row with its value at the right (the inverter under its strings). */
@@ -96,10 +101,26 @@ export interface BarsCardConfig
    * name and the value on one line and the bar under them.
    */
   variant?: BarsVariant;
-  /** "All good" by default. */
+  /**
+   * The head's badge in place of the two below (#253): words of the person's own, an entity's state or a template, the
+   * card's own words where it says nothing (an empty answer, a template that failed); `{count}` is how many rows warn.
+   */
+  badge?: string;
+  /** "All good" by default; words, an entity's state or a template, as `badge`. */
   badge_ok?: string;
-  /** "{count} low" by default ("{count} thirsty", "{count} shaded"). */
+  /** "{count} low" by default ("{count} thirsty", "{count} shaded"); words, an entity's state or a template. */
   badge_warn?: string;
+}
+
+/** A bar's bound or limit as a config writes it: a figure, an entity, a template (`BarRowConfig.min`). */
+type Limit = number | string;
+
+/** A row's range and its limits as read now (`ownFigure`). */
+interface Limits {
+  readonly min: Own<number>;
+  readonly max: Own<number>;
+  readonly low: Own<number>;
+  readonly high: Own<number>;
 }
 
 /** Device classes that are a share of themselves: 0 … 100. */
@@ -141,7 +162,8 @@ const rowHeight = (row: BarRowConfig, compact: boolean): number =>
  * The bar-row list: one 76 px row per entity — icon circle, name and context, the value at the right
  * and a 4 px bar under the text — or, compact, 48 px rows with the name and the value on one line over
  * the bar. Rows outside their band turn warning and are counted in the head badge ("1 shaded",
- * "2 thirsty", "All good"). Strings, plants, batteries and meters are all this card. A list in parts carries a
+ * "2 thirsty", "All good"); a band's ends may come from the house, an entity's reading or a template's answer, as the
+ * badge's words may (#253). Strings, plants, batteries and meters are all this card. A list in parts carries a
  * section's label or a hairline between its rows, and a row may show only while a condition holds (#157): the badge
  * counts the rows that show, and with none showing the card is its empty panel.
  */
@@ -166,8 +188,6 @@ export class FluvyBarsCard extends Card<BarsCardConfig> {
   ];
 
   private readonly head = new HeadFit(this);
-  /** A row's own context when it is a template: rendered by Home Assistant, live. */
-  private readonly texts = new TemplateTexts(this);
 
   static override editor(): Promise<CardEditor> {
     return import('./bars-editor.js');
@@ -227,7 +247,7 @@ export class FluvyBarsCard extends Card<BarsCardConfig> {
    * In a narrow column the context gives way from the end — the word that says why there is no value never does.
    */
   private context(row: BarRowConfig, view: EntityView, usable: boolean, room: number): string {
-    const own = row.secondary ? this.texts.resolve(row.secondary, row.entity) : '';
+    const own = row.secondary ? this.templates.resolve(row.secondary, row.entity) : '';
     const segments: Segment[] =
       own && own !== PENDING_LINE ? own.split(' · ').map((text) => ({ text, optional: true })) : [];
     const lower = (state: string): string =>
@@ -257,7 +277,16 @@ export class FluvyBarsCard extends Card<BarsCardConfig> {
     return state && line === lower(state) ? state : line; // left alone on the line, the state keeps its capital
   }
 
+  /** A row's range and its limits (#253), in its entity's unit: a template asked with the row's entity as `entity`. */
+  private limitsOf(row: BarRowConfig): Limits {
+    const unit = this.entity(row.entity).unit;
+    const read = (raw: unknown): Own<number> => this.ownFigure(raw, unit, row.entity);
+    return { min: read(row.min), max: read(row.max), low: read(row.low), high: read(row.high) };
+  }
+
   protected renderCard(): TemplateResult {
+    // every row's range and limits, asked whether the row shows or not: a template stays live while its row is hidden
+    const limits = new Map(this.rows().map((row) => [row, this.limitsOf(row)]));
     // the rows whose condition holds, and the sections over them: what is measured, counted and drawn
     const drawn = drawnOf<BarRowConfig>(this.hass, this.config?.rows, this.config?.show_rows_when);
     const rows = drawn.filter(isRow<BarRowConfig>);
@@ -279,6 +308,8 @@ export class FluvyBarsCard extends Card<BarsCardConfig> {
     const width = this.contentWidth;
     const compact = this.compact();
     let warnings = 0;
+    // a limit whose template is still to answer: the count is not known yet, so the badge waits for it
+    let counting = false;
     // every row's figure first: whether the rows keep their circles is decided over all of them
     const items = rows.map((row, index) => {
       const view = views[index] as EntityView;
@@ -286,19 +317,28 @@ export class FluvyBarsCard extends Card<BarsCardConfig> {
       const quantity = usable ? baseOf(view) : null;
       const percent = PERCENT.has(view.deviceClass) || view.unit === '%';
       const factor = toBase(1, view.unit).value;
-      const min = (row.min ?? 0) * factor;
+      // a row given as an id alone is a new item each time, with none of its own
+      const limit = limits.get(row) ?? this.limitsOf(row);
+      // a bound still to come leaves the bar empty, rather than drawn against a scale it does not have
+      const scaled = !limit.min.pending && !limit.max.pending;
+      const min = (limit.min.value ?? 0) * factor;
       const max =
-        row.max !== undefined
-          ? row.max * factor
+        limit.max.value !== undefined
+          ? limit.max.value * factor
           : percent
             ? 100
             : (barPeak.get(quantity?.unit ?? '') ?? 0);
-      const low = row.low ?? (RUNS_LOW.has(view.deviceClass) ? 20 : undefined);
+      // a limit still to come warns of nothing; one that says nothing is its default
+      const low = limit.low.pending
+        ? undefined
+        : (limit.low.value ?? (RUNS_LOW.has(view.deviceClass) ? 20 : undefined));
+      const high = limit.high.value;
       const warn =
         quantity !== null &&
         ((low !== undefined && quantity.value < low * factor) ||
-          (row.high !== undefined && quantity.value > row.high * factor));
+          (high !== undefined && quantity.value > high * factor));
       if (warn) warnings += 1;
+      if (quantity !== null && (limit.low.pending || limit.high.pending)) counting = true;
 
       const scale = quantity ? scaleFor(setPeak.get(quantity.unit) ?? 0, quantity.unit) : null;
       const parts = valueParts(this.hass, view);
@@ -316,7 +356,7 @@ export class FluvyBarsCard extends Card<BarsCardConfig> {
         compact && view.status !== 'ok'
           ? this.head.rowWord(width, title, stateWord(this.hass, view), figure)
           : figure;
-      return { row, view, usable, quantity, min, max, warn, title, value };
+      return { row, view, usable, quantity, scaled, min, max, warn, title, value };
     });
     // the line under a name keeps its room as the name does: the circles give way to "6 panels" too
     const keepIcon = this.head.rowsKeepIcon(
@@ -330,7 +370,7 @@ export class FluvyBarsCard extends Card<BarsCardConfig> {
       compact,
     );
     const body = withSections(drawn, (row, index) => {
-      const { view, usable, quantity, min, max, warn, title, value } = items[index]!;
+      const { view, usable, quantity, scaled, min, max, warn, title, value } = items[index]!;
       // a row's own tone, or its colour as the accent; without either the circle stays neutral and the bar takes the measure's tone
       const own: Tone | undefined = row.tone ?? (row.color ? 'accent' : undefined);
       const iconTone: Tone = !usable ? 'off' : warn ? 'warning' : (own ?? 'neutral');
@@ -359,14 +399,24 @@ export class FluvyBarsCard extends Card<BarsCardConfig> {
         : barRow({
             ...shared,
             barTone: warn ? 'warning' : (own ?? barToneFor(view)),
-            fraction: quantity === null || max <= min ? 0 : (quantity.value - min) / (max - min),
+            fraction:
+              quantity === null || !scaled || max <= min ? 0 : (quantity.value - min) / (max - min),
           });
     });
 
-    const template =
-      warnings > 0
-        ? (this.config?.badge_warn ?? this.t('battery.low', { count: warnings }))
-        : (this.config?.badge_ok ?? this.t('battery.all_good'));
+    // the person's badges, each asked every render so its template stays live: the first that says something, then
+    // the card's own words; none while one before them waits for its answer, or while the count does
+    const badge = this.ownWords(this.config?.badge);
+    const ok = this.ownWords(this.config?.badge_ok);
+    const warn = this.ownWords(this.config?.badge_warn);
+    const said = [badge, warnings > 0 ? warn : ok].find(
+      (own) => own.pending || own.value !== undefined,
+    );
+    const words = said
+      ? said.value
+      : warnings > 0
+        ? this.t('battery.low', { count: warnings })
+        : this.t('battery.all_good');
     const title = this.config?.title ?? strings(this.hass, 'levels');
     // nothing measured is nothing to call good: the badge waits for a row
     const panel = emptyPanel(this, !rows.length, 'sliders', 'common.no_readings');
@@ -376,12 +426,13 @@ export class FluvyBarsCard extends Card<BarsCardConfig> {
       width,
       title,
       sub: this.config?.subtitle ?? '',
-      badge: panel
-        ? null
-        : {
-            text: template.replace(/\{count\}/g, String(warnings)),
-            tone: warnings > 0 ? 'warning' : tone,
-          },
+      badge:
+        panel || counting || !words
+          ? null
+          : {
+              text: words.replace(/\{count\}/g, String(warnings)),
+              tone: warnings > 0 ? 'warning' : tone,
+            },
     });
 
     return html`<article class="fv-card so-card" data-card>

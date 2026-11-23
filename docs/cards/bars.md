@@ -106,6 +106,7 @@ rows:
     sub_entity: sensor.so_inverter_note
 # show_rows_when:
 names: full
+# badge:
 # badge_ok:
 badge_warn: '{count} shaded'
 # empty_text:
@@ -135,8 +136,9 @@ hide_empty: false
 | `chart` | `classic` | The bars’ style. `classic` · `soft`. |
 | `show_rows_when` |  | A condition for the rows: while it holds they show, else only the rows that ask to. |
 | `names` | `full` | How a row is named where it has no name of its own: the entity’s full name, its own, or its device’s. `full` · `entity` · `device`. |
-| `badge_ok` |  | The head’s badge while no row is outside its range. |
-| `badge_warn` |  | The head’s badge while rows are outside their range; {count} is how many. |
+| `badge` |  | The head’s badge whatever the rows say: your own words, an entity’s state or a template; {count} is how many rows are outside their range. Where it says nothing, `badge_ok` or `badge_warn` does. |
+| `badge_ok` |  | The head’s badge while no row is outside its range: your own words, an entity’s state or a template. |
+| `badge_warn` |  | The head’s badge while rows are outside their range, as `badge_ok`; {count} is how many. |
 | `empty_text` |  | What the card says while it has nothing to show. |
 | `hide_empty` | `false` | Hides the whole card while it has nothing to show. |
 | [`rows`](#rows) |  | The rows, each a reading on its bar. A list: [its items](#rows). |
@@ -183,16 +185,44 @@ An item is an entity id, or a map with `entity` and any of these fields. Between
 | `sub_entity` | Entities whose states make the row’s second line. A list of entities. |
 | `tone` | The item’s colour from the palette’s tones. `accent` · `light` · `heat` · `cool` · `dry` · `fan` · `water` · `solar` · `grid` · `media` · `presence` · `armed` · `battery` · `house` · `gas` · `vehicle` (Car) · `neutral` · `ok` (Good) · `warning` · `danger`. |
 | `color` | The item’s colour, in place of the one the card gives it. |
-| `min` | The bottom of the row’s bar. |
-| `max` | The top of the row’s bar. |
-| `low` | Below this value the row turns to a warning. |
-| `high` | Above this value the row turns to a warning. |
+| `min` | The bottom of the row’s bar: a figure, an entity or a template. |
+| `max` | The top of the row’s bar: a figure, an entity or a template. |
+| `low` | Below this value the row turns to a warning: a figure, an entity or a template. |
+| `high` | Above this value the row turns to a warning: a figure, an entity or a template. |
 | `plain` | Draws the row without a bar, its value at the end. `true` or `false`. |
 | `show_when` | A condition under which the row shows. |
 | **Interactions** |  |
 | `tap_action` | What a tap on the item does. |
 | `hold_action` | What a long press on the item does. |
 | `double_tap_action` | What two taps on the item do. |
+
+## Guide
+
+A row's range and its limits may come from the house: `min`, `max`, `low` and `high` each take a figure, an entity
+whose reading it is, or a Home Assistant template whose answer it is, kept live (the row's entity is `entity` in it).
+The head's badge takes your own words, an entity's state or a template too.
+
+```yaml
+# each room against limits the house keeps in helpers; the badge says what the dehumidifier is doing
+type: custom:fluvy-bars-card
+title: Humidity
+icon: mdi:water-percent
+badge: "{{ 'Drying' if is_state('switch.dehumidifier', 'on') else '' }}"
+badge_warn: "{count} to air"
+rows:
+  - entity: sensor.bedroom_humidity
+    low: input_number.humidity_low
+    high: "{{ states('input_number.humidity_high') }}"
+  - entity: sensor.bathroom_humidity
+    low: input_number.humidity_low
+    high: "{{ states('input_number.humidity_high') | int + 10 }}" # a bathroom runs damper
+```
+
+- An entity in another unit of the same kind is converted: a limit in kW for a row in W.
+- A limit whose template fails, or answers no figure, is its default: 20 % for a battery and a plant's soil, none for
+  any other reading. While its answer is still to come it warns of nothing, and the badge waits for the count.
+- A badge that says nothing (an empty answer, a template that fails) leaves the word to `badge_ok` or `badge_warn`,
+  then to the card's own. `{count}` is filled in after the template has answered.
 
 <details>
 <summary>Older names the card still reads</summary>
