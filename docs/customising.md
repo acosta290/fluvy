@@ -109,7 +109,8 @@ tap_action:
 A row's switch (the Entities and Water & gas cards) and a round of the [Rounds](cards/rounds.md) card, where it names
 no tap, flip only what a second tap undoes: lights, switches, fans, blinds, valves, humidifiers, sirens, automations,
 remotes, groups (and a lock, as above). A vacuum, a player, a scene, a script and a button open their details there; a
-room's quick action runs what it stands for (a scene, a vacuum, a player).
+room's quick action, and an entity among a [Vehicle](cards/vehicle.md) card's controls or quick actions, runs what it
+stands for (a scene, a vacuum, a player, a script).
 
 ## Details sheets
 

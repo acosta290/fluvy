@@ -12202,6 +12202,13 @@
           }
         },
         {
+          "key": "badge",
+          "label": "Badge text",
+          "does": "Words, an entity’s state or a template of your own in the head’s badge, in place of what the car is doing.",
+          "helper": "Your own words, an entity (its state), or a template such as {{ states('sensor.x') }}",
+          "type": "text"
+        },
+        {
           "key": "variant",
           "label": "Style",
           "does": "The card’s layout.",
@@ -12264,6 +12271,27 @@
           }
         },
         {
+          "key": "image_size",
+          "label": "Picture size",
+          "does": "The picture’s size over the battery: a share of the card’s width (50%) or a height (120px), the card’s height following it.",
+          "helper": "A share of the card’s width, such as 50%, or a height, such as 120px",
+          "type": "text"
+        },
+        {
+          "key": "show_head",
+          "label": "Show the head",
+          "does": "Shows the head: the car, its name, where it is and what it is doing.",
+          "type": "boolean",
+          "default": true
+        },
+        {
+          "key": "show_hero",
+          "label": "Show the battery",
+          "does": "Shows the battery or the tank, or a plug-in hybrid’s both.",
+          "type": "boolean",
+          "default": true
+        },
+        {
           "key": "show_range",
           "label": "Show the range",
           "does": "Shows the range.",
@@ -12304,6 +12332,45 @@
           "does": "Shows the tyres’ pressures.",
           "type": "boolean",
           "default": false
+        },
+        {
+          "key": "tyre_decimals",
+          "label": "Tyre decimals",
+          "does": "The decimals every tyre’s pressure is written with; automatic, their sensors’ own, else one under 10.",
+          "type": "choice",
+          "default": "auto",
+          "values": {
+            "0": "0",
+            "1": "1",
+            "2": "2",
+            "auto": "Automatic"
+          }
+        },
+        {
+          "key": "tyre_low",
+          "label": "Low tyre under",
+          "does": "The pressure under which a tyre is low, in the tyres’ unit: a number, an entity or a template; a low tyre is marked and said on the line.",
+          "helper": "A pressure in the tyres’ unit, an entity, or a template such as {{ states('sensor.x') }}",
+          "type": "text"
+        },
+        {
+          "key": "show_quick_states",
+          "label": "Show their states",
+          "does": "Shows every quick action’s state in its round, unless the action says otherwise.",
+          "helper": "Under or beside each icon: a reading with its unit, a door open or closed, a light’s brightness.",
+          "type": "boolean",
+          "default": false
+        },
+        {
+          "key": "quick_state_position",
+          "label": "Their states",
+          "does": "Where the quick actions’ states stand: under their icons, their line taller, or beside them, the rounds wider.",
+          "type": "choice",
+          "default": "under",
+          "values": {
+            "under": "Under the icon",
+            "beside": "Beside the icon"
+          }
         },
         {
           "key": "low_range",
@@ -12527,16 +12594,17 @@
         {
           "key": "controls",
           "label": "Controls",
-          "does": "The car’s controls, each a round that acts on it.",
+          "does": "The car’s controls, each a round that acts on it, and entities of your own among them.",
           "id": "control",
           "item": [
             {
               "key": "control",
               "label": "Control",
-              "does": "What the control switches.",
+              "does": "One of the car’s controls; `entity`, or none, for the item’s entity of your own.",
               "type": "choice",
               "values": {
                 "lock": "Lock",
+                "engine": "Engine",
                 "climate": "Climate",
                 "charging": "Charging",
                 "charge_port": "Charge port",
@@ -12544,14 +12612,21 @@
                 "frunk": "Front boot",
                 "windows": "Windows",
                 "doors": "Doors",
-                "sentry": "Sentry"
+                "sentry": "Sentry",
+                "entity": "Entity"
               }
+            },
+            {
+              "key": "entity",
+              "label": "Entity",
+              "does": "An entity of your own in the row: a switch, a button, a script, a scene, its name under its round.",
+              "type": "entity"
             },
             {
               "key": "name",
               "label": "Name",
               "does": "The item’s own name, in place of the one the card would give it.",
-              "type": "text"
+              "type": "name"
             },
             {
               "key": "icon",
@@ -12677,6 +12752,101 @@
           ]
         },
         {
+          "key": "quick_actions",
+          "label": "Quick actions",
+          "does": "Small rounds at the card’s foot, each an entity with its own icon, colour and actions: a sensor, a door, a script.",
+          "id": "entity",
+          "item": [
+            {
+              "key": "entity",
+              "label": "Entity",
+              "does": "The entity the item shows.",
+              "type": "entity"
+            },
+            {
+              "key": "name",
+              "label": "Name",
+              "does": "The item’s own name, in place of the one the card would give it.",
+              "type": "name"
+            },
+            {
+              "key": "icon",
+              "label": "Icon",
+              "does": "The item’s own icon, in place of the one the card would give it.",
+              "type": "icon"
+            },
+            {
+              "key": "tone",
+              "label": "Tone",
+              "does": "The item’s colour from the palette’s tones.",
+              "type": "choice",
+              "default_in_words": "the card’s own",
+              "values": {
+                "accent": "Accent",
+                "light": "Light",
+                "heat": "Heat",
+                "cool": "Cool",
+                "dry": "Dry",
+                "fan": "Fan",
+                "water": "Water",
+                "solar": "Solar",
+                "grid": "Grid",
+                "media": "Media",
+                "presence": "Presence",
+                "armed": "Armed",
+                "battery": "Battery",
+                "house": "House",
+                "gas": "Gas",
+                "vehicle": "Car",
+                "neutral": "Neutral",
+                "ok": "Good",
+                "warning": "Warning",
+                "danger": "Danger"
+              }
+            },
+            {
+              "key": "color",
+              "label": "Colour",
+              "does": "The item’s colour, in place of the one the card gives it.",
+              "helper": "Empty: the light’s bulb colour where the card shows bulbs’ colours, else the card’s",
+              "type": "colour"
+            },
+            {
+              "key": "show_state",
+              "label": "Show its state",
+              "does": "Shows this quick action’s state in its round, or hides it, whatever the card says.",
+              "helper": "Empty: the card’s",
+              "type": "choice",
+              "values": {
+                "true": "On",
+                "false": "Off"
+              }
+            },
+            {
+              "key": "tap_action",
+              "label": "Tap action",
+              "does": "What a tap on the item does.",
+              "type": "action",
+              "default_in_words": "the card’s own"
+            },
+            {
+              "key": "hold_action",
+              "label": "Hold action",
+              "does": "What a long press on the item does.",
+              "type": "action",
+              "default": "more-info"
+            },
+            {
+              "key": "double_tap_action",
+              "label": "Double tap action",
+              "does": "What two taps on the item do.",
+              "helper": "A tap waits a moment to tell it from a double tap",
+              "type": "action",
+              "default": "none"
+            }
+          ]
+        },
+        {
           "key": "roles",
           "label": "Entities by hand",
           "does": "Entities named by hand for a part the card does not find on the device, or should read otherwise.",
@@ -12711,6 +12881,7 @@
                 "trunk": "Boot",
                 "frunk": "Front boot",
                 "windows": "Windows",
+                "engine": "Engine",
                 "sentry": "Sentry",
                 "odometer": "Odometer",
                 "location": "Location",

@@ -624,16 +624,30 @@ export const MEANINGS: Readonly<Record<string, string>> = {
   'timer.entity': 'The timer the card shows and controls.',
   'updates.entities': 'The update entities the card lists; left out, every one of the house.',
   'vacuum.show_battery': 'Shows the robot’s battery.',
+  'vehicle.badge':
+    'Words, an entity’s state or a template of your own in the head’s badge, in place of what the car is doing.',
   'vehicle.energy':
     'What the car runs on: its battery, its tank, or both; automatic, its tank where it has one and no battery, else its battery.',
   'vehicle.entity':
     'An entity of the car, where its device is not named: the device is found from it.',
   'vehicle.image':
     'A picture of the car: an address, an entity whose picture it is, or the integration’s own.',
+  'vehicle.image_size':
+    'The picture’s size over the battery: a share of the card’s width (50%) or a height (120px), the card’s height following it.',
+  'vehicle.quick_state_position':
+    'Where the quick actions’ states stand: under their icons, their line taller, or beside them, the rounds wider.',
+  'vehicle.show_head': 'Shows the head: the car, its name, where it is and what it is doing.',
+  'vehicle.show_hero': 'Shows the battery or the tank, or a plug-in hybrid’s both.',
+  'vehicle.show_quick_states':
+    'Shows every quick action’s state in its round, unless the action says otherwise.',
   'vehicle.show_status':
     'Shows the line under the battery or the tank: when it is full, why it is not charging, a low range.',
   'vehicle.tank_size':
     'The tank’s size, so that a car which says only how much is in it shows its level.',
+  'vehicle.tyre_decimals':
+    'The decimals every tyre’s pressure is written with; automatic, their sensors’ own, else one under 10.',
+  'vehicle.tyre_low':
+    'The pressure under which a tyre is low, in the tyres’ unit: a number, an entity or a template; a low tyre is marked and said on the line.',
   'weather.days': 'How many days the forecast shows.',
   'weather.entity': 'The weather entity the card shows.',
   'compass.arrow_points':
@@ -739,7 +753,10 @@ export const MEANINGS: Readonly<Record<string, string>> = {
   'stat-tiles.tiles[]': 'The figures as tiles, in this order.',
   'template.readouts[]': 'Sensors shown as readouts on the tile, in this order.',
   'tile.readouts[]': 'Sensors shown as readouts on the tile, in this order.',
-  'vehicle.controls[]': 'The car’s controls, each a round that acts on it.',
+  'vehicle.controls[]':
+    'The car’s controls, each a round that acts on it, and entities of your own among them.',
+  'vehicle.quick_actions[]':
+    'Small rounds at the card’s foot, each an entity with its own icon, colour and actions: a sensor, a door, a script.',
   'vehicle.rows[]': 'The rows of readings under the battery or the tank, in this order.',
   'compass.stats[]': 'Up to three sensors read out under the compass, in this order.',
 
@@ -762,7 +779,6 @@ export const MEANINGS: Readonly<Record<string, string>> = {
   '[].color': 'The item’s colour, in place of the one the card gives it.',
   '[].conditions': 'Conditions under which the alert counts at all.',
   '[].confirm': 'Asks before the control acts.',
-  '[].control': 'What the control switches.',
   '[].cost_entity': 'A cost sensor for this device, said after its share.',
   '[].count_by': 'Counts the entities, or the devices they belong to.',
   '[].curve': 'How this series’ line joins its readings.',
@@ -933,5 +949,11 @@ export const MEANINGS: Readonly<Record<string, string>> = {
     'The preset’s key: comfort, eco, away, home, sleep, boost, activity, or the name of one of your own.',
   'thermostats.thermostats[].rounds':
     'Rounds of its own after the one that opens it, each an entity with its own icon and actions: a schedule’s view, a window.',
+  'vehicle.controls[].control':
+    'One of the car’s controls; `entity`, or none, for the item’s entity of your own.',
+  'vehicle.controls[].entity':
+    'An entity of your own in the row: a switch, a button, a script, a scene, its name under its round.',
+  'vehicle.quick_actions[].show_state':
+    'Shows this quick action’s state in its round, or hides it, whatever the card says.',
   'vehicle.roles[].role': 'What the entity is to the car.',
 };

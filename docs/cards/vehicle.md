@@ -41,16 +41,20 @@ scan: true
 show_icon: auto
 show_badge: true
 name_lines: 1
+# badge:
 variant: full
 energy: hybrid
 # tank_size:
 # image:
+show_head: true
+show_hero: true
 show_range: true
 show_limit: true
 show_status: true
 show_controls: true
 show_rows: true
 show_tyres: false
+# tyre_low:
 # low_range:
 stale_after: 30
 range_unit: auto
@@ -82,6 +86,7 @@ power_decimals: auto
 #   action: none
 # controls:
 # rows:
+# quick_actions:
 # roles:
 ```
 
@@ -94,18 +99,26 @@ power_decimals: auto
 | `scan` | `true` | Searches the device for the rest of its entities; off, the card reads only those named. |
 | `name` |  | The name the card shows, in place of the entity’s own. |
 | `icon` |  | The card’s icon, in place of the entity’s own. |
+| `badge` |  | Words, an entity’s state or a template of your own in the head’s badge, in place of what the car is doing. |
 | `variant` | `full` | The card’s layout. `full` · `compact` · `mini`. |
 | `energy` | `auto` | What the car runs on: its battery, its tank, or both; automatic, its tank where it has one and no battery, else its battery. `auto` · `electric` · `fuel` · `hybrid` (Plug-in hybrid). |
 | `tank_size` |  | The tank’s size, so that a car which says only how much is in it shows its level. 0 to 500. |
 | `hero` | `ruler` | Draws the battery or the tank on a ruler, or as a ring. `ruler` · `ring`. |
 | `image` |  | A picture of the car: an address, an entity whose picture it is, or the integration’s own. |
 | `image_position` | `hero` | Where the car’s picture stands: over its battery or its tank, or in the head. `hero` (Over the battery) · `head` (The head). |
+| `image_size` |  | The picture’s size over the battery: a share of the card’s width (50%) or a height (120px), the card’s height following it. |
+| `show_head` | `true` | Shows the head: the car, its name, where it is and what it is doing. |
+| `show_hero` | `true` | Shows the battery or the tank, or a plug-in hybrid’s both. |
 | `show_range` | `true` | Shows the range. |
 | `show_limit` | `true` | Marks the charge limit on the battery’s ruler. |
 | `show_status` | `true` | Shows the line under the battery or the tank: when it is full, why it is not charging, a low range. |
 | `show_controls` | `true` | Shows the buttons. |
 | `show_rows` | `true` | Shows the rows under the main control. |
 | `show_tyres` | `false` | Shows the tyres’ pressures. |
+| `tyre_decimals` | `auto` | The decimals every tyre’s pressure is written with; automatic, their sensors’ own, else one under 10. `auto` · `0` · `1` · `2`. |
+| `tyre_low` |  | The pressure under which a tyre is low, in the tyres’ unit: a number, an entity or a template; a low tyre is marked and said on the line. |
+| `show_quick_states` | `false` | Shows every quick action’s state in its round, unless the action says otherwise. |
+| `quick_state_position` | `under` | Where the quick actions’ states stand: under their icons, their line taller, or beside them, the rounds wider. `under` · `beside`. |
 | `low_range` |  | The range below which the car reads low; left out, a charge of 20 % or less does. 0 to 1000. |
 | `stale_after` | `30` | Says when the car last reported, once it has said nothing for this many minutes. 0 to 1440. |
 | `range_unit` | `auto` | The unit the range is written in. `auto` · `km` · `mi`. |
@@ -115,8 +128,9 @@ power_decimals: auto
 | `hero_tap_action` | the card’s own | What a tap on the battery or the tank does. |
 | `hero_hold_action` | the card’s own | What a long press on the battery or the tank does. |
 | `hero_double_tap_action` | `none` | What two taps on the battery or the tank do. |
-| [`controls`](#controls) |  | The car’s controls, each a round that acts on it. A list: [its items](#controls). |
+| [`controls`](#controls) |  | The car’s controls, each a round that acts on it, and entities of your own among them. A list: [its items](#controls). |
 | [`rows`](#rows) |  | The rows of readings under the battery or the tank, in this order. A list: [its items](#rows). |
+| [`quick_actions`](#quick_actions) |  | Small rounds at the card’s foot, each an entity with its own icon, colour and actions: a sensor, a door, a script. A list: [its items](#quick_actions). |
 | [`roles`](#roles) |  | Entities named by hand for a part the card does not find on the device, or should read otherwise. A list: [its items](#roles). |
 
 <details>
@@ -155,7 +169,8 @@ An item is a map with `control` and any of these fields.
 
 | Field | What it does |
 | --- | --- |
-| `control` | What the control switches. `lock` · `climate` · `charging` · `charge_port` · `trunk` (Boot) · `frunk` (Front boot) · `windows` · `doors` · `sentry`. |
+| `control` | One of the car’s controls; `entity`, or none, for the item’s entity of your own. `lock` · `engine` · `climate` · `charging` · `charge_port` · `trunk` (Boot) · `frunk` (Front boot) · `windows` · `doors` · `sentry` · `entity`. |
+| `entity` | An entity of your own in the row: a switch, a button, a script, a scene, its name under its round. |
 | `name` | The item’s own name, in place of the one the card would give it. |
 | `icon` | The item’s own icon, in place of the one the card would give it. |
 | `color` | The item’s colour, in place of the one the card gives it. |
@@ -181,13 +196,30 @@ An item is a map with `row` and any of these fields.
 | `hold_action` | What a long press on the item does. |
 | `double_tap_action` | What two taps on the item do. |
 
+### `quick_actions`
+
+An item is an entity id, or a map with `entity` and any of these fields.
+
+| Field | What it does |
+| --- | --- |
+| `entity` | The entity the item shows. |
+| `name` | The item’s own name, in place of the one the card would give it. |
+| `icon` | The item’s own icon, in place of the one the card would give it. |
+| `tone` | The item’s colour from the palette’s tones. `accent` · `light` · `heat` · `cool` · `dry` · `fan` · `water` · `solar` · `grid` · `media` · `presence` · `armed` · `battery` · `house` · `gas` · `vehicle` (Car) · `neutral` · `ok` (Good) · `warning` · `danger`. |
+| `color` | The item’s colour, in place of the one the card gives it. |
+| `show_state` | Shows this quick action’s state in its round, or hides it, whatever the card says. `true` (On) · `false` (Off). |
+| **Interactions** |  |
+| `tap_action` | What a tap on the item does. |
+| `hold_action` | What a long press on the item does. |
+| `double_tap_action` | What two taps on the item do. |
+
 ### `roles`
 
 An item is a map with `role` and any of these fields.
 
 | Field | What it does |
 | --- | --- |
-| `role` | What the entity is to the car. `battery` · `range` · `charging` · `plugged` (Cable plugged in) · `charge_power` (Charging power) · `charge_rate` · `time_to_full` · `charge_limit` · `charge_switch` (Charging switch) · `charge_start` (Start charging) · `charge_stop` (Stop charging) · `charge_port` · `climate` · `climate_switch` · `climate_start` (Start the climate) · `climate_stop` (Stop the climate) · `climate_running` · `inside` · `outside` · `lock` · `trunk` (Boot) · `frunk` (Front boot) · `windows` · `sentry` · `odometer` · `location` · `address` · `software` · `state` (Car state) · `shift` (Gear) · `speed` · `moving` · `updated` (Last update) · `fuel` · `fuel_range` · `fuel_volume` (In the tank) · `fuel_low` (Low fuel warning) · `adblue` · `oil` · `service` (Next service) · `service_time` (Time to service) · `tyre_fl` (Front left) · `tyre_fr` (Front right) · `tyre_rl` (Rear left) · `tyre_rr` (Rear right). |
+| `role` | What the entity is to the car. `battery` · `range` · `charging` · `plugged` (Cable plugged in) · `charge_power` (Charging power) · `charge_rate` · `time_to_full` · `charge_limit` · `charge_switch` (Charging switch) · `charge_start` (Start charging) · `charge_stop` (Stop charging) · `charge_port` · `climate` · `climate_switch` · `climate_start` (Start the climate) · `climate_stop` (Stop the climate) · `climate_running` · `inside` · `outside` · `lock` · `trunk` (Boot) · `frunk` (Front boot) · `windows` · `engine` · `sentry` · `odometer` · `location` · `address` · `software` · `state` (Car state) · `shift` (Gear) · `speed` · `moving` · `updated` (Last update) · `fuel` · `fuel_range` · `fuel_volume` (In the tank) · `fuel_low` (Low fuel warning) · `adblue` · `oil` · `service` (Next service) · `service_time` (Time to service) · `tyre_fl` (Front left) · `tyre_fr` (Front right) · `tyre_rl` (Rear left) · `tyre_rr` (Rear right). |
 | `entity` | The entity the item shows. |
 
 ## Guide
@@ -207,7 +239,8 @@ low_range: 50             # in the range's unit
 ```
 
 - Controls that matter ask first: unlocking, the boot, the windows, stopping a charge, sentry off.
-- Nothing that could move, wake or sound the car (horn, lights, keyless driving, remote start) is ever a control.
+- Nothing that could move, wake or sound the car (horn, lights, keyless driving, remote start) is ever found for a
+  control: what starts the engine is named by hand (`engine`, below).
 - `roles` names an entity the card did not find; with `scan: false` only those count.
 
 A car with no device (a Nissan Leaf on Home Assistant's integration), named by hand:
@@ -248,6 +281,51 @@ rows: [location, fuel_volume, oil, service]
 - The tank is also found on Toyota, Ford, Mercedes-Benz and Stellantis (HACS), else by ids ending `_fuel_level`,
   `_fuel_range`, `_adblue_range`, `_oil_level`, `_distance_to_service`, else by `roles`.
 - Low: the car's own warning, else under `low_range`, else 15 %.
+
+### Its engine, its own controls, tyres, badge and small icons
+
+```yaml
+type: custom:fluvy-vehicle-card
+device: 9b2d… # a Haval H6 on GWM's integration
+roles:
+  - { role: engine, entity: switch.haval_h6_engine }
+controls:
+  - lock
+  - engine # asks before it starts, and before it stops
+  - { entity: switch.haval_h6_seat_heating, name: Seats }
+  - { entity: script.find_my_car, name: Find, confirm: true }
+show_tyres: true
+tyre_low: sensor.haval_h6_tyre_threshold # or 2.1, or a template
+tyre_decimals: 1 # auto: the sensors' own precision
+badge: "{{ 'GPS ok' if is_state('binary_sensor.haval_h6_gps', 'on') else 'No GPS' }}"
+quick_actions:
+  - { entity: binary_sensor.haval_h6_gps, name: GPS, icon: mdi:crosshairs-gps }
+  - { entity: sensor.haval_h6_gsm_signal, name: GSM, icon: mdi:signal }
+show_quick_states: true
+```
+
+- `engine` is never found: name it in `roles`. A switch starts and stops it, a button starts it; `confirm: false` on
+  its control stops it asking.
+- An `entity` in `controls` sits in the car's row under its name: lit while on, a tap turns it on and off (a switch, a
+  script, a scene), else opens it; `confirm: true` asks first.
+- `tyre_low` is in the tyres' unit (an entity in another unit of pressure is converted). A tyre under it, or the car's
+  own tyre warning, says Low tyre pressure on the line.
+- `badge` takes the place of what the car is doing, in the head and on the mini strip; Unavailable still shows.
+- `quick_actions` sit at the foot as a room's quick actions do, as many as one line holds.
+
+### The picture at its own size
+
+```yaml
+type: custom:fluvy-vehicle-card
+device: 7c1e…
+image: /local/model-y.png
+image_size: 50% # a share of the card's width, or a height: 120px
+show_head: false
+show_hero: false
+show_status: false
+show_controls: false
+show_rows: false # every part hidden: the card is the picture, its tap the card's
+```
 
 <details>
 <summary>Older names the card still reads</summary>

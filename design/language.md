@@ -3668,7 +3668,8 @@ panel) and the controls' row (the map's zone columns as buttons: a circle and it
 - **Heights** by the config alone (`vehicle-family.ts`): full 460 (its picture over the battery 176 more, a ring 68
   more, its tyres 112 more, a row 48, the card's own controls 76 a row more), compact 200, mini 76. A car out of reach
   keeps every part.
-- Its chunk is its own (`vehicle`, 20.2 KB of 24, its editor on its class): every page carries only its tag and height.
+- Its chunk is its own (`vehicle`): every page carries only its tag and height. Its editor went with the forms in 1.25
+  (`vehicle-editor.ts`, fetched the first time a card is edited), so a dashboard never loads it.
 
 ### A car that burns fuel (1.22, #207)
 
@@ -3716,6 +3717,46 @@ A petrol or diesel car is the same card with its tank where the battery is: noth
 - **Glyphs** (`vehicle/glyphs.ts`): the pump (its column on its foot, its display, its hose looped down, the nozzle hung
   at its top) and the oil can (its body, its cap, its spout raised, a drop under it: the dashboard's oil light); the
   service is the set's wrench, AdBlue its drop.
+
+### Its own controls, tyres, badge, small icons and picture (1.25, #248, #251, #254)
+
+Asked by @SentinelXS for a GWM car: nothing new in the anatomy but a line of small rounds at the foot and an engine
+glyph; every addition is off until a config asks for it.
+
+- **The engine** (`roles: engine`, a switch or a button): never found (the `NEVER` list keeps an engine's start and
+  stop out of discovery), named by hand. A control of its own after the lock, the set's new glyph (the dashboard's
+  engine light: its block, its cap on its stem, its intake, its manifold; 24 grid, 1.75 stroke). A switch says "Off"
+  or "Running" (lit in the card's colour) and asks before it starts and before it stops ("Start the engine?", "Stop the
+  engine?"); a button says its name and asks before it starts. Its `confirm: false` says never.
+- **An entity among the controls** (`controls: [{ entity }]`): the car's own cell — its round and its word under it —
+  drawn by the rounds' engine (`roundOf`): its name the word (cut to an ellipsis, as a name may be), its glyph, lit in
+  its tone or its colour while on, the dashed circle out of reach; a tap on and off where its kind takes one (as a
+  room's quick action: a switch, a script, a scene, a button), else its details; `confirm: true` asks before the tap
+  acts. Its name never widens the row: the cells are laid out by the car's own words, and it counts as a cell where
+  they give way and wrap. The editor's picker offers it as "Entity", its form the entity's own.
+- **The tyres**: all four in one count of decimals (`tyre_decimals`; else their sensors' display precision; else one
+  under 10, none above: 2.0 bar, 36 psi), the car from above giving way by the widest figure they run to in their unit
+  (whatever they read now), then each unit under its figure where two columns would not hold it beside (half a
+  section: the row's 36 holds the figure's 20 and the unit's 16). A tyre is low where the integration's warning says
+  so, or under `tyre_low` (a figure in the tyres' unit, an entity in its own unit of pressure, converted, or a template
+  read once answered): its figure and its wheel in the warning's ink, and the line says "Low tyre pressure" ("Tyres"
+  where it would not hold) between a service due and what stands open. The integration's own warning is said on the
+  line whether the tyres are drawn or not.
+- **The badge** (`badge`): words, an entity's state or a template in place of what the car is doing, in the head
+  (stepping into its line where it would not hold, as a person's own badge does) and on the strip's line; none while
+  its template is asked, the car's own where the answer is empty, "Unavailable" first.
+- **Small icons at the foot** (`quick_actions`): a room's quick actions (`roundsIn`), each an entity's 44 round, 8
+  apart from the line's start, as many as one line holds (those that do not give way from the end), their states in
+  pills under their glyphs (the line 64 tall) or beside them (`show_quick_states`, `quick_state_position`). 16 under
+  what they follow, in the whole card and the compact one; the line is declared by the config, kept while none of them
+  can be drawn.
+- **The picture at its own size** (`image_size`): a share of the card's width (`50%`, its plate 2:1 that wide,
+  centred) or a height (`120px`, the plate that tall across the column, the whole car inside it); the plate's height
+  is on the 4 grid at every width, the card's height following it. `show_head: false` and `show_hero: false` hide the
+  head and the battery: the first part then stands at the card's padding, and the line, with no battery over it, 16
+  under what it follows; with every part hidden the card is the picture alone, and the picture its button (the head's
+  tap, hold and double tap).
+- **Roles as a map** (`roles: { fuel: sensor.x }`) read as the list they mean, in the card and in its editor.
 
 ## Drive pad (1.20, #178)
 
