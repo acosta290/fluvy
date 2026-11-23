@@ -3449,7 +3449,8 @@
     "editor.electric": "Elektromos",
     "editor.hybrid": "Konnektoros hibrid",
     "editor.tank_size": "Tankméret",
-    "editor.tank_size_helper": "A tartalom mértékegységében (L, gal): a szintje, ha az autó csak a tartalmát jelzi"
+    "editor.tank_size_helper": "A tartalom mértékegységében (L, gal): a szintje, ha az autó csak a tartalmát jelzi",
+    "tyre_pressure_low": "Alacsony guminyomás"
   },
   "remote": {
     "key.power": "Be/ki",

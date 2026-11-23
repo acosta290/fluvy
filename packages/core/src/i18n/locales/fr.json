@@ -3449,7 +3449,8 @@
     "editor.electric": "Électrique",
     "editor.hybrid": "Hybride rechargeable",
     "editor.tank_size": "Capacité du réservoir",
-    "editor.tank_size_helper": "Dans l’unité de son contenu (L, gal) : son niveau, quand la voiture ne dit que son contenu"
+    "editor.tank_size_helper": "Dans l’unité de son contenu (L, gal) : son niveau, quand la voiture ne dit que son contenu",
+    "tyre_pressure_low": "Pression des pneus basse"
   },
   "remote": {
     "key.power": "Marche/arrêt",

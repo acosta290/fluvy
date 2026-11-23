@@ -3429,7 +3429,8 @@
     "editor.electric": "Elektrina",
     "editor.hybrid": "Plug-in hybrid",
     "editor.tank_size": "Objem nádrže",
-    "editor.tank_size_helper": "V jednotke obsahu nádrže (L, gal): jej stav tam, kde auto hlási len obsah"
+    "editor.tank_size_helper": "V jednotke obsahu nádrže (L, gal): jej stav tam, kde auto hlási len obsah",
+    "tyre_pressure_low": "Nízky tlak v pneumatikách"
   },
   "expander": {
     "card": "Rozbaľovacia sekcia",

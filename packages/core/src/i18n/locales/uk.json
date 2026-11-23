@@ -3579,7 +3579,8 @@
     "editor.electric": "Електрика",
     "editor.hybrid": "Гібрид із підзарядкою",
     "editor.tank_size": "Об’єм бака",
-    "editor.tank_size_helper": "В одиницях вмісту (L, gal): рівень, коли автомобіль повідомляє лише вміст"
+    "editor.tank_size_helper": "В одиницях вмісту (L, gal): рівень, коли автомобіль повідомляє лише вміст",
+    "tyre_pressure_low": "Низький тиск у шинах"
   },
   "expander": {
     "card": "Розгортний блок",

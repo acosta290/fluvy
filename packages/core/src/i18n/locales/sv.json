@@ -3611,7 +3611,8 @@
     "editor.electric": "El",
     "editor.hybrid": "Laddhybrid",
     "editor.tank_size": "Tankvolym",
-    "editor.tank_size_helper": "I enheten för det som finns i den (L, gal): dess nivå, där bilen bara anger hur mycket som finns i den"
+    "editor.tank_size_helper": "I enheten för det som finns i den (L, gal): dess nivå, där bilen bara anger hur mycket som finns i den",
+    "tyre_pressure_low": "Lågt däcktryck"
   },
   "web": {
     "card": "Webbsida",

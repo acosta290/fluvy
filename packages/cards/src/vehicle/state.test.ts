@@ -5,6 +5,7 @@ import {
   chargeOf,
   chargeWord,
   convertDistance,
+  convertPressure,
   energyOf,
   isDistance,
   lineOf,
@@ -178,7 +179,8 @@ describe('the line under the battery', () => {
     expect(at({ low: true, adblue: true, oil: true, service: true })).toBe('low_fuel');
     expect(at({ adblue: true, oil: true, service: true })).toBe('adblue');
     expect(at({ oil: true, service: true }, { open: 'doors' })).toBe('oil');
-    expect(at({ service: true }, { open: 'doors' })).toBe('service');
+    expect(at({ service: true }, { open: 'doors', tyre: true })).toBe('service');
+    expect(at({}, { open: 'frunk', tyre: true })).toBe('tyre');
     expect(at({}, { open: 'frunk' })).toBe('open');
     expect(at({}, { cabin: 'cold' })).toBe('cabin');
     expect(at({})).toBe('none');
@@ -244,5 +246,14 @@ describe('a distance', () => {
     expect(convertDistance(5, 'furlong', 'km')).toBe(5);
     expect(isDistance('mi')).toBe(true);
     expect(isDistance('d')).toBe(false);
+  });
+});
+
+describe('a pressure', () => {
+  it('goes between bar, psi and kPa; a unit it does not know stays', () => {
+    expect(convertPressure(2.5, 'bar', 'psi')).toBeCloseTo(36.26, 2);
+    expect(convertPressure(36, 'psi', 'kPa')).toBeCloseTo(248.21, 2);
+    expect(convertPressure(250, 'kPa', 'bar')).toBeCloseTo(2.5);
+    expect(convertPressure(2.3, 'бар', 'psi')).toBe(2.3);
   });
 });

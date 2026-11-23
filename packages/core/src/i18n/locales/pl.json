@@ -3375,7 +3375,8 @@
     "editor.electric": "Elektryczny",
     "editor.hybrid": "Hybryda plug-in",
     "editor.tank_size": "Pojemność zbiornika",
-    "editor.tank_size_helper": "W jednostce zawartości (L, gal): poziom tam, gdzie samochód podaje tylko zawartość"
+    "editor.tank_size_helper": "W jednostce zawartości (L, gal): poziom tam, gdzie samochód podaje tylko zawartość",
+    "tyre_pressure_low": "Niskie ciśnienie w oponach"
   },
   "wall": {
     "paused": "Tryb ściany wstrzymany",

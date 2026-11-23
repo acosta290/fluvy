@@ -278,7 +278,7 @@ export type Opening = 'windows' | 'doors' | 'trunk' | 'frunk';
 /**
  * What the line under the battery (or the tank) says, the most pressing first: why charging failed; while it charges,
  * when it is done; a range that is low; a tank that is low, AdBlue that runs low, oil to check, a service that is due;
- * something left open; done at its limit; plugged in and waiting (for its time, or for nothing); a cabin too cold or
+ * a tyre that is low; something left open; done at its limit; plugged in and waiting (for its time, or for nothing); a cabin too cold or
  * too hot to get into; else where its limit stands, or that it is unplugged.
  */
 export type LineKind =
@@ -289,6 +289,7 @@ export type LineKind =
   | 'adblue'
   | 'oil'
   | 'service'
+  | 'tyre'
   | 'open'
   | 'complete'
   | 'waiting'
@@ -302,6 +303,8 @@ export function lineOf(o: {
   readonly low: boolean;
   readonly open: Opening | null;
   readonly cabin: Cabin;
+  /** A tyre is low: its integration's warning, or its pressure under the card's `tyre_low`. */
+  readonly tyre?: boolean;
   /** A tank's: low, its AdBlue low, its oil to check, its service due. */
   readonly tank?: {
     readonly low: boolean;
@@ -317,6 +320,7 @@ export function lineOf(o: {
   if (o.tank?.adblue) return 'adblue';
   if (o.tank?.oil) return 'oil';
   if (o.tank?.service) return 'service';
+  if (o.tyre) return 'tyre';
   if (o.open) return 'open';
   if (o.charge === 'complete') return 'complete';
   if (o.charge === 'waiting') return 'waiting';
@@ -337,5 +341,25 @@ export const isDistance = (unit: string): boolean => Object.hasOwn(METRES, unit.
 export function convertDistance(value: number, from: string, to: string): number {
   const a = METRES[from.trim()];
   const b = METRES[to.trim()];
+  return a && b ? (value * a) / b : value;
+}
+
+/** A pressure's pascals, by its unit: Home Assistant's own pressure units. */
+const PASCALS: Readonly<Record<string, number>> = {
+  Pa: 1,
+  hPa: 100,
+  kPa: 1000,
+  mbar: 100,
+  cbar: 1000,
+  bar: 100_000,
+  psi: 6894.757,
+  inHg: 3386.389,
+  mmHg: 133.322,
+};
+
+/** A pressure in another unit (bar ↔ psi ↔ kPa); the same where either unit is not one the card converts. */
+export function convertPressure(value: number, from: string, to: string): number {
+  const a = PASCALS[from.trim()];
+  const b = PASCALS[to.trim()];
   return a && b ? (value * a) / b : value;
 }

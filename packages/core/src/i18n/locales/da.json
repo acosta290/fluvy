@@ -3611,7 +3611,8 @@
     "editor.electric": "Elektrisk",
     "editor.hybrid": "Plug-in-hybrid",
     "editor.tank_size": "Tankstørrelse",
-    "editor.tank_size_helper": "I enheden for det, der er i den (L, gal): dens niveau, hvor bilen kun oplyser, hvad der er i den"
+    "editor.tank_size_helper": "I enheden for det, der er i den (L, gal): dens niveau, hvor bilen kun oplyser, hvad der er i den",
+    "tyre_pressure_low": "Lavt dæktryk"
   },
   "web": {
     "card": "Webside",

@@ -3449,7 +3449,8 @@
     "editor.electric": "Elektrisch",
     "editor.hybrid": "Plug-in hybride",
     "editor.tank_size": "Tankinhoud",
-    "editor.tank_size_helper": "In de eenheid van wat erin zit (L, gal): het niveau, waar de auto alleen zegt wat erin zit"
+    "editor.tank_size_helper": "In de eenheid van wat erin zit (L, gal): het niveau, waar de auto alleen zegt wat erin zit",
+    "tyre_pressure_low": "Lage bandenspanning"
   },
   "remote": {
     "key.power": "Aan/uit",

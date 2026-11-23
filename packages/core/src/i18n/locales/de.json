@@ -3449,7 +3449,8 @@
     "editor.electric": "Elektrisch",
     "editor.hybrid": "Plug-in-Hybrid",
     "editor.tank_size": "Tankgröße",
-    "editor.tank_size_helper": "In der Einheit des Tankinhalts (L, gal): sein Füllstand, wo das Auto nur den Inhalt meldet"
+    "editor.tank_size_helper": "In der Einheit des Tankinhalts (L, gal): sein Füllstand, wo das Auto nur den Inhalt meldet",
+    "tyre_pressure_low": "Niedriger Reifendruck"
   },
   "remote": {
     "key.power": "Ein/Aus",

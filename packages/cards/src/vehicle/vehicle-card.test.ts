@@ -283,6 +283,7 @@ describe('the vehicle card', () => {
         'binary_sensor.model_y_charge_cable': { state: 'off' },
         'switch.model_y_charge': { state: 'off' },
         'sensor.model_y_charger_power': { state: '0' },
+        'binary_sensor.model_y_tire_pressure_warning_rear_right': { state: 'off' },
       }),
     );
     const round = root(card).querySelector('.vh-control');
@@ -314,6 +315,7 @@ describe('the vehicle card', () => {
         'sensor.model_y_charging': { state: 'disconnected' },
         'binary_sensor.model_y_charge_cable': { state: 'off' },
         'sensor.model_y_charger_power': { state: '0' },
+        'binary_sensor.model_y_tire_pressure_warning_rear_right': { state: 'off' },
       }),
     );
     expect(text(root(card).querySelector('.vh-line'))).toBe('Cold inside · 2 °C');
@@ -446,6 +448,64 @@ describe('the vehicle card', () => {
   it('says it has found no car, rather than draw an empty one', async () => {
     const card = await mount({ device: 'd-washer' });
     expect(root(card).querySelector('.fv-card--empty')).not.toBeNull();
+  });
+
+  it('writes its tyres in the decimals they share: their display precision, else one under 10, none above (#251)', async () => {
+    const pressures = async (hass: HomeAssistant, device = TESLA.device): Promise<string[]> => {
+      const card = await mount({ device, show_tyres: true }, hass);
+      const read = [...root(card).querySelectorAll('.vh-tyre')].map((tyre) => text(tyre));
+      document.body.replaceChildren();
+      return read;
+    };
+    // a bar's: 2.0 beside 2.3, never "2"
+    expect(
+      await pressures(house({ 'sensor.model_y_tire_pressure_front_left': { state: '2' } })),
+    ).toEqual(['2.0bar', '—', '—', '2.3bar']);
+    // a unit in another script reads as a bar does: by its figures
+    expect(
+      await pressures(
+        house({
+          'sensor.model_y_tire_pressure_front_left': {
+            state: '2.31',
+            attributes: { unit_of_measurement: 'бар' },
+          },
+        }),
+      ),
+    ).toEqual(['2.3бар', '—', '—', '2.3bar']);
+    // psi whole, but the sensor's own precision where Home Assistant's registry gives one
+    expect(
+      await pressures(
+        house({ 'sensor.ev6_tire_pressure_front_left': { state: '35.5' } }),
+        KIA.device,
+      ),
+    ).toEqual(['36psi', '—', '—', '—']);
+    const precise = house({ 'sensor.ev6_tire_pressure_front_left': { state: '35.5' } });
+    const entities = precise.entities as unknown as Record<string, Record<string, unknown>>;
+    entities['sensor.ev6_tire_pressure_front_left'] = {
+      ...entities['sensor.ev6_tire_pressure_front_left'],
+      display_precision: 1,
+    };
+    expect(await pressures(precise, KIA.device)).toEqual(['35.5psi', '—', '—', '—']);
+  });
+
+  it('says its integration’s tyre warning on its line, the tyres drawn or not', async () => {
+    const parked = {
+      'sensor.model_y_charging': { state: 'disconnected' },
+      'binary_sensor.model_y_charge_cable': { state: 'off' },
+      'sensor.model_y_charger_power': { state: '0' },
+    };
+    const card = await mount({ device: TESLA.device }, house(parked));
+    expect(line(card)).toBe('Low tyre pressure');
+    expect(root(card).querySelector('.vh-line.is-warning')).not.toBeNull();
+    document.body.replaceChildren();
+    const fine = await mount(
+      { device: TESLA.device },
+      house({
+        ...parked,
+        'binary_sensor.model_y_tire_pressure_warning_rear_right': { state: 'off' },
+      }),
+    );
+    expect(line(fine)).toBe('Unplugged · Limit 80 %');
   });
 
   it('draws an entity of the person’s own among its controls, in the car’s cell, its name its word (#248)', async () => {

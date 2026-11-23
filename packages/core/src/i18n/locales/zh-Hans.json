@@ -3371,7 +3371,8 @@
     "editor.electric": "纯电",
     "editor.hybrid": "插电混动",
     "editor.tank_size": "油箱容量",
-    "editor.tank_size_helper": "单位与油箱内容相同（L、gal）：车辆只报告油量时，用于算出油位"
+    "editor.tank_size_helper": "单位与油箱内容相同（L、gal）：车辆只报告油量时，用于算出油位",
+    "tyre_pressure_low": "胎压偏低"
   },
   "expander": {
     "card": "折叠面板",

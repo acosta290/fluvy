@@ -3449,7 +3449,8 @@
     "editor.electric": "Eléctrico",
     "editor.hybrid": "Híbrido enchufable",
     "editor.tank_size": "Capacidad del depósito",
-    "editor.tank_size_helper": "En la unidad de lo que contiene (L, gal): su nivel, cuando el coche solo dice lo que contiene"
+    "editor.tank_size_helper": "En la unidad de lo que contiene (L, gal): su nivel, cuando el coche solo dice lo que contiene",
+    "tyre_pressure_low": "Presión de neumáticos baja"
   },
   "remote": {
     "key.power": "Encendido",

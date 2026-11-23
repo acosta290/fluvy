@@ -3449,7 +3449,8 @@
     "editor.electric": "電気",
     "editor.hybrid": "プラグインハイブリッド",
     "editor.tank_size": "タンク容量",
-    "editor.tank_size_helper": "中身と同じ単位（L、gal）: 車が中身の量しか伝えないときの残量に使います"
+    "editor.tank_size_helper": "中身と同じ単位（L、gal）: 車が中身の量しか伝えないときの残量に使います",
+    "tyre_pressure_low": "タイヤ空気圧が低い"
   },
   "remote": {
     "key.power": "電源",

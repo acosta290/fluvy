@@ -138,6 +138,7 @@
     "editor.electric": "Electric",
     "editor.hybrid": "Plug-in hybrid",
     "editor.tank_size": "Tank size",
-    "editor.tank_size_helper": "In the unit of what is in it (L, gal): its level, where the car says only what is in it"
+    "editor.tank_size_helper": "In the unit of what is in it (L, gal): its level, where the car says only what is in it",
+    "tyre_pressure_low": "Low tyre pressure"
   }
 }

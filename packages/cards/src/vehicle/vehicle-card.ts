@@ -66,6 +66,7 @@ import {
   cabinOf,
   chargeOf,
   convertDistance,
+  convertPressure,
   energyOf,
   isDistance,
   lineOf,
@@ -273,6 +274,15 @@ interface ControlView {
   };
 }
 
+/** A tyre as the card draws it: its wheel, its pressure and unit (or its warning's word), whether it is low, what it opens. */
+interface Tyre {
+  readonly wheel: Wheel;
+  readonly value: string;
+  readonly unit: string;
+  readonly low: boolean;
+  readonly id: string | undefined;
+}
+
 /** A distance as the card writes it, in its unit, and its number (null where it cannot be read). */
 interface Distance {
   readonly value: string;
@@ -329,6 +339,8 @@ interface Reading {
   readonly low: boolean;
   /** What stands open (a window first, then a door, the boot, the front boot), null where all is shut. */
   readonly open: Opening | null;
+  /** Its four tyres, front left to rear right: what the tyres' panel draws, and a low one the line says. */
+  readonly tyres: readonly Tyre[];
   readonly cabin: Cabin;
   /** "Updated 2 h ago" while the car says nothing, '' otherwise. */
   readonly stale: string;
@@ -362,6 +374,8 @@ const CELL_MIN = 56;
 const WORD_CLEAR = 2;
 /** The tyres' car from above: its box in the panel. */
 const CAR_WIDTH = 40;
+/** The wheels, in the order the tyres' panel reads them: the front's left and right, then the rear's. */
+const WHEELS: readonly Wheel[] = ['fl', 'fr', 'rl', 'rr'];
 /** Minutes without a word from the car after which the card says when it last spoke (`stale_after`). */
 export const STALE_AFTER = 30;
 /** A lock's states, each a word its round may say. */
@@ -1249,6 +1263,7 @@ export class FluvyVehicleCard extends Card<VehicleCardConfig> {
         charge !== 'charging' &&
         lowRange(range.number, level, this.config?.low_range),
       open: unavailable ? null : this.opening(),
+      tyres: this.tyres(unavailable),
       cabin: climateOn || unavailable ? null : cabinOf(inside?.n ?? null, inside?.unit ?? '°C'),
       stale: this.stale(now),
       place,
@@ -1317,6 +1332,7 @@ export class FluvyVehicleCard extends Card<VehicleCardConfig> {
       low: r.low,
       open: r.open,
       cabin: r.cabin,
+      tyre: r.tyres.some((tyre) => tyre.low),
       ...(r.tank ? { tank: r.tank } : {}),
     });
     const words = (text: string, ink: Line['ink'] = '', short?: string): Line => ({
@@ -1380,6 +1396,9 @@ export class FluvyVehicleCard extends Card<VehicleCardConfig> {
         return words(s(this.hass, 'oil_check'), 'warning');
       case 'service':
         return words(s(this.hass, 'service_due'), 'warning');
+      case 'tyre':
+        // a line too short for it names the tyres alone, in the warning's ink
+        return words(s(this.hass, 'tyre_pressure_low'), 'warning', s(this.hass, 'tyres'));
       case 'open': {
         // an engine's car opens a bonnet where an electric one opens its front boot; a line too short for "Boot open"
         // names the part alone, in the warning's ink, as a car's own display does ("Багажник" at 152)
@@ -2131,47 +2150,95 @@ export class FluvyVehicleCard extends Card<VehicleCardConfig> {
 
   /* ---------- the tyres ---------- */
 
+  /**
+   * The decimals every tyre is written in (one count for all four): their sensors' display precision where Home
+   * Assistant's registry gives one, else one where they read under 10 (a bar's 2.3), none above (a psi's 36, a kPa's
+   * 230).
+   */
+  private tyreDigits(views: readonly (EntityView | undefined)[]): number {
+    const precisions = views.flatMap((v) => {
+      const precision = v ? this.hass?.entities?.[v.id]?.display_precision : undefined;
+      return typeof precision === 'number' && Number.isFinite(precision) ? [precision] : [];
+    });
+    if (precisions.length) return Math.max(...precisions);
+    return this.tyreScale(views) < 10 ? 1 : 0;
+  }
+
+  /** How large the tyres' figures run: their highest reading, else (out of reach) a car's usual 3 bar in their unit. */
+  private tyreScale(views: readonly (EntityView | undefined)[]): number {
+    const read = views.flatMap((v) => (v?.status === 'ok' && v.number !== null ? [v.number] : []));
+    return read.length
+      ? Math.max(...read.map(Math.abs))
+      : convertPressure(3, 'bar', views.find((v) => v?.unit)?.unit ?? 'bar');
+  }
+
+  /**
+   * The four tyres, front left to rear right: each one's pressure, all four in the same decimals (`tyreDigits`), or
+   * where it has none what its warning says; low where its integration's warning is on (or its warning of every tyre).
+   */
+  private tyres(unavailable: boolean): Tyre[] {
+    const { warnings } = this.car();
+    const on = (id: string | undefined): boolean => Boolean(id) && this.entity(id).state === 'on';
+    const all = on(warnings.all);
+    const views = WHEELS.map((wheel) => this.view(`tyre_${wheel}`));
+    const decimals = this.tyreDigits(views);
+    return WHEELS.map((wheel, index) => {
+      const v = views[index];
+      const read = v?.status === 'ok' && !unavailable ? v.number : null;
+      const low = !unavailable && (on(warnings[wheel]) || all);
+      // a tyre with no pressure of its own says what its warning says
+      const value =
+        read !== null
+          ? formatNumber(this.hass, read, { digits: decimals, minDigits: decimals })
+          : !v && warnings[wheel]
+            ? s(this.hass, low ? 'tyre_low' : 'tyre_ok')
+            : '—';
+      return {
+        wheel,
+        value,
+        unit: read !== null && v ? v.unit : '',
+        low,
+        id: v?.id ?? warnings[wheel],
+      };
+    });
+  }
+
   private renderTyres(r: Reading): TemplateResult | typeof nothing {
     if (this.config?.show_tyres !== true || this.variant !== 'full') return nothing;
-    const { warnings } = this.car();
-    const all = warnings.all ? this.entity(warnings.all).state === 'on' : false;
-    const wheels: readonly Wheel[] = ['fl', 'fr', 'rl', 'rr'];
-    const low: Partial<Record<Wheel, boolean>> = {};
-    const tyre = (wheel: Wheel) => {
-      const v = this.view(`tyre_${wheel}`);
-      const flag = warnings[wheel] ? this.entity(warnings[wheel]).state === 'on' : false;
-      low[wheel] = !r.unavailable && (flag || all);
-      const ok = v && v.status === 'ok' && v.number !== null && !r.unavailable;
-      // a tyre with no pressure of its own says what its warning says
-      const value = ok
-        ? this.figure(v.number as number, /bar$/i.test(v.unit) ? 1 : 0)
-        : !v && warnings[wheel]
-          ? low[wheel]
-            ? s(this.hass, 'tyre_low')
-            : s(this.hass, 'tyre_ok')
-          : '—';
-      return { wheel, value, unit: ok ? v.unit : '', id: v?.id ?? warnings[wheel] };
-    };
-    const tyres = wheels.map(tyre);
-    // the car from above gives way where a column would not hold the widest pressure beside it
+    const { tyres } = r;
+    // the car from above gives way where a column would not hold the widest pressure beside it: the widest its
+    // figures run to, in their decimals and their unit, whatever they read now
+    const views = WHEELS.map((wheel) => this.view(`tyre_${wheel}`));
+    const decimals = this.tyreDigits(views);
+    const whole = String(Math.trunc(this.tyreScale(views))).length;
+    const sample = formatNumber(this.hass, Number(`${'8'.repeat(whole)}.${'8'.repeat(decimals)}`), {
+      digits: decimals,
+      minDigits: decimals,
+    });
     const widest = Math.max(
       ...tyres.map((t) => this.head.ruler.width('vh-tyre', t.value, 'fv-unit', t.unit)),
-      this.head.ruler.width('vh-tyre', '8.8', 'fv-unit', 'bar'),
+      this.head.ruler.width(
+        'vh-tyre',
+        sample,
+        'fv-unit',
+        views.find((v) => v?.unit)?.unit ?? 'bar',
+      ),
     );
     const bare = (this.contentWidth - 32 - CAR_WIDTH - 24) / 2 < widest;
-    const label = (t: (typeof tyres)[number]): string =>
+    const low = Object.fromEntries(tyres.map((t) => [t.wheel, t.low]));
+    const label = (t: Tyre): string =>
       `${s(this.hass, `tyre_${t.wheel}`)} · ${t.value}${t.unit ? ` ${t.unit}` : ''}`;
     return html`<div
       class="vh-tyres ${bare ? 'is-bare' : ''}"
       role="group"
       aria-label=${s(this.hass, 'tyres')}
-      @click=${() => this.tap(tyres.find((t) => low[t.wheel])?.id ?? tyres[0]?.id, { action: 'more-info' })}
+      @click=${() => this.tap(tyres.find((t) => t.low)?.id ?? tyres[0]?.id, { action: 'more-info' })}
     >
       ${bare ? nothing : carFromAbove(low)}
       ${tyres.map(
         (t, index) =>
           html`<span
-            class="vh-tyre ${index % 2 ? '' : 'is-left'} ${low[t.wheel] ? 'is-low' : ''}"
+            class="vh-tyre ${index % 2 ? '' : 'is-left'} ${t.low ? 'is-low' : ''}"
             style="grid-row:${index < 2 ? 1 : 2};grid-column:${bare ? (index % 2) + 1 : index % 2 ? 3 : 1}"
             aria-label=${label(t)}
             >${t.value}${t.unit ? html`<span class="fv-unit">${t.unit}</span>` : nothing}</span

@@ -3449,7 +3449,8 @@
     "editor.electric": "Elétrico",
     "editor.hybrid": "Híbrido plug-in",
     "editor.tank_size": "Capacidade do depósito",
-    "editor.tank_size_helper": "Na unidade do conteúdo (L, gal): o nível, quando o carro indica apenas o conteúdo"
+    "editor.tank_size_helper": "Na unidade do conteúdo (L, gal): o nível, quando o carro indica apenas o conteúdo",
+    "tyre_pressure_low": "Pressão dos pneus baixa"
   },
   "remote": {
     "key.power": "Liga/desliga",

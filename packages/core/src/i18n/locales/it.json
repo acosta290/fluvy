@@ -3449,7 +3449,8 @@
     "editor.electric": "Elettrica",
     "editor.hybrid": "Ibrida plug-in",
     "editor.tank_size": "Capacità del serbatoio",
-    "editor.tank_size_helper": "Nell’unità del contenuto (L, gal): il suo livello, dove l’auto dice solo cosa contiene"
+    "editor.tank_size_helper": "Nell’unità del contenuto (L, gal): il suo livello, dove l’auto dice solo cosa contiene",
+    "tyre_pressure_low": "Pressione pneumatici bassa"
   },
   "remote": {
     "key.power": "Accensione",
