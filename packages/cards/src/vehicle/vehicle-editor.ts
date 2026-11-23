@@ -25,6 +25,7 @@ import {
   numberField,
   onlyWhen,
   optionalActions,
+  ownTextField,
   selectField,
   textField,
   unitChoices,
@@ -173,6 +174,7 @@ export const keys = configKeys<VehicleCardConfig>()([
   'energy',
   'tank_size',
   'hero',
+  'badge',
   'image',
   'image_position',
   'show_range',
@@ -324,6 +326,7 @@ export function getConfigForm(): LovelaceConfigForm {
       boolField('scan'),
       nameIconFields(),
       headFields({ badge: true }),
+      ownTextField('badge'),
       selectField('variant', VEHICLE_VARIANTS),
       fieldRow(
         choiceField('energy', [
@@ -394,6 +397,7 @@ export function getConfigForm(): LovelaceConfigForm {
         hero_double_tap_action: 'editor.hero_double_tap_action',
       },
       {
+        badge: 'gauge.badge',
         image: 'editor.picture',
         show_controls: 'editor.show_actions',
         show_rows: 'editor.show_rows',

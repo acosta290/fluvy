@@ -44,6 +44,7 @@ import { durationSeconds, when } from '../shared/job-time.js';
 import { BrokenPictures, imageEntity, imageOf } from '../shared/picture.js';
 import { Ticker, MINUTE } from '../shared/ticker.js';
 import { roundOf, roundTap, type RoundSpec, type RoundsHost } from '../shared/rounds.js';
+import { PENDING_LINE } from '../shared/templates.js';
 import { valueRow } from '../shared/value-row.js';
 import {
   pictureAt,
@@ -224,6 +225,11 @@ export interface VehicleCardConfig extends FluvyCardConfig, HeadConfig {
   tank_size?: number;
   /** The battery (or the tank) on its ruler (the default) or as a ring; a hybrid's two are rulers. */
   hero?: 'ruler' | 'ring';
+  /**
+   * The head's badge of the person's own (#251): words, an entity's state or a template, in place of what the car does
+   * (which says it again where the answer is empty); "Unavailable" while the car is out of reach.
+   */
+  badge?: string;
   /** A picture of the car: an address, an entity whose picture it is, or `auto` (the integration's own). */
   image?: string;
   image_position?: 'hero' | 'head';
@@ -365,7 +371,8 @@ interface Reading {
   /** The car out of reach: every part at rest in the off skin, at its size (1.9). */
   readonly unavailable: boolean;
   readonly tone: Tone;
-  readonly badge: { readonly text: string; readonly tone: Tone };
+  /** What the head's badge says: what the car does, or the person's own (`own`); none while their template is asked. */
+  readonly badge: { readonly text: string; readonly tone: Tone; readonly own?: boolean } | null;
 }
 
 /** The line under the battery: its parts, and the ink it is said in. */
@@ -1231,7 +1238,7 @@ export class FluvyVehicleCard extends Card<VehicleCardConfig> {
     const words = this.view('address');
     const address =
       location?.state !== 'home' && words && words.status === 'ok' ? words.state.trim() : '';
-    const badge = ((): Reading['badge'] => {
+    const badge = ((): { readonly text: string; readonly tone: Tone } => {
       if (unavailable) return { text: this.t('state.unavailable'), tone: 'off' };
       if (charge === 'charging') {
         const watts = this.watts();
@@ -1260,6 +1267,7 @@ export class FluvyVehicleCard extends Card<VehicleCardConfig> {
         return { text: s(this.hass, 'plugged'), tone: charge === 'error' ? 'warning' : 'neutral' };
       return { text: s(this.hass, activity === 'asleep' ? 'asleep' : 'parked'), tone: 'neutral' };
     })();
+    const own = unavailable ? undefined : this.ownBadge();
     return {
       name: this.carName(),
       energy,
@@ -1284,8 +1292,23 @@ export class FluvyVehicleCard extends Card<VehicleCardConfig> {
       address,
       unavailable,
       tone: badge.tone,
-      badge,
+      badge: own === null ? null : own ? { text: own, tone: badge.tone, own: true } : badge,
     };
+  }
+
+  /**
+   * The person's own badge (`badge`, #251): its words, an entity's state, a template's answer; null while Home
+   * Assistant has not answered (no badge, rather than the card's for a moment); undefined where it says nothing — an
+   * empty answer, a template refused, an entity out of reach — and the card's own says what the car does.
+   */
+  private ownBadge(): string | null | undefined {
+    const asked = this.config?.badge;
+    const line = this.ownText(asked);
+    if (!line) return undefined;
+    if (line.text === PENDING_LINE) return null;
+    if (isEntityId(asked) && this.hass?.states[asked] && !isUsable(this.entity(asked)))
+      return undefined;
+    return line.text.trim() || undefined;
   }
 
   /** What stands open, a window first: its windows' cover or sensors, its doors, its boot, its front boot. */
@@ -2627,7 +2650,7 @@ export class FluvyVehicleCard extends Card<VehicleCardConfig> {
     // out of reach, the line says so alone, as a small tile does (the dash where the word would not hold); a hybrid
     // says its tank after its charge, and how far it goes on both
     const segments: Segment[] = r.unavailable
-      ? [{ text: r.badge.text, short: '—' }]
+      ? [{ text: this.t('state.unavailable'), short: '—' }]
       : [
           { text: level === null && !gauge.amount ? '—' : this.gaugeText(gauge) },
           ...(tank
@@ -2644,7 +2667,7 @@ export class FluvyVehicleCard extends Card<VehicleCardConfig> {
           ...(this.config?.show_range !== false && reach.number !== null
             ? [{ text: `${reach.value} ${reach.unit}`, optional: true }]
             : []),
-          { text: r.badge.text, optional: true },
+          ...(r.badge ? [{ text: r.badge.text, optional: true }] : []),
           ...(r.place ? [{ text: r.place, optional: true }] : []),
         ];
     const line = fitLine(segments, room, (text) => this.head.ruler.width('fv-row__sub', text));

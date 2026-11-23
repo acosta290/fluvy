@@ -556,6 +556,42 @@ describe('the vehicle card', () => {
     expect(line(fine)).toBe('Unplugged · Limit 80 %');
   });
 
+  it('says a badge of the person’s own: words, an entity’s state, a template once answered; Unavailable first (#251)', async () => {
+    const badgeOf = async (
+      config: Record<string, unknown>,
+      hass: HomeAssistant = house(),
+    ): Promise<{ badge: string | null; strip: string }> => {
+      const card = await mount({ device: TESLA.device, ...config }, hass);
+      const badge = root(card).querySelector('.fv-badge');
+      document.body.replaceChildren();
+      const mini = await mount({ device: TESLA.device, variant: 'mini', ...config }, hass);
+      const strip = text(root(mini).querySelector('.fv-row__sub'));
+      document.body.replaceChildren();
+      return { badge: badge ? text(badge) : null, strip };
+    };
+    expect(await badgeOf({ badge: 'GPS ok · GSM 4/5' })).toEqual({
+      badge: 'GPS ok · GSM 4/5',
+      strip: '64 % · 320 km · GPS ok · GSM 4/5 · Home',
+    });
+    expect((await badgeOf({ badge: 'device_tracker.model_y_location' })).badge).toBe('Home');
+    // an entity out of reach, or an empty answer: the card says what the car does
+    expect(
+      (
+        await badgeOf(
+          { badge: 'device_tracker.model_y_location' },
+          house({ 'device_tracker.model_y_location': { state: 'unavailable' } }),
+        )
+      ).badge,
+    ).toBe('Charging · 7.2 kW');
+    expect((await badgeOf({ badge: ' ' })).badge).toBe('Charging · 7.2 kW');
+    // a template Home Assistant has not answered: no badge yet, rather than the card's for a moment
+    expect(await badgeOf({ badge: "{{ 'GPS ok' }}" })).toEqual({
+      badge: null,
+      strip: '64 % · 320 km · Home',
+    });
+    expect((await badgeOf({ badge: 'GPS ok' }, house(away(TESLA)))).badge).toBe('Unavailable');
+  });
+
   it('starts and stops an engine named by hand, asking first both ways unless it says not to (#248)', async () => {
     const asked: unknown[] = [];
     const listen = (event: Event) => asked.push((event as CustomEvent).detail.config.tap_action);
