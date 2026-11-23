@@ -18157,12 +18157,70 @@
           }
         ]
       },
+      "layout": {
+        "key": "style",
+        "values": [
+          "pill",
+          "plain"
+        ],
+        "default": "pill"
+      },
+      "layouts": {
+        "plain": {
+          "type": "custom:fluvy-chips-card",
+          "chips": [
+            {
+              "name": "All",
+              "path": "/"
+            },
+            {
+              "name": "Living",
+              "path": "/fluvy-home/living"
+            },
+            {
+              "name": "Kitchen",
+              "path": "/fluvy-home/kitchen"
+            },
+            {
+              "name": "Bedroom",
+              "path": "/fluvy-home/bedroom"
+            }
+          ],
+          "style": "plain"
+        }
+      },
+      "layout_pictures": {
+        "plain": {
+          "light": "images/cards/chips.plain-light.webp",
+          "dark": "images/cards/chips.plain-dark.webp",
+          "width": 784,
+          "height": 152
+        }
+      },
       "keys": [
         {
           "key": "name",
           "label": "Name",
           "does": "The name the card shows, in place of the entity’s own.",
           "type": "text"
+        },
+        {
+          "key": "style",
+          "label": "Style",
+          "does": "Draws each chip as a pill, or plain on the page with no pill at rest, the open view’s chip keeping its own.",
+          "type": "choice",
+          "default": "pill",
+          "values": {
+            "pill": "Standard",
+            "plain": "Plain"
+          }
+        },
+        {
+          "key": "show_name",
+          "label": "Show the name",
+          "does": "Shows each chip’s name; hidden, a chip with an icon shows it alone, its name read aloud and shown under the pointer.",
+          "type": "boolean",
+          "default": true
         },
         {
           "key": "tint",
@@ -18235,6 +18293,28 @@
               "does": "The item’s colour, in place of the one the card gives it.",
               "helper": "Empty: the card’s colour",
               "type": "colour"
+            },
+            {
+              "key": "style",
+              "label": "Style",
+              "does": "Draws this chip as a pill, or plain, whatever the card says.",
+              "helper": "Empty: the card’s",
+              "type": "choice",
+              "values": {
+                "pill": "Standard",
+                "plain": "Plain"
+              }
+            },
+            {
+              "key": "show_name",
+              "label": "Show the name",
+              "does": "Shows this chip’s name, or its icon alone, whatever the card says.",
+              "helper": "Empty: the card’s",
+              "type": "choice",
+              "values": {
+                "true": "On",
+                "false": "Off"
+              }
             },
             {
               "key": "tap_action",

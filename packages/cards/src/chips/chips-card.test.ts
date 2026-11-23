@@ -52,9 +52,13 @@ function house(): { hass: HomeAssistant; open: () => string[] } {
 
 type ChipsElement = FluvyChipsCard & { hass: HomeAssistant };
 
-async function draw(chips: readonly Record<string, unknown>[], hass: HomeAssistant) {
+async function draw(
+  chips: readonly Record<string, unknown>[],
+  hass: HomeAssistant,
+  own: Record<string, unknown> = {},
+) {
   const card = document.createElement('fluvy-chips-card') as ChipsElement;
-  card.setConfig({ type: 'custom:fluvy-chips-card', chips, tint: 'always' });
+  card.setConfig({ type: 'custom:fluvy-chips-card', chips, tint: 'always', ...own });
   card.hass = hass;
   document.body.append(card);
   await card.updateComplete;
@@ -150,5 +154,72 @@ describe('chips whose words are templates (#87)', () => {
 
   it('keep the row 44 tall whatever the templates say: its height is the config’s', () => {
     expect(FluvyChipsCard.layoutHeight({ type: 'x', chips: [{ name: "{{ '' }}" }] })).toBe(44);
+  });
+});
+
+/** Each chip's parts as drawn: whether it has a box for its words, its name as a reader hears it, its look. */
+const partsOf = (card: ChipsElement) =>
+  [...card.renderRoot.querySelectorAll<HTMLElement>('.fv-chip')].map((chip) => ({
+    words: chip.querySelector('.fv-chip__name')?.textContent ?? null,
+    label: chip.getAttribute('aria-label'),
+    title: chip.getAttribute('title'),
+    plain: chip.classList.contains('is-plain'),
+  }));
+
+describe('a tab’s content, look and name (#241)', () => {
+  it('draws no box for words that render nothing: its glyph alone is what the pill centres', async () => {
+    const { hass } = house();
+    const card = await draw([{ name: "{{ '' }}", icon: 'mdi:door' }, { name: 'Kitchen' }], hass);
+    expect(partsOf(card).map(({ words }) => words)).toEqual([null, 'Kitchen']);
+    // the glyph is the pill's one child, nothing beside it to take the gap
+    expect(card.renderRoot.querySelector('.fv-chip__pill')?.childElementCount).toBe(1);
+  });
+
+  it('shows its icon alone where asked, its name then the button’s, said and shown under the pointer', async () => {
+    const { hass } = house();
+    const card = await draw(
+      [
+        { name: 'Lights', icon: 'mdi:lightbulb' },
+        { name: 'Climate', icon: 'mdi:thermometer', show_name: true },
+        // a tab with no icon keeps its name: there would be nothing to show
+        { name: 'Energy' },
+      ],
+      hass,
+      { show_name: false },
+    );
+    expect(partsOf(card)).toEqual([
+      { words: null, label: 'Lights', title: 'Lights', plain: false },
+      { words: 'Climate', label: null, title: null, plain: false },
+      { words: 'Energy', label: null, title: null, plain: false },
+    ]);
+  });
+
+  it('hides one tab’s name of its own, the card’s others named', async () => {
+    const { hass } = house();
+    const card = await draw(
+      [
+        { name: 'Door', icon: 'mdi:door', show_name: false },
+        { name: 'Bedroom', icon: 'mdi:bed' },
+      ],
+      hass,
+    );
+    expect(partsOf(card).map(({ words, label }) => [words, label])).toEqual([
+      [null, 'Door'],
+      ['Bedroom', null],
+    ]);
+  });
+
+  it('stands plain where the card asks, a tab’s own look winning, and as a pill by default', async () => {
+    const { hass } = house();
+    const tabs = [
+      { name: 'Home' },
+      { name: 'Living', style: 'pill' },
+      { name: 'Hall', style: 'plain' },
+    ];
+    const plain = await draw(tabs, hass, { style: 'plain' });
+    expect(partsOf(plain).map((part) => part.plain)).toEqual([true, false, true]);
+    plain.remove();
+    const standard = await draw(tabs, hass);
+    expect(partsOf(standard).map((part) => part.plain)).toEqual([false, false, true]);
   });
 });

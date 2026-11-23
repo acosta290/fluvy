@@ -218,10 +218,14 @@ export const sheet: SheetSpec = {
         card(
           `<div class="fx-head"><h3 class="fx-title"><button class="fv-card__tap">sensor.fixture</button></h3><button class="fx-round" data-control data-target></button></div>
            <div class="fx-row"><div class="fv-readout"><p>Target</p><p class="fx-figure">21,5 °C</p></div><span class="fx-stepper" data-control></span></div>
-           <p><span class="fx-pill" data-fit="28"><span class="fx-name" data-name>Kitchen</span></span></p>`,
+           <p><span class="fx-pill" data-fit="28"><span class="fx-name" data-name>Kitchen</span></span></p>
+           <p><span class="fx-pill fx-glyphed" data-fit="32"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8" /></svg><span class="fx-name" data-name>Kitchen</span></span></p>`,
           `.fx-pill { box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center;
              width: 96px; height: 36px; padding: 0 16px; border-radius: 20px; background: var(--fluvy-page); }
-           .fx-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }`,
+           .fx-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+           /* a glyph centred with its words in a fitted pill: 17 in, off the grid by construction */
+           .fx-glyphed { justify-content: flex-start; gap: 6px; width: 120px; padding: 0 0 0 17px; }
+           .fx-glyphed svg { flex: none; width: 20px; height: 20px; fill: currentColor; }`,
         ),
       ],
     },

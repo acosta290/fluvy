@@ -688,6 +688,11 @@
   height: 20px;
 }
 
+/* a chip's glyph keeps its 20 in a pill its words fill: the words give way, never the glyph */
+.fv-chip__pill > :is(svg, .fv-haicon) {
+  flex: none;
+}
+
 /* a tab's colour at rest (`tint: always`): its rest wash and the fill's hairline, as a tile's (tiles.css); over any
    ground a chip row gives its pills (the tabs' card fill) */
 .fv-chip .fv-chip__pill.is-tinted {

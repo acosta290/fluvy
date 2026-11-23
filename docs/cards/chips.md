@@ -25,6 +25,17 @@ chips:
 
 The picture above, on the demo house: put your own entities in place of its.
 
+## Layouts
+
+`style` chooses the layout. The picture above is `pill`, the default; each of the others is the example plus the line over it, and opens in the live demo.
+
+<table>
+<tbody><tr>
+<td align="center" valign="top" width="50%"><code>style: plain</code><br><a href="https://acosta290.github.io/fluvy/?card=chips&amp;layout=plain"><picture><source media="(prefers-color-scheme: dark)" srcset="../images/cards/chips.plain-dark.webp"><img src="../images/cards/chips.plain-light.webp" width="392" alt="The Chips card in its plain layout"></picture></a></td>
+<td align="center" valign="top" width="50%"></td>
+</tr></tbody>
+</table>
+
 ## All options
 
 ```yaml
@@ -39,6 +50,8 @@ chips:
     path: /fluvy-home/kitchen
   - name: Bedroom
     path: /fluvy-home/bedroom
+style: pill
+show_name: true
 # tint: 'on'
 # exact_colors: false
 # empty_text:
@@ -50,6 +63,8 @@ hide_empty: false
 | Option | Default | What it does |
 | --- | --- | --- |
 | `name` |  | The name the card shows, in place of the entity’s own. |
+| `style` | `pill` | Draws each chip as a pill, or plain on the page with no pill at rest, the open view’s chip keeping its own. `pill` (Standard) · `plain`. |
+| `show_name` | `true` | Shows each chip’s name; hidden, a chip with an icon shows it alone, its name read aloud and shown under the pointer. |
 | `tint` | `on` | When each chip shows its colour. `on` (When on) · `always`. |
 | `empty_text` |  | What the card says while it has nothing to show. |
 | `hide_empty` | `false` | Hides the whole card while it has nothing to show. |
@@ -79,6 +94,8 @@ An item is a map with `name` and any of these fields.
 | `path` | Where a tap on the chip goes. |
 | `entity` | The entity the item shows. |
 | `color` | The item’s colour, in place of the one the card gives it. |
+| `style` | Draws this chip as a pill, or plain, whatever the card says. `pill` (Standard) · `plain`. |
+| `show_name` | Shows this chip’s name, or its icon alone, whatever the card says. `true` (On) · `false` (Off). |
 | **Interactions** |  |
 | `tap_action` | What a tap on the item does. |
 | `hold_action` | What a long press on the item does. |
@@ -109,6 +126,10 @@ chips:
 - A template that fails shows nothing of itself.
 - `icon` takes an `mdi:` icon or a Fluvy glyph's name; `color` a colour name or `#rrggbb`.
 - The row stays one line, whatever the words.
+- `show_name: false` shows a chip's icon alone, its name read aloud and shown under the pointer: the card's for every
+  chip, or one chip's own. A chip with no icon keeps its name.
+- `style: plain` draws no pill at rest: the chips stand on the page in its own inks, a wall's picture showing behind
+  them, and the open view's chip keeps its pill. A chip may say its own `style` as well.
 - Fluvy runs no JavaScript: a button-card label between `[[[ ]]]` shows as written. Write it as a template.
 
 <details>

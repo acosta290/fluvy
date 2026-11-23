@@ -59,7 +59,17 @@ export interface ChipConfig {
    * the open one.
    */
   color?: string;
+  /** Its own look (#241), where it is not the card's `style`. */
+  style?: ChipStyle;
+  /**
+   * false: its icon alone, its name said to a screen reader and under the pointer (#241); the card's `show_name` where
+   * it says none. A tab with no icon keeps its name.
+   */
+  show_name?: boolean;
 }
+
+/** A tab's look: its pill (the default), or plain, its glyph and words on the page with no pill at rest (#241). */
+export type ChipStyle = 'pill' | 'plain';
 
 /** A chip as it shows: its words, icon and colour, each as written or as its template rendered it. */
 interface Drawn {
@@ -71,8 +81,15 @@ interface Drawn {
 
 export interface ChipsCardConfig extends FluvyCardConfig, EmptyList {
   chips?: readonly ChipConfig[];
-  /** `always`: a tab with a colour shows it at rest too — a wash and its hairline (`on`, the default: when open). */
+  /**
+   * `always`: a tab with a colour shows it at rest too — a wash and its hairline, a plain tab's glyph and words in it
+   * (`on`, the default: when open).
+   */
   tint?: Tint;
+  /** Every tab's look, where a tab names none of its own (#241): `pill` (the default) or `plain`. */
+  style?: ChipStyle;
+  /** false: every tab its icon alone, where a tab says none of its own (#241); true by default. */
+  show_name?: boolean;
 }
 
 /** "/fluvy-home/living/", "/fluvy-home/living?edit=1" and "/fluvy-home/living" are the same view. */
@@ -162,7 +179,7 @@ export class FluvyChipsCard extends Card<ChipsCardConfig> {
       }
       .hm-rooms .fv-chips.fills .fv-chip__pill {
         justify-content: center !important;
-        padding-left: 0 !important;
+        padding-inline: 0 !important;
       }
       /* a mouse drags the row (sideScroll): the pills stop reacting while it moves */
       .hm-rooms .fv-chips.is-dragging {
@@ -174,6 +191,30 @@ export class FluvyChipsCard extends Card<ChipsCardConfig> {
       }
       .fv-chip__pill {
         white-space: nowrap;
+      }
+      /* a plain tab (#241): no pill at rest, its glyph and words in the page's inks (the light ink on a deep
+         background), a colour at rest (tint: always) in its ink alone; a wash of its ink under the pointer and the
+         finger; the open view keeps its pill */
+      :host {
+        --fv-page-text: var(--fluvy-text);
+        --fv-page-text-secondary: var(--fluvy-text-secondary);
+      }
+      .fv-chip.is-plain:not(.is-active) .fv-chip__pill {
+        background: none;
+        box-shadow: none;
+        color: var(--fluvy-page-ink-2, var(--fv-page-text-secondary));
+      }
+      .fv-chip.is-plain:not(.is-active):active .fv-chip__pill {
+        background: color-mix(in srgb, currentColor 10%, transparent);
+      }
+      @media (hover: hover) {
+        .fv-chip.is-plain:not(.is-active):hover .fv-chip__pill {
+          background: color-mix(in srgb, currentColor 10%, transparent);
+          color: var(--fluvy-page-ink, var(--fv-page-text));
+        }
+      }
+      .fv-chip.is-plain:not(.is-active) .fv-chip__pill.is-tinted {
+        color: var(--fluvy-accent);
       }
     `,
   ];
@@ -432,6 +473,11 @@ export class FluvyChipsCard extends Card<ChipsCardConfig> {
       >
         ${chips.map(({ chip, name, icon: glyph, color }, index) => {
           const accent = this.accents.item(color);
+          const plain = (chip.style ?? this.config?.style) === 'plain';
+          // its icon alone where asked and it has one: its name is then the button's, said and shown under the pointer
+          const alone = glyph !== undefined && (chip.show_name ?? this.config?.show_name) === false;
+          // words that render nothing draw no box: the glyph alone is the pill's content, in its middle
+          const words = !alone && (name === PENDING_LINE || name.trim() !== '');
           // its tap: its own, else its path, else its entity's details; a hold and a double tap where set (#179)
           const { onTap, onHold } = this.pressOf(
             chip,
@@ -443,11 +489,13 @@ export class FluvyChipsCard extends Card<ChipsCardConfig> {
           return keyed(
             Boolean(glyph),
             html`<button
-              class="fv-chip ${index === active ? (accent ? 'is-active' : 'fv-chip--ink is-active') : ''}"
+              class="fv-chip ${index === active ? (accent ? 'is-active' : 'fv-chip--ink is-active') : ''} ${plain ? 'is-plain' : ''}"
               data-target
               data-fit="32"
               data-accent=${accent ?? nothing}
               aria-current=${index === active ? 'page' : nothing}
+              aria-label=${alone ? name : nothing}
+              title=${alone ? name : nothing}
               .fvTap=${onTap}
               .fvHold=${onHold}
               @pointerdown=${startPress}
@@ -460,9 +508,9 @@ export class FluvyChipsCard extends Card<ChipsCardConfig> {
                   this.config?.tint === 'always' && accent && index !== active ? 'is-tinted' : ''
                 }"
                 data-control
-                >${glyph ? icon(glyph) : nothing}<span class="fv-chip__name" data-name
-                  >${name}</span
-                ></span
+                >${glyph ? icon(glyph) : nothing}${
+                  words ? html`<span class="fv-chip__name" data-name>${name}</span>` : nothing
+                }</span
               >
             </button>`,
           );

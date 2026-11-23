@@ -1192,6 +1192,23 @@ control the house already has, read.
   sizes), the language's short hello ("Hello", "Hallo", "Ciao"). The date and the weather give way under it as before.
 - **Whose greeting**: without a `person`, the signed-in user's person (name, picture, more-info); a `person` pins one.
 
+## Tabs on the page (1.25, #241)
+
+The chips card's tabs (§ Controls: tab rows) stand on the page beside the greeting; a wall's header holds four or five.
+
+- **Centred** (a fix): in a row that fills its line each tab's glyph and words stand in its middle, the fitted sides
+  dropped on both ends (they were dropped at the start only: every tab sat 8 left); words that render nothing (a
+  template's empty answer) draw no box, so the glyph alone is the content and no gap follows it; a glyph keeps its 20
+  in any pill, the words giving way.
+- **Its icon alone** (`show_name: false`, the card's or a tab's own): the glyph alone in the pill (20 + 32, on the 4
+  grid: 52), its name the button's, read aloud and shown under the pointer. A tab with no icon keeps its name.
+- **Plain** (`style: plain`, the card's or a tab's own; `pill` the default): no pill at rest, neither fill nor
+  hairline, the glyph and words in the page's inks (the secondary; the light ink on a deep background or a picture, as
+  the greeting's), a wash of that ink (10 %) under the pointer, where the words take the page's primary ink, and
+  under the finger. The open view keeps its pill (the ink pill, or its colour's fill), so the row still says where
+  you are. A colour at rest (`tint: always`) is the glyph and the words in its ink, no wash. Height 44, the 36 pill,
+  the 44 target and the focus ring are the pill's: only what is painted at rest goes.
+
 ## Dashboards (the panel's tab)
 
 - The templates as rows in one card: a created one is a row that opens (accent circle, its url as the sub, the bare

@@ -509,6 +509,11 @@
     "width": 784,
     "height": 152
   },
+  "chips.plain": {
+    "example": "f0c073665b84",
+    "width": 784,
+    "height": 152
+  },
   "heading": {
     "example": "00646f9e93e8",
     "width": 784,

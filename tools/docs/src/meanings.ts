@@ -430,6 +430,10 @@ export const MEANINGS: Readonly<Record<string, string>> = {
   'chart.show_head': 'Shows the value now, large, over the chart.',
   'chart.show_legend': 'Shows the legend under the chart.',
   'chips.tint': 'When each chip shows its colour.',
+  'chips.style':
+    'Draws each chip as a pill, or plain on the page with no pill at rest, the open view’s chip keeping its own.',
+  'chips.show_name':
+    'Shows each chip’s name; hidden, a chip with an icon shows it alone, its name read aloud and shown under the pointer.',
   'clock.title': 'A title over the clock, such as the city it shows.',
   'clock.weather':
     'A weather entity: its condition and temperature, and the sky’s tone on the face.',
@@ -909,6 +913,8 @@ export const MEANINGS: Readonly<Record<string, string>> = {
   'chart.series[].state_colors':
     'A series of states’ colour for each of its states: a tone, none for the strip’s own fill, or a colour of your own.',
   'chart.series[].unit': 'The unit this series is written in.',
+  'chips.chips[].show_name': 'Shows this chip’s name, or its icon alone, whatever the card says.',
+  'chips.chips[].style': 'Draws this chip as a pill, or plain, whatever the card says.',
   'energy.legend[].period': 'What the legend’s figure shows.',
   'energy-sankey.devices[].parent': 'Another device’s meter this device is part of.',
   'energy-usage.meters[].entity': 'The meter’s statistic.',

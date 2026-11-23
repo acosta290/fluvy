@@ -437,6 +437,8 @@ export const GALLERY: Readonly<Record<string, Example>> = {
         { name: 'Bedroom', path: '/fluvy-home/bedroom' },
       ],
     },
+    layout: 'style',
+    variants: { plain: {} },
   },
   'fluvy-heading-card': {
     config: {

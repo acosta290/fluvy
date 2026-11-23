@@ -916,9 +916,12 @@ function audit(opts) {
             y: Math.abs(pb.y + pb.height / 2 - (box.y + box.height / 2)) < 0.5,
           };
         })();
+        // what a fitted pill holds is centred by construction (fitPills pads it evenly, on whole pixels): its glyph, as
+        // its words, has no left edge of its own
+        const fitted = !el.hasAttribute('data-fit') && !!el.parentElement?.closest('[data-fit]');
         const off = keys.filter(
           (key) =>
-            !(key === 'x' && (away || sharedX || centredIn.x)) &&
+            !(key === 'x' && (away || sharedX || centredIn.x || fitted)) &&
             !(key === 'y' && centredIn.y) &&
             !(key === 'w' && (stretched || sharedW)) &&
             offGrid(rect[key]),
