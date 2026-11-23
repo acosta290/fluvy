@@ -3457,7 +3457,11 @@
     "engine": "Motor",
     "engine_running": "Ligado",
     "start_engine_confirm": "Ligar o motor?",
-    "stop_engine_confirm": "Desligar o motor?"
+    "stop_engine_confirm": "Desligar o motor?",
+    "editor.show_head": "Mostrar o cabeçalho",
+    "editor.show_hero": "Mostrar a bateria",
+    "editor.image_size": "Tamanho da imagem",
+    "editor.image_size_helper": "Uma parte da largura do cartão, como 50%, ou uma altura, como 120px"
   },
   "remote": {
     "key.power": "Liga/desliga",

@@ -3457,7 +3457,11 @@
     "engine": "Motor",
     "engine_running": "Läuft",
     "start_engine_confirm": "Motor starten?",
-    "stop_engine_confirm": "Motor abstellen?"
+    "stop_engine_confirm": "Motor abstellen?",
+    "editor.show_head": "Kopfzeile anzeigen",
+    "editor.show_hero": "Batterie anzeigen",
+    "editor.image_size": "Bildgröße",
+    "editor.image_size_helper": "Ein Anteil der Kartenbreite wie 50% oder eine Höhe wie 120px"
   },
   "remote": {
     "key.power": "Ein/Aus",

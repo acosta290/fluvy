@@ -3379,7 +3379,11 @@
     "engine": "发动机",
     "engine_running": "运转中",
     "start_engine_confirm": "启动发动机？",
-    "stop_engine_confirm": "关闭发动机？"
+    "stop_engine_confirm": "关闭发动机？",
+    "editor.show_head": "显示标题栏",
+    "editor.show_hero": "显示电池",
+    "editor.image_size": "图片大小",
+    "editor.image_size_helper": "卡片宽度的比例，如 50%，或高度，如 120px"
   },
   "expander": {
     "card": "折叠面板",

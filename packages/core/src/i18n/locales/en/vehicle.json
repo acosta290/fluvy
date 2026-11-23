@@ -146,6 +146,10 @@
     "engine": "Engine",
     "engine_running": "Running",
     "start_engine_confirm": "Start the engine?",
-    "stop_engine_confirm": "Stop the engine?"
+    "stop_engine_confirm": "Stop the engine?",
+    "editor.show_head": "Show the head",
+    "editor.show_hero": "Show the battery",
+    "editor.image_size": "Picture size",
+    "editor.image_size_helper": "A share of the card’s width, such as 50%, or a height, such as 120px"
   }
 }

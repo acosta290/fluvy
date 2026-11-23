@@ -3437,7 +3437,11 @@
     "engine": "Motor",
     "engine_running": "Běží",
     "start_engine_confirm": "Nastartovat motor?",
-    "stop_engine_confirm": "Vypnout motor?"
+    "stop_engine_confirm": "Vypnout motor?",
+    "editor.show_head": "Zobrazit záhlaví",
+    "editor.show_hero": "Zobrazit baterii",
+    "editor.image_size": "Velikost obrázku",
+    "editor.image_size_helper": "Podíl šířky karty, například 50%, nebo výška, například 120px"
   },
   "expander": {
     "card": "Rozbalovač",

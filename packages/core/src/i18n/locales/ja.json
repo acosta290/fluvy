@@ -3457,7 +3457,11 @@
     "engine": "エンジン",
     "engine_running": "始動中",
     "start_engine_confirm": "エンジンを始動しますか？",
-    "stop_engine_confirm": "エンジンを停止しますか？"
+    "stop_engine_confirm": "エンジンを停止しますか？",
+    "editor.show_head": "ヘッダーを表示",
+    "editor.show_hero": "バッテリーを表示",
+    "editor.image_size": "画像のサイズ",
+    "editor.image_size_helper": "カードの幅に対する割合（例: 50%）、または高さ（例: 120px）"
   },
   "remote": {
     "key.power": "電源",

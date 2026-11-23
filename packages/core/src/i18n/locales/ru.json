@@ -3587,7 +3587,11 @@
     "engine": "Двигатель",
     "engine_running": "Работает",
     "start_engine_confirm": "Запустить двигатель?",
-    "stop_engine_confirm": "Заглушить двигатель?"
+    "stop_engine_confirm": "Заглушить двигатель?",
+    "editor.show_head": "Показывать заголовок",
+    "editor.show_hero": "Показывать батарею",
+    "editor.image_size": "Размер изображения",
+    "editor.image_size_helper": "Доля ширины карточки, например 50%, или высота, например 120px"
   },
   "expander": {
     "card": "Раскрывающийся блок",

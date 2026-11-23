@@ -3619,7 +3619,11 @@
     "engine": "Motor",
     "engine_running": "Kører",
     "start_engine_confirm": "Start motoren?",
-    "stop_engine_confirm": "Stop motoren?"
+    "stop_engine_confirm": "Stop motoren?",
+    "editor.show_head": "Vis hovedet",
+    "editor.show_hero": "Vis batteriet",
+    "editor.image_size": "Billedstørrelse",
+    "editor.image_size_helper": "En andel af kortets bredde, fx 50%, eller en højde, fx 120px"
   },
   "web": {
     "card": "Webside",

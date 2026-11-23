@@ -3457,7 +3457,11 @@
     "engine": "Motore",
     "engine_running": "Acceso",
     "start_engine_confirm": "Avviare il motore?",
-    "stop_engine_confirm": "Spegnere il motore?"
+    "stop_engine_confirm": "Spegnere il motore?",
+    "editor.show_head": "Mostra l’intestazione",
+    "editor.show_hero": "Mostra la batteria",
+    "editor.image_size": "Dimensione dell’immagine",
+    "editor.image_size_helper": "Una parte della larghezza della scheda, come 50%, o un’altezza, come 120px"
   },
   "remote": {
     "key.power": "Accensione",

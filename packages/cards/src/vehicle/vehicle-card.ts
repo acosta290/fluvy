@@ -37,7 +37,7 @@ import { css, html, nothing, svg, type CSSResultGroup, type TemplateResult } fro
 import { HeadFit, ROW_NAME_MIN } from '../energy/head.js';
 import { statesUnder, type QuickStatePosition } from '../room/room-card.js';
 import { MARK_LABEL, markedRuler } from '../energy/marked-ruler.js';
-import { Card, MORE_INFO, type CardEditor, type HeadConfig } from '../shared/base.js';
+import { Card, MORE_INFO, type CardEditor, type HeadConfig, type Press } from '../shared/base.js';
 import { toneOf } from '../shared/colour.js';
 import type { AliasSpec } from '../shared/config.js';
 import { spanText, unitWord, withUnit } from '../shared/duration.js';
@@ -57,6 +57,7 @@ import { PENDING_LINE } from '../shared/templates.js';
 import { valueRow } from '../shared/value-row.js';
 import {
   pictureAt,
+  pictureSize,
   vehicleHeight,
   vehicleVariant,
   type VehicleVariant,
@@ -242,6 +243,15 @@ export interface VehicleCardConfig extends FluvyCardConfig, HeadConfig {
   /** A picture of the car: an address, an entity whose picture it is, or `auto` (the integration's own). */
   image?: string;
   image_position?: 'hero' | 'head';
+  /**
+   * The picture's size over the battery (#254): a share of the card's width (`50%`) or a height (`120px`, or a
+   * figure), the card's height following it; none, 2:1 across the column.
+   */
+  image_size?: string | number;
+  /** Whether the head shows (its circle or picture, its name, where it is and what it does): unless `false` (#254). */
+  show_head?: boolean;
+  /** Whether the battery (or the tank, or a hybrid's both) shows: unless `false` (#254). */
+  show_hero?: boolean;
   show_range?: boolean;
   show_limit?: boolean;
   /** The line under the battery: when it is full, why it is not charging, a low range, a cold cabin. */
@@ -505,10 +515,18 @@ export class FluvyVehicleCard extends Card<VehicleCardConfig> {
         position: relative;
         display: grid;
         place-items: center;
-        margin-top: 16px;
+        margin: 16px auto 0;
         aspect-ratio: 2 / 1;
         border-radius: var(--fluvy-radius-lg);
-        cursor: pointer;
+      }
+      /* the card's button where its head is hidden (#254) */
+      .vh-picture > .fv-tile__tap {
+        border-radius: inherit;
+      }
+      /* the first part where the head is hidden sits at the card's padding (#254) */
+      .vh-card > :first-child,
+      .vh-card > .vh-hero:first-child > :first-child {
+        margin-top: 0;
       }
       .vh-picture > img {
         width: 100%;
@@ -565,7 +583,7 @@ export class FluvyVehicleCard extends Card<VehicleCardConfig> {
       /* the line under the battery: one line, its parts fitted to it */
       .vh-line {
         height: 20px;
-        margin-top: 8px;
+        margin-top: 16px;
         overflow: hidden;
         font-size: 13px;
         font-weight: 500;
@@ -573,6 +591,9 @@ export class FluvyVehicleCard extends Card<VehicleCardConfig> {
         color: var(--fluvy-text-secondary);
         font-variant-numeric: tabular-nums;
         white-space: nowrap;
+      }
+      .vh-hero + .vh-line {
+        margin-top: 8px;
       }
       .vh-line.is-warning {
         color: var(--fluvy-warning);
@@ -2419,12 +2440,20 @@ export class FluvyVehicleCard extends Card<VehicleCardConfig> {
     );
   }
 
-  private picture(lead: boolean): TemplateResult {
+  /**
+   * The car's picture: in the head, or over the battery at its size (`image_size`, #254) — there the card's button
+   * where the head is hidden (`press`: its tap and hold), named by the car.
+   */
+  private picture(lead: boolean, press?: Press, name = ''): TemplateResult {
     const src = this.pictures.shown(this.pictureSrc());
+    const size = lead || !this.config ? null : pictureSize(this.config);
+    const cover =
+      press?.onTap || press?.onHold ? pressCover(name, press.onTap, press.onHold) : nothing;
     return html`<span
       class="${lead ? 'vh-face' : 'vh-picture'} ${src ? '' : 'is-empty'}"
-      aria-hidden="true"
-      >${src ? html`<img src=${src} alt="" @error=${this.pictures.failed} />` : glyph('car')}</span
+      style=${!size ? nothing : 'share' in size ? `width:${size.share}%` : `height:${size.height}px;aspect-ratio:auto`}
+      aria-hidden=${cover === nothing ? 'true' : nothing}
+      >${src ? html`<img src=${src} alt="" @error=${this.pictures.failed} />` : glyph('car')}${cover}</span
     >`;
   }
 
@@ -2440,10 +2469,20 @@ export class FluvyVehicleCard extends Card<VehicleCardConfig> {
     this.timed = r.charge === 'charging' || Boolean(r.stale) || Boolean(this.view('updated'));
     if (this.variant === 'mini') return this.renderMini(r);
     const at = c ? pictureAt(c) : null;
+    // the head and the battery as the config shows them (#254): the picture is the card's button where the head is not
+    const headed = c?.show_head !== false;
     return html`<article class="fv-card vh-card ${r.unavailable ? 'is-unavailable' : ''}" data-card>
-      ${this.renderHead(r, at === 'head')}
-      ${at === 'hero' && this.variant === 'full' ? this.picture(false) : nothing}
-      ${this.renderHeroes(r)} ${this.renderLine(r, now)}
+      ${headed ? this.renderHead(r, at === 'head') : nothing}
+      ${
+        at === 'hero' && this.variant === 'full'
+          ? this.picture(
+              false,
+              headed ? undefined : this.headActions(this.leadEntity(r) ?? c?.entity),
+              r.name,
+            )
+          : nothing
+      }
+      ${c?.show_hero !== false ? this.renderHeroes(r) : nothing} ${this.renderLine(r, now)}
       ${this.renderControls(r, this.variant === 'compact')}
       ${this.variant === 'full' ? html`${this.renderRows(r)}${this.renderTyres(r)}` : nothing}
       ${this.renderQuick()}

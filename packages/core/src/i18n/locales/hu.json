@@ -3457,7 +3457,11 @@
     "engine": "Motor",
     "engine_running": "Jár",
     "start_engine_confirm": "Beindítod a motort?",
-    "stop_engine_confirm": "Leállítod a motort?"
+    "stop_engine_confirm": "Leállítod a motort?",
+    "editor.show_head": "Fejléc megjelenítése",
+    "editor.show_hero": "Az akku megjelenítése",
+    "editor.image_size": "A kép mérete",
+    "editor.image_size_helper": "A kártya szélességének része, például 50%, vagy egy magasság, például 120px"
   },
   "remote": {
     "key.power": "Be/ki",

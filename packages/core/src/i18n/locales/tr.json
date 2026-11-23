@@ -3457,7 +3457,11 @@
     "engine": "Motor",
     "engine_running": "Çalışıyor",
     "start_engine_confirm": "Motor çalıştırılsın mı?",
-    "stop_engine_confirm": "Motor durdurulsun mu?"
+    "stop_engine_confirm": "Motor durdurulsun mu?",
+    "editor.show_head": "Başlığı göster",
+    "editor.show_hero": "Bataryayı göster",
+    "editor.image_size": "Resim boyutu",
+    "editor.image_size_helper": "Kart genişliğinin bir payı (50% gibi) veya bir yükseklik (120px gibi)"
   },
   "remote": {
     "key.power": "Güç",

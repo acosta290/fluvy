@@ -3383,7 +3383,11 @@
     "engine": "Silnik",
     "engine_running": "Pracuje",
     "start_engine_confirm": "Uruchomić silnik?",
-    "stop_engine_confirm": "Wyłączyć silnik?"
+    "stop_engine_confirm": "Wyłączyć silnik?",
+    "editor.show_head": "Pokaż nagłówek",
+    "editor.show_hero": "Pokaż baterię",
+    "editor.image_size": "Rozmiar obrazu",
+    "editor.image_size_helper": "Część szerokości karty, np. 50%, lub wysokość, np. 120px"
   },
   "wall": {
     "paused": "Tryb ściany wstrzymany",

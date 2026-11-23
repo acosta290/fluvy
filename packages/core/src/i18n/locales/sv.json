@@ -3619,7 +3619,11 @@
     "engine": "Motor",
     "engine_running": "Igång",
     "start_engine_confirm": "Starta motorn?",
-    "stop_engine_confirm": "Stänga av motorn?"
+    "stop_engine_confirm": "Stänga av motorn?",
+    "editor.show_head": "Visa huvudet",
+    "editor.show_hero": "Visa batteriet",
+    "editor.image_size": "Bildstorlek",
+    "editor.image_size_helper": "En andel av kortets bredd, till exempel 50%, eller en höjd, till exempel 120px"
   },
   "web": {
     "card": "Webbsida",

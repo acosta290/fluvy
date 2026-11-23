@@ -3457,7 +3457,11 @@
     "engine": "Motor",
     "engine_running": "Draait",
     "start_engine_confirm": "Motor starten?",
-    "stop_engine_confirm": "Motor uitzetten?"
+    "stop_engine_confirm": "Motor uitzetten?",
+    "editor.show_head": "Kop tonen",
+    "editor.show_hero": "Accu tonen",
+    "editor.image_size": "Afbeeldingsgrootte",
+    "editor.image_size_helper": "Een deel van de breedte van de kaart, zoals 50%, of een hoogte, zoals 120px"
   },
   "remote": {
     "key.power": "Aan/uit",

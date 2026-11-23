@@ -179,6 +179,9 @@ export const keys = configKeys<VehicleCardConfig>()([
   'badge',
   'image',
   'image_position',
+  'image_size',
+  'show_head',
+  'show_hero',
   'show_range',
   'show_limit',
   'show_status',
@@ -304,6 +307,8 @@ export const defaults: EditorDefaults = () => ({
   energy: 'auto',
   hero: 'ruler',
   image_position: 'hero',
+  show_head: true,
+  show_hero: true,
   show_range: true,
   show_limit: true,
   show_status: true,
@@ -331,6 +336,11 @@ export function getConfigForm(): LovelaceConfigForm {
   const charged = (data: Readonly<Record<string, unknown>>): boolean => data['energy'] !== 'fuel';
   const tyred = (data: Readonly<Record<string, unknown>>): boolean =>
     full(data) && data['show_tyres'] === true;
+  // the picture over the battery; the battery (or the tank) shown
+  const pictured = (data: Readonly<Record<string, unknown>>): boolean =>
+    full(data) && hasImage(data) && data['image_position'] !== 'head';
+  const heroed = (data: Readonly<Record<string, unknown>>): boolean =>
+    notMini(data) && data['show_hero'] !== false;
   const decimals = ['auto', '0', '1', '2'] as const;
   return {
     schema: [
@@ -356,7 +366,7 @@ export function getConfigForm(): LovelaceConfigForm {
         onlyWhen(tanked, numberField('tank_size', 0, 500)),
       ),
       onlyWhen(
-        (data) => full(data) && data['energy'] !== 'hybrid',
+        (data) => full(data) && data['energy'] !== 'hybrid' && data['show_hero'] !== false,
         selectField('hero', ['ruler', 'ring']),
       ),
       onlyWhen(notMini, textField('image')),
@@ -367,9 +377,16 @@ export function getConfigForm(): LovelaceConfigForm {
           ['head', 'vehicle.editor.image_head'],
         ]),
       ),
-      onlyWhen(
-        notMini,
-        fieldRow(boolField('show_range'), onlyWhen(charged, boolField('show_limit'))),
+      // the picture over the battery at a size of its own (#254)
+      onlyWhen(pictured, textField('image_size')),
+      onlyWhen(notMini, fieldRow(boolField('show_head'), boolField('show_hero'))),
+      // the range where the battery or the compact card's head says it; the limit where a battery marks it
+      fieldRow(
+        onlyWhen(
+          (data) => heroed(data) || (data['variant'] === 'compact' && data['show_head'] !== false),
+          boolField('show_range'),
+        ),
+        onlyWhen((data) => heroed(data) && charged(data), boolField('show_limit')),
       ),
       onlyWhen(notMini, fieldRow(boolField('show_status'), boolField('show_controls'))),
       onlyWhen(full, fieldRow(boolField('show_rows'), boolField('show_tyres'))),
@@ -397,9 +414,13 @@ export function getConfigForm(): LovelaceConfigForm {
       fieldRow(unitField('range_unit', ['km', 'mi']), selectField('range_decimals', decimals)),
       fieldRow(unitField('power_unit', ['W', 'kW']), selectField('power_decimals', decimals)),
       ...colourFields(),
-      actionFields({ icon: true }),
-      onlyWhen(notMini, fieldRow(actionField('hero_tap_action'), actionField('hero_hold_action'))),
-      onlyWhen(notMini, optionalActions(doubleTapField('hero_double_tap_action'))),
+      // the card's own: its head's, the strip's, or its picture's where the head is hidden
+      onlyWhen(
+        (data) => !notMini(data) || data['show_head'] !== false || pictured(data),
+        actionFields({ icon: true }),
+      ),
+      onlyWhen(heroed, fieldRow(actionField('hero_tap_action'), actionField('hero_hold_action'))),
+      onlyWhen(heroed, optionalActions(doubleTapField('hero_double_tap_action'))),
     ],
     ...editorLabels(
       s,
@@ -410,6 +431,9 @@ export function getConfigForm(): LovelaceConfigForm {
         tank_size: 'editor.tank_size',
         hero: 'editor.hero',
         image_position: 'editor.image_position',
+        image_size: 'editor.image_size',
+        show_head: 'editor.show_head',
+        show_hero: 'editor.show_hero',
         show_range: 'editor.show_range',
         show_limit: 'editor.show_limit',
         show_status: 'editor.show_status',
@@ -444,6 +468,8 @@ export function getConfigForm(): LovelaceConfigForm {
             ? s(undefined, 'editor.tank_size_helper')
             : schema.name === 'tyre_low'
               ? s(undefined, 'editor.tyre_low_helper')
-              : undefined,
+              : schema.name === 'image_size'
+                ? s(undefined, 'editor.image_size_helper')
+                : undefined,
   };
 }

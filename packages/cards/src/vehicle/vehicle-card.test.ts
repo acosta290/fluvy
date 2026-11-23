@@ -393,6 +393,51 @@ describe('the vehicle card', () => {
     expect(src()).toBe('http://ha.example/api/b.png');
   });
 
+  it('draws its picture at its own size, its height following; the picture alone where nothing else shows (#254)', async () => {
+    const at = (config: Record<string, unknown>) =>
+      FluvyVehicleCard.layoutHeight({ type: 'x', ...config } as LovelaceCardConfig);
+    const image = '/local/car.png';
+    expect(at({ image, image_size: '50%' })).toBe(at({}) + 16 + 80);
+    expect(at({ image, image_size: '120px' })).toBe(at({}) + 16 + 120);
+    expect(at({ image, image_size: 96 })).toBe(at({}) + 16 + 96);
+    expect(at({ image, image_size: 'large' })).toBe(at({ image }));
+    expect(at({ image, image_size: '50%', image_position: 'head' })).toBe(at({}));
+    // the head hidden: its 44 and the 16 under it; the battery hidden, the line 16 under the head
+    expect(at({ show_head: false })).toBe(at({}) - 60);
+    expect(at({ show_hero: false })).toBe(at({}) - 156 + 8);
+    expect(at({ variant: 'compact', show_hero: false })).toBe(at({ variant: 'compact' }) - 36 + 8);
+    const alone = {
+      image,
+      show_head: false,
+      show_hero: false,
+      show_status: false,
+      show_controls: false,
+      show_rows: false,
+    };
+    expect(at(alone)).toBe(40 + 160);
+    expect(at({ ...alone, image_size: '50%' })).toBe(40 + 80);
+    expect(at({ ...alone, image: '' })).toBe(40);
+
+    const sized = await mount({ device: TESLA.device, image, image_size: '50%' });
+    expect(root(sized).querySelector<HTMLElement>('.vh-picture')?.style.width).toBe('50%');
+    expect(root(sized).querySelector('.vh-picture .fv-tile__tap')).toBeNull();
+    document.body.replaceChildren();
+    const tall = await mount({ device: TESLA.device, image, image_size: '120px' });
+    expect(root(tall).querySelector<HTMLElement>('.vh-picture')?.style.height).toBe('120px');
+    document.body.replaceChildren();
+    // the picture alone is the card's button: its tap opens the battery, as the head's would
+    const card = await mount({ device: TESLA.device, ...alone, image_size: '60%' });
+    expect(sections(card)).toEqual(['span.vh-picture']);
+    const cover = root(card).querySelector<HTMLButtonElement>('.vh-picture > .fv-tile__tap');
+    expect(cover?.getAttribute('aria-label')).toBe('Model Y');
+    const opened: unknown[] = [];
+    const open = (event: Event) => opened.push((event as CustomEvent).detail.entityId);
+    window.addEventListener('hass-more-info', open);
+    cover?.click();
+    window.removeEventListener('hass-more-info', open);
+    expect(opened).toEqual(['sensor.model_y_battery_level']);
+  });
+
   it('draws its picture in the head, and a car glyph where none can be shown', async () => {
     const card = await mount({
       device: TESLA.device,

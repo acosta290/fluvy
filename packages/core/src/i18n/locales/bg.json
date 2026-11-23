@@ -3619,7 +3619,11 @@
     "engine": "Двигател",
     "engine_running": "Работи",
     "start_engine_confirm": "Стартиране на двигателя?",
-    "stop_engine_confirm": "Спиране на двигателя?"
+    "stop_engine_confirm": "Спиране на двигателя?",
+    "editor.show_head": "Показване на заглавието",
+    "editor.show_hero": "Показване на батерията",
+    "editor.image_size": "Размер на изображението",
+    "editor.image_size_helper": "Дял от ширината на картата, например 50%, или височина, например 120px"
   },
   "web": {
     "card": "Уеб страница",

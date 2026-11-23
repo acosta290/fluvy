@@ -3457,7 +3457,11 @@
     "engine": "Moteur",
     "engine_running": "En marche",
     "start_engine_confirm": "Démarrer le moteur ?",
-    "stop_engine_confirm": "Arrêter le moteur ?"
+    "stop_engine_confirm": "Arrêter le moteur ?",
+    "editor.show_head": "Afficher l’en-tête",
+    "editor.show_hero": "Afficher la batterie",
+    "editor.image_size": "Taille de l’image",
+    "editor.image_size_helper": "Une part de la largeur de la carte, comme 50%, ou une hauteur, comme 120px"
   },
   "remote": {
     "key.power": "Marche/arrêt",

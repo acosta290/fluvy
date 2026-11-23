@@ -3457,7 +3457,11 @@
     "engine": "Motor",
     "engine_running": "En marcha",
     "start_engine_confirm": "¿Arrancar el motor?",
-    "stop_engine_confirm": "¿Apagar el motor?"
+    "stop_engine_confirm": "¿Apagar el motor?",
+    "editor.show_head": "Mostrar la cabecera",
+    "editor.show_hero": "Mostrar la batería",
+    "editor.image_size": "Tamaño de la imagen",
+    "editor.image_size_helper": "Una parte del ancho de la tarjeta, como 50%, o una altura, como 120px"
   },
   "remote": {
     "key.power": "Encendido",
