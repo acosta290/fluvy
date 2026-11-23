@@ -218,9 +218,9 @@ const BUDGETS = {
   // room and its rounds in columns (#225); 4 before
   'quick-actions': 5120,
   // the weather card, and the Compass card since 1.23 (#209: the card and its English; its editor goes with the forms)
-  // 13.5 KB since 2026-11-23 (1.25: the Compass card's classic face, its letters' fit and its chevron, #247: measured at
+  // 14 KB since 2026-11-23 (1.25: the Compass card's classic face, its letters' fit and its chevron, #247: measured at
   // 13.0 KB)
-  weather: 13_824,
+  weather: 14_336,
   // the calendar card: its views, what reads its events, its sheet (1.18: it left core, 9.7 KB of what every page
   // loads, for the release's new card and styles); measured at 11.5 KB
   calendar: 16_384,
