@@ -1,6 +1,6 @@
 {
   "name": "fluvy",
-  "version": "1.24.0",
+  "version": "1.25.0",
   "private": true,
   "description": "A premium theme and card library for Home Assistant: a card for every part of the house, a light and dark theme in palettes to choose from, automatic dashboards built from your home, a wall panel and kiosk mode for tablets, and a settings panel, one design for all of Home Assistant, installed through HACS",
   "license": "GPL-3.0-only",

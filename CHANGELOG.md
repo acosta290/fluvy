@@ -5,6 +5,8 @@ and the versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.25.0] — 2026-11-23
+
 ### Visible on upgrade
 
 Two changes are choices: the Compass card draws a classic compass face, and a house whose Home Assistant speaks
