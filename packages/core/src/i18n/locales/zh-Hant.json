@@ -1648,7 +1648,9 @@
     "pointer_arrow": "箭頭",
     "arrow_points": "箭頭方向",
     "arrow_outward": "朝外",
-    "arrow_inward": "朝內"
+    "arrow_inward": "朝內",
+    "pointer_chevron": "人字形",
+    "face": "刻度盤"
   },
   "cover-card": {
     "closed": "關閉",
