@@ -3713,7 +3713,9 @@
     "pointer_arrow": "Šípka",
     "arrow_points": "Šípka smeruje",
     "arrow_outward": "Von",
-    "arrow_inward": "Dovnútra"
+    "arrow_inward": "Dovnútra",
+    "pointer_chevron": "Krokva",
+    "face": "Stupnica"
   },
   "schedule": {
     "card": "Plán kúrenia",

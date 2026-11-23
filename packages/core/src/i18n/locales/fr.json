@@ -3653,7 +3653,9 @@
     "pointer_arrow": "Flèche",
     "arrow_points": "La flèche pointe",
     "arrow_outward": "Vers l’extérieur",
-    "arrow_inward": "Vers l’intérieur"
+    "arrow_inward": "Vers l’intérieur",
+    "pointer_chevron": "Chevron",
+    "face": "Cadran"
   },
   "schedule": {
     "card": "Programme de chauffage",

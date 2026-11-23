@@ -3653,7 +3653,9 @@
     "pointer_arrow": "Pfeil",
     "arrow_points": "Pfeil zeigt",
     "arrow_outward": "Nach außen",
-    "arrow_inward": "Nach innen"
+    "arrow_inward": "Nach innen",
+    "pointer_chevron": "Chevron",
+    "face": "Skala"
   },
   "schedule": {
     "card": "Heizplan",

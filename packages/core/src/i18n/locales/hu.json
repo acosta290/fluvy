@@ -3653,7 +3653,9 @@
     "pointer_arrow": "Nyíl",
     "arrow_points": "A nyíl iránya",
     "arrow_outward": "Kifelé",
-    "arrow_inward": "Befelé"
+    "arrow_inward": "Befelé",
+    "pointer_chevron": "Szarufa",
+    "face": "Számlap"
   },
   "schedule": {
     "card": "Fűtési ütemterv",

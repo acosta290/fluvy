@@ -3653,7 +3653,9 @@
     "pointer_arrow": "Flecha",
     "arrow_points": "La flecha apunta",
     "arrow_outward": "Hacia fuera",
-    "arrow_inward": "Hacia dentro"
+    "arrow_inward": "Hacia dentro",
+    "pointer_chevron": "Cheurón",
+    "face": "Esfera"
   },
   "schedule": {
     "card": "Calendario de calefacción",

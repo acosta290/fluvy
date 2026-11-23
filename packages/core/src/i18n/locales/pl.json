@@ -3778,7 +3778,9 @@
     "pointer_arrow": "Strzałka",
     "arrow_points": "Strzałka wskazuje",
     "arrow_outward": "Na zewnątrz",
-    "arrow_inward": "Do środka"
+    "arrow_inward": "Do środka",
+    "pointer_chevron": "Szewron",
+    "face": "Tarcza"
   },
   "schedule": {
     "card": "Harmonogram ogrzewania",

@@ -637,7 +637,7 @@ export const MEANINGS: Readonly<Record<string, string>> = {
   'weather.days': 'How many days the forecast shows.',
   'weather.entity': 'The weather entity the card shows.',
   'compass.arrow_points':
-    'Which way an arrow points, the bearing’s and the second’s: out from the centre to the bearing, as a compass needle’s head, or in at the figure, as the wind blows from it.',
+    'Which way an arrow or a chevron points, the bearing’s and the second’s: out from the centre to the bearing, as a compass needle’s head, or in at the figure, as the wind blows from it.',
   'compass.badge':
     'The words in the head’s badge: your own, an entity’s state or a template; none by default.',
   'compass.direction_attribute':
@@ -646,8 +646,10 @@ export const MEANINGS: Readonly<Record<string, string>> = {
     'The bearing: a state in degrees or in English letters (N, NNE … NNW), the sun’s azimuth, a weather entity’s wind.',
   'compass.entity':
     'The figure in the ring beside `direction_entity`, such as the wind’s speed; alone, it is read as the bearing.',
+  'compass.face':
+    'The ring’s look: a classic compass’s, a band with the ticks across it and the letters large outside it; or the ring of ticks alone, the letters small in their place.',
   'compass.indicator':
-    'How the bearing is marked: an arrow across the ring, the knob on the ring, the ticks lit across it, or a dot outside them.',
+    'How the bearing is marked: an arrow across the ring, a chevron in a ringed circle on it, the knob on the ring, the ticks lit across it, or a dot.',
   'compass.label': 'The words inside the ring, over the figure.',
   'compass.north_offset':
     'Where north is drawn, in degrees clockwise from the top, for a window that does not face north.',
@@ -657,7 +659,7 @@ export const MEANINGS: Readonly<Record<string, string>> = {
   'compass.secondary_indicator': 'How the second bearing is marked.',
   'compass.show_cardinals': 'Writes N, E, S and W in the ring, in the page’s language.',
   'compass.show_stats': 'Shows the row of readouts under the ring.',
-  'compass.show_ticks': 'Draws the ring’s ticks.',
+  'compass.show_ticks': 'Draws the ring’s ticks, the cardinal points’ bars with them.',
   'compass.tint':
     'Whether the card itself takes the colour of the threshold its figure is past: never, or while it is past one.',
   'compass.tint_style': 'How that colour is shown: a wash over the card, or the card’s edge.',

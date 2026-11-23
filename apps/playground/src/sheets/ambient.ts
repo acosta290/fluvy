@@ -176,6 +176,14 @@ const COMPASS_STATION = {
   ],
 };
 
+/** The sun's azimuth: the bearing itself is the figure. */
+const COMPASS_SUN = {
+  type: 'custom:fluvy-compass-card',
+  name: 'Sun',
+  direction_entity: 'sun.sun',
+  label: 'Azimuth',
+};
+
 /** A car's heading, read from its tracker's attribute, its speed in the ring. */
 const COMPASS_CAR = {
   type: 'custom:fluvy-compass-card',
@@ -1667,6 +1675,61 @@ export const sheet: SheetSpec = {
           direction_entity: 'sensor.am_wind_bearing_gone',
           cols: 12,
         },
+      ],
+    },
+
+    /* the classic face (#247, the default) beside 1.24's ring (`face: ring`): a section each, the wind and the sun;
+       then half a section and the narrow columns, where the letters step down together (Polish's "Wsch" and "Zach"
+       stand in the band's place where no size holds them outside it, `&lang=pl`) */
+    {
+      title: 'Compass · classic and ring',
+      width: 736,
+      cards: [COMPASS_STATION, { ...COMPASS_STATION, face: 'ring' }].map((card) => ({
+        ...card,
+        cols: 6,
+      })),
+    },
+    {
+      title: 'Compass · classic and ring · the sun',
+      width: 736,
+      cards: [COMPASS_SUN, { ...COMPASS_SUN, face: 'ring' }].map((card) => ({ ...card, cols: 6 })),
+    },
+    ...[266, 211, 172, 152].map((column) => ({
+      title: `Compass · classic and ring at ${column}`,
+      width: column * 2 + 16,
+      cards: [COMPASS_WIND, { ...COMPASS_WIND, face: 'ring' }].map((card) => ({
+        ...card,
+        cols: 6,
+      })),
+    })),
+
+    /* the chevron (#247): a ringed circle riding the band, pointing out from the centre, or in at the figure as the
+       wind blows (`arrow_points: inward`), the 10-minute average's in the secondary ink; on a face without its ticks,
+       on the compact card's small ring and in a row */
+    {
+      title: 'Compass · chevron',
+      cards: [
+        {
+          ...COMPASS_STATION,
+          indicator: 'chevron',
+          arrow_points: 'inward',
+          secondary_indicator: 'chevron',
+        },
+      ],
+    },
+    {
+      title: 'Compass · chevron · half a section',
+      cards: [
+        { ...COMPASS_WIND, name: 'Garden', indicator: 'chevron' },
+        { ...COMPASS_SUN, indicator: 'chevron', arrow_points: 'inward', show_ticks: false },
+      ].map((card) => ({ ...card, cols: 6 })),
+    },
+    {
+      title: 'Compass · chevron · compact and a row',
+      cards: [
+        { ...COMPASS_WIND, variant: 'compact', indicator: 'chevron', arrow_points: 'inward' },
+        { ...COMPASS_WIND, variant: 'row', indicator: 'chevron', arrow_points: 'inward', cols: 6 },
+        { ...COMPASS_SUN, variant: 'row', indicator: 'chevron', cols: 6 },
       ],
     },
   ],

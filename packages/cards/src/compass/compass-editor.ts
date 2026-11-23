@@ -28,6 +28,7 @@ import {
 import type { EditorChoices, EditorDefaults, RowsListSpec } from '../shared/rows-editor.js';
 import {
   COMPASS_ARROW_POINTS,
+  COMPASS_FACES,
   COMPASS_POINTERS,
   COMPASS_VARIANTS,
   type CompassCardConfig,
@@ -49,6 +50,7 @@ export const keys = configKeys<CompassCardConfig>()([
   'direction_attribute',
   'secondary_direction_entity',
   'secondary_direction_attribute',
+  'face',
   'indicator',
   'secondary_indicator',
   'arrow_points',
@@ -101,14 +103,21 @@ const names =
   (data: Data): boolean =>
     Boolean(data[key]);
 
-/** Whether the card draws an arrow: the bearing's (its default pointer), or a second bearing's asked for one. */
+/** Whether a pointer points (an arrow or a chevron), where it is asked for. */
+const points = (pointer: unknown): boolean => pointer === 'arrow' || pointer === 'chevron';
+
+/**
+ * Whether the card draws a pointer that points: the bearing's (an arrow, its default pointer, or a chevron), or a
+ * second bearing's asked for one.
+ */
 const drawsArrow = (data: Data): boolean =>
-  (data['indicator'] ?? 'arrow') === 'arrow' ||
-  (names('secondary_direction_entity')(data) && data['secondary_indicator'] === 'arrow');
+  points(data['indicator'] ?? 'arrow') ||
+  (names('secondary_direction_entity')(data) && points(data['secondary_indicator']));
 
 /** What the editor shows where the config says nothing: what the card does then. */
 export const defaults: EditorDefaults = () => ({
   variant: 'full',
+  face: 'classic',
   indicator: 'arrow',
   secondary_indicator: 'dot',
   arrow_points: 'outward',
@@ -150,7 +159,7 @@ export function getConfigForm(): LovelaceConfigForm {
       entityField(undefined, 'secondary_direction_entity', false),
       attributeField('secondary_direction_attribute', 'secondary_direction_entity'),
       onlyWhen(names('secondary_direction_entity'), pointerField('secondary_indicator')),
-      // which way an arrow points, the bearing's and the second's: shown where one is drawn
+      // which way an arrow or a chevron points, the bearing's and the second's: shown where one is drawn
       onlyWhen(
         drawsArrow,
         choiceField(
@@ -164,6 +173,8 @@ export function getConfigForm(): LovelaceConfigForm {
           number: { min: -180, max: 180, step: 1, mode: 'box', unit_of_measurement: '°' },
         },
       },
+      // the ring's face, its ticks and its letters: a row draws none of them
+      onlyWhen(ringed, selectField('face', COMPASS_FACES)),
       onlyWhen(ringed, fieldRow(boolField('show_ticks'), boolField('show_cardinals'))),
       onlyWhen(
         ringed,
@@ -198,6 +209,7 @@ export function getConfigForm(): LovelaceConfigForm {
         direction_attribute: 'attribute',
         secondary_direction_entity: 'secondary_direction',
         secondary_direction_attribute: 'attribute',
+        face: 'face',
         indicator: 'indicator',
         secondary_indicator: 'secondary_indicator',
         arrow_points: 'arrow_points',

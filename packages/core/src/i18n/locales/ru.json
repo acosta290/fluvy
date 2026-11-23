@@ -3779,7 +3779,9 @@
     "pointer_arrow": "Стрелка",
     "arrow_points": "Стрелка указывает",
     "arrow_outward": "Наружу",
-    "arrow_inward": "Внутрь"
+    "arrow_inward": "Внутрь",
+    "pointer_chevron": "Шеврон",
+    "face": "Шкала"
   },
   "schedule": {
     "card": "График отопления",

@@ -3653,7 +3653,9 @@
     "pointer_arrow": "Seta",
     "arrow_points": "A seta aponta",
     "arrow_outward": "Para fora",
-    "arrow_inward": "Para dentro"
+    "arrow_inward": "Para dentro",
+    "pointer_chevron": "Divisa",
+    "face": "Mostrador"
   },
   "schedule": {
     "card": "Agenda de aquecimento",

@@ -3653,7 +3653,9 @@
     "pointer_arrow": "Freccia",
     "arrow_points": "La freccia punta",
     "arrow_outward": "Verso l’esterno",
-    "arrow_inward": "Verso l’interno"
+    "arrow_inward": "Verso l’interno",
+    "pointer_chevron": "Gallone",
+    "face": "Quadrante"
   },
   "schedule": {
     "card": "Programma riscaldamento",

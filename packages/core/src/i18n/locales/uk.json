@@ -3779,7 +3779,9 @@
     "pointer_arrow": "Стрілка",
     "arrow_points": "Стрілка вказує",
     "arrow_outward": "Назовні",
-    "arrow_inward": "Усередину"
+    "arrow_inward": "Усередину",
+    "pointer_chevron": "Шеврон",
+    "face": "Шкала"
   },
   "schedule": {
     "card": "Графік опалення",

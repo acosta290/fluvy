@@ -3653,7 +3653,9 @@
     "pointer_arrow": "矢印",
     "arrow_points": "矢印の向き",
     "arrow_outward": "外向き",
-    "arrow_inward": "内向き"
+    "arrow_inward": "内向き",
+    "pointer_chevron": "シェブロン",
+    "face": "文字盤"
   },
   "schedule": {
     "card": "暖房スケジュール",

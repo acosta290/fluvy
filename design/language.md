@@ -930,14 +930,38 @@ longer than the ends' 56 ends in an ellipsis.
 ## Compass (1.23, #209, by @twodrops)
 
 A bearing on a 360° ring, drawn as Fluvy's dials are: the wind from a weather station, a car's heading, the sun's
-azimuth. One shape of its own, its arrow; every other part is a control the house already has, read.
+azimuth. Two shapes of its own, its arrow and its chevron, and a classic compass's bezel; every other part is a
+control the house already has, read.
 
 - **The ring** is the gauge's: R 96 from a 240 column, in a 240 box, down to the column's on the 4 grid (as the gauge,
-  `(width / 2 − 24)`), its ticks the dial's (2 px, round caps, the strong hairline; 12 long every 45°, 7.2 between,
-  every 5°, every 10° under R 64). The four cardinal points stand in their ticks' place, in the ticks' band, 11/600
-  tracked as a dial's label, the weather's words in the page's language, north in the text's ink and the others in the
-  secondary's; `north_offset` turns the ring (east at the top for a window facing east) and the letters stay upright.
-  Without ticks, a 2 px ring in the hairline is the knob's track.
+  `(width / 2 − 24)`). Its face (`face`) is a classic compass's by default, or 1.24's ring of ticks.
+- **The classic face** (1.25, #247, after @twodrops' own design): a bezel band 12 wide (6 under R 72) in the well's
+  quiet fill (`--fluvy-inset`, the page's colour on a plain card: the wash's deeper step on a washed one, see-through
+  on a see-through one), its outer edge 2 past the ring so the letters outside it keep the ring's box and the card is
+  as tall as with the ring; the ticks across it, hanging from its outer edge in the dial's 2 px round-capped strong
+  hairline, every 7.5° (three to a sixteenth, every 11.25° under R 56): the rest 5 long, every 22.5° 8, every 45°
+  across the band; each cardinal point's bar 3 bold, from the hairline (2 inside the band without one) to 2 past the
+  band toward its letter; on a large ring (from R 72) a 1 px hairline in the border round the open centre, 5 inside
+  the band (a smaller ring's centre has no room to spare for one). The four letters stand outside the band, 5 clear of
+  it where their box meets their bearing, upright wherever `north_offset` turns the ring, 16/700 (14 from R 40 to 56,
+  12 under), north in the card's ink and the others in the secondary's. They keep their column: the room from the
+  ring's centre to the column's nearer edge across (the ring's box beside a compact card's reading), the ring's box
+  down; a long word steps all four down together, 16 → 14 → 12 → 11 (Polish's "Wsch" holds at 16 in a desktop's
+  section, at 12 on a phone's), and where none holds (Polish in a narrow column) they stand in the band's place at
+  11/600 tracked, the band and its ticks giving way round each in arcs, as the ring's do. The pointers ride the band's
+  middle (4 inside the ring on a full one), a dot on it clearing the ticks under it as the arrow does, and lit ticks
+  span the band so the bearing's sixteenth reads as one arc. The open centre's lines are as wide as the dial's disc
+  holds and, here, as the circle inside the hairline (else the band) holds them where they stand, 3 clear: the word
+  over the figure and the line under it (43 from the middle on a large dial, 35 on a small one) and the figure's
+  digits (18, 12), so a long word leaves rather than runs into the band. Without ticks the band, the hairline and the
+  letters stay: a plain bezel.
+- **The ring of ticks** (`face: ring`, 1.24's look): the dial's ticks (2 px, round caps, the strong hairline; 12 long
+  every 45°, 7.2 between, every 5°, every 10° under R 64). The four cardinal points stand in their ticks' place, in
+  the ticks' band, 11/600 tracked as a dial's label, the weather's words in the page's language, north in the text's
+  ink and the others in the secondary's; `north_offset` turns the ring (east at the top for a window facing east) and
+  the letters stay upright. Without ticks, a 2 px ring in the hairline is the knob's track.
+- **The letters** are words laid over the drawing (each centred where it stands, `aria-hidden`: the line under the
+  figure says the bearing), so the measurer reads them as it reads every word: inside their card, over no other.
 - **The bearing** is marked by the compass's **arrow** (the default, 1.23 polish: "compasses usually have an arrow"): a
   compass needle's head, isosceles and slim, symmetric about its axis and of one ink, laid across the ring where the
   bearing is and pointing out from the centre to it, as a compass needle's head points on its ring (the owner's call,
@@ -952,10 +976,15 @@ azimuth. One shape of its own, its arrow; every other part is a control the hous
   the short way round (350° to 10° is 20° clockwise) and settles there on the house's spring (640 ms; still under
   reduced motion). What it covers gives way, never cut: the ticks it would touch (4 clear of their lines) fade out and
   back as it leaves, and a cardinal point it stands on fades as well, as does a point under a knob's halo or a dot,
-  where the letters were cut before. Or a control read: the thermostat's **knob** riding the ring (36, 28 on a small
-  ring; its dot, its lift, its halo cutting the ticks), the ring's **ticks lit** across the bearing's sixteenth (11.25°
-  either side, the gauge's lit ticks, glowing in dark), or the dial's **dot** outside the ticks (3, as the thermostat's
-  current reading). A second bearing to compare against (a 10-minute average, the sun) is drawn under the first in the
+  where the letters were cut before. Or the **chevron** (1.25, #247, @twodrops' pointer in the house's idiom): the
+  knob's disc and 2 ring in the tone's ink (its size: 36, 28, 20) with a chevron of the same ink and stroke in it, 0.4
+  of the disc wide and 0.22 deep, pointing out or in as `arrow_points` says; it turns as the arrow does (the short way
+  round, on the spring), lifted as the knob is, its halo of the card (6 round its ring, a layer of its own under it,
+  turned with it) cutting the band and the ticks; the second's in the secondary ink and flat; in a row the chevron
+  alone across the track (8 wide, 5 deep), the circle having no room beside the row's. Or a control read: the
+  thermostat's **knob** riding the ring (36, 28 on a small ring; its dot, its lift, its halo cutting the ticks), the
+  ring's **ticks lit** across the bearing's sixteenth (11.25° either side, the gauge's lit ticks, glowing in dark), or
+  the dial's **dot** outside the ticks (3, as the thermostat's current reading; on the classic face's band). A second bearing to compare against (a 10-minute average, the sun) is drawn under the first in the
   secondary ink: a dot by default; its arrow, where it is asked for one, is the same head unnotched, its outline alone
   (1.5) and flat, never a second filled arrow beside the first (a notched outline is the paper plane again). Each
   pointer is a layer of its own over the ring, the second's under the first's. Nothing is marked where the bearing
@@ -975,7 +1004,8 @@ azimuth. One shape of its own, its arrow; every other part is a control the hous
   Spanish's West); it is said in the page's language, a point between two as the language joins them (`compass.point16`:
   "NNE", 北北東, "Pn-Pn-Wsch"); 359.6° is 0°.
 - **Layouts** (`variant`): `full` (the default, above); `compact`, the head, then a small ring at the column's start (R
-  28 in a 104 box, the arrow in a tile's 20 knob's place, its points in its ticks' band) with the readout 16 beside it —
+  28 in a 104 box, the arrow in a tile's 20 knob's place; a classic face's band 6 and its letters 12 outside it within
+  the ring's box, a ring's points in its ticks' band) with the readout 16 beside it —
   the word, the figure at the large readout's size where it holds, else the small one (the extra-small one before it
   would be cut), the point and the degrees under it on one line, the stack centred on the ring — the readout under the
   ring where the column does not leave it a room as wide as the ring beside it (under 224 of content: a phone's

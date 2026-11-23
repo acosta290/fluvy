@@ -3653,7 +3653,9 @@
     "pointer_arrow": "Стрелка",
     "arrow_points": "Стрелката сочи",
     "arrow_outward": "Навън",
-    "arrow_inward": "Навътре"
+    "arrow_inward": "Навътре",
+    "pointer_chevron": "Шеврон",
+    "face": "Скала"
   },
   "schedule": {
     "card": "График за отопление",

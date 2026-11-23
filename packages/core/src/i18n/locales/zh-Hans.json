@@ -3653,7 +3653,9 @@
     "pointer_arrow": "箭头",
     "arrow_points": "箭头方向",
     "arrow_outward": "朝外",
-    "arrow_inward": "朝内"
+    "arrow_inward": "朝内",
+    "pointer_chevron": "人字形",
+    "face": "刻度盘"
   },
   "schedule": {
     "card": "供暖计划",

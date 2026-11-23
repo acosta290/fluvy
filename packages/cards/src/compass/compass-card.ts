@@ -52,16 +52,30 @@ const s = words('compass');
 const weatherWords = words('weather');
 
 /**
- * How a bearing is marked on the ring: the compass's own arrow across the ring at the bearing; or one of Fluvy's
- * controls read: the thermostat's knob riding the ring, the ring's ticks lit across the bearing's sixteenth (the
- * gauge's lit ticks), or the dial's dot outside the ticks (the thermostat's current reading).
+ * How a bearing is marked on the ring: the compass's own arrow across the ring at the bearing, or its chevron in a
+ * ringed circle riding the ring (#247); or one of Fluvy's controls read: the thermostat's knob riding the ring, the
+ * ring's ticks lit across the bearing's sixteenth (the gauge's lit ticks), or the dial's dot (the thermostat's current
+ * reading).
  */
-export type CompassPointer = 'arrow' | 'knob' | 'ticks' | 'dot';
-export const COMPASS_POINTERS: readonly CompassPointer[] = ['arrow', 'knob', 'ticks', 'dot'];
+export type CompassPointer = 'arrow' | 'chevron' | 'knob' | 'ticks' | 'dot';
+export const COMPASS_POINTERS: readonly CompassPointer[] = [
+  'arrow',
+  'chevron',
+  'knob',
+  'ticks',
+  'dot',
+];
 
 /**
- * Which way an arrow points: out from the centre to the bearing, as a compass needle's head, or in from the bearing at
- * the figure, as the wind blows from it.
+ * The ring's face (#247): a classic compass's, its bezel a band with the ticks across it and the four letters large
+ * outside it (the default); or the gauge's ring of ticks with the letters in their place (1.24's).
+ */
+export type CompassFace = 'classic' | 'ring';
+export const COMPASS_FACES: readonly CompassFace[] = ['classic', 'ring'];
+
+/**
+ * Which way an arrow or a chevron points: out from the centre to the bearing, as a compass needle's head, or in from
+ * the bearing at the figure, as the wind blows from it.
  */
 export type CompassArrowPoints = 'outward' | 'inward';
 export const COMPASS_ARROW_POINTS: readonly CompassArrowPoints[] = ['outward', 'inward'];
@@ -96,10 +110,12 @@ export interface CompassCardConfig
   /** A second bearing on the same ring, to compare against (a 10-minute average, the sun). */
   secondary_direction_entity?: string;
   secondary_direction_attribute?: string;
+  /** The ring's face: `classic` (default), a compass's bezel; `ring`, the gauge's ticks (1.24's). */
+  face?: CompassFace;
   /** How the bearing is marked (`arrow`); the second's (`dot`), in the secondary ink. */
   indicator?: CompassPointer;
   secondary_indicator?: CompassPointer;
-  /** Which way an arrow points, the bearing's and the second's: `outward` (default) or `inward`. */
+  /** Which way an arrow or a chevron points, the bearing's and the second's: `outward` (default) or `inward`. */
   arrow_points?: CompassArrowPoints;
   /** Where north is drawn, in degrees clockwise from the top (−180 to 180): a window that does not face north. */
   north_offset?: number;
@@ -219,20 +235,165 @@ const CARDINALS: readonly (readonly [bearing: number, word: CompassKey])[] = [
   [270, 'dir.w'],
 ];
 
-/** The cardinal points' face (`.cp-point`), as a dial's label: 11/600, tracked. */
+/** The cardinal points' face (`.cp-point`) in their ticks' place, as a dial's label: 11/600, tracked. */
 const POINT_FACE = { size: 11, weight: 600, tracking: 0.06 } as const;
 
-/** One of the ring's ticks: its bearing on the drawn ring (north at the top, `north_offset` turned) and its ends. */
+/**
+ * One of the ring's ticks: its bearing on the drawn ring (north at the top, `north_offset` turned), its ends, and
+ * whether it is a cardinal point's bar (a classic face's, bold).
+ */
 interface Tick {
   readonly bearing: number;
   readonly x1: number;
   readonly y1: number;
   readonly x2: number;
   readonly y2: number;
+  readonly bar: boolean;
 }
 
 /** A point of the ring's drawing, in its pixels. */
 type Point = readonly [x: number, y: number];
+
+/** Where the ring gives way to a cardinal point standing in its place: the point's bearing and the half-angle it takes. */
+type Gap = readonly [bearing: number, half: number];
+
+/**
+ * A circle of `radius` centred at `c` as the arcs between its gaps (`north_offset` turning them), clockwise: a classic
+ * face's band where its letters stand in its place.
+ */
+const arcsOf = (c: number, radius: number, offset: number, gaps: readonly Gap[]): string => {
+  const at = (deg: number): string => {
+    const a = ((deg + offset) * Math.PI) / 180;
+    return `${(c + radius * Math.sin(a)).toFixed(2)} ${(c - radius * Math.cos(a)).toFixed(2)}`;
+  };
+  const sorted = [...gaps].sort(([a], [b]) => a - b);
+  return sorted
+    .map(([bearing, half], i) => {
+      const [next, nextHalf] = sorted[(i + 1) % sorted.length]!;
+      const [from, to] = [bearing + half, (next <= bearing ? next + 360 : next) - nextHalf];
+      return `M${at(from)}A${radius} ${radius} 0 ${to - from > 180 ? 1 : 0} 1 ${at(to)}`;
+    })
+    .join('');
+};
+
+/** How a face draws its ticks: its key, each tick's radii by its bearing, and whether a cardinal point's is a bar. */
+interface TickFace {
+  readonly key: string;
+  readonly span: (bearing: number) => readonly [from: number, to: number];
+  readonly bars: boolean;
+}
+
+/**
+ * A classic face's bezel on a ring of radius `r` (#247): a band 12 wide (6 under R 72) in the well's quiet fill, its
+ * outer edge 2 past the ring so that the letters outside it keep the ring's box (the card is as tall as with 1.24's
+ * ring); the pointers ride its middle, 4 inside the ring on a full one; on a large ring the hairline round the open
+ * centre, 5 inside the band (a smaller ring's open centre has no room to spare for one).
+ */
+export interface Bezel {
+  readonly band: number;
+  readonly inner: number;
+  readonly outer: number;
+  readonly track: number;
+  readonly line: number | null;
+}
+
+export const bezelOf = (r: number): Bezel => {
+  const band = r >= 72 ? 12 : 6;
+  const outer = r + 2;
+  const inner = outer - band;
+  return { band, inner, outer, track: outer - band / 2, line: r >= 72 ? inner - 5 : null };
+};
+
+/**
+ * A tick's ends on a classic face, by its bearing: from the band's outer edge in, the rest short (5 of 12), every
+ * 22.5° medium (8), every 45° across the band; a cardinal point's bar across it from the hairline (2 inside the band
+ * without one) to 2 past its outer edge, toward its letter.
+ */
+const classicSpan = (
+  { band, inner, outer, line }: Bezel,
+  bearing: number,
+): readonly [number, number] => {
+  if (bearing % 90 === 0) return [line ?? inner - 2, outer + 2];
+  const long = bearing % 45 === 0 ? band : bearing % 22.5 === 0 ? (band * 2) / 3 : (band * 5) / 12;
+  // the 2 of a tick's round caps inside the band
+  return [outer + 1 - long, outer - 1];
+};
+
+/**
+ * How far from the open centre's middle its ink reaches, by the dial's size: the word over the figure and the line
+ * under it (the dial's stack, 92 or 76 tall, 3 in from its ends), and the figure's digits.
+ */
+const REACH = { l: { line: 43, figure: 18 }, s: { line: 35, figure: 12 } } as const;
+
+/**
+ * How wide a line of the open centre may be, `reach` from its middle: the dial's disc less 8 a side, and on a classic
+ * face no wider than its open circle (inside its hairline, else its band) holds it there, 3 clear.
+ */
+const centreRoom = (r: number, bezel: Bezel | undefined, reach: number): number => {
+  const disc = 2 * (dialDiscRadius(r) - 8);
+  if (!bezel) return disc;
+  const clear = (bezel.line ?? bezel.inner) - 3;
+  return Math.min(disc, Math.floor(2 * Math.sqrt(Math.max(0, clear * clear - reach * reach))));
+};
+
+/**
+ * The sizes a classic face's letters (700) may take, largest first, by the ring: from 16 on a full one, 14 and 12 on
+ * smaller ones, down to 11.
+ */
+const letterSizes = (r: number): readonly number[] =>
+  [16, 14, 12, 11].filter((size) => size <= (r >= 56 ? 16 : r >= 40 ? 14 : 12));
+
+/** How far a classic face's letters stand from the band: past its bars, 5 from its outer edge. */
+const LETTER_CLEAR = 5;
+
+/** A cardinal point as the ring draws it: its word and its box, centred on the ring's centre (x right, y down). */
+export interface Letter {
+  readonly bearing: number;
+  readonly word: string;
+  readonly size: number;
+  readonly x: number;
+  readonly y: number;
+  readonly width: number;
+  readonly height: number;
+}
+
+/**
+ * The classic face's four letters (#247), upright wherever `north_offset` turns the ring: each `LETTER_CLEAR` outside
+ * the band where its box meets the bearing, at the largest of `sizes` at which all four keep the room their column
+ * leaves (`across`, from the ring's centre to the column's nearer edge; `down`, the ring's box: the head is above it).
+ * A long word steps them down together ("Wsch" and "Zach" in a half section); where none holds at the smallest, null:
+ * the letters then stand in the band's place.
+ */
+export function classicLetters(
+  points: readonly (readonly [bearing: number, word: string])[],
+  bezel: Bezel,
+  offset: number,
+  room: { readonly across: number; readonly down: number },
+  sizes: readonly number[],
+  widthOf: (word: string, size: number) => number,
+): Letter[] | null {
+  for (const size of sizes) {
+    // a word's box: its width, and its capitals' height (an ideogram's as tall)
+    const height = size * 0.75;
+    const letters = points.map(([bearing, word]): Letter => {
+      const width = widthOf(word, size);
+      const a = ((bearing + offset) * Math.PI) / 180;
+      const [sin, cos] = [Math.sin(a), Math.cos(a)];
+      // the box's half along the bearing: its reach toward the band
+      const away =
+        bezel.outer + LETTER_CLEAR + (Math.abs(width * sin) + Math.abs(height * cos)) / 2;
+      return { bearing, word, size, x: away * sin, y: -away * cos, width, height };
+    });
+    if (
+      letters.every(
+        (l) =>
+          Math.abs(l.x) + l.width / 2 <= room.across && Math.abs(l.y) + l.height / 2 <= room.down,
+      )
+    )
+      return letters;
+  }
+  return null;
+}
 
 /** The knob a ring carries: the thermostat's 36, its small dial's 28, a tile's 20. */
 const knobSize = (r: number): number => (r >= 72 ? 36 : r >= 40 ? 28 : 20);
@@ -323,6 +484,10 @@ function meets(a: readonly Point[], b: readonly Point[], clear: number): boolean
 /** Which pointer a bearing is, the card's own or the second, each remembering where it was last drawn. */
 type Slot = 'first' | 'second';
 
+/** A turn about a drawing's centre `c`, what a pointer riding the ring is drawn at. */
+const turned = (c: number, angle: number): string =>
+  `transform-origin:${c}px ${c}px;rotate:${Math.round(angle * 100) / 100}deg`;
+
 /**
  * An arrow on a ring of radius `r` centred at `c`, turned to `angle` (clockwise from the top, wound as it turned) and
  * pointing out or in: the bearing's filled, the second's its outline alone.
@@ -335,7 +500,40 @@ const arrowOf = (
   second: boolean,
   outward: boolean,
 ) =>
-  svg`<path class="cp-arrow ${second ? 'is-second' : ''}" d=${dartPath(c, r, second ? { ...dart, notch: 0 } : dart, outward)} style="transform-origin:${c}px ${c}px;rotate:${Math.round(angle * 100) / 100}deg" />`;
+  svg`<path class="cp-arrow ${second ? 'is-second' : ''}" d=${dartPath(c, r, second ? { ...dart, notch: 0 } : dart, outward)} style=${turned(c, angle)} />`;
+
+/**
+ * A chevron's stroke centred at (`c`, `y`) at the top of its ring: `half` either side, its point `depth` from its
+ * middle, out from the ring's centre (up) or in at it, its ends as far the other way.
+ */
+const veeOf = (c: number, y: number, half: number, depth: number, outward: boolean): string => {
+  const at = (v: number): number => Math.round(v * 100) / 100;
+  const d = outward ? -depth : depth;
+  return `M${at(c - half)} ${at(y - d)}L${c} ${at(y + d)}L${at(c + half)} ${at(y - d)}`;
+};
+
+/**
+ * The chevron in its ringed circle (#247) at the top of a ring of radius `track` centred at `c`, turned to `angle`: the
+ * knob's disc and its 2 ring (`size` across), a chevron of the tone's ink in it, 0.4 of the disc wide and 0.22 deep,
+ * pointing out from the centre or in at it. Its halo, cutting what it stands on, is a layer of its own under it
+ * (`haloOf`), as the knob's lift falls on its halo.
+ */
+const chevronOf = (
+  c: number,
+  track: number,
+  size: number,
+  angle: number,
+  second: boolean,
+  outward: boolean,
+) =>
+  svg`<g class="cp-chevron ${second ? 'is-second' : ''}" style=${turned(c, angle)}>
+    <circle cx=${c} cy=${c - track} r=${size / 2 + 1} />
+    <path class="cp-vee" d=${veeOf(c, c - track, size * 0.2, size * 0.11, outward)} />
+  </g>`;
+
+/** A chevron's halo: 6 of the card round its ring, cutting the band and the ticks under it, turned with it. */
+const haloOf = (c: number, track: number, size: number, angle: number) =>
+  svg`<circle class="cp-halo" cx=${c} cy=${c - track} r=${size / 2 + 8} style=${turned(c, angle)} />`;
 
 /** What the ring's open centre reads: its figure, its words, and the reading a threshold is held to. */
 interface Reading {
@@ -382,20 +580,50 @@ export class FluvyCompassCard extends Card<CompassCardConfig> {
         stroke: var(--fluvy-border-strong);
         stroke-width: 2;
       }
-      /* the cardinal points stand in their ticks' place, upright whatever way the ring is turned */
+      /* a classic face's bezel (#247): the band in the well's quiet fill under its ticks, a cardinal point's bar bold
+         across it, the hairline round the open centre */
+      .cp-band {
+        fill: none;
+        stroke: var(--fluvy-inset, var(--fluvy-page));
+      }
+      /* out of reach the card stands on the page's colour: the band keeps its shape a step off it */
+      .fv-card.is-off .cp-band {
+        stroke: var(--fluvy-page-alt);
+      }
+      .cp-line {
+        fill: none;
+        stroke: var(--fluvy-border);
+        stroke-width: 1;
+      }
+      .cp-dial line.is-bar {
+        stroke-width: 3;
+      }
+      /* the cardinal points, upright whatever way the ring is turned, centred where they stand: in their ticks' place
+         (11/600, tracked), or large outside a classic face's band (700, at the size their column holds), north in the
+         card's ink there */
       .cp-point {
+        position: absolute;
+        translate: -50% -50%;
+        text-align: center;
         font-size: 11px;
         font-weight: 600;
+        line-height: 1;
         letter-spacing: 0.06em;
-        text-anchor: middle;
-        dominant-baseline: central;
-        fill: var(--fluvy-text-secondary);
+        white-space: nowrap;
+        color: var(--fluvy-text-secondary);
       }
       .cp-point.is-north {
-        fill: var(--fluvy-text);
+        color: var(--fluvy-text);
+      }
+      .cp-point.is-large {
+        font-weight: 700;
+        letter-spacing: 0;
+      }
+      .cp-dial.is-classic .cp-point.is-north {
+        color: var(--tone-ink);
       }
       .cp-dial.is-off .cp-point {
-        fill: var(--fluvy-text-disabled);
+        color: var(--fluvy-text-disabled);
       }
       /* the second bearing's dot, in the secondary ink, as the thermostat's current reading; the bearing's own in the
          card's */
@@ -409,11 +637,36 @@ export class FluvyCompassCard extends Card<CompassCardConfig> {
         stroke: var(--tone-ink);
         stroke-width: 1.5;
         stroke-linejoin: round;
+      }
+      .cp-arrow,
+      .cp-chevron,
+      .cp-halo,
+      .cp-vee {
         transition: rotate 640ms var(--fv-spring);
       }
       .cp-arrow.is-second {
         fill: none;
         stroke: var(--fluvy-text-secondary);
+      }
+      /* the chevron (#247): the knob's disc and ring, a chevron of the tone's ink in it (a row's across its track); it
+         turns as the arrow does, its halo with it. The second's in the secondary ink */
+      .cp-halo {
+        fill: var(--knob-halo);
+      }
+      .cp-chevron circle {
+        fill: var(--fv-solid-card, var(--fluvy-card));
+        stroke: var(--tone-ink);
+        stroke-width: 2;
+      }
+      .cp-vee {
+        fill: none;
+        stroke: var(--tone-ink);
+        stroke-width: 2;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+      .cp-chevron.is-second {
+        --tone-ink: var(--fluvy-text-secondary);
       }
       /* the ring's own lifted as the knob is, and glowing in dark as a lit tick; the second's and a row's lie flat */
       .cp-lift {
@@ -714,15 +967,18 @@ export class FluvyCompassCard extends Card<CompassCardConfig> {
     };
   }
 
-  /** The ring's ticks for a ring of radius `r` centred at `c`, laid out once (`ticks`). */
+  /**
+   * The ring's ticks every `step` from north, centred at `c`, from and to the radii its face gives each (`face.span`),
+   * but where a cardinal point stands in their place: laid out once for a face and a ring (`ticks`).
+   */
   private ticksOf(
-    r: number,
+    face: TickFace,
     c: number,
     step: number,
     offset: number,
-    gaps: readonly (readonly [bearing: number, half: number])[],
+    gaps: readonly Gap[],
   ): readonly Tick[] {
-    const key = `${r}|${c}|${step}|${offset}|${gaps.map(([, half]) => half.toFixed(1))}`;
+    const key = `${face.key}|${c}|${step}|${offset}|${gaps.map(([, half]) => half.toFixed(1))}`;
     if (this.ticks?.key === key) return this.ticks.all;
     const all: Tick[] = [];
     for (let bearing = 0; bearing < 360; bearing += step) {
@@ -730,13 +986,14 @@ export class FluvyCompassCard extends Card<CompassCardConfig> {
       if (gaps.some(([at, half]) => turn(bearing, at) <= half)) continue;
       const a = ((bearing + offset) * Math.PI) / 180;
       const [sin, cos] = [Math.sin(a), Math.cos(a)];
-      const out = r + (bearing % 45 === 0 ? TICK : TICK * 0.6);
+      const [from, to] = face.span(bearing);
       all.push({
         bearing,
-        x1: c + r * sin,
-        y1: c - r * cos,
-        x2: c + out * sin,
-        y2: c - out * cos,
+        x1: c + from * sin,
+        y1: c - from * cos,
+        x2: c + to * sin,
+        y2: c - to * cos,
+        bar: face.bars && bearing % 90 === 0,
       });
     }
     this.ticks = { key, all };
@@ -782,6 +1039,8 @@ export class FluvyCompassCard extends Card<CompassCardConfig> {
     const half = r + COMPASS_RIM;
     const inset = Math.max(0, Math.floor(width / 2 - half));
     const large = r >= 72;
+    // a classic face's bezel (#247), the default; none on 1.24's ring
+    const bezel = c.face === 'ring' ? undefined : bezelOf(r);
     // the figure in the ring's open centre (the full card's, from R 56), beside the compact card's small ring where
     // the column holds it there, else under the ring: by the column alone, never by the figure it writes now
     const besideRoom = width - 2 * half - 16;
@@ -795,7 +1054,11 @@ export class FluvyCompassCard extends Card<CompassCardConfig> {
     // the word over the figure: the person's (a name: it ends in an ellipsis), else what the figure is, which leaves
     // where its line cannot hold it
     const room =
-      where === 'inside' ? 2 * (dialDiscRadius(r) - 8) : where === 'beside' ? besideRoom : width;
+      where === 'inside'
+        ? centreRoom(r, bezel, REACH[large ? 'l' : 's'].line)
+        : where === 'beside'
+          ? besideRoom
+          : width;
     const label = gaugeLabel(c.label, reading.word, room, (text) =>
       this.head.ruler.width(where === 'inside' ? 'fv-dial__label-in' : 'fv-readout__label', text),
     );
@@ -875,15 +1138,25 @@ export class FluvyCompassCard extends Card<CompassCardConfig> {
       <div class="so-gauge ${where === 'beside' ? 'cp-beside' : ''}">
         ${this.renderDial({
           r,
+          bezel,
           half,
           inset: where === 'beside' ? 0 : inset,
+          // the reading beside a compact card's ring keeps its 16: the ring's box is the letters' room there
+          across: where === 'beside' ? half : inset + half,
           large,
           tone: unusable ? 'neutral' : tone,
           bearing,
           second,
           centre:
             where === 'inside'
-              ? this.renderCentre(reading, label, large, r, half, pointWords, degrees, band?.ink)
+              ? this.renderCentre(
+                  reading,
+                  label,
+                  { r, bezel, half, large },
+                  pointWords,
+                  degrees,
+                  band?.ink,
+                )
               : nothing,
         })}
         ${
@@ -927,10 +1200,11 @@ export class FluvyCompassCard extends Card<CompassCardConfig> {
 
   /**
    * One 76 row, the house's (a printer's, a car's mini): the card's circle ringed by the compass 3 clear of it — its
-   * track, north's notch, the bearing on it as its pointer marks it (a knob in small, the arc across its sixteenth for
-   * lit ticks, a dot) and the second in the secondary ink — its name over its figure, its point and its degrees. In a
-   * narrow row the degrees leave the line first, then the point (the ring says it), then a band's words; where the
-   * figure would still not hold beside the circle, the circle and its ring give way, the line taking the whole row.
+   * track, north's notch, the bearing on it as its pointer marks it (the arrow across it, the chevron alone, a knob in
+   * small, the arc across its sixteenth for lit ticks, a dot) and the second in the secondary ink — its name over its
+   * figure, its point and its degrees. In a narrow row the degrees leave the line first, then the point (the ring says
+   * it), then a band's words; where the figure would still not hold beside the circle, the circle and its ring give
+   * way, the line taking the whole row.
    */
   private renderRow(o: {
     readonly main: EntityView;
@@ -1019,6 +1293,9 @@ export class FluvyCompassCard extends Card<CompassCardConfig> {
           slot === 'second',
           pointsOut(c),
         );
+      // the chevron alone across the track, 8 wide and 5 deep: no room for its circle beside the row's
+      if (pointer === 'chevron')
+        return svg`<path class="cp-vee ${cls}" d=${veeOf(29, 29 - R, 4, 2.5, pointsOut(c))} style=${turned(29, this.swing(slot, deg + offset))} />`;
       if (pointer === 'ticks')
         return svg`<path class="cp-arc ${cls}" d="M ${at(deg - 11.25)} A ${R} ${R} 0 0 1 ${at(deg + 11.25)}" />`;
       return pointer === 'knob'
@@ -1061,25 +1338,31 @@ export class FluvyCompassCard extends Card<CompassCardConfig> {
 
   /**
    * The open centre, as a gauge's dial writes it: the word over the figure, the figure at the largest size its disc
-   * holds with its unit (the dial's sizes, measured), the point and the degrees under it.
+   * holds with its unit (the dial's sizes, measured), the point and the degrees under it; on a classic face each line
+   * as wide as its open circle holds it where it stands (`centreRoom`).
    */
   private renderCentre(
     reading: Reading,
     label: ReturnType<typeof gaugeLabel>,
-    large: boolean,
-    r: number,
-    half: number,
+    ring: {
+      readonly r: number;
+      readonly bezel: Bezel | undefined;
+      readonly half: number;
+      readonly large: boolean;
+    },
     point: string,
     degrees: string,
     ink: string | undefined,
   ): TemplateResult {
+    const { r, bezel, half, large } = ring;
     const disc = dialDiscRadius(r);
+    const reach = REACH[large ? 'l' : 's'];
     const unitWidth = reading.unit
       ? 4 + textWidth(reading.unit, { size: large ? 18 : 14, weight: 600 })
       : 0;
     const holds = (size: number): boolean =>
       textWidth(reading.value, { size, weight: 600, tracking: -0.02, tabular: true }) <=
-      disc * 2 - 16 - unitWidth;
+      centreRoom(r, bezel, reach.figure) - unitWidth;
     const own = large ? 48 : 32;
     const size = holds(own) ? own : ([24, 20, 16].find(holds) ?? 16);
     return html`<div
@@ -1101,18 +1384,22 @@ export class FluvyCompassCard extends Card<CompassCardConfig> {
         <span>${reading.value}</span
         >${reading.unit ? html`<span class="fv-unit">${reading.unit}</span>` : nothing}
       </p>
-      ${this.renderPoint(reading, point, degrees, 2 * (disc - 8), large ? 'l' : 's')}
+      ${this.renderPoint(reading, point, degrees, centreRoom(r, bezel, reach.line), large ? 'l' : 's')}
     </div>`;
   }
 
   /**
-   * The ring: its ticks (a long one every 45°, the cardinal points in their place, upright, north turned to
-   * `north_offset`), the second bearing under the first, each as its pointer marks it, and the centre over it.
+   * The ring: its face, north turned to `north_offset` and its letters upright (a classic compass's bezel, its band with
+   * the ticks across it and the four letters large outside it, or the gauge's ticks with the letters in their place),
+   * the second bearing under the first, each as its pointer marks it, and the centre over it. `across` is the room
+   * from the ring's centre to its column's nearer edge: what the letters may take.
    */
   private renderDial(o: {
     readonly r: number;
+    readonly bezel: Bezel | undefined;
     readonly half: number;
     readonly inset: number;
+    readonly across: number;
     readonly large: boolean;
     readonly tone: Tone;
     readonly bearing: number | null;
@@ -1120,59 +1407,95 @@ export class FluvyCompassCard extends Card<CompassCardConfig> {
     readonly centre: TemplateResult | typeof nothing;
   }): TemplateResult {
     const c = this.config!;
-    const { r, half } = o;
+    const { r, bezel, half } = o;
     const box = half * 2;
     const offset = offsetOf(c);
     const showTicks = c.show_ticks !== false;
-    const points =
-      c.show_cardinals === false
-        ? []
-        : CARDINALS.map(([bearing, key]) => {
-            const word = weatherWords(this.hass, key);
-            return { bearing, word, width: textWidth(word, POINT_FACE) };
-          });
-    // a point's word keeps its ticks clear: its box across the ring where it stands, 2 either side
-    const gaps = points.map(({ bearing, width }) => {
-      const a = ((bearing + offset) * Math.PI) / 180;
-      const across = (Math.abs(width * Math.cos(a)) + Math.abs(11 * Math.sin(a))) / 2 + 2;
-      return [bearing, (Math.asin(Math.min(1, across / (r + TICK / 2))) * 180) / Math.PI] as const;
-    });
-    const ticks = this.ticksOf(r, half, r >= 64 ? 5 : 10, offset, gaps);
-    const primary = c.indicator ?? 'arrow';
-    const secondary = c.secondary_indicator ?? 'dot';
+    // where the pointers ride: a classic face's band's middle, else the ring
+    const track = bezel?.track ?? r;
     const at = (bearing: number, radius: number): Point => {
       const a = ((bearing + offset) * Math.PI) / 180;
       return [half + radius * Math.sin(a), half - radius * Math.cos(a)];
     };
-    // the knob its ring carries, and the arrow in its place, pointing out or in
+    const words =
+      c.show_cardinals === false
+        ? []
+        : CARDINALS.map(([bearing, key]) => [bearing, weatherWords(this.hass, key)] as const);
+    // a classic face's letters outside its band, where their column holds them at one of their sizes
+    const outside =
+      bezel && words.length
+        ? classicLetters(
+            words,
+            bezel,
+            offset,
+            { across: o.across, down: half },
+            letterSizes(r),
+            (word, size) => textWidth(word, { size, weight: 700 }),
+          )
+        : null;
+    // else in their ticks' place: the ring's ticks' middle, or the band's
+    const place = bezel ? track : r + TICK / 2;
+    const letters: readonly Letter[] =
+      outside ??
+      words.map(([bearing, word]): Letter => {
+        const [x, y] = at(bearing, place);
+        return {
+          bearing,
+          word,
+          size: POINT_FACE.size,
+          x: x - half,
+          y: y - half,
+          width: textWidth(word, POINT_FACE),
+          height: POINT_FACE.size,
+        };
+      });
+    // a point's word in their place keeps the ticks (and the band) clear: its box across the ring, 2 either side
+    const gaps: readonly Gap[] = outside
+      ? []
+      : letters.map(({ bearing, width, height }) => {
+          const a = ((bearing + offset) * Math.PI) / 180;
+          const across = (Math.abs(width * Math.cos(a)) + Math.abs(height * Math.sin(a))) / 2 + 2;
+          return [bearing, (Math.asin(Math.min(1, across / place)) * 180) / Math.PI] as const;
+        });
+    const face: TickFace = bezel
+      ? { key: `classic|${r}`, span: (bearing) => classicSpan(bezel, bearing), bars: true }
+      : {
+          key: `ring|${r}`,
+          span: (bearing) => [r, r + (bearing % 45 === 0 ? TICK : TICK * 0.6)],
+          bars: false,
+        };
+    // a classic face's every 7.5° (three to a sixteenth, its bearings' marks among them), every 11.25° on a small ring
+    const step = bezel ? (r >= 56 ? 7.5 : 11.25) : r >= 64 ? 5 : 10;
+    const ticks = this.ticksOf(face, half, step, offset, gaps);
+    const primary = c.indicator ?? 'arrow';
+    const secondary = c.secondary_indicator ?? 'dot';
+    // the knob its ring carries, and the arrow and the chevron in its place, pointing out or in
     const size = knobSize(r);
     const dart = dartOf(size);
     const outward = pointsOut(c);
-    // what each pointer covers, by its outline: an arrow the ticks under it, 4 clear of a tick (its 1 either side of
-    // the line); an arrow, a knob (its halo, which cuts the ticks) or a dot a point's word, 3 clear of it
+    // a dot on a classic face's band; outside the ring's ticks
+    const dotAt = (bearing: number): Point => at(bearing, bezel ? track : r + TICK + 6);
+    // what each pointer covers, by its outline: an arrow (and a dot on a band) the ticks under it, 4 clear of a tick
+    // (its 1 either side of the line); any of them a point's word, 3 clear of it; a knob and a chevron by their halo,
+    // which cuts the ticks
     const marks = (
       [
         [o.second, secondary],
         [o.bearing, primary],
       ] as const
-    ).flatMap(([bearing, pointer]): { arrow: boolean; outline: Point[] }[] => {
+    ).flatMap(([bearing, pointer]): { clears: boolean; outline: Point[] }[] => {
       if (bearing === null || pointer === 'ticks') return [];
       if (pointer === 'arrow')
-        return [{ arrow: true, outline: dartOutline(half, r, dart, bearing + offset, outward) }];
-      return [
-        {
-          arrow: false,
-          outline:
-            pointer === 'knob'
-              ? roundOutline(at(bearing, r), size / 2 + 6)
-              : roundOutline(at(bearing, r + TICK + 6), 3),
-        },
-      ];
+        return [
+          { clears: true, outline: dartOutline(half, track, dart, bearing + offset, outward) },
+        ];
+      if (pointer === 'dot') return [{ clears: !!bezel, outline: roundOutline(dotAt(bearing), 3) }];
+      return [{ clears: false, outline: roundOutline(at(bearing, track), size / 2 + 6) }];
     });
     const under = (tick: Tick): boolean =>
       marks.some(
-        ({ arrow, outline }) =>
-          arrow &&
+        ({ clears, outline }) =>
+          clears &&
           meets(
             outline,
             [
@@ -1182,15 +1505,15 @@ export class FluvyCompassCard extends Card<CompassCardConfig> {
             4,
           ),
       );
-    const covered = ([x, y]: Point, width: number): boolean =>
+    const covered = ({ x, y, width, height }: Letter): boolean =>
       marks.some(({ outline }) =>
         meets(
           outline,
           [
-            [x - width / 2, y - 5.5],
-            [x + width / 2, y - 5.5],
-            [x + width / 2, y + 5.5],
-            [x - width / 2, y + 5.5],
+            [half + x - width / 2, half + y - height / 2],
+            [half + x + width / 2, half + y - height / 2],
+            [half + x + width / 2, half + y + height / 2],
+            [half + x - width / 2, half + y + height / 2],
           ],
           3,
         ),
@@ -1200,17 +1523,43 @@ export class FluvyCompassCard extends Card<CompassCardConfig> {
       pointer === 'ticks' && bearing !== null && turn(tick.bearing, bearing) <= 11.25;
     const lit = across(o.bearing, primary);
     const litSecond = across(o.second, secondary);
+    // a lit tick on a classic face spans its band, the sixteenth one lit arc; a bar keeps its ends
+    const litOf = (tick: Tick): Tick => {
+      if (!bezel || tick.bar) return tick;
+      const [[x1, y1], [x2, y2]] = [
+        at(tick.bearing, bezel.inner + 1),
+        at(tick.bearing, bezel.outer - 1),
+      ];
+      return { ...tick, x1, y1, x2, y2 };
+    };
     const line = (tick: Tick, cls: string) =>
-      svg`<line x1=${tick.x1.toFixed(2)} y1=${tick.y1.toFixed(2)} x2=${tick.x2.toFixed(2)} y2=${tick.y2.toFixed(2)} class="${cls} ${under(tick) ? 'is-under' : ''}" />`;
+      svg`<line x1=${tick.x1.toFixed(2)} y1=${tick.y1.toFixed(2)} x2=${tick.x2.toFixed(2)} y2=${tick.y2.toFixed(2)} class="${cls} ${tick.bar ? 'is-bar' : ''} ${under(tick) ? 'is-under' : ''}" />`;
     const dot = (bearing: number | null, pointer: CompassPointer, cls: string) => {
       if (bearing === null || pointer !== 'dot') return nothing;
-      const [x, y] = at(bearing, r + TICK + 6);
+      const [x, y] = dotAt(bearing);
       return svg`<circle cx=${x.toFixed(2)} cy=${y.toFixed(2)} r="3" class=${cls} />`;
     };
-    // a pointer over the ring, each a layer of its own, the second's under the first's: a knob, or an arrow's drawing
+    // where an arrow or a chevron is drawn, wound the short way round from where it stood: once a drawing, the
+    // second's first
+    const angleOf = (slot: Slot, bearing: number | null, kind: CompassPointer): number | null =>
+      bearing !== null && (kind === 'arrow' || kind === 'chevron')
+        ? this.swing(slot, bearing + offset)
+        : null;
+    const angles: Readonly<Record<Slot, number | null>> = {
+      second: angleOf('second', o.second, secondary),
+      first: angleOf('first', o.bearing, primary),
+    };
+    // a chevron's halo, over the band and the ticks it cuts
+    const halo = (slot: Slot, kind: CompassPointer) => {
+      const angle = angles[slot];
+      return kind === 'chevron' && angle !== null ? haloOf(half, track, size, angle) : nothing;
+    };
+    // a pointer over the ring, each a layer of its own, the second's under the first's: a knob, or the drawing of an
+    // arrow or a chevron
     const pointer = (slot: Slot, bearing: number | null, kind: CompassPointer, tone: Tone) => {
       if (bearing === null) return nothing;
-      if (kind === 'arrow')
+      const angle = angles[slot];
+      if (angle !== null)
         return html`<svg
           class=${slot === 'first' ? 'cp-lift' : nothing}
           width=${box}
@@ -1218,39 +1567,60 @@ export class FluvyCompassCard extends Card<CompassCardConfig> {
           viewBox="0 0 ${box} ${box}"
           aria-hidden="true"
         >
-          ${arrowOf(half, r, dart, this.swing(slot, bearing + offset), slot === 'second', outward)}
+          ${
+            kind === 'chevron'
+              ? chevronOf(half, track, size, angle, slot === 'second', outward)
+              : arrowOf(half, track, dart, angle, slot === 'second', outward)
+          }
         </svg>`;
       if (kind !== 'knob') return nothing;
-      const [x, y] = at(bearing, r);
+      const [x, y] = at(bearing, track);
       // half pixels: crisp at 2× and 3×, never off the ring
-      const place = (v: number): number => Math.round((v - size / 2) * 2) / 2;
+      const knobAt = (v: number): number => Math.round((v - size / 2) * 2) / 2;
       return html`<span
         class="fv-knob fv-knob--${tone}"
         data-measure="value"
-        style="translate:${place(x)}px ${place(y)}px;width:${size}px;height:${size}px"
+        style="translate:${knobAt(x)}px ${knobAt(y)}px;width:${size}px;height:${size}px"
       ></span>`;
     };
+    // a classic face's band (in arcs between the letters standing in its place) and its hairline; without its ticks,
+    // the ring a 2 hairline, the knob's track
+    const ground = bezel
+      ? svg`${
+          gaps.length
+            ? svg`<path class="cp-band" d=${arcsOf(half, track, offset, gaps)} style="stroke-width:${bezel.band}px" />`
+            : svg`<circle class="cp-band" cx=${half} cy=${half} r=${track} style="stroke-width:${bezel.band}px" />`
+        }${bezel.line === null ? nothing : svg`<circle class="cp-line" cx=${half} cy=${half} r=${bezel.line} />`}`
+      : showTicks
+        ? nothing
+        : svg`<circle class="cp-ring" cx=${half} cy=${half} r=${r} />`;
     return html`<div
-      class="fv-dial fv-dial--${o.large ? 'l' : 's'} fv-dial--gauge fv-dial--${o.tone} cp-dial ${o.tone === 'neutral' && o.bearing === null ? 'is-off' : ''}"
+      class="fv-dial fv-dial--${o.large ? 'l' : 's'} fv-dial--gauge fv-dial--${o.tone} cp-dial ${bezel ? 'is-classic' : ''} ${o.tone === 'neutral' && o.bearing === null ? 'is-off' : ''}"
       style="margin-left:${o.inset}px;width:${box}px;height:${box}px"
     >
       <svg width=${box} height=${box} viewBox="0 0 ${box} ${box}" aria-hidden="true">
-        ${showTicks ? nothing : svg`<circle class="cp-ring" cx=${half} cy=${half} r=${r} />`}
+        ${ground}
         ${ticks.map((tick) =>
           lit(tick)
-            ? line(tick, 'tk-on')
+            ? line(litOf(tick), 'tk-on')
             : litSecond(tick)
-              ? svg`<g class="fv-tone--neutral">${line(tick, 'tk-on')}</g>`
+              ? svg`<g class="fv-tone--neutral">${line(litOf(tick), 'tk-on')}</g>`
               : showTicks
                 ? line(tick, 'tk-off')
                 : nothing,
         )}
-        ${points.map(({ bearing, word, width }) => {
-          const place = at(bearing, r + TICK / 2);
-          return svg`<text class="cp-point ${bearing === 0 ? 'is-north' : ''} ${covered(place, width) ? 'is-under' : ''}" x=${place[0].toFixed(2)} y=${place[1].toFixed(2)}>${word}</text>`;
-        })}
-        ${dot(o.second, secondary, 'dl-current')}${dot(o.bearing, primary, 'cp-dot')}
+        ${halo('second', secondary)}${dot(o.second, secondary, 'dl-current')}
+        ${halo('first', primary)}${dot(o.bearing, primary, 'cp-dot')}
       </svg>
+      ${letters.map(
+        (letter) =>
+          html`<span
+            class="cp-point ${letter.bearing === 0 ? 'is-north' : ''} ${outside ? 'is-large' : ''} ${covered(letter) ? 'is-under' : ''}"
+            aria-hidden="true"
+            style="left:${(half + letter.x).toFixed(2)}px;top:${(half + letter.y).toFixed(2)}px${outside ? `;font-size:${letter.size}px` : ''}"
+            >${letter.word}</span
+          >`,
+      )}
       ${o.centre}${pointer('second', o.second, secondary, 'neutral')}${pointer('first', o.bearing, primary, o.tone)}
     </div>`;
   }

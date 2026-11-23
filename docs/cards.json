@@ -13295,11 +13295,12 @@
         {
           "key": "indicator",
           "label": "Pointer",
-          "does": "How the bearing is marked: an arrow across the ring, the knob on the ring, the ticks lit across it, or a dot outside them.",
+          "does": "How the bearing is marked: an arrow across the ring, a chevron in a ringed circle on it, the knob on the ring, the ticks lit across it, or a dot.",
           "type": "choice",
           "default": "arrow",
           "values": {
             "arrow": "Arrow",
+            "chevron": "Chevron",
             "knob": "Knob",
             "ticks": "Lit ticks",
             "dot": "Dot"
@@ -13325,6 +13326,7 @@
           "default": "dot",
           "values": {
             "arrow": "Arrow",
+            "chevron": "Chevron",
             "knob": "Knob",
             "ticks": "Lit ticks",
             "dot": "Dot"
@@ -13333,7 +13335,7 @@
         {
           "key": "arrow_points",
           "label": "Arrow points",
-          "does": "Which way an arrow points, the bearing’s and the second’s: out from the centre to the bearing, as a compass needle’s head, or in at the figure, as the wind blows from it.",
+          "does": "Which way an arrow or a chevron points, the bearing’s and the second’s: out from the centre to the bearing, as a compass needle’s head, or in at the figure, as the wind blows from it.",
           "type": "choice",
           "default": "outward",
           "values": {
@@ -13350,9 +13352,20 @@
           "range": "-180 ° to 180 °"
         },
         {
+          "key": "face",
+          "label": "Face",
+          "does": "The ring’s look: a classic compass’s, a band with the ticks across it and the letters large outside it; or the ring of ticks alone, the letters small in their place.",
+          "type": "choice",
+          "default": "classic",
+          "values": {
+            "classic": "Classic",
+            "ring": "Ring"
+          }
+        },
+        {
           "key": "show_ticks",
           "label": "Ticks",
-          "does": "Draws the ring’s ticks.",
+          "does": "Draws the ring’s ticks, the cardinal points’ bars with them.",
           "type": "boolean",
           "default": true
         },

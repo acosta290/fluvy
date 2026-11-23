@@ -3653,7 +3653,9 @@
     "pointer_arrow": "Ok",
     "arrow_points": "Ok yönü",
     "arrow_outward": "Dışa doğru",
-    "arrow_inward": "İçe doğru"
+    "arrow_inward": "İçe doğru",
+    "pointer_chevron": "Köşeli ok",
+    "face": "Kadran"
   },
   "schedule": {
     "card": "Isıtma planı",

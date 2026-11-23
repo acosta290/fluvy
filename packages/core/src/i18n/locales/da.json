@@ -3653,7 +3653,9 @@
     "pointer_arrow": "Pil",
     "arrow_points": "Pilen peger",
     "arrow_outward": "Udad",
-    "arrow_inward": "Indad"
+    "arrow_inward": "Indad",
+    "pointer_chevron": "Chevron",
+    "face": "Skive"
   },
   "schedule": {
     "card": "Varmeplan",

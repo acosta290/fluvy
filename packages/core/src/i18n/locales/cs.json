@@ -3713,7 +3713,9 @@
     "pointer_arrow": "Šipka",
     "arrow_points": "Šipka míří",
     "arrow_outward": "Ven",
-    "arrow_inward": "Dovnitř"
+    "arrow_inward": "Dovnitř",
+    "pointer_chevron": "Krokev",
+    "face": "Stupnice"
   },
   "schedule": {
     "card": "Plán vytápění",
