@@ -923,7 +923,15 @@
     "trigger.time_pattern": "tidsmønster",
     "trigger.time": "tid",
     "trigger.homeassistant_stopping": "Home Assistant stopper",
-    "trigger.homeassistant_starting": "Home Assistant starter"
+    "trigger.homeassistant_starting": "Home Assistant starter",
+    "fact.who": "Hvem",
+    "kind.account": "Konto",
+    "kind.integration": "Integration",
+    "you": "Dig",
+    "by": "Af {name}",
+    "by_you": "Af dig",
+    "by_person": "Efter person",
+    "everyone": "Alle"
   },
   "alerts": {
     "preset.low_battery": "Lave batterier",
@@ -3181,7 +3189,9 @@
     "dashboard.up_to": "Op til…",
     "dashboard.up_to_count": "Op til {count} pr. liste",
     "cards.levels": "Ikoner viser niveauet",
-    "cards.levels_sub": "Et batteris opladning, et signals streger, en ventil åben eller lukket"
+    "cards.levels_sub": "Et batteris opladning, et signals streger, en ventil åben eller lukket",
+    "scope.activity_who": "Hvem gjorde det",
+    "scope.activity_who_sub": "Hver post i Aktivitet viser personen bag den, med billede; et filter efter person"
   },
   "remote": {
     "key.power": "Tænd/sluk",

@@ -1003,7 +1003,15 @@
     "trigger.time_pattern": "времеви модел",
     "trigger.time": "време",
     "trigger.homeassistant_stopping": "спиране на Home Assistant",
-    "trigger.homeassistant_starting": "стартиране на Home Assistant"
+    "trigger.homeassistant_starting": "стартиране на Home Assistant",
+    "fact.who": "Кой",
+    "kind.account": "Акаунт",
+    "kind.integration": "Интеграция",
+    "you": "Вие",
+    "by": "От {name}",
+    "by_you": "От вас",
+    "by_person": "По лице",
+    "everyone": "Всички"
   },
   "alerts": {
     "preset.low_battery": "Слаби батерии",
@@ -3202,7 +3210,9 @@
     "dashboard.up_to": "До…",
     "dashboard.up_to_count": "До {count} на списък",
     "cards.levels": "Иконите показват нивото",
-    "cards.levels_sub": "Зарядът на батерия, чертите на сигнал, клапан отворен или затворен"
+    "cards.levels_sub": "Зарядът на батерия, чертите на сигнал, клапан отворен или затворен",
+    "scope.activity_who": "Кой го е направил",
+    "scope.activity_who_sub": "Всеки запис в „Дейност“ назовава човека зад него, със снимката му; филтър по лице"
   },
   "remote": {
     "key.power": "Захранване",

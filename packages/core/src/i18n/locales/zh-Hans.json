@@ -66,7 +66,15 @@
     "trigger.time_pattern": "时间模式",
     "trigger.time": "时间",
     "trigger.homeassistant_stopping": "Home Assistant 停止中",
-    "trigger.homeassistant_starting": "Home Assistant 启动中"
+    "trigger.homeassistant_starting": "Home Assistant 启动中",
+    "fact.who": "操作人",
+    "kind.account": "账户",
+    "kind.integration": "集成",
+    "you": "您",
+    "by": "由{name}操作",
+    "by_you": "由您操作",
+    "by_person": "按人员",
+    "everyone": "所有人"
   },
   "alerts": {
     "preset.low_battery": "电池电量低",
@@ -3044,7 +3052,9 @@
     "dashboard.up_to": "最多…",
     "dashboard.up_to_count": "每个列表最多 {count} 项",
     "cards.levels": "图标显示级别",
-    "cards.levels_sub": "电池电量、信号格数、阀门开关"
+    "cards.levels_sub": "电池电量、信号格数、阀门开关",
+    "scope.activity_who": "谁操作的",
+    "scope.activity_who_sub": "活动中的每条记录都显示操作人及其照片；可按人员筛选"
   },
   "customise": {
     "title": "自定义",

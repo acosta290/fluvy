@@ -66,6 +66,14 @@
     "trigger.time_pattern": "time pattern",
     "trigger.time": "time",
     "trigger.homeassistant_stopping": "Home Assistant stopping",
-    "trigger.homeassistant_starting": "Home Assistant starting"
+    "trigger.homeassistant_starting": "Home Assistant starting",
+    "fact.who": "Who",
+    "kind.account": "Account",
+    "kind.integration": "Integration",
+    "you": "You",
+    "by": "By {name}",
+    "by_you": "By you",
+    "by_person": "By person",
+    "everyone": "Everyone"
   }
 }

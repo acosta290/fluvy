@@ -850,7 +850,15 @@
     "trigger.time_pattern": "schema orario",
     "trigger.time": "ora",
     "trigger.homeassistant_stopping": "Home Assistant in arresto",
-    "trigger.homeassistant_starting": "Home Assistant in avvio"
+    "trigger.homeassistant_starting": "Home Assistant in avvio",
+    "fact.who": "Chi",
+    "kind.account": "Account",
+    "kind.integration": "Integrazione",
+    "you": "Tu",
+    "by": "Da {name}",
+    "by_you": "Da te",
+    "by_person": "Per persona",
+    "everyone": "Tutti"
   },
   "keypad": {
     "close": "Chiudi",
@@ -1675,7 +1683,9 @@
     "dashboard.up_to": "Fino a…",
     "dashboard.up_to_count": "Fino a {count} per elenco",
     "cards.levels": "Le icone mostrano il livello",
-    "cards.levels_sub": "La carica di una batteria, le tacche di un segnale, una valvola aperta o chiusa"
+    "cards.levels_sub": "La carica di una batteria, le tacche di un segnale, una valvola aperta o chiusa",
+    "scope.activity_who": "Chi è stato",
+    "scope.activity_who_sub": "Ogni voce di Attività indica la persona che l’ha fatta, con la sua foto; un filtro per persona"
   },
   "customise": {
     "title": "Personalizzazione",

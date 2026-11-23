@@ -113,6 +113,7 @@ export type HouseEdit = Partial<
     | 'frame'
     | 'icons'
     | 'activity'
+    | 'activityWho'
     | 'history'
     | 'details'
     | 'wall'
@@ -627,6 +628,8 @@ export function changeLines(ctx: PanelContext): string[] {
       if (house.icons[place] !== ctx.settings.icons[place])
         lines.push(`${t(`scope.icons_${place}`)} · ${onOff(house.icons[place])}`);
   if (house.activity !== undefined) lines.push(`${t('scope.activity')} · ${onOff(house.activity)}`);
+  if (house.activityWho !== undefined)
+    lines.push(`${t('scope.activity_who')} · ${onOff(house.activityWho)}`);
   if (house.history !== undefined) lines.push(`${t('scope.history')} · ${onOff(house.history)}`);
   if (house.details !== undefined) lines.push(`${t('scope.details')} · ${onOff(house.details)}`);
   const device = ctx.deviceEdit;

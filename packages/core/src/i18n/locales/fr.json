@@ -850,7 +850,15 @@
     "trigger.time_pattern": "motif horaire",
     "trigger.time": "heure",
     "trigger.homeassistant_stopping": "arrêt de Home Assistant",
-    "trigger.homeassistant_starting": "démarrage de Home Assistant"
+    "trigger.homeassistant_starting": "démarrage de Home Assistant",
+    "fact.who": "Qui",
+    "kind.account": "Compte",
+    "kind.integration": "Intégration",
+    "you": "Vous",
+    "by": "Par {name}",
+    "by_you": "Par vous",
+    "by_person": "Par personne",
+    "everyone": "Tout le monde"
   },
   "keypad": {
     "close": "Fermer",
@@ -1675,7 +1683,9 @@
     "dashboard.up_to": "Jusqu’à…",
     "dashboard.up_to_count": "Jusqu’à {count} par liste",
     "cards.levels": "Les icônes montrent leur niveau",
-    "cards.levels_sub": "La charge d’une batterie, les barres d’un signal, une vanne ouverte ou fermée"
+    "cards.levels_sub": "La charge d’une batterie, les barres d’un signal, une vanne ouverte ou fermée",
+    "scope.activity_who": "Qui l’a fait",
+    "scope.activity_who_sub": "Chaque entrée de l’Activité nomme la personne derrière elle, avec sa photo ; un filtre par personne"
   },
   "customise": {
     "title": "Personnaliser",

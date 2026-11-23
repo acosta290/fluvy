@@ -276,13 +276,16 @@ export class FluvySelect extends LitElement {
     menu.style.setProperty('--fv-menu-h', h);
   }
 
-  /** What an anchored list needs to hold its longest name whole: the name at 15/500, its row's sides, gap and check. */
+  /**
+   * What an anchored list needs to hold its longest name whole: the name at 15/500, its row's sides, gap and check, on
+   * the 4 grid.
+   */
   private namesWidth(): number {
     const widest = Math.max(
       0,
       ...this.options.map((option) => textWidth(option.label, { size: 15, weight: 500 })),
     );
-    return Math.ceil(PAD * 2 + ROW_CHROME + widest);
+    return Math.ceil((PAD * 2 + ROW_CHROME + widest) / 4) * 4;
   }
 
   /** While the menu is open its field may still be moving (a card animating in, a font landing): it follows. */

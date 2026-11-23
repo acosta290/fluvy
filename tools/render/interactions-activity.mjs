@@ -5,7 +5,7 @@
  *   node interactions-activity.mjs            (expects the playground dev server on :5183)
  * What it proves: typed times move on to the minutes; the date grid's first tap picks one whole day; the knob agrees
  * with the list while the page scrolls or the knob is dragged back up; Spanish state words are never cut; a phone
- * measures its own column.
+ * measures its own column; who did it (1.25) never makes a row taller.
  */
 import { startSuite } from './lib/suite.mjs';
 
@@ -423,6 +423,42 @@ for (const [clock, width] of [
     JSON.stringify({ rows: off.length, worst: Math.max(...off) }),
   );
   await page.close();
+}
+
+/* ---------- who did it (1.25): a face never makes a row taller, and sits whole in its line ---------- */
+for (const width of [1440, 360]) {
+  const rows = async (who) => {
+    const page = await open(`who=${who}`, width);
+    const read = await page.evaluate(() => {
+      const root = document.querySelector('fluvy-activity').shadowRoot;
+      return [...root.querySelectorAll('.av-row[data-t]')].slice(0, 40).map((row) => {
+        const sub = row.querySelector('.av-sub')?.getBoundingClientRect();
+        const face = row.querySelector('.av-face')?.getBoundingClientRect();
+        return {
+          t: row.dataset.t,
+          height: row.offsetHeight,
+          face: !!face,
+          inside: !face || (face.top >= sub.top - 0.5 && face.bottom <= sub.bottom + 0.5),
+        };
+      });
+    });
+    await page.close();
+    return read;
+  };
+  const [plain, named] = [await rows(0), await rows(1)];
+  const taller = named.filter(
+    (row) => row.height !== plain.find((other) => other.t === row.t)?.height,
+  );
+  check(
+    `${width}: the rows that show who did it keep their height`,
+    named.some((row) => row.face) && taller.length === 0,
+    `${named.filter((row) => row.face).length} faces, ${taller.length} taller`,
+  );
+  check(
+    `${width}: each face sits whole in its line`,
+    named.every((row) => row.inside),
+    `${named.filter((row) => !row.inside).length} out`,
+  );
 }
 
 await suite.finish();

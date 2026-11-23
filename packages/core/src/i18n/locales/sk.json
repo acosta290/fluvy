@@ -72,7 +72,15 @@
     "trigger.time_pattern": "časový vzor",
     "trigger.time": "čas",
     "trigger.homeassistant_stopping": "Home Assistant sa vypína",
-    "trigger.homeassistant_starting": "Home Assistant sa spúšťa"
+    "trigger.homeassistant_starting": "Home Assistant sa spúšťa",
+    "fact.who": "Kto",
+    "kind.account": "Účet",
+    "kind.integration": "Integrácia",
+    "you": "Vy",
+    "by": "Kto: {name}",
+    "by_you": "Kto: vy",
+    "by_person": "Podľa osoby",
+    "everyone": "Všetci"
   },
   "alerts": {
     "preset.low_battery": "Slabé batérie",
@@ -3102,7 +3110,9 @@
     "dashboard.up_to": "Najviac…",
     "dashboard.up_to_count": "Najviac {count} v každom zozname",
     "cards.levels": "Ikony ukazujú úroveň",
-    "cards.levels_sub": "Nabitie batérie, čiarky signálu, ventil otvorený alebo zatvorený"
+    "cards.levels_sub": "Nabitie batérie, čiarky signálu, ventil otvorený alebo zatvorený",
+    "scope.activity_who": "Kto to urobil",
+    "scope.activity_who_sub": "Každý záznam v Aktivite uvádza osobu, ktorá zaň stojí, s jej fotkou; filter podľa osoby"
   },
   "customise": {
     "title": "Prispôsobenie",

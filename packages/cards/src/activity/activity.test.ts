@@ -585,6 +585,243 @@ describe('the Activity page', () => {
   });
 });
 
+/** Who did each entry (1.25): a run Leo's tap fired, the Node-RED account, Marta (the one reading), a switch by hand. */
+const WHO_DAY: readonly ActivityEvent[] = [
+  {
+    when: at(20, 10),
+    entity_id: 'light.kitchen',
+    state: 'on',
+    context_event_type: 'script_started',
+    context_domain: 'script',
+    context_entity_id: 'script.movie',
+    context_name: 'Movie time',
+    context_user_id: 'u2',
+  },
+  { when: at(19, 30), entity_id: 'binary_sensor.front_door', state: 'on', context_user_id: 'u3' },
+  { when: at(19, 2), entity_id: 'light.kitchen', state: 'off', context_user_id: 'u1' },
+  { when: at(18, 10), entity_id: 'light.kitchen', state: 'on' },
+];
+
+describe('the Activity page, who did it (1.25)', () => {
+  afterEach(() => document.body.replaceChildren());
+
+  /** The page on `WHO_DAY`, the house showing who (or not), read by Marta (an administrator, or not). */
+  async function mount(who: boolean, admin = true) {
+    await import('./view.js');
+    // no sources remembered from another test
+    localStorage.clear();
+    const asked: Record<string, unknown>[] = [];
+    const hass = house({
+      user: { id: 'u1', name: 'Marta', is_admin: admin },
+      hassUrl: (path: string) => `https://ha.example${path}`,
+      connection: {
+        subscribeMessage: async (
+          callback: (message: { events: ActivityEvent[] }) => void,
+          message: Record<string, unknown>,
+        ) => {
+          asked.push(message);
+          callback({ events: [...WHO_DAY] });
+          return () => undefined;
+        },
+      },
+      callWS: async (message: Record<string, unknown>) => {
+        asked.push(message);
+        return message['type'] === 'config/auth/list'
+          ? [
+              { id: 'u1', name: 'Marta', system_generated: false },
+              { id: 'u2', name: 'Leo', system_generated: false },
+              { id: 'u3', name: 'Node-RED', system_generated: false },
+            ]
+          : {};
+      },
+    } as unknown as Partial<HomeAssistant>);
+    hass.states['person.leo'] = {
+      entity_id: 'person.leo',
+      state: 'home',
+      attributes: {
+        friendly_name: 'Leo',
+        user_id: 'u2',
+        entity_picture: '/api/image/serve/leo/512x512',
+      },
+      last_changed: '',
+      last_updated: '',
+    } as HomeAssistant['states'][string];
+    history.replaceState(null, '', '/logbook');
+    const view = document.createElement('fluvy-activity') as View & {
+      who: boolean;
+      person: string;
+      filter: string;
+    };
+    view.hass = hass;
+    view.who = who;
+    view.range = dayRange(new Date(2026, 8, 17));
+    view.filter = 'all';
+    document.body.append(view);
+    const settle = async () => {
+      for (let i = 0; i < 3; i += 1) {
+        await new Promise((resolve) => setTimeout(resolve, 0));
+        await view.updateComplete;
+      }
+    };
+    await settle();
+    const root = view.shadowRoot!;
+    const row = (time: string) =>
+      [...root.querySelectorAll<HTMLElement>('.av-row')].find((node) =>
+        node.querySelector('.av-time')?.textContent?.includes(time),
+      )!;
+    // each fact's label and what it says (a face's letters are its picture's, unspoken)
+    const facts = () =>
+      [...root.querySelectorAll('.av-fact')].map((fact) => [
+        fact.querySelector('dt')?.textContent,
+        (fact.querySelector('.av-link-row__text') ?? fact.querySelector('dd'))?.textContent
+          ?.replace(/\s+/g, ' ')
+          .trim(),
+      ]);
+    /** Every fold animates away, then goes. */
+    const folded = async () => {
+      await settle();
+      root
+        .querySelectorAll('.av-detail.is-closing')
+        .forEach((detail) => detail.dispatchEvent(new Event('animationend')));
+      await settle();
+    };
+    return { view, root, asked, settle, row, facts, folded };
+  }
+
+  it('names who did each entry: a run’s person after its name, someone’s own face and name, nobody invented', async () => {
+    const { row, asked } = await mount(true);
+    expect(asked.filter((message) => message['type'] === 'config/auth/list').length).toBe(1);
+    const run = row('20:10').querySelector('.av-cause')!;
+    expect(run.getAttribute('aria-label')).toBe('Movie time · Script · By Leo');
+    expect(run.querySelector('.av-face img')?.getAttribute('src')).toBe(
+      'https://ha.example/api/image/serve/leo/512x512',
+    );
+    // an account no person stands for (an administrator reads its name), its initial on the card's fill
+    const account = row('19:30').querySelector('.av-cause')!;
+    expect(account.getAttribute('aria-label')).toBe('Node-RED · Account');
+    expect(account.querySelector('.av-face')?.textContent?.trim()).toBe('N');
+    expect(account.querySelector('.av-face')?.classList.contains('is-person')).toBe(false);
+    // the one reading is "You", their initial on the accent (no picture), in place of the person glyph
+    const own = row('19:02').querySelector('.av-cause')!;
+    expect(own.getAttribute('aria-label')).toBe('You');
+    expect(own.querySelector('svg')).toBeNull();
+    expect(own.querySelector('.av-face.is-person')?.textContent?.trim()).toBe('M');
+    // a switch pressed by hand carries no user: nobody
+    expect(row('18:10').querySelector('.av-cause')).toBeNull();
+  });
+
+  it('changes nothing while the house does not show who (the default)', async () => {
+    const { row, root, asked } = await mount(false);
+    expect(asked.some((message) => message['type'] === 'config/auth/list')).toBe(false);
+    expect(root.querySelector('.av-face')).toBeNull();
+    expect(root.querySelector('.av-person')).toBeNull();
+    expect(row('20:10').querySelector('.av-cause')?.getAttribute('aria-label')).toBe(
+      'Movie time · Script',
+    );
+    expect(row('19:02').querySelector('.av-cause')?.getAttribute('aria-label')).toBe(
+      'marta · Person',
+    );
+    expect(row('19:30').querySelector('.av-cause')).toBeNull();
+  });
+
+  it('names no account to someone who is not an administrator, and asks for none', async () => {
+    const { row, asked } = await mount(true, false);
+    expect(asked.some((message) => message['type'] === 'config/auth/list')).toBe(false);
+    expect(row('19:30').querySelector('.av-cause')).toBeNull();
+    expect(row('19:02').querySelector('.av-cause')?.getAttribute('aria-label')).toBe('You');
+  });
+
+  it('says who after the cause in a run’s detail, a way to their details; a person’s own cause wears their face', async () => {
+    const { view, row, facts, settle, folded, root } = await mount(true);
+    row('20:10').click();
+    await settle();
+    expect(facts().map(([label]) => label)).toEqual(['When', 'Change', 'Cause', 'Who']);
+    expect(facts().at(-1)).toEqual(['Who', 'Leo· Person']);
+    const opened: string[] = [];
+    view.addEventListener('hass-more-info', (event) =>
+      opened.push((event as CustomEvent<{ entityId: string }>).detail.entityId),
+    );
+    root.querySelector<HTMLElement>('.av-fact:last-child button.av-link-row')!.click();
+    expect(opened).toEqual(['person.leo']);
+    row('20:10').click();
+    row('19:02').click();
+    await folded();
+    // the cause names Marta already: no Who, the cause is her, with her face
+    expect(facts().map(([label]) => label)).toEqual(['When', 'Change', 'Cause']);
+    expect(facts().at(-1)).toEqual(['Cause', 'You']);
+    expect(root.querySelector('.av-fact .av-face.is-person')).not.toBeNull();
+    // an account: only named
+    row('19:02').click();
+    row('19:30').click();
+    await folded();
+    expect(facts().at(-1)).toEqual(['Who', 'Node-RED· Account']);
+    expect(root.querySelector('.av-fact .av-link-row.is-plain')).not.toBeNull();
+  });
+
+  it('finds by who did it and narrows to one of them; "Show everything" lets go', async () => {
+    const { view, root, settle } = await mount(true);
+    const shown = () =>
+      [...root.querySelectorAll('.av-row .av-time')].map((node) => node.textContent?.trim());
+    const search = async (text: string) => {
+      const input = root.querySelector<HTMLInputElement>('#av-search')!;
+      input.value = text;
+      input.dispatchEvent(new InputEvent('input'));
+      await settle();
+    };
+    await search('leo');
+    expect(shown()).toEqual(['20:10']);
+    await search('you');
+    expect(shown()).toEqual(['19:02']);
+    await search('');
+    // By person: the one reading first, then the busiest
+    const menu = root.querySelector('.av-person + fluvy-select') as HTMLElement & {
+      options: { value: string; label: string }[];
+    };
+    expect(root.querySelector('.av-person')?.getAttribute('aria-label')).toBe('By person');
+    expect(menu.options.map((option) => option.label)).toEqual([
+      'Everyone',
+      'You',
+      'Leo',
+      'Node-RED',
+    ]);
+    menu.dispatchEvent(new CustomEvent('fluvy-change', { detail: { value: 'u2' } }));
+    await settle();
+    expect(view.person).toBe('u2');
+    expect(shown()).toEqual(['20:10']);
+    expect(root.querySelector('.av-person')?.getAttribute('aria-label')).toBe('By person · Leo');
+    expect(root.querySelector('.av-person .av-face img')).not.toBeNull();
+    // someone with nothing in the period: nothing matches, and the way out shows everything again
+    view.person = 'u9';
+    await settle();
+    root.querySelector<HTMLElement>('.av-empty__action')!.click();
+    await settle();
+    expect(view.person).toBe('');
+    expect(shown().length).toBe(4);
+  });
+
+  it('writes who did each entry into the CSV, only while the house shows who', async () => {
+    const { download } = await import('./csv.js');
+    const files: Promise<string>[] = [];
+    const create = URL.createObjectURL;
+    URL.createObjectURL = (blob: Blob) => (files.push(blob.text()), 'blob:fluvy');
+    try {
+      for (const who of [true, false]) {
+        const { view } = await mount(who);
+        download(view as unknown as FluvyActivity);
+        document.body.replaceChildren();
+      }
+    } finally {
+      URL.createObjectURL = create;
+    }
+    const [on, off] = (await Promise.all(files)).map((file) =>
+      file.split('\n').map((line) => line.split(',')),
+    );
+    expect(on![0]!.at(-1)).toBe('who');
+    expect(on!.slice(1).map((line) => line.at(-1))).toEqual(['Leo', 'Node-RED', 'marta', '']);
+    expect(off![0]!.at(-1)).toBe('context_source');
+  });
+});
+
 /** A long day: six entries an hour, ten minutes apart, over four things (no bursts, no repeats). */
 function longDay(): ActivityEvent[] {
   const things = ['light.kitchen', 'binary_sensor.front_door', 'person.marta', 'light.kitchen'];

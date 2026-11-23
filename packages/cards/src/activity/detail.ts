@@ -11,21 +11,32 @@ import {
   type KeyOf,
 } from '@fluvy/core';
 import type { SourceTarget } from '@fluvy/core/sources';
-import type { ActivityCause, ActivityItem } from '@fluvy/core/activity';
+import type { ActivityCause, ActivityItem, ActivityWho } from '@fluvy/core/activity';
 import { glyph, textWidth } from '@fluvy/ui';
 import { changeOf } from './rows.js';
 import { HOUR, keepDay, type Place } from './shared.js';
 import { focusOn } from './sources.js';
 import type { FluvyActivity } from './view.js';
-import { causeGlyph, causeName, isMoment, triggerOf } from './words.js';
+import { causeGlyph, causeName, isMoment, triggerOf, whoFace, whoKind, whoName } from './words.js';
 
 type ActivityString = KeyOf<'activity' | 'page'>;
+
+/** What a detail may say, in its order. */
+const FACTS: readonly ActivityString[] = [
+  'fact.when',
+  'fact.change',
+  'fact.trigger',
+  'fact.cause',
+  'fact.who',
+  'fact.where',
+];
 
 export function renderDetail(
   page: FluvyActivity,
   item: ActivityItem,
   view: EntityView | undefined,
   cause: ActivityCause | undefined,
+  who: ActivityWho | undefined,
   place: Place,
 ): TemplateResult {
   const { event, key } = item;
@@ -52,7 +63,10 @@ export function renderDetail(
   if (event.state !== undefined && event.entity_id && !isMoment(event))
     facts.push(['fact.change', changeOf(page, event, item.from, view)]);
   if (trigger) facts.push(['fact.trigger', trigger]);
-  if (cause) facts.push(['fact.cause', causeLink(page, cause)]);
+  // who did it, after the cause; a cause that names that person already is them, with their face
+  const themselves = who && (!cause || cause.kind === 'person');
+  if (cause) facts.push(['fact.cause', themselves ? whoLink(page, who) : causeLink(page, cause)]);
+  if (who && !(cause && themselves)) facts.push(['fact.who', whoLink(page, who)]);
   if (where.length) facts.push(['fact.where', where.join(' · ')]);
   const config = domain === 'automation' ? view?.stateObj?.attributes['id'] : undefined;
   const buttons: [string, () => void][] = [];
@@ -85,7 +99,7 @@ export function renderDetail(
     page,
     key,
     place,
-    html`<dl class="av-facts">
+    html`<dl class="av-facts" style="--av-label:${labelColumn(page)}px">
         ${facts.map(
           ([label, value]) =>
             html`<div class="av-fact">
@@ -96,6 +110,17 @@ export function renderDetail(
       </dl>
       ${detailActions(page, buttons)}`,
   );
+}
+
+/**
+ * The labels' column: 88, or as wide as the page's language needs for its widest label whole (12/600 capitals, 0.04em
+ * apart: "CHANGEMENT"), on the 4 grid; every detail of the page the same.
+ */
+export function labelColumn(page: FluvyActivity): number {
+  page.family ||= getComputedStyle(page).fontFamily || 'Inter, sans-serif';
+  const face = { size: 12, weight: 600, tracking: 0.04, upper: true, family: page.family };
+  const widest = Math.max(...FACTS.map((key) => textWidth(page.t(key), face)));
+  return Math.max(88, Math.ceil(widest / 4) * 4);
 }
 
 /**
@@ -121,6 +146,24 @@ export function causeLink(page: FluvyActivity, cause: ActivityCause): TemplateRe
         : undefined;
   return open
     ? html`<button class="av-link-row" @click=${open}>${inner}${glyph('chevron')}</button>`
+    : html`<span class="av-link-row is-plain">${inner}</span>`;
+}
+
+/**
+ * Who did it, a way in: their face, their name ("You" for the one reading) · what they are; a person opens their
+ * details, an account is only named.
+ */
+export function whoLink(page: FluvyActivity, who: ActivityWho): TemplateResult {
+  const inner = html`${whoFace(page, who, 20)}<span class="av-link-row__text" data-one-line
+      ><span class="av-link-row__name">${whoName(page, who)}</span>${
+        who.you ? nothing : html`<span class="av-link-row__kind">· ${whoKind(page, who)}</span>`
+      }</span
+    >`;
+  const person = who.entityId;
+  return person && page.hass?.states[person]
+    ? html`<button class="av-link-row" @click=${() => moreInfo(page, person)}>
+        ${inner}${glyph('chevron')}
+      </button>`
     : html`<span class="av-link-row is-plain">${inner}</span>`;
 }
 

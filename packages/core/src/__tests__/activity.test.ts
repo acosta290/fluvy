@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { HomeAssistant } from '../ha/types.js';
 import {
+  accountsOf,
   categoryOf,
   causeOf,
   density,
@@ -9,7 +10,9 @@ import {
   subscribeActivity,
   toRows,
   toSections,
+  whoOf,
   withPrevious,
+  type ActivityAccount,
   type ActivityEvent,
 } from '../activity/index.js';
 import {
@@ -224,6 +227,123 @@ describe('who did it', () => {
       ),
     ).toEqual({ kind: 'entity', name: 'Door', entityId: 'binary_sensor.door' });
     expect(causeOf(at(1, 'light.sofa'), hass, people)).toBeUndefined();
+  });
+
+  describe('whoOf (1.25)', () => {
+    /** The house as Leo (u2, a person with a picture) reads it, or an administrator (Ana, u1). */
+    const as = (user: { id: string; name: string; is_admin: boolean }) =>
+      ({
+        ...hass,
+        states: {
+          ...hass.states,
+          'person.leo': state('person.leo', {
+            friendly_name: 'Leo',
+            user_id: 'u2',
+            entity_picture: '/api/image/serve/leo/512x512',
+          }),
+        },
+        user,
+      }) as unknown as HomeAssistant;
+    const ana = as({ id: 'u1', name: 'Ana', is_admin: true });
+    const leo = as({ id: 'u2', name: 'Leo', is_admin: false });
+    const accounts = new Map<string, ActivityAccount>([
+      ['u1', { name: 'Ana', system: false }],
+      ['u3', { name: 'Node-RED', system: false }],
+      ['u4', { name: 'Home Assistant Cloud', system: true }],
+    ]);
+    const by = (user: string, extra: Partial<ActivityEvent> = {}) =>
+      at(1, 'light.sofa', { context_user_id: user, ...extra });
+
+    it('names the person whose user did it, with their entity and picture', () => {
+      expect(whoOf(by('u2'), ana, peopleByUser(ana), accounts)).toEqual({
+        kind: 'person',
+        userId: 'u2',
+        name: 'Leo',
+        entityId: 'person.leo',
+        picture: '/api/image/serve/leo/512x512',
+        you: false,
+      });
+    });
+
+    it('names the person behind a run their tap fired (the run carries their user)', () => {
+      const run = by('u2', {
+        context_event_type: 'script_started',
+        context_domain: 'script',
+        context_entity_id: 'script.movie',
+        context_name: 'Movie time',
+      });
+      expect(causeOf(run, ana, peopleByUser(ana))).toMatchObject({ kind: 'script' });
+      expect(whoOf(run, ana, peopleByUser(ana), accounts)).toMatchObject({
+        kind: 'person',
+        name: 'Leo',
+      });
+    });
+
+    it('names an account no person stands for to an administrator: a sign-in, or an integration’s', () => {
+      expect(whoOf(by('u3'), ana, peopleByUser(ana), accounts)).toEqual({
+        kind: 'account',
+        userId: 'u3',
+        name: 'Node-RED',
+        picture: '',
+        you: false,
+      });
+      expect(whoOf(by('u4'), ana, peopleByUser(ana), accounts)).toMatchObject({
+        kind: 'integration',
+        name: 'Home Assistant Cloud',
+      });
+    });
+
+    it('names no account to anyone else, even one they were handed', () => {
+      expect(whoOf(by('u3'), leo, peopleByUser(leo), accounts)).toBeUndefined();
+      // a person is anyone's to read
+      expect(whoOf(by('u1'), leo, peopleByUser(leo), new Map())).toMatchObject({ name: 'Ana' });
+    });
+
+    it('invents nobody: an entry with no user, or a user nobody knows', () => {
+      expect(whoOf(at(1, 'light.sofa'), ana, peopleByUser(ana), accounts)).toBeUndefined();
+      expect(whoOf(by('u9'), ana, peopleByUser(ana), accounts)).toBeUndefined();
+    });
+
+    it('says when it is the one reading, even without a person or an administrator’s list', () => {
+      expect(whoOf(by('u2'), leo, peopleByUser(leo), new Map())).toMatchObject({
+        kind: 'person',
+        you: true,
+      });
+      const guest = { ...leo, states: hass.states } as HomeAssistant;
+      expect(whoOf(by('u2'), guest, peopleByUser(guest), new Map())).toEqual({
+        kind: 'account',
+        userId: 'u2',
+        name: 'Leo',
+        picture: '',
+        you: true,
+      });
+    });
+
+    it('reads the accounts for an administrator only, each with a name, and none when the answer fails', async () => {
+      const asked: unknown[] = [];
+      const answering = (base: HomeAssistant, answer: () => Promise<unknown>) =>
+        ({
+          ...base,
+          callWS: (message: unknown) => (asked.push(message), answer()),
+        }) as unknown as HomeAssistant;
+      const users = [
+        { id: 'u3', name: 'Node-RED', system_generated: false },
+        { id: 'u4', name: 'Home Assistant Cloud', system_generated: true },
+        { id: 'u5', name: '', system_generated: false },
+        { id: 7, name: 'Broken' },
+      ];
+      expect(await accountsOf(answering(ana, async () => users))).toEqual(
+        new Map([
+          ['u3', { name: 'Node-RED', system: false }],
+          ['u4', { name: 'Home Assistant Cloud', system: true }],
+        ]),
+      );
+      expect(asked).toEqual([{ type: 'config/auth/list' }]);
+      expect((await accountsOf(answering(leo, async () => users))).size).toBe(0);
+      expect(asked.length).toBe(1);
+      const refused = answering(ana, () => Promise.reject(new Error('unauthorized')));
+      expect((await accountsOf(refused)).size).toBe(0);
+    });
   });
 });
 

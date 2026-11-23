@@ -50,6 +50,9 @@ export type { CardLanguage };
 
 export const SETTINGS_KEY = 'fluvy';
 /**
+ * 9 since 1.25: the house says whether its Activity view shows who did each entry (`activityWho`): off where an 8
+ * stored none, every entry as it was, so nothing changes on upgrade (a 1.24 bundle reads a 9's as its own, and keeps
+ * the field on a save).
  * 8 since 1.23: the house says whether Fluvy's icons show what an entity reads (`levelIcons`, #226: a battery's charge,
  * a signal's bars, a valve open or shut): off where a 7 stored none, each icon drawn as it was, so nothing changes on
  * upgrade (a 1.22 bundle reads an 8's as its own, and keeps the field on a save).
@@ -77,7 +80,7 @@ export const SETTINGS_KEY = 'fluvy';
  * one added inside such a field (1.16's `cards.unavailable`): a 1.15 bundle draws it as its default, and a save of
  * the cards from it writes the default back.
  */
-export const SETTINGS_VERSION = 8;
+export const SETTINGS_VERSION = 9;
 
 /** A palette saved to the house: a palette file as it was shared. */
 export type SavedPalette = PaletteFile;
@@ -193,6 +196,8 @@ export interface HouseSettings {
   readonly icons: MenuIcons;
   /** Our Activity view in place of Home Assistant's logbook page (where the look reaches it); false keeps Home Assistant's. */
   readonly activity: boolean;
+  /** Our Activity view says who did each entry, with their face (1.25), and finds and filters by them. */
+  readonly activityWho: boolean;
   /** Our History view in place of Home Assistant's history page (where the look reaches it); false keeps Home Assistant's. */
   readonly history: boolean;
   /**
@@ -258,6 +263,7 @@ export interface EffectiveSettings {
   readonly frame: boolean;
   readonly icons: MenuIcons;
   readonly activity: boolean;
+  readonly activityWho: boolean;
   readonly history: boolean;
   readonly details: boolean;
   readonly language: CardLanguage;
@@ -295,6 +301,8 @@ export const HOUSE_DEFAULTS: HouseSettings = {
   frame: true,
   icons: { sidebar: true, settings: true },
   activity: true,
+  // every entry with its cause alone, as before 1.25
+  activityWho: false,
   history: true,
   details: true,
   palettes: [],
@@ -457,6 +465,7 @@ export function parseHouse(raw: unknown): HouseSettings {
     frame: typeof value['frame'] === 'boolean' ? value['frame'] : d.frame,
     icons: parseIcons(value['icons']),
     activity: typeof value['activity'] === 'boolean' ? value['activity'] : d.activity,
+    activityWho: value['activityWho'] === true,
     history: typeof value['history'] === 'boolean' ? value['history'] : d.history,
     details: typeof value['details'] === 'boolean' ? value['details'] : d.details,
     palettes: parseSavedPalettes(value['palettes']),
@@ -521,6 +530,7 @@ export function resolveSettings(
     frame: house.frame,
     icons: house.icons,
     activity: house.activity,
+    activityWho: house.activityWho,
     history: house.history,
     details: house.details,
     language: personal.language,

@@ -89,7 +89,15 @@
     "trigger.time_pattern": "wzorzec czasu",
     "trigger.time": "czas",
     "trigger.homeassistant_stopping": "zatrzymanie Home Assistanta",
-    "trigger.homeassistant_starting": "uruchomienie Home Assistanta"
+    "trigger.homeassistant_starting": "uruchomienie Home Assistanta",
+    "fact.who": "Kto",
+    "kind.account": "Konto",
+    "kind.integration": "Integracja",
+    "you": "Ty",
+    "by": "Kto: {name}",
+    "by_you": "Kto: ty",
+    "by_person": "Według osoby",
+    "everyone": "Wszyscy"
   },
   "alarm": {
     "arm_home": "Uzbrój (w domu)",
@@ -2775,7 +2783,9 @@
     "dashboard.up_to": "Do…",
     "dashboard.up_to_count": "Do {count} na listę",
     "cards.levels": "Ikony pokazują poziom",
-    "cards.levels_sub": "Naładowanie baterii, kreski sygnału, zawór otwarty lub zamknięty"
+    "cards.levels_sub": "Naładowanie baterii, kreski sygnału, zawór otwarty lub zamknięty",
+    "scope.activity_who": "Kto to zrobił",
+    "scope.activity_who_sub": "Każdy wpis w Aktywności wskazuje osobę, która za nim stoi, z jej zdjęciem; filtr według osoby"
   },
   "customise": {
     "title": "Dostosowanie",

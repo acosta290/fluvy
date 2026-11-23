@@ -1610,6 +1610,20 @@ export function scope(ctx: PanelContext, theme: ThemeInUse | null): TemplateResu
                 readonly: !admin,
                 onToggle: (on) => ctx.editHouse({ activity: on }),
               })}
+              ${
+                // who did each entry, in our Activity view: offered while the view is ours
+                shown.activity
+                  ? listRow({
+                      icon: 'person',
+                      title: ctx.t('scope.activity_who'),
+                      sub: ctx.t('scope.activity_who_sub'),
+                      trailing: 'switch',
+                      on: shown.activityWho,
+                      readonly: !admin,
+                      onToggle: (on) => ctx.editHouse({ activityWho: on }),
+                    })
+                  : nothing
+              }
               ${listRow({
                 icon: 'chart',
                 title: ctx.t('scope.history'),

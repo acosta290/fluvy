@@ -65,6 +65,7 @@ describe('parsing stored settings', () => {
         frame: false,
         icons: { sidebar: false, settings: true },
         activity: false,
+        activityWho: true,
         history: false,
         details: false,
         tabs: { style: 'pills', content: 'icons', title: false },
@@ -106,6 +107,7 @@ describe('parsing stored settings', () => {
       frame: false,
       icons: { sidebar: false, settings: true },
       activity: false,
+      activityWho: true,
       history: false,
       details: false,
       palettes: [],
@@ -248,13 +250,28 @@ describe('parsing stored settings', () => {
     const upgraded = parseHouse({ version: 7, palette: 'volt' });
     expect(upgraded.levelIcons).toBe(false);
     expect(upgraded.version).toBe(SETTINGS_VERSION);
-    expect(SETTINGS_VERSION).toBe(8);
     expect(HOUSE_DEFAULTS.levelIcons).toBe(false);
     // only a true turns them on
     for (const broken of ['true', 1, null, {}])
       expect(parseHouse({ levelIcons: broken }).levelIcons).toBe(false);
     // the house's, whoever looks
     expect(resolveSettings(parseHouse({ levelIcons: true }), PERSONAL_DEFAULTS).levelIcons).toBe(
+      true,
+    );
+  });
+
+  it('reads whether the Activity view shows who did it: off where an 8 stored none (1.25: nothing changes on upgrade)', () => {
+    // a 1.24 house stored none: every entry with its cause alone, as before
+    const upgraded = parseHouse({ version: 8, palette: 'volt', activity: true });
+    expect(upgraded.activityWho).toBe(false);
+    expect(upgraded.version).toBe(SETTINGS_VERSION);
+    expect(SETTINGS_VERSION).toBe(9);
+    expect(HOUSE_DEFAULTS.activityWho).toBe(false);
+    // only a true turns it on
+    for (const broken of ['true', 1, null, {}])
+      expect(parseHouse({ activityWho: broken }).activityWho).toBe(false);
+    // the house's, whoever reads the page
+    expect(resolveSettings(parseHouse({ activityWho: true }), PERSONAL_DEFAULTS).activityWho).toBe(
       true,
     );
   });

@@ -1,5 +1,5 @@
 /** The Activity page's words: what an entry is and how it reads — a state, a moment, a cause, a trigger, a name. */
-import { html, type TemplateResult } from 'lit';
+import { html, nothing, type TemplateResult } from 'lit';
 
 import {
   dateFormat,
@@ -9,10 +9,12 @@ import {
   type EntityView,
   type KeyOf,
 } from '@fluvy/core';
-import type { ActivityCause, ActivityEvent } from '@fluvy/core/activity';
+import type { ActivityCause, ActivityEvent, ActivityWho } from '@fluvy/core/activity';
 import { glyph, type GlyphName } from '@fluvy/ui';
 
+import { initials } from '../shared/avatar.js';
 import { currentTone, iconOf } from '../shared/domain.js';
+import { imageOf } from '../shared/picture.js';
 
 import { type Look, MINOR, MOMENTS, TRIGGER_KEYS, TRIGGERS } from './shared.js';
 
@@ -69,12 +71,78 @@ export function causeGlyph(cause: ActivityCause): GlyphName {
           : 'nodes';
 }
 
-/** Who or what, short: a glyph and a name (the detail says it in full and leads to it). */
-export function causeTag(page: FluvyActivity, cause: ActivityCause): TemplateResult {
+/**
+ * Who or what, short: a glyph and a name (the detail says it in full and leads to it). While the house shows who, the
+ * person behind a run (or an action) follows its name as their face, said "By Ana".
+ */
+export function causeTag(
+  page: FluvyActivity,
+  cause: ActivityCause,
+  who?: ActivityWho,
+): TemplateResult {
   const name = causeName(page, cause);
   const full = `${name} · ${page.t(`kind.${cause.kind}` as ActivityString)}`;
-  return html`<span class="av-sub__part av-cause" title=${full} aria-label=${full}
-    >${glyph(causeGlyph(cause))}${name}</span
+  // a name: on a short line it is the part that ends in an ellipsis
+  if (!who)
+    return html`<span class="av-sub__part av-cause" data-name title=${full} aria-label=${full}
+      >${glyph(causeGlyph(cause))}${name}</span
+    >`;
+  const said = `${full} · ${byWho(page, who)}`;
+  return html`<span class="av-sub__part av-cause av-cause--who" title=${said} aria-label=${said}
+    >${glyph(causeGlyph(cause))}<span class="av-cause__name">${name}</span
+    >${whoFace(page, who, 16)}</span
+  >`;
+}
+
+/**
+ * Someone who did it themselves (a person, an account), short: their face in place of a glyph, and their name. The 16
+ * face sits in the line's 16, so the row keeps its height.
+ */
+export function whoTag(page: FluvyActivity, who: ActivityWho): TemplateResult {
+  const said = who.you ? whoName(page, who) : `${who.name} · ${whoKind(page, who)}`;
+  return html`<span class="av-sub__part av-cause av-cause--who" title=${said} aria-label=${said}
+    >${whoFace(page, who, 16)}<span class="av-cause__name">${whoName(page, who)}</span></span
+  >`;
+}
+
+/** Who did it, as the page names them: "You" for the one reading. */
+export function whoName(page: FluvyActivity, who: ActivityWho): string {
+  return who.you ? page.t('you') : who.name;
+}
+
+/** What they are: a person, an account, an integration's. */
+export function whoKind(page: FluvyActivity, who: ActivityWho): string {
+  return page.t(`kind.${who.kind}`);
+}
+
+/** Who did it, spoken: Home Assistant's "By Ana", or "By you". */
+export function byWho(page: FluvyActivity, who: ActivityWho): string {
+  return who.you
+    ? page.t('by_you')
+    : page.ha('ui.components.logbook.cause.by', 'by', { name: who.name });
+}
+
+/**
+ * A face: the person's picture (as the house reads pictures), over their initials, which show where it will not load;
+ * else the initials, on the accent for a person and on the card's fill for an account. A 16 face holds one letter.
+ */
+export function whoFace(page: FluvyActivity, who: ActivityWho, size: 16 | 20 | 28): TemplateResult {
+  const picture = imageOf(page.hass, who.picture);
+  const letters = initials(who.name);
+  return html`<span
+    class="av-face av-face--${size} ${who.kind === 'person' ? 'is-person' : ''}"
+    aria-hidden="true"
+    >${size === 16 ? [...letters][0] : letters}${
+      picture
+        ? html`<img
+            src=${picture}
+            alt=""
+            draggable="false"
+            @load=${(event: Event) => ((event.currentTarget as HTMLElement).hidden = false)}
+            @error=${(event: Event) => ((event.currentTarget as HTMLElement).hidden = true)}
+          />`
+        : nothing
+    }</span
   >`;
 }
 

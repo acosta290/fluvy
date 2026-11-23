@@ -1284,7 +1284,15 @@
     "trigger.time_pattern": "időminta",
     "trigger.time": "idő",
     "trigger.homeassistant_stopping": "a Home Assistant leáll",
-    "trigger.homeassistant_starting": "a Home Assistant elindul"
+    "trigger.homeassistant_starting": "a Home Assistant elindul",
+    "fact.who": "Ki",
+    "kind.account": "Fiók",
+    "kind.integration": "Integráció",
+    "you": "Te",
+    "by": "Ki: {name}",
+    "by_you": "Ki: te",
+    "by_person": "Személy szerint",
+    "everyone": "Mindenki"
   },
   "alerts": {
     "preset.low_battery": "Gyenge elemek",
@@ -3119,7 +3127,9 @@
     "dashboard.up_to": "Legfeljebb…",
     "dashboard.up_to_count": "Listánként legfeljebb {count}",
     "cards.levels": "Az ikonok mutatják a szintet",
-    "cards.levels_sub": "Az akkumulátor töltöttsége, a jel sávjai, a szelep nyitva vagy zárva"
+    "cards.levels_sub": "Az akkumulátor töltöttsége, a jel sávjai, a szelep nyitva vagy zárva",
+    "scope.activity_who": "Ki csinálta",
+    "scope.activity_who_sub": "A Tevékenység minden bejegyzése megnevezi a mögötte álló személyt, a képével; szűrés személy szerint"
   },
   "customise": {
     "title": "Testreszabás",

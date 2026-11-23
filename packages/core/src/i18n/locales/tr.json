@@ -850,7 +850,15 @@
     "trigger.time_pattern": "zaman deseni",
     "trigger.time": "zaman",
     "trigger.homeassistant_stopping": "Home Assistant durduruluyor",
-    "trigger.homeassistant_starting": "Home Assistant başlatılıyor"
+    "trigger.homeassistant_starting": "Home Assistant başlatılıyor",
+    "fact.who": "Kim",
+    "kind.account": "Hesap",
+    "kind.integration": "Entegrasyon",
+    "you": "Siz",
+    "by": "{name} tarafından",
+    "by_you": "Sizin tarafınızdan",
+    "by_person": "Kişiye göre",
+    "everyone": "Herkes"
   },
   "keypad": {
     "close": "Kapat",
@@ -1675,7 +1683,9 @@
     "dashboard.up_to": "En fazla…",
     "dashboard.up_to_count": "Liste başına en fazla {count}",
     "cards.levels": "Simgeler seviyeyi gösterir",
-    "cards.levels_sub": "Pilin şarjı, sinyalin çubukları, vananın açık ya da kapalı olması"
+    "cards.levels_sub": "Pilin şarjı, sinyalin çubukları, vananın açık ya da kapalı olması",
+    "scope.activity_who": "Kimin yaptığı",
+    "scope.activity_who_sub": "Etkinlik’teki her kayıt, arkasındaki kişiyi fotoğrafıyla gösterir; kişiye göre filtre"
   },
   "customise": {
     "title": "Özelleştirme",

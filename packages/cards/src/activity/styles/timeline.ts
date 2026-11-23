@@ -435,6 +435,72 @@ export const timelineStyles = css`
     vertical-align: -1px;
     color: var(--fluvy-text-secondary);
   }
+  /* while the house shows who (1.25): a run's name, then the face of who fired it; or someone's face, then their name.
+     The 16 face fills the line's 16: the row keeps its height */
+  .av-cause--who {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .av-cause--who svg {
+    flex: 0 0 auto;
+    margin-right: 0;
+  }
+  /* a name, not a figure: its hyphens and digits as the font draws them in words ("Node-RED") */
+  .av-cause__name {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-variant-numeric: normal;
+  }
+  /* a face: the picture over the initials (which show where it will not load); a person's initials on the accent, an
+     account's on the card's fill with its hairline, as the timeline's quiet circles. 16 in a row, 20 in its detail, 28
+     in the "By person" button */
+  .av-face {
+    position: relative;
+    display: inline-flex;
+    flex: 0 0 auto;
+    align-items: center;
+    justify-content: center;
+    width: var(--av-face);
+    height: var(--av-face);
+    border-radius: 50%;
+    overflow: hidden;
+    background: var(--fluvy-card);
+    box-shadow: inset 0 0 0 1px var(--fluvy-edge, var(--fluvy-border));
+    color: var(--fluvy-text-secondary);
+    font-weight: 600;
+    line-height: 1;
+    letter-spacing: 0.02em;
+    font-variant-numeric: normal;
+  }
+  .av-face.is-person {
+    background: var(--fluvy-accent-fill);
+    box-shadow: none;
+    color: var(--fluvy-accent-on-fill);
+  }
+  .av-face img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  .av-face img[hidden] {
+    display: none;
+  }
+  .av-face--16 {
+    --av-face: 16px;
+    font-size: 9px;
+  }
+  .av-face--20 {
+    --av-face: 20px;
+    font-size: 8px;
+  }
+  .av-face--28 {
+    --av-face: 28px;
+    font-size: 11px;
+  }
   .av-ago {
     font-size: 13px;
     line-height: 20px;

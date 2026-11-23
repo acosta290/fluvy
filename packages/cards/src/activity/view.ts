@@ -8,6 +8,7 @@ import {
   formatDate,
   formatTime,
   languageOf,
+  lookHandle,
   markLanguage,
   navigate,
   plural,
@@ -25,12 +26,16 @@ import {
   type SourceTarget,
 } from '@fluvy/core/sources';
 import {
+  accountsOf,
+  type ActivityAccount,
   type ActivityEvent,
   type ActivityFilter,
+  type ActivityPerson,
   type ActivitySection,
   eventKey,
   peopleByUser,
   subscribeActivity,
+  whoOf,
 } from '@fluvy/core/activity';
 import {
   baseStyles,
@@ -72,7 +77,17 @@ import {
   topTime,
 } from './rail.js';
 import { renderFresh, renderList } from './rows.js';
-import { type Anchor, COMPACT, EXIT, FILTERS, HOUR, HOUR_HEAD, PICKED, ROW } from './shared.js';
+import {
+  type Anchor,
+  COMPACT,
+  EXIT,
+  FILTERS,
+  HOUR,
+  HOUR_HEAD,
+  MINUTE,
+  PICKED,
+  ROW,
+} from './shared.js';
 import { renderNarrowed, renderSources } from './sources.js';
 import { activityStyles } from './styles/index.js';
 import '@fluvy/ui/time-rail';
@@ -101,6 +116,9 @@ export class FluvyActivity extends LitElement {
     loading: { state: true },
     filter: { state: true },
     search: { state: true },
+    who: { state: true },
+    person: { state: true },
+    accounts: { state: true },
     target: { state: true },
     sourceFilters: { state: true },
     open: { state: true },
@@ -133,6 +151,12 @@ export class FluvyActivity extends LitElement {
   declare loading: boolean;
   declare filter: ActivityFilter;
   declare search: string;
+  /** The house shows who did each entry (`activityWho`): their face and name, a search and a filter by them. */
+  declare who: boolean;
+  /** Only what this user did ("By person"; '' everyone). */
+  declare person: string;
+  /** The accounts' names, an administrator's to read (none for anyone else, or while the house shows nobody). */
+  declare accounts: ReadonlyMap<string, ActivityAccount>;
   declare target: SourceTarget;
   declare sourceFilters: SourceFilters;
   /** Rows showing their detail (and bursts / repeats unfolded). */
@@ -166,7 +190,7 @@ export class FluvyActivity extends LitElement {
   /** Fluvy's "Reduce motion": reflected onto the rail and the dates, whose shadow roots follow it too. */
   declare reduced: boolean;
 
-  readonly index = new ActivityIndex(() => this.hass!);
+  index = new ActivityIndex(() => this.hass!);
   stop: (() => void) | undefined;
   subscribed = '';
   baseline: Set<string> | undefined;
@@ -180,6 +204,8 @@ export class FluvyActivity extends LitElement {
         filter: ActivityFilter;
         search: string;
         range: ActivityRange;
+        index: ActivityIndex;
+        person: string;
         model: ActivityModel;
       }
     | undefined;
@@ -196,7 +222,9 @@ export class FluvyActivity extends LitElement {
   tick = 0;
   timers = new Set<number>();
   timeWidth = 52;
-  people = new Map<string, string>();
+  people = new Map<string, ActivityPerson>();
+  /** When the accounts were last asked for (at most once a minute). */
+  accountsAt = 0;
   family = '';
   stuck: HTMLElement | undefined;
   opener: HTMLElement | null = null;
@@ -230,6 +258,9 @@ export class FluvyActivity extends LitElement {
     this.loading = true;
     this.filter = 'highlights';
     this.search = '';
+    this.who = false;
+    this.person = '';
+    this.accounts = new Map();
     this.target = {};
     this.sourceFilters = {};
     this.open = new Set();
@@ -303,11 +334,17 @@ export class FluvyActivity extends LitElement {
     this.subscribed = '';
   }
 
-  /** The person's language and motion, followed live (Fluvy's preferences changed on this or another screen). */
+  /**
+   * The person's language and motion, and whether the house shows who did it, followed live (Fluvy's settings changed
+   * on this or another screen).
+   */
   readonly onPreferences = (): void => {
     this.reduced = motionPreference() === 'reduced';
     this.toggleAttribute('reduced-motion', this.reduced);
     this.card = document.documentElement.hasAttribute(ACTIVITY_CARD);
+    // the house's say, where Fluvy's look runs the page (one without it, the playground's, keeps what it was given)
+    const settings = lookHandle()?.settings();
+    if (settings) this.who = settings.activityWho;
     this.requestUpdate();
   };
 
@@ -316,6 +353,11 @@ export class FluvyActivity extends LitElement {
       this.timeWidth = this.measureTime();
       this.resubscribe();
     }
+    if (changed.has('who')) {
+      if (!this.who) this.person = '';
+      this.readAccounts();
+    }
+    if (changed.has('who') || changed.has('accounts')) this.reindex();
     markLanguage(this, this.hass?.language);
   }
 
@@ -435,6 +477,8 @@ export class FluvyActivity extends LitElement {
     this.subscribed = key;
     this.baseline = undefined;
     this.people = peopleByUser(hass);
+    this.reindex();
+    this.readAccounts();
     this.arriving = 'load';
     this.stop = subscribeActivity(
       hass,
@@ -448,6 +492,8 @@ export class FluvyActivity extends LitElement {
   }
 
   receive(events: readonly ActivityEvent[], loading: boolean): void {
+    // someone new may have done something: their account's name, at most once a minute
+    this.readAccounts();
     // the list is leaving for another period: what arrives meanwhile is shown once it has gone
     if (this.exiting) {
       this.buffered = { events, loading };
@@ -499,11 +545,36 @@ export class FluvyActivity extends LitElement {
 
   keeps(event: ActivityEvent): boolean {
     const meta = this.index.of(event);
+    if (this.person && meta.who?.userId !== this.person) return false;
     return this.filter === 'all'
       ? true
       : this.filter === 'highlights'
         ? !meta.quiet
         : meta.category === this.filter;
+  }
+
+  /** What each entry is, read again: who did it, named while the house shows who, from the people and accounts known now. */
+  reindex(): void {
+    const hass = (): HomeAssistant => this.hass!;
+    this.index = this.who
+      ? new ActivityIndex(
+          hass,
+          (event) => whoOf(event, hass(), this.people, this.accounts),
+          this.t('you'),
+        )
+      : new ActivityIndex(hass);
+  }
+
+  /** The accounts' names, for an administrator while the house shows who: asked at most once a minute. */
+  readAccounts(): void {
+    const hass = this.hass;
+    if (!this.who || !hass?.user?.is_admin || Date.now() - this.accountsAt < MINUTE) return;
+    this.accountsAt = Date.now();
+    void accountsOf(hass).then((accounts) => {
+      // only a change draws again (every entry is read anew)
+      if (JSON.stringify([...accounts]) !== JSON.stringify([...this.accounts]))
+        this.accounts = accounts;
+    });
   }
 
   model(): ActivityModel {
@@ -513,15 +584,26 @@ export class FluvyActivity extends LitElement {
       memo.events === this.events &&
       memo.filter === this.filter &&
       memo.search === this.search &&
-      memo.range === this.range
+      memo.range === this.range &&
+      memo.index === this.index &&
+      memo.person === this.person
     )
       return memo.model;
-    const model = buildModel(this.events, this.index, this.filter, this.search, this.range);
+    const model = buildModel(
+      this.events,
+      this.index,
+      this.filter,
+      this.search,
+      this.range,
+      this.person,
+    );
     this.modelMemo = {
       events: this.events,
       filter: this.filter,
       search: this.search,
       range: this.range,
+      index: this.index,
+      person: this.person,
       model,
     };
     return model;
@@ -562,9 +644,9 @@ export class FluvyActivity extends LitElement {
   }
 
   /** Home Assistant's translation of one of its keys, else ours. */
-  ha(key: string, fallback: ActivityString): string {
-    const text = this.hass?.localize?.(key);
-    return text && text !== key ? text : this.t(fallback);
+  ha(key: string, fallback: ActivityString, values?: Record<string, string>): string {
+    const text = this.hass?.localize?.(key, values);
+    return text && text !== key ? text : this.t(fallback, values);
   }
 
   time(ms: number, seconds = false): string {
@@ -634,9 +716,20 @@ export class FluvyActivity extends LitElement {
   setFilter(filter: ActivityFilter): void {
     if (filter === this.filter) return;
     this.filter = filter;
+    this.filtered();
+  }
+
+  /** Only what this user did ('' everyone), as a filter narrows. */
+  setPerson(person: string): void {
+    if (person === this.person) return;
+    this.person = person;
+    this.filtered();
+  }
+
+  /** Another filter: its entries come in, from where the list starts. */
+  filtered(): void {
     this.freshCount = 0;
     this.enter('filter');
-    // what the new filter shows starts where the list does
     const scroller = this.scroller;
     if (scroller && scroller.scrollTop > listTop(this)) glide(this, listTop(this));
   }
@@ -915,7 +1008,7 @@ export class FluvyActivity extends LitElement {
       >
         <div class="av-page">
           <div class="av-main">
-            ${renderDay(this, model)} ${renderTools(this)} ${renderFilters(this, model)}
+            ${renderDay(this, model)} ${renderTools(this, model)} ${renderFilters(this, model)}
             ${renderNarrowed(this)} ${renderFresh(this)} ${renderList(this, model)}
           </div>
           <div class="av-rail">${rail}</div>

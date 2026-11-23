@@ -1,4 +1,4 @@
-/** The Activity page's tools: the search and the filters (one or two rows of equal chips, or a strip). */
+/** The Activity page's tools: the search, by person and the filters (one or two rows of equal chips, or a strip). */
 import { html, nothing, type TemplateResult } from 'lit';
 
 import { keyed } from 'lit/directives/keyed.js';
@@ -7,15 +7,19 @@ import { type KeyOf } from '@fluvy/core';
 import { countFilters, countTargets } from '@fluvy/core/sources';
 
 import { faceOf, firstFit, glyph, reducedMotion, sideScroll, zoomOf } from '@fluvy/ui';
+import type { FluvySelect, SelectChangeDetail } from '@fluvy/ui/select';
+import '@fluvy/ui/select';
 import type { ActivityModel } from './model.js';
 import { openSources, singleEntity } from './sources.js';
 
 import type { FluvyActivity } from './view.js';
+import { whoFace, whoName } from './words.js';
 
 type ActivityString = KeyOf<'activity' | 'page'>;
 
-export function renderTools(page: FluvyActivity): TemplateResult {
+export function renderTools(page: FluvyActivity, model: ActivityModel): TemplateResult {
   const sources = countTargets(page.target) + countFilters(page.sourceFilters);
+  const person = renderPerson(page, model);
   return html`<div class="av-tools">
     <label class="fv-field fv-field--on-page av-search">
       ${glyph('search')}
@@ -25,7 +29,7 @@ export function renderTools(page: FluvyActivity): TemplateResult {
         type="search"
         autocomplete="off"
         spellcheck="false"
-        placeholder=${searchHint(page)}
+        placeholder=${searchHint(page, person === nothing ? 1 : 2)}
         aria-label=${page.t('search')}
         .value=${page.search}
         @input=${(event: InputEvent) => {
@@ -54,15 +58,54 @@ export function renderTools(page: FluvyActivity): TemplateResult {
     >
       ${glyph('sliders')}${sources ? html`<span class="av-badge">${sources}</span>` : nothing}
     </button>
+    ${person}
   </div>`;
+}
+
+/**
+ * By person, while the house shows who: a round beside Sources (the face of the one chosen in it) opening the dropdown
+ * of everyone who did anything in the period, the one reading first, then the busiest. Not offered while nobody is
+ * named, nor for one entity.
+ */
+export function renderPerson(
+  page: FluvyActivity,
+  model: ActivityModel,
+): TemplateResult | typeof nothing {
+  if (!page.who || singleEntity(page) || (!model.people.length && !page.person)) return nothing;
+  const chosen = model.people.find((who) => who.userId === page.person);
+  const label = page.t('by_person');
+  return html`<button
+      class="fv-round fv-round--on-page av-person ${page.person ? 'is-on' : ''}"
+      aria-label=${chosen ? `${label} · ${whoName(page, chosen)}` : label}
+      aria-haspopup="listbox"
+      @click=${(event: Event) => {
+        const menu = (event.currentTarget as HTMLElement).nextElementSibling as FluvySelect | null;
+        if (menu) menu.open = !menu.open;
+      }}
+    >
+      ${chosen ? whoFace(page, chosen, 28) : glyph('person')}</button
+    ><fluvy-select
+      anchored
+      .label=${label}
+      .value=${page.person}
+      .options=${[
+        { value: '', label: page.t('everyone') },
+        // the one reading first, then the busiest
+        ...[...model.people]
+          .sort((a, b) => Number(b.you) - Number(a.you))
+          .map((who) => ({ value: who.userId, label: whoName(page, who) })),
+      ]}
+      @fluvy-change=${(event: CustomEvent<SelectChangeDetail>) =>
+        page.setPerson(event.detail.value)}
+    ></fluvy-select>`;
 }
 
 /**
  * The filters. On a desktop, one or two balanced rows of equal cells sharing the column; when two rows cannot hold
  * the labels (and on a phone), a strip of content-sized pills that scrolls (finger, wheel, mouse drag). Loading,
  * grey pills hold the place. A filter that would change nothing is not offered: with one entity asked for, on an
- * empty day, or when every filter shows the same entries (one device's day). While searching, the counts are the
- * search's.
+ * empty day, or when every filter shows the same entries (one device's day). While searching (or narrowed to one
+ * person), the counts are what that finds.
  */
 export function renderFilters(page: FluvyActivity, model: ActivityModel): unknown {
   if (singleEntity(page)) return nothing;
@@ -70,7 +113,11 @@ export function renderFilters(page: FluvyActivity, model: ActivityModel): unknow
     return html`<div class="av-filters av-filters--loading" aria-hidden="true">
       ${ghosts(page).map((width) => html`<span class="av-ghost" style="width:${width}px"></span>`)}
     </div>`;
-  if (!page.search && new Set(model.filters.map((filter) => model.counts[filter])).size < 2)
+  if (
+    !page.search &&
+    !page.person &&
+    new Set(model.filters.map((filter) => model.counts[filter])).size < 2
+  )
     return nothing;
   const items = model.filters.map((filter) => ({
     filter,
@@ -119,13 +166,16 @@ export function renderFilters(page: FluvyActivity, model: ActivityModel): unknow
   );
 }
 
-/** The search field's hint: its fullest wording that fits with 12 px to spare ("Search activity" → "Search"). */
-export function searchHint(page: FluvyActivity): string {
+/**
+ * The search field's hint: its fullest wording that fits with 12 px to spare ("Search activity" → "Search"), beside
+ * its `rounds` (Sources, and By person while it is offered).
+ */
+export function searchHint(page: FluvyActivity, rounds: number): string {
   const full = page.t('search');
   if (!page.mainWidth) return full;
-  // the column, less Sources (44 + 8) and the field's sides (16, its leading glyph 2 out), glyph and gap
+  // the column, less the rounds (44 + 8 each) and the field's sides (16, its leading glyph 2 out), glyph and gap
   const room =
-    page.mainWidth - (page.card ? (page.compact ? 32 : 48) : 0) - 52 - (14 + 20 + 12 + 16);
+    page.mainWidth - (page.card ? (page.compact ? 32 : 48) : 0) - 52 * rounds - (14 + 20 + 12 + 16);
   // measured in the face the hint is drawn in: the input's (15, or 16 under a finger) at the placeholder's 400
   const input = page.renderRoot.querySelector('#av-search');
   page.family ||= getComputedStyle(page).fontFamily || 'Inter, sans-serif';

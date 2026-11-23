@@ -999,7 +999,15 @@
     "trigger.time_pattern": "шаблон часу",
     "trigger.time": "час",
     "trigger.homeassistant_stopping": "Зупинка Home Assistant",
-    "trigger.homeassistant_starting": "Запуск Home Assistant"
+    "trigger.homeassistant_starting": "Запуск Home Assistant",
+    "fact.who": "Хто",
+    "kind.account": "Обліковий запис",
+    "kind.integration": "Інтеграція",
+    "you": "Ви",
+    "by": "Хто: {name}",
+    "by_you": "Хто: ви",
+    "by_person": "За особою",
+    "everyone": "Усі"
   },
   "alerts": {
     "preset.low_battery": "Низький заряд",
@@ -3168,7 +3176,9 @@
     "dashboard.up_to": "До…",
     "dashboard.up_to_count": "До {count} у списку",
     "cards.levels": "Значки показують рівень",
-    "cards.levels_sub": "Заряд батареї, поділки сигналу, клапан відкритий чи закритий"
+    "cards.levels_sub": "Заряд батареї, поділки сигналу, клапан відкритий чи закритий",
+    "scope.activity_who": "Хто це зробив",
+    "scope.activity_who_sub": "Кожен запис «Активності» називає людину, яка за ним стоїть, з її фото; фільтр за особою"
   },
   "customise": {
     "title": "Налаштувати",

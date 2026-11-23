@@ -999,7 +999,15 @@
     "trigger.time_pattern": "временной цикл",
     "trigger.time": "время",
     "trigger.homeassistant_stopping": "Home Assistant останавливается",
-    "trigger.homeassistant_starting": "Home Assistant запускается"
+    "trigger.homeassistant_starting": "Home Assistant запускается",
+    "fact.who": "Кто",
+    "kind.account": "Учётная запись",
+    "kind.integration": "Интеграция",
+    "you": "Вы",
+    "by": "Кто: {name}",
+    "by_you": "Кто: вы",
+    "by_person": "По человеку",
+    "everyone": "Все"
   },
   "alerts": {
     "preset.low_battery": "Низкий заряд",
@@ -3168,7 +3176,9 @@
     "dashboard.up_to": "До…",
     "dashboard.up_to_count": "До {count} в списке",
     "cards.levels": "Значки показывают уровень",
-    "cards.levels_sub": "Заряд батареи, деления сигнала, клапан открыт или закрыт"
+    "cards.levels_sub": "Заряд батареи, деления сигнала, клапан открыт или закрыт",
+    "scope.activity_who": "Кто это сделал",
+    "scope.activity_who_sub": "Каждая запись «Активности» называет человека, который за ней стоит, с его фото; фильтр по человеку"
   },
   "customise": {
     "title": "Настройка",

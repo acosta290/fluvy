@@ -1,10 +1,11 @@
-/** The Activity page's download: what the list shows, as CSV. */
+/** The Activity page's download: what the list shows, as CSV (and who did each, while the house shows who). */
 import { downloadCsv } from '../shared/csv.js';
 import type { FluvyActivity } from './view.js';
 
 export function download(page: FluvyActivity): void {
   const rows = page.model().shown;
   if (!rows.length) return;
+  const who = page.who;
   const head = [
     'time',
     'entity_id',
@@ -20,6 +21,7 @@ export function download(page: FluvyActivity): void {
     'context_entity_id',
     'context_state',
     'context_source',
+    ...(who ? ['who'] : []),
   ];
   downloadCsv(
     'activity.csv',
@@ -39,6 +41,7 @@ export function download(page: FluvyActivity): void {
       e.context_entity_id,
       e.context_state,
       e.context_source,
+      ...(who ? [page.index.of(e).who?.name] : []),
     ]),
   );
 }

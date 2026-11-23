@@ -11,6 +11,19 @@ caused it — a person, an automation, a script, a service call — the way Home
 narrows the day; the sources filter keeps only the areas, devices or entities you care about; the date picker and the
 ‹ › arrows move by day. New entries arrive live. **Export** writes the shown day as CSV.
 
+**Who did it** (off until the house turns it on: *Scope › Everywhere › Who did it*, under the Activity page). Each entry
+names the person whose account did it, with their picture (their initials where they have none): after the name of an
+automation or a script their tap started, or in place of the cause where they did it themselves; "You" is the one
+reading. Home Assistant only knows a person when an account did something: a switch pressed by hand, a sensor or a
+schedule names nobody. An administrator also sees the accounts no person stands for (a tool's token such as Node-RED, an
+integration's such as Home Assistant Cloud); everyone else sees people only. The entry's detail says **Who**, a way to
+the person's details; the search finds by their name; **By person**, beside the sources, keeps one person's entries;
+the CSV gets a `who` column. In a settings file it is the house's `activityWho`:
+
+```json
+{ "fluvy": 1, "house": { "activityWho": true } }
+```
+
 ## History
 
 The history page as a set of charts and state lines: sensors as curves, on/off things as coloured stretches, grouped

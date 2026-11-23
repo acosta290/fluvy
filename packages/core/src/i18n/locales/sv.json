@@ -923,7 +923,15 @@
     "trigger.time_pattern": "tidsmönster",
     "trigger.time": "tid",
     "trigger.homeassistant_stopping": "Home Assistant stängs av",
-    "trigger.homeassistant_starting": "Home Assistant startar"
+    "trigger.homeassistant_starting": "Home Assistant startar",
+    "fact.who": "Vem",
+    "kind.account": "Konto",
+    "kind.integration": "Integration",
+    "you": "Du",
+    "by": "Av {name}",
+    "by_you": "Av dig",
+    "by_person": "Per person",
+    "everyone": "Alla"
   },
   "alerts": {
     "preset.low_battery": "Låga batterier",
@@ -3181,7 +3189,9 @@
     "dashboard.up_to": "Upp till…",
     "dashboard.up_to_count": "Upp till {count} per lista",
     "cards.levels": "Ikoner visar nivån",
-    "cards.levels_sub": "Ett batteris laddning, en signals staplar, en ventil öppen eller stängd"
+    "cards.levels_sub": "Ett batteris laddning, en signals staplar, en ventil öppen eller stängd",
+    "scope.activity_who": "Vem som gjorde det",
+    "scope.activity_who_sub": "Varje post i Aktivitet visar personen bakom den, med bild; ett filter per person"
   },
   "remote": {
     "key.power": "Ström",

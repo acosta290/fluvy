@@ -1284,7 +1284,15 @@
     "trigger.time_pattern": "タイムパターン",
     "trigger.time": "時刻",
     "trigger.homeassistant_stopping": "Home Assistantの停止",
-    "trigger.homeassistant_starting": "Home Assistantの起動"
+    "trigger.homeassistant_starting": "Home Assistantの起動",
+    "fact.who": "実行者",
+    "kind.account": "アカウント",
+    "kind.integration": "インテグレーション",
+    "you": "あなた",
+    "by": "実行者：{name}",
+    "by_you": "実行者：あなた",
+    "by_person": "人で絞り込む",
+    "everyone": "全員"
   },
   "alerts": {
     "preset.low_battery": "バッテリー低下",
@@ -3008,7 +3016,9 @@
     "dashboard.up_to": "最大…",
     "dashboard.up_to_count": "各リスト最大{count}件",
     "cards.levels": "アイコンでレベルを表示",
-    "cards.levels_sub": "バッテリーの残量、信号の強さ、バルブの開閉"
+    "cards.levels_sub": "バッテリーの残量、信号の強さ、バルブの開閉",
+    "scope.activity_who": "誰が操作したか",
+    "scope.activity_who_sub": "アクティビティの各項目に操作した人を写真付きで表示（人で絞り込むことも可能）"
   },
   "customise": {
     "title": "カスタマイズ",

@@ -4,7 +4,8 @@
  *   node activity-states.mjs --viewport 1440 --height 900 --mode light --lang en --out ../../apps/playground/out/activity
  * Writes <out>-<moment>.png for: top, scrolled (the morning), detail (a row unfolded), burst (the restart unfolded),
  * dates (the date picker), sources (the sheet), scrub (a finger on the rail, mid-drag), end (the rail's End key),
- * bottom (the wheel to the end of the scroll).
+ * bottom (the wheel to the end of the scroll). With `--who 1` the house shows who did each entry (1.25): who (Leo's run
+ * unfolded, his face after it), people (the By person dropdown), leo (his day alone).
  * Prints the page's console errors: the page must never throw.
  */
 import { mkdir } from 'node:fs/promises';
@@ -19,6 +20,7 @@ const args = parseArgs(process.argv.slice(2), {
   lang: 'en',
   palette: '',
   card: '',
+  who: '',
   at: '2026-09-17T21:47:12',
   url: PLAYGROUND,
   out: '../../apps/playground/out/activity',
@@ -33,6 +35,7 @@ const query = new URLSearchParams({
   lang: args.lang,
   ...(args.palette ? { palette: args.palette } : {}),
   ...(args.card ? { card: '1' } : {}),
+  ...(args.who ? { who: '1' } : {}),
 });
 const browser = await chromium.launch(launchOptions);
 const problems = [];
@@ -44,6 +47,9 @@ const QUERY = {
   drop: 'moment=drop',
   loading: 'moment=loading',
   empty: 'moment=empty',
+  who: 'moment=who',
+  people: 'moment=people',
+  leo: 'moment=leo',
   linked: 'entity_id=light.kitchen&start_date=2026-09-16T21%3A47%3A12',
 };
 const WAIT = { drop: 250, loading: 0, fresh: 1200 };

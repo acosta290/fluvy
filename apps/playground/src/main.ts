@@ -105,7 +105,8 @@ import { loadFixture, SHEETS, type FrameSpec, type SheetSpec } from './scenes.js
  * ?activity=1            Fluvy's Activity page on a made-up house (&live=0 without live entries,
  *                        &at=2026-09-17T21:47 the clock set to that moment, still running,
  *                        &card=1 its timeline on a card,
- *                        &moment=detail|burst|dates|sources|lights|week|nomatch|fresh|drop|loading|empty)
+ *                        &moment=detail|burst|dates|sources|lights|week|nomatch|fresh|drop|loading|empty,
+ *                        &who=1 who did each entry, with &moment=who|people|leo)
  * ?dashboard=home        a sheet's frames as a dashboard's view, under Home Assistant's header and its view tabs
  *                        (&tabs= &content= &tabtitle= &views= &icons= &edit= &subview= &scope= — see dashboard.ts)
  * ?dashboard=auto        the automatic dashboard's view (&view=home, its path), built by its own strategy from the
@@ -329,6 +330,7 @@ if (activity)
     language,
     params.get('live') !== '0',
     (params.get('moment') ?? undefined) as ActivityMoment | undefined,
+    params.get('who') === '1',
   );
 // the wall: this page as a wall panel over the sheet's frames (`?sheet=home&wall=1&moment=asleep`)
 const wallMoment =

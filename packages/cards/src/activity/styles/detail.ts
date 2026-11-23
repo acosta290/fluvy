@@ -36,9 +36,10 @@ export const detailStyles = css`
     gap: 8px;
     margin: 0;
   }
+  /* the labels' column: 88, or what the page's language needs for its widest label (--av-label, measured) */
   .av-fact {
     display: grid;
-    grid-template-columns: 88px minmax(0, 1fr);
+    grid-template-columns: var(--av-label, 88px) minmax(0, 1fr);
     column-gap: 12px;
     align-items: center;
     min-height: 20px;

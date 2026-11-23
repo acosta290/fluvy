@@ -2436,6 +2436,42 @@ describe('the settings panel', () => {
     panel.remove();
   });
 
+  it('lets the house show who did each entry in its Activity view, off until chosen and offered only with it (1.25)', async () => {
+    const { panel, root, row, button, handle, previews, settle } = await mount();
+    await handle.store.saveHouse({ scope: 'everywhere' });
+    panel.tab = 'scope';
+    await settle();
+    const name = 'Who did it';
+    // off, by default: nothing changes on upgrade
+    const who = () => row(name)?.querySelector('.fv-switch');
+    expect(row(name)?.textContent).toContain(
+      'Each Activity entry names the person behind it, with their picture; a filter by person',
+    );
+    expect(who()?.getAttribute('aria-checked')).toBe('false');
+    row(name)?.querySelector<HTMLElement>('.fv-hit')?.click();
+    await settle();
+    expect(who()?.getAttribute('aria-checked')).toBe('true');
+    expect(previews.at(-1)).toEqual({ activityWho: true });
+    expect(root.querySelector('.pn-bar__text')?.textContent?.trim()).toBe('Who did it · On');
+    button('Save')!.click();
+    await settle();
+    expect(handle.settings().activityWho).toBe(true);
+    // Home Assistant's own Activity page kept: nothing of ours to name anyone in
+    row('Our Activity view')?.querySelector<HTMLElement>('.fv-hit')?.click();
+    await settle();
+    expect(row(name)).toBeUndefined();
+    panel.remove();
+    // someone who is not an administrator reads it, and changes nothing
+    const guest = await mount(false);
+    await guest.handle.store.saveHouse({ scope: 'everywhere' });
+    guest.panel.tab = 'scope';
+    await guest.settle();
+    guest.row(name)?.querySelector<HTMLElement>('.fv-hit')?.click();
+    await guest.settle();
+    expect(guest.previews.at(-1)).not.toEqual(expect.objectContaining({ activityWho: false }));
+    guest.panel.remove();
+  });
+
   it('shows a language on the panel before it is saved, and discards it back', async () => {
     const { panel, root, pick, button, written, previews, settle } = await mount();
     panel.tab = 'preferences';
@@ -3222,6 +3258,8 @@ describe('the settings panel', () => {
       stateTintStyle: 'edge',
       // whether Fluvy's icons show their level (1.23, #226)
       levelIcons: true,
+      // whether the Activity view shows who did each entry (1.25)
+      activityWho: true,
       // a wall's subviews with no way back (1.23, #222)
       wall: { ...WALL_DEFAULTS, subview: 'none' },
     });
@@ -3270,6 +3308,7 @@ describe('the settings panel', () => {
       stateTint: 'always',
       stateTintStyle: 'edge',
       levelIcons: true,
+      activityWho: true,
       wall: { subview: 'none' },
     });
     expect(exported['personal']).toMatchObject({

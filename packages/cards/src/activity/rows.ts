@@ -36,6 +36,7 @@ import {
   pastView,
   stateWord,
   triggerWords,
+  whoTag,
   withNames,
 } from './words.js';
 
@@ -78,6 +79,7 @@ export function renderList(page: FluvyActivity, model: ActivityModel): unknown {
               style="width:${page.pill([action], 15, 32)}px"
               @click=${() => {
                 page.search = '';
+                page.person = '';
                 page.setFilter('all');
               }}
             >
@@ -330,16 +332,24 @@ export function renderEvent(page: FluvyActivity, item: ActivityItem, place: Plac
   const view = event.entity_id ? resolveEntity(hass, event.entity_id) : undefined;
   const look = lookOf(page, event, view);
   const cause = causeOf(event, hass, page.people);
+  const who = page.index.of(event).who;
   const open = page.open.has(key);
   const fresh = page.fresh.has(key);
   const trigger =
     event.entity_id && domainOf(event.entity_id) === 'automation'
       ? triggerWords(page, event.source)
       : '';
+  // who did it themselves (a person, an account) is their face and name; the one behind a run follows the run's name
   const sub = subLine([
     page.compact ? page.time(when) : '',
     view?.areaName ?? '',
-    cause ? causeTag(page, cause) : trigger ? page.t('trigger', { what: trigger }) : '',
+    who && (!cause || cause.kind === 'person')
+      ? whoTag(page, who)
+      : cause
+        ? causeTag(page, cause, who)
+        : trigger
+          ? page.t('trigger', { what: trigger })
+          : '',
   ]);
   const row = html`<div
     class=${rowClass(page, key, place, fresh)}
@@ -364,7 +374,7 @@ export function renderEvent(page: FluvyActivity, item: ActivityItem, place: Plac
   </div>`;
   // a new entry opens a place for itself (from nothing: its clip has no padding), the rows below slide down
   return html`${fresh ? html`<div class="av-grow"><div class="av-grow__clip">${row}</div></div>` : row}
-  ${open ? renderDetail(page, item, view, cause, place) : nothing}`;
+  ${open ? renderDetail(page, item, view, cause, who, place) : nothing}`;
 }
 
 export function renderGroup(

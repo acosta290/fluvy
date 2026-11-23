@@ -7,9 +7,25 @@ import type { ActivityEvent } from '@fluvy/core/activity';
  * routine, a restart burst, a TV changing again and again, the evening coming home — streamed the way Home Assistant
  * streams its logbook (history in two chunks, then each new entry live). Every day is the same house on a different
  * day (a seeded shuffle), so ‹ › has something to show. `&live=0` stops the live entries (stable screenshots).
+ * `&who=1`: the house shows who did each entry (1.25) — Marta reading (an administrator), Leo, Sam (no picture), the
+ * Node-RED account and Home Assistant Cloud's (a voice assistant).
  */
 
 type Words = Record<'en' | 'es', string>;
+
+/** A drawn face (no one's photo): a head, its hair and shoulders on a ground of its own, as Home Assistant serves one. */
+const face = (ground: string, skin: string, hair: string, shirt: string, long: boolean): string =>
+  "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='88' height='88'>" +
+  [
+    `<rect width='88' height='88' fill='${ground}'/>`,
+    long ? `<path d='M25 46c0-17 8-27 19-27s19 10 19 27v16H25z' fill='${hair}'/>` : '',
+    `<path d='M15 88a29 29 0 0 1 58 0z' fill='${shirt}'/><circle cx='44' cy='38' r='14' fill='${skin}'/>`,
+    `<path d='M30 36c0-10 6-16 14-16s14 6 14 16c-4-4-9-6-14-6s-10 2-14 6z' fill='${hair}'/></svg>`,
+  ]
+    .join('')
+    .replace(/#/g, '%23');
+const MARTA = face('#c98a62', '#f2d9c1', '#4b3427', '#f5ede1', true);
+const LEO = face('#5f8b8c', '#e6c4a2', '#2e2925', '#ece0c2', false);
 
 interface Thing {
   readonly id: string;
@@ -106,8 +122,19 @@ const THINGS: readonly Thing[] = [
   },
   { id: 'alarm_control_panel.house', name: { en: 'Alarm', es: 'Alarma' }, area: 'entrance' },
   { id: 'vacuum.robot', name: { en: 'Robot vacuum', es: 'Robot aspirador' }, area: 'living' },
-  { id: 'person.marta', name: { en: 'Marta', es: 'Marta' }, attributes: { user_id: 'u1' } },
-  { id: 'person.leo', name: { en: 'Leo', es: 'Leo' }, attributes: { user_id: 'u2' } },
+  {
+    id: 'person.marta',
+    name: { en: 'Marta', es: 'Marta' },
+    attributes: { user_id: 'u1', entity_picture: MARTA },
+  },
+  {
+    id: 'person.leo',
+    name: { en: 'Leo', es: 'Leo' },
+    attributes: { user_id: 'u2', entity_picture: LEO },
+  },
+  { id: 'person.sam', name: { en: 'Sam', es: 'Sam' }, attributes: { user_id: 'u5' } },
+  { id: 'light.porch', name: { en: 'Porch light', es: 'Luz del porche' }, area: 'entrance' },
+  { id: 'script.movie_time', name: { en: 'Movie time', es: 'Hora de cine' } },
   {
     id: 'automation.morning',
     name: { en: 'Good morning', es: 'Buenos días' },
@@ -169,6 +196,8 @@ const STATES: Record<string, string> = {
   'vacuum.robot': 'docked',
   'person.marta': 'home',
   'person.leo': 'home',
+  'person.sam': 'home',
+  'script.movie_time': 'off',
   'automation.morning': 'on',
   'automation.welcome': 'on',
   'automation.night': 'on',
@@ -193,7 +222,8 @@ interface Draft {
   at: number; // minutes after midnight (fractions allowed)
   id: string;
   state?: string;
-  by?: { automation?: string; user?: string };
+  /** What did it: an automation's or a script's run, and the user behind it (a run a person fired carries theirs). */
+  by?: { automation?: string; script?: string; user?: string };
   message?: string;
   source?: string;
   domain?: string;
@@ -281,6 +311,17 @@ function story(day: number): Draft[] {
   add(19 * 60 + 40, 'media_player.living_tv', 'playing', { by: { user: 'u1' } });
   add(20 * 60 + 5, 'light.living_lamp', 'on', { by: { user: 'u1' } });
   add(20 * 60 + 6, 'light.living_ceiling', 'off', { by: { user: 'u1' } });
+  // a late film: a script Leo runs from his phone; its run, and what it did a moment later, carry his user
+  const movie = { script: 'script.movie_time', user: 'u2' };
+  const film = 21 * 60 + 39 + jitter(2);
+  d.push({ at: film, id: 'script.movie_time', message: 'started', by: { user: 'u2' } });
+  d.push({ at: film + 0.1, id: 'cover.living_blinds', state: 'closing', by: movie });
+  d.push({ at: film + 0.9, id: 'cover.living_blinds', state: 'closed', by: movie });
+  // the porch light by Node-RED's account, the kitchen by voice through Home Assistant Cloud, the radio by Sam
+  add(19 * 60 + 21, 'light.porch', 'on', { by: { user: 'u3' } });
+  add(21 * 60 + 44, 'light.porch', 'off', { by: { user: 'u3' } });
+  add(18 * 60 + 52, 'light.kitchen', 'on', { by: { user: 'u4' } });
+  add(18 * 60 + 47, 'media_player.kitchen_radio', 'playing', { by: { user: 'u5' } });
   add(21 * 60 + 30, 'automation.night', undefined, {
     message: 'triggered by time',
     source: 'time',
@@ -302,17 +343,19 @@ function story(day: number): Draft[] {
 function toEvent(draft: Draft, midnight: number, lang: 'en' | 'es'): ActivityEvent {
   const when = (midnight + draft.at * 60_000) / 1000;
   const thing = THINGS.find((item) => item.id === draft.id);
-  const automation = draft.by?.automation;
-  const context = automation
+  const run = draft.by?.automation ?? draft.by?.script;
+  const user = draft.by?.user;
+  const context = run
     ? {
         context_id: `c-${Math.round(when)}`,
-        context_event_type: 'automation_triggered',
-        context_domain: 'automation',
-        context_entity_id: automation,
-        context_name: THINGS.find((item) => item.id === automation)?.name[lang] ?? automation,
+        context_event_type: draft.by?.automation ? 'automation_triggered' : 'script_started',
+        context_domain: draft.by?.automation ? 'automation' : 'script',
+        context_entity_id: run,
+        context_name: THINGS.find((item) => item.id === run)?.name[lang] ?? run,
+        ...(user ? { context_user_id: user } : {}),
       }
-    : draft.by?.user
-      ? { context_id: `u-${Math.round(when)}`, context_user_id: draft.by.user }
+    : user
+      ? { context_id: `u-${Math.round(when)}`, context_user_id: user }
       : {};
   if (draft.domain === 'homeassistant')
     return {
@@ -329,6 +372,7 @@ function toEvent(draft: Draft, midnight: number, lang: 'en' | 'es'): ActivityEve
     ...(draft.message ? { message: draft.message, name: thing?.name[lang] ?? draft.id } : {}),
     ...(draft.source ? { source: draft.source } : {}),
     ...(draft.id.startsWith('automation.') ? { domain: 'automation' } : {}),
+    ...(draft.id.startsWith('script.') ? { domain: 'script' } : {}),
     ...context,
   };
 }
@@ -469,14 +513,31 @@ export function activityHass(
     callWS: async <T>(message: { type: string; [key: string]: unknown }): Promise<T> => {
       if (message.type === 'entity/source')
         return Object.fromEntries(THINGS.map((thing) => [thing.id, { domain: 'demo' }])) as T;
+      if (message.type === 'config/auth/list') return ACCOUNTS as T;
       return base.callWS(message);
     },
   } as unknown as HomeAssistant;
 }
 
-/** A moment of the page to look at (`&moment=`): a row unfolded, the restart unfolded, the dates, the sources, a filter. */
+/** The house's accounts as `config/auth/list` answers an administrator: its people's, a tool's, Home Assistant's own. */
+const ACCOUNTS = [
+  { id: 'u1', name: 'Marta', is_owner: true, system_generated: false },
+  { id: 'u2', name: 'Leo', is_owner: false, system_generated: false },
+  { id: 'u3', name: 'Node-RED', is_owner: false, system_generated: false },
+  { id: 'u4', name: 'Home Assistant Cloud', is_owner: false, system_generated: true },
+  { id: 'u5', name: 'Sam', is_owner: false, system_generated: false },
+  { id: 'u6', name: 'Supervisor', is_owner: false, system_generated: true },
+];
+
+/**
+ * A moment of the page to look at (`&moment=`): a row unfolded, the restart unfolded, the dates, the sources, a filter;
+ * with `&who=1`, Leo's run unfolded (`who`), the By person dropdown open (`people`), Leo's day alone (`leo`).
+ */
 export type ActivityMoment =
   | 'detail'
+  | 'who'
+  | 'people'
+  | 'leo'
   | 'burst'
   | 'dates'
   | 'sources'
@@ -492,6 +553,8 @@ export type ActivityMoment =
 type View = HTMLElement & {
   hass: HomeAssistant;
   narrow: boolean;
+  who: boolean;
+  person: string;
   filter: string;
   picking: boolean;
   sourcing: boolean;
@@ -505,6 +568,16 @@ async function reach(view: View, moment: ActivityMoment): Promise<void> {
   if (moment === 'sources') view.sourcing = true;
   if (moment === 'lights') view.filter = 'lights';
   if (moment === 'detail') rows()[1]?.click();
+  // the blinds as Leo's run closed them: the cause, and who fired it
+  if (moment === 'who')
+    rows()
+      .find(
+        (row) =>
+          row.querySelector('.av-cause--who svg') && /closed|cerrad/i.test(row.textContent ?? ''),
+      )
+      ?.click();
+  if (moment === 'people') root.querySelector<HTMLElement>('.av-person')?.click();
+  if (moment === 'leo') view.person = 'u2';
   if (moment === 'week') {
     const end = new Date();
     end.setHours(24, 0, 0, 0);
@@ -561,6 +634,7 @@ export function mountActivity(
   lang: string,
   live: boolean,
   moment?: ActivityMoment,
+  who = false,
 ): void {
   const language = lang === 'es' ? 'es' : 'en';
   const hass = activityHass(base, language, {
@@ -571,6 +645,7 @@ export function mountActivity(
   const view = document.createElement('fluvy-activity') as View;
   view.hass = hass;
   view.narrow = window.innerWidth < 870;
+  view.who = who;
   stage.classList.add('pg-panel');
   stage.append(view);
   window.addEventListener('resize', () => {
