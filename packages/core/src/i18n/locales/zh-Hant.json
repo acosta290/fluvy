@@ -3212,6 +3212,7 @@
     "dashboard.up_to_count": "每個列表最多 {count} 項",
     "cards.levels": "圖示顯示等級",
     "cards.levels_sub": "電池電量、訊號格數、閥門開或關",
+    "cards.sheets_history": "彈出視窗顯示過去 24 小時",
     "cards.exact": "精確顏色",
     "cards.exact_sub": "顏色名稱依 Home Assistant 的顏色顯示，十六進位色碼依輸入顯示，而非配色的色調",
     "scope.activity_who": "誰操作的",
@@ -3448,8 +3449,8 @@
     "style": "外觀",
     "panel": "面板",
     "card": "卡片",
-    "width_tablet": "平板上的寬度（px）",
-    "width_desktop": "電腦上的寬度（px）",
+    "width_tablet": "平板上的寬度",
+    "width_desktop": "電腦上的寬度",
     "phone": "在手機上",
     "top": "畫布上方",
     "drawer": "抽屜式",
@@ -3466,7 +3467,9 @@
     "yaml": "此儀表板以 YAML 撰寫。請將以下內容複製到其檔案中，與 views: 位於同一層：",
     "copy": "複製 YAML",
     "copied": "已複製 YAML",
-    "copy_failed": "無法複製：請選取文字後再複製"
+    "copy_failed": "無法複製：請選取文字後再複製",
+    "unit_screen": "螢幕占比（%）",
+    "unit_dashboard": "儀表板占比（%）"
   },
   "sidebar": {
     "label": "側邊欄",
@@ -3751,7 +3754,19 @@
     "editor.electric": "純電",
     "editor.hybrid": "插電式油電混合",
     "editor.tank_size": "油箱容量",
-    "editor.tank_size_helper": "與油箱存量相同的單位（L、gal）：車輛只回報存量時，用來算出油位"
+    "editor.tank_size_helper": "與油箱存量相同的單位（L、gal）：車輛只回報存量時，用來算出油位",
+    "tyre_pressure_low": "胎壓偏低",
+    "editor.tyre_decimals": "胎壓小數位數",
+    "editor.tyre_low": "胎壓低於此值為偏低",
+    "editor.tyre_low_helper": "與輪胎相同單位的胎壓值、實體，或範本，例如 {{ states('sensor.x') }}",
+    "engine": "引擎",
+    "engine_running": "運轉中",
+    "start_engine_confirm": "要發動引擎嗎？",
+    "stop_engine_confirm": "要關閉引擎嗎？",
+    "editor.show_head": "顯示標題列",
+    "editor.show_hero": "顯示電池",
+    "editor.image_size": "圖片大小",
+    "editor.image_size_helper": "卡片寬度的比例，例如 50%，或高度，例如 120px"
   },
   "web": {
     "card": "網頁",
