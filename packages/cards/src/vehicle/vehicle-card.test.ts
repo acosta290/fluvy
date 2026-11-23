@@ -448,6 +448,96 @@ describe('the vehicle card', () => {
     expect(root(card).querySelector('.fv-card--empty')).not.toBeNull();
   });
 
+  it('draws an entity of the person’s own among its controls, in the car’s cell, its name its word (#248)', async () => {
+    const hass = house();
+    const card = await mount(
+      {
+        device: TESLA.device,
+        controls: [
+          'lock',
+          { entity: 'switch.model_y_sentry_mode', name: 'Guard', icon: 'mdi:shield-car' },
+          'cover.model_y_windows',
+        ],
+      },
+      hass,
+    );
+    expect(labels(card)).toEqual([
+      'Lock · Locked',
+      'Guard · Off',
+      'Model Y model y windows · Closed',
+    ]);
+    const word = root(card).querySelectorAll('.vh-control__word')[1];
+    expect(word?.classList.contains('is-name')).toBe(true);
+    expect(word?.hasAttribute('data-name')).toBe(true);
+    // a switch turns on and off at once, as a room's quick action does; a cover opens
+    const rounds = root(card).querySelectorAll<HTMLButtonElement>('.vh-control');
+    rounds[1]?.click();
+    rounds[2]?.click();
+    expect(hass.calls.map(({ domain, service }) => `${domain}.${service}`)).toEqual([
+      'switch.turn_on',
+      'cover.open_cover',
+    ]);
+    expect((card as unknown as { watched(): string[] }).watched()).toContain(
+      'switch.model_y_sentry_mode',
+    );
+  });
+
+  it('asks before an entity of the person’s own acts where it says so, never before its details open', async () => {
+    const asked: unknown[] = [];
+    const opened: unknown[] = [];
+    const listen = (event: Event) => asked.push((event as CustomEvent).detail.config.tap_action);
+    const open = (event: Event) => opened.push((event as CustomEvent).detail.entityId);
+    document.body.addEventListener('hass-action', listen);
+    window.addEventListener('hass-more-info', open);
+    try {
+      const hass = house();
+      const card = await mount(
+        {
+          device: TESLA.device,
+          controls: [
+            { entity: 'switch.model_y_sentry_mode', confirm: true },
+            { entity: 'sensor.model_y_odometer', confirm: true },
+          ],
+        },
+        hass,
+      );
+      const rounds = root(card).querySelectorAll<HTMLButtonElement>('.vh-control');
+      rounds[0]?.click();
+      rounds[1]?.click();
+      expect(asked).toEqual([
+        expect.objectContaining({ perform_action: 'switch.turn_on', confirmation: true }),
+      ]);
+      expect(opened).toEqual(['sensor.model_y_odometer']);
+      expect(hass.calls).toEqual([]);
+    } finally {
+      document.body.removeEventListener('hass-action', listen);
+      window.removeEventListener('hass-more-info', open);
+    }
+  });
+
+  it('counts the person’s own controls in its rows, their names never widening a cell', async () => {
+    // at 7 a letter a 300 card's 260 holds four cells of 65: a long name is cut, the car's own words decide the row
+    const card = await mount(
+      {
+        device: TESLA.device,
+        controls: [
+          'lock',
+          'climate',
+          { entity: 'switch.model_y_sentry_mode', name: 'A name far too long for its cell' },
+          'trunk',
+          { entity: 'cover.model_y_windows' },
+        ],
+      },
+      house(),
+      300,
+      7,
+    );
+    expect(root(card).querySelectorAll('.vh-control')).toHaveLength(5);
+    expect(
+      (root(card).querySelector('.vh-controls') as HTMLElement).style.getPropertyValue('--vh-cols'),
+    ).toBe('3');
+  });
+
   it('reads roles written as a map as the list it means, and the editor shows them so (#251)', async () => {
     const card = await mount({
       device: TESLA.device,
@@ -686,5 +776,37 @@ describe('a car that burns fuel (#207)', () => {
     expect(at({ energy: 'hybrid', hero: 'ring' })).toBe(at({ energy: 'hybrid' }));
     expect(at({ energy: 'hybrid', variant: 'compact' })).toBe(at({ variant: 'compact' }) + 28);
     expect(at({ energy: 'hybrid', variant: 'mini' })).toBe(76);
+  });
+});
+
+describe('the controls in the editor (#248)', () => {
+  it('reads an entity of the person’s own as the picker’s own word, and writes it back as its entity', async () => {
+    const { lists } = await import('./vehicle-editor.js');
+    const controls = lists.find((list) => list.key === 'controls');
+    const read = (raw: unknown) => controls?.read?.(raw);
+    const write = (item: Record<string, unknown>) => controls?.write?.(item);
+    expect(read('lock')).toEqual({ control: 'lock' });
+    expect(read('switch.haval_engine')).toEqual({
+      control: 'entity',
+      entity: 'switch.haval_engine',
+    });
+    expect(read({ entity: 'switch.haval_engine', name: 'Engine' })).toEqual({
+      control: 'entity',
+      entity: 'switch.haval_engine',
+      name: 'Engine',
+    });
+    expect(
+      write({ control: 'entity', entity: 'switch.haval_engine', name: '', confirm: true }),
+    ).toEqual({ entity: 'switch.haval_engine', confirm: true });
+    // picked, before its entity is: kept in the list
+    expect(write({ control: 'entity' })).toEqual({ control: 'entity' });
+    expect(write({ control: 'trunk', name: 'Tailgate', icon: '' })).toEqual({
+      control: 'trunk',
+      name: 'Tailgate',
+    });
+    const fields = (item: Record<string, unknown>) =>
+      JSON.stringify(controls?.schemaOf?.(item)).match(/"name":"\w+"/g);
+    expect(fields({ control: 'entity' })).toContain('"name":"entity"');
+    expect(fields({ control: 'lock' })).not.toContain('"name":"entity"');
   });
 });

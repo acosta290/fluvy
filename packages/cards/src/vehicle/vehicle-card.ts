@@ -1,10 +1,12 @@
 import {
   deviceNameOf,
   formatNumber,
+  isEntityId,
   relativeTime,
   stateText,
   strings,
   textName,
+  TOGGLE_DOMAINS,
   type ActionConfig,
   type EntityName,
   type EntityView,
@@ -40,6 +42,7 @@ import { fitLine, type Segment } from '../shared/fit.js';
 import { durationSeconds, when } from '../shared/job-time.js';
 import { BrokenPictures, imageEntity, imageOf } from '../shared/picture.js';
 import { Ticker, MINUTE } from '../shared/ticker.js';
+import { roundOf, roundTap, type RoundSpec, type RoundsHost } from '../shared/rounds.js';
 import { valueRow } from '../shared/value-row.js';
 import {
   pictureAt,
@@ -159,13 +162,22 @@ export const VEHICLE_ROWS: readonly VehicleRow[] = [
 ];
 const DEFAULT_ROWS: readonly VehicleRow[] = ['location', 'odometer'];
 
-/** A control as a list names it: which, and what the card may change of it. */
+/** A control as a list names it: one of the car's, or an entity of the person's own, and what the card may change of it. */
 export interface ControlEntry {
-  readonly control: VehicleControl;
+  /** One of the car's: what it reads and how it acts, the card knows. */
+  readonly control?: VehicleControl;
+  /**
+   * An entity of the person's own where it names no control (#248: a switch, a button, a script, a scene): its round
+   * lit while it is on, a tap on and off where its kind takes one, else its details; its name under it.
+   */
+  readonly entity?: string;
   readonly name?: string;
   readonly icon?: string;
   readonly color?: string;
-  /** Whether a tap that acts on the car asks first (by default: unlocking, opening, venting, stopping a charge). */
+  /**
+   * Whether a tap that acts asks first: by default the car's own unlocking, opening, venting and stopping a charge do;
+   * an entity's own tap asks where this says so.
+   */
   readonly confirm?: boolean;
   readonly tap_action?: ActionConfig;
   readonly hold_action?: ActionConfig;
@@ -237,7 +249,6 @@ export interface VehicleCardConfig extends FluvyCardConfig, HeadConfig {
 
 /** A control's cell: its round, its word under it, what a tap does. */
 interface ControlView {
-  readonly key: VehicleControl;
   readonly name: string;
   readonly glyph: string;
   readonly word: string;
@@ -254,6 +265,12 @@ interface ControlView {
   readonly why: string;
   readonly accent: string | undefined;
   readonly entry: ControlEntry;
+  /** An entity of the person's own: its round's tap and hold (`roundOf`), and its state for a reader. */
+  readonly own?: {
+    readonly onTap: (() => void) | undefined;
+    readonly onHold: (() => void) | undefined;
+    readonly state: string;
+  };
 }
 
 /** A distance as the card writes it, in its unit, and its number (null where it cannot be read). */
@@ -362,9 +379,9 @@ const LOCK_STATES: readonly string[] = [
 const said = (view: Pick<ControlView, 'name' | 'word'>): string =>
   view.word && view.word !== view.name ? `${view.name} · ${view.word}` : view.name;
 
-/** A list's entry as an object: a bare key is `{ control }` / `{ row }`. */
+/** A list's entry as an object: a bare key is `{ control }` (an entity's id `{ entity }`) / `{ row }`. */
 const controlEntry = (raw: VehicleControl | ControlEntry): ControlEntry =>
-  typeof raw === 'string' ? { control: raw } : raw;
+  typeof raw === 'string' ? (isEntityId(raw) ? { entity: raw } : { control: raw }) : raw;
 const rowEntry = (raw: VehicleRow | RowEntry): RowEntry =>
   typeof raw === 'string' ? { row: raw } : raw;
 
@@ -635,6 +652,11 @@ export class FluvyVehicleCard extends Card<VehicleCardConfig> {
       .vh-control__word.is-warning {
         color: var(--fluvy-warning);
       }
+      /* an entity of the person's own says its name, cut to an ellipsis where the cell is narrower */
+      .vh-control__word.is-name {
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
       .vh-control__word.is-cool {
         color: var(--fluvy-state-climate-cool);
       }
@@ -855,6 +877,7 @@ export class FluvyVehicleCard extends Card<VehicleCardConfig> {
       ...windows,
       ...Object.values(warnings),
       ...this.rowEntries().flatMap((entry) => (entry.entity ? [entry.entity] : [])),
+      ...this.controlEntries().flatMap((entry) => (entry.control ? [] : [entry.entity])),
       this.config?.image?.trim() === 'auto'
         ? this.devicePicture()
         : imageEntity(this.config?.image),
@@ -1417,7 +1440,11 @@ export class FluvyVehicleCard extends Card<VehicleCardConfig> {
   private controlEntries(): ControlEntry[] {
     const listed = this.config?.controls;
     if (Array.isArray(listed))
-      return listed.map(controlEntry).filter((e) => VEHICLE_CONTROLS.includes(e.control));
+      return listed
+        .map(controlEntry)
+        .filter((e) =>
+          e.control === undefined ? isEntityId(e.entity) : VEHICLE_CONTROLS.includes(e.control),
+        );
     return carControls(this.car()).map((control) => ({ control }));
   }
 
@@ -1435,9 +1462,9 @@ export class FluvyVehicleCard extends Card<VehicleCardConfig> {
    * Every word a control can say, whatever its state now: an opening's name and "Open", each of a lock's states, the
    * climate's off and on and a temperature at its widest, each of the charge's words, the sentry's name.
    */
-  private controlWords(entry: ControlEntry, name: string, shut: string): readonly string[] {
+  private controlWords(key: VehicleControl, name: string, shut: string): readonly string[] {
     const open = this.t('common.open');
-    switch (entry.control) {
+    switch (key) {
       case 'lock': {
         const v = this.view('lock');
         return v?.domain === 'lock'
@@ -1471,16 +1498,17 @@ export class FluvyVehicleCard extends Card<VehicleCardConfig> {
 
   /** A control as it stands: its round, its word, what a tap does. */
   private control(entry: ControlEntry, r: Reading): ControlView {
+    const key = entry.control;
+    if (!key) return this.ownControl(entry);
     const { roles, doors, windows } = this.car();
-    const name = entry.name ?? this.t(controlWord(entry.control, r.energy));
+    const name = entry.name ?? this.t(controlWord(key, r.energy));
     /** What an opening says: its name while shut (the port's short one), "Open" while open (in the warning's ink). */
-    const shut = entry.name ?? (entry.control === 'charge_port' ? s(this.hass, 'port') : name);
+    const shut = entry.name ?? (key === 'charge_port' ? s(this.hass, 'port') : name);
     const opening = (isOpen: boolean): string => (isOpen ? this.t('common.open') : shut);
     const accent = this.accents.item(entry.color);
     const base = {
-      key: entry.control,
       name,
-      words: this.controlWords(entry, name, shut),
+      words: this.controlWords(key, name, shut),
       accent,
       entry,
       ink: '' as ControlView['ink'],
@@ -1516,7 +1544,7 @@ export class FluvyVehicleCard extends Card<VehicleCardConfig> {
         : v.domain === 'binary_sensor' || v.domain === 'switch'
           ? v.state === 'on'
           : /open|ajar/.test(v.state.toLowerCase());
-    switch (entry.control) {
+    switch (key) {
       case 'lock': {
         const v = this.view('lock');
         if (!v || v.status !== 'ok' || r.unavailable) return out('lock', v?.id);
@@ -1650,7 +1678,7 @@ export class FluvyVehicleCard extends Card<VehicleCardConfig> {
       case 'charge_port':
       case 'trunk':
       case 'frunk': {
-        const role = entry.control;
+        const role = key;
         const v = this.view(role);
         const closedGlyph = role === 'charge_port' ? 'chargePort' : role;
         if (!v || v.status !== 'ok' || r.unavailable) return out(closedGlyph, v?.id);
@@ -1748,6 +1776,76 @@ export class FluvyVehicleCard extends Card<VehicleCardConfig> {
   }
 
   /**
+   * What the rounds reach of the card: its house, its names, its states as drawn, its calls and its colours; a tap on
+   * and off for what a person puts among its controls on purpose (a switch, a button, a script, a scene), as a room's
+   * quick actions take one.
+   */
+  private host(): RoundsHost {
+    return {
+      hass: this.hass,
+      toggles: TOGGLE_DOMAINS,
+      name: (view, own: EntityName | undefined) => this.nameFor(view, own),
+      state: (view) => this.stateOf(view),
+      expect: (id, state) => this.expect(id, state),
+      call: (domain, service, data) => this.call(domain, service, data, ''),
+      run: (action, entity) => this.tap(entity, action),
+      tapper: (of, at, tap, double) => this.tapper(of, at, tap, double),
+      accent: (colour) => this.accents.item(colour),
+      ruler: this.head.ruler,
+      root: this.renderRoot,
+    };
+  }
+
+  /**
+   * An entity of the person's own among the controls (#248), as every card draws its round (`roundOf`): its name, its
+   * glyph, lit in its tone (its colour) while on, the dashed circle out of reach; its tap — its own, else on and off
+   * where its kind takes one, else its details — asking first where `confirm` says so (never before its details open),
+   * its hold its details. In the car's cell, its name its word (cut to an ellipsis, as a name may be), which never
+   * widens the row: a row's cells are laid out by the car's own words.
+   */
+  private ownControl(entry: ControlEntry): ControlView {
+    const host = this.host();
+    const id = entry.entity ?? '';
+    const item: RoundSpec = {
+      group: 'entity',
+      entity: id,
+      ...(entry.name ? { name: entry.name } : {}),
+      ...(entry.icon ? { icon: entry.icon } : {}),
+      ...(entry.color ? { color: entry.color } : {}),
+      ...(entry.tap_action ? { tap_action: entry.tap_action } : {}),
+      ...(entry.hold_action ? { hold_action: entry.hold_action } : {}),
+      ...(entry.double_tap_action ? { double_tap_action: entry.double_tap_action } : {}),
+    };
+    const view = this.entity(id);
+    const tap = roundTap(host, item, view.domain);
+    const acts = tap.action !== 'more-info' && tap.action !== 'none';
+    const round = roundOf(
+      host,
+      acts && entry.confirm !== undefined
+        ? {
+            ...item,
+            tap_action: { ...tap, confirmation: entry.confirm && (tap.confirmation ?? true) },
+          }
+        : item,
+    );
+    return {
+      name: round.name,
+      glyph: round.glyph,
+      word: round.name,
+      words: [],
+      tone: !round.usable ? 'off' : round.on ? round.tone : 'neutral',
+      ink: '',
+      entity: view.id,
+      act: undefined,
+      disabled: !round.usable,
+      why: '',
+      accent: round.on ? round.accent : undefined,
+      entry,
+      own: { onTap: round.onTap, onHold: round.onHold, state: stateText(this.hass, view) },
+    };
+  }
+
+  /**
    * How many controls a row holds: as many cells of 56 at least as the column takes, fewer while a word (each at its
    * widest, so a state that changes never moves the row) would not keep 2 of its cell clear — never a word cut: the
    * words of all of them where they wrap into rows (`wrap`), of the first `n` where the rest give way. The rounds alone
@@ -1816,8 +1914,15 @@ export class FluvyVehicleCard extends Card<VehicleCardConfig> {
 
   private renderControl(view: ControlView, bare: boolean): TemplateResult {
     const hold = view.entry.hold_action;
-    const onHold = (): void => this.hold(view.entity, hold ?? { action: 'more-info' });
-    const label = view.why ? `${said(view)} · ${view.why}` : said(view);
+    const { own } = view;
+    const onHold = own
+      ? own.onHold
+      : (): void => this.hold(view.entity, hold ?? { action: 'more-info' });
+    const label = own
+      ? `${view.name} · ${own.state}`
+      : view.why
+        ? `${said(view)} · ${view.why}`
+        : said(view);
     return html`<button
       class="vh-control"
       data-target
@@ -1826,25 +1931,31 @@ export class FluvyVehicleCard extends Card<VehicleCardConfig> {
       title=${label}
       aria-disabled=${view.disabled ? 'true' : nothing}
       ?disabled=${view.tone === 'off'}
-      .fvTap=${this.tapper(
-        view.entry.double_tap_action,
-        `control_${view.entry.control}`,
-        () => this.press(view),
-        this.runner(view.entry.double_tap_action, view.entity),
-      )}
+      .fvTap=${
+        own
+          ? own.onTap
+          : this.tapper(
+              view.entry.double_tap_action,
+              `control_${view.entry.control}`,
+              () => this.press(view),
+              this.runner(view.entry.double_tap_action, view.entity),
+            )
+      }
       .fvHold=${onHold as PressTarget['fvHold']}
       @pointerdown=${startPress}
       @contextmenu=${preventMenu}
       @click=${view.disabled ? (event: Event) => event.preventDefault() : clickPress}
-      @keydown=${holdKey(onHold)}
+      @keydown=${onHold ? holdKey(onHold) : nothing}
     >
       <span class="fv-ico fv-ico--${view.tone}">${icon(view.glyph, 'car')}</span>
       ${
         bare
           ? nothing
-          : html`<span class="vh-control__word ${view.ink ? `is-${view.ink}` : ''}"
-              >${view.word}</span
-            >`
+          : own
+            ? html`<span class="vh-control__word is-name" data-name>${view.word}</span>`
+            : html`<span class="vh-control__word ${view.ink ? `is-${view.ink}` : ''}"
+                >${view.word}</span
+              >`
       }
     </button>`;
   }

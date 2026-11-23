@@ -1,4 +1,5 @@
 import {
+  isEntityId,
   strings,
   type HaFormSchemaItem,
   type LovelaceConfigForm,
@@ -43,6 +44,9 @@ import {
 
 const s = strings('vehicle');
 
+/** The picker's word for a control of the person's own: the item is then its entity's. */
+const OWN = 'entity';
+
 /** A unit a figure reads in: automatic (the sensor's own), or one of `units`. */
 const unitField = (name: string, units: readonly string[]): HaFormSchemaItem => ({
   name,
@@ -63,7 +67,11 @@ const keyPicker = <K extends string>(
     },
   },
 });
-const controlPicker = (): HaFormSchemaItem => keyPicker('control', VEHICLE_CONTROLS, controlWord);
+/** A control the list adds: one of the car's, by its word, or an entity of the person's own (#248). */
+const controlPicker = (): HaFormSchemaItem =>
+  keyPicker('control', [...VEHICLE_CONTROLS, OWN] as const, (key) =>
+    key === OWN ? 'editor.entity' : controlWord(key),
+  );
 const rowPicker = (): HaFormSchemaItem =>
   keyPicker('row', VEHICLE_ROWS, (key): MessageKey => `vehicle.${key}`);
 /** A role's word in the editor: its control's or its row's where it has one, else its own. */
@@ -116,6 +124,25 @@ const ROLE_WORDS: Readonly<Record<VehicleRole, MessageKey>> = {
 };
 const rolePicker = (): HaFormSchemaItem =>
   keyPicker('role', VEHICLE_ROLES, (role) => ROLE_WORDS[role]);
+
+/** A control's colour, whether its tap asks first, and its actions: the car's do what they do where they name no tap. */
+const CONTROL_OWN: readonly HaFormSchemaItem[] = [
+  fieldRow(accentField('color', { item: 'card' }), boolField('confirm')),
+  actionFields({ tap: null }),
+];
+/** One of the car's controls: which, and its own name and icon. */
+const CAR_CONTROL: readonly HaFormSchemaItem[] = [
+  controlPicker(),
+  fieldRow(textField('name'), iconField()),
+  ...CONTROL_OWN,
+];
+/** An entity of the person's own among them: the entity, then its own name and icon (Home Assistant's by default). */
+const OWN_CONTROL: readonly HaFormSchemaItem[] = [
+  controlPicker(),
+  entityField(undefined, 'entity', false),
+  nameIconFields(),
+  ...CONTROL_OWN,
+];
 
 /** A car has no entity of its own to show: its device does; `entity` names one of its entities instead. */
 export const base: readonly BaseKey[] = [
@@ -170,9 +197,11 @@ export const lists: readonly RowsListSpec[] = [
   {
     key: 'controls',
     idKey: 'control',
+    also: ['entity'],
     title: 'editor.controls',
     keys: [
       'control',
+      'entity',
       'name',
       'icon',
       'color',
@@ -188,14 +217,25 @@ export const lists: readonly RowsListSpec[] = [
           ? editorWord('vehicle.editor.confirm')
           : undefined,
     picker: controlPicker(),
+    // an entity of the person's own is the picker's own word in the editor, and goes back as its entity (its id alone
+    // in the config, a bare word or id read as one)
+    read: (raw) => {
+      const entry =
+        typeof raw === 'string' ? (isEntityId(raw) ? { entity: raw } : { control: raw }) : raw;
+      if (typeof entry !== 'object' || entry === null) return null;
+      const item = entry as Readonly<Record<string, unknown>>;
+      return item['control'] === undefined ? { control: OWN, ...item } : item;
+    },
+    write: ({ control, ...own }) => {
+      const kept = Object.fromEntries(
+        Object.entries(own).filter(([, value]) => value !== undefined && value !== ''),
+      );
+      if (control !== OWN) return { control, ...kept };
+      return typeof kept['entity'] === 'string' ? kept : { control };
+    },
     when: (data) => data['show_controls'] !== false && data['variant'] !== 'mini',
-    schema: [
-      controlPicker(),
-      fieldRow(textField('name'), iconField()),
-      fieldRow(accentField('color', { item: 'card' }), boolField('confirm')),
-      // a control does what it does on the car where it names no tap of its own
-      actionFields({ tap: null }),
-    ],
+    schema: OWN_CONTROL,
+    schemaOf: (item) => (item['control'] === OWN ? OWN_CONTROL : CAR_CONTROL),
   },
   {
     key: 'rows',

@@ -430,6 +430,20 @@ const FLIPS: ReadonlySet<string> = new Set([
 const MORE_INFO: ActionConfig = { action: 'more-info' };
 const TOGGLE: ActionConfig = { action: 'toggle' };
 
+/**
+ * What a round's tap does, its entity of `domain`: its own, else on and off where its card's rule flips its kind (every
+ * set does), else its details.
+ */
+export const roundTap = (
+  host: Pick<RoundsHost, 'toggles'>,
+  item: RoundSpec,
+  domain: string,
+): ActionConfig =>
+  item.tap_action ??
+  ((item.group && item.group !== 'entity') || (host.toggles ?? ROUND_TOGGLE).has(domain)
+    ? TOGGLE
+    : MORE_INFO);
+
 /** A round as drawn, and its state's forms where it says it (longest first). */
 export type Round = LevelRound & { readonly said?: readonly string[] | undefined };
 
@@ -479,8 +493,7 @@ export function roundOf(host: RoundsHost, item: RoundSpec): Round {
         : action;
     return actionRuns(run, own) ? () => host.run(run, own) : undefined;
   };
-  const toggles = host.toggles ?? ROUND_TOGGLE;
-  const tap = item.tap_action ?? (group || toggles.has(first.domain) ? TOGGLE : MORE_INFO);
+  const tap = roundTap(host, item, first.domain);
   // its own on and off where its tap toggles it, asked first or not
   const flip =
     tap.action === 'toggle' && !tap.entity && FLIPS.has(first.domain)
