@@ -186,26 +186,29 @@ describe('TemplateTexts', () => {
     const { connection, open } = socket();
     const host = new Host(connection);
     const texts = new TemplateTexts(host);
-    const read = (): string[] =>
+    const read = (): Array<string | undefined> =>
       host.render(() => [
         texts.text(T, 'a'),
         texts.line(T, 'a'),
         texts.resolve(T, 'a'),
         texts.resolve('Study', 'a'),
         texts.line('{{ refused }}'),
+        texts.answer(T, 'a'),
       ]);
-    // before the socket has even been asked, a line is pending too
-    expect(read()).toEqual(['', PENDING_LINE, PENDING_LINE, 'Study', PENDING_LINE]);
+    // before the socket has even been asked, a line is pending too, and there is no answer yet
+    expect(read()).toEqual(['', PENDING_LINE, PENDING_LINE, 'Study', PENDING_LINE, undefined]);
     await flush();
-    expect(read()).toEqual(['', PENDING_LINE, PENDING_LINE, 'Study', '']); // refused: answered with nothing
+    // refused: answered with nothing
+    expect(read()).toEqual(['', PENDING_LINE, PENDING_LINE, 'Study', '', undefined]);
     const before = host.updates;
     open[0]!.answer({ result: null, listeners: {} });
     expect(host.updates).toBe(before + 1); // an answered nothing is a change: the held line goes
-    expect(read()).toEqual(['', '', '', 'Study', '']);
+    expect(read()).toEqual(['', '', '', 'Study', '', '']);
     open[0]!.answer({ result: 'Open', listeners: {} });
     expect(read().slice(0, 3)).toEqual(['Open', 'Open', 'Open']);
+    expect(read()[5]).toBe('Open');
     open[0]!.answer({ error: "UndefinedError: 'x' is undefined", level: 'ERROR' });
-    expect(read().slice(0, 3)).toEqual(['', '', '']); // an error ends with nothing, not with a blank
+    expect(read()).toEqual(['', '', '', 'Study', '', '']); // an error ends with nothing, not with a blank
   });
 
   it('releases a template no row asks for any more, and keeps the others', async () => {

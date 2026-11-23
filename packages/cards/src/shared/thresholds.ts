@@ -1,8 +1,6 @@
-import { isEntityId, type EntityView } from '@fluvy/core';
 import { TONES, type Tone } from '@fluvy/ui';
 import type { ThresholdBand } from '../chart/engine/model.js';
-import { isTemplate } from './templates.js';
-import { scaleNamed, toBase } from './units.js';
+import { readFigure, type OwnHost } from './own-values.js';
 
 /*
  * A reading's thresholds (1.22, #204): the figures past which a card says it in a colour, read and laid out. Each
@@ -10,9 +8,10 @@ import { scaleNamed, toBase } from './units.js';
  * highest it reaches upward, the lowest it is under downward, and where one of each claims it the nearer, the one
  * above it on an even split — and a threshold in no colour (`tone: none`) ends a band there. Upward alone, that is the Chart
  * card's rule of 1.11, so its configs mean what they did. A value is a figure, an entity's reading (live: the card
- * watches it) or a template's answer, in the reading's unit, a reading of another unit of its family converted;
- * one that cannot be read is left out, so a card never shows a colour it has no ground for. Fetched by the first
- * card that names a threshold (`Card.thresholds`), its first frame waiting for it: a card that names none never does.
+ * watches it) or a template's answer, in the reading's unit, a reading of another unit of its family converted, as
+ * every figure of a card's own is read (`own-values.ts`); one that cannot be read, or whose template is still to
+ * answer, is left out, so a card never shows a colour it has no ground for. Fetched by the first card that names a
+ * threshold (`Card.thresholds`), its first frame waiting for it: a card that names none never does.
  */
 
 /** One threshold as a config writes it. */
@@ -37,14 +36,11 @@ export interface ThresholdsConfig {
 }
 
 /** What a card hands its thresholds to read with: its colours, the house's entities, its templates' answers. */
-export interface ThresholdHost {
+export interface ThresholdHost extends OwnHost {
   readonly accents: {
     item(choice: unknown): string | undefined;
     ink(source: string): string;
   };
-  entity(id: string): EntityView;
-  /** A template's answer: '' until Home Assistant has given one, and where it failed. */
-  template(text: string): string;
 }
 
 /** The band a reading is in, as the card draws it. */
@@ -71,34 +67,6 @@ interface Read {
   readonly value: number;
   readonly below: boolean;
   readonly item: ThresholdItem;
-}
-
-/** A figure as words write it ("230", "-0.5", "1e3"); anything else ("230 V", '') is not one. */
-const FIGURE = /^\s*[-+]?(\d+\.?\d*|\.\d+)(e[-+]?\d+)?\s*$/i;
-const figureOf = (text: string): number | undefined =>
-  FIGURE.test(text) ? Number(text) : undefined;
-
-/**
- * A reading of `from` in `to`: as it is where they are one unit or either says none, else converted where they are of
- * one family (kW to W, m³ to L), else none.
- */
-function inUnit(value: number, from: string, to: string): number | undefined {
-  if (!from.trim() || !to.trim() || from.trim() === to.trim()) return value;
-  const named = scaleNamed(from, to);
-  if (named) return value * named.divisor;
-  const reading = toBase(value, from);
-  const base = toBase(1, to);
-  return reading.unit === base.unit ? reading.value / base.value : undefined;
-}
-
-/** A threshold's value in `unit`: its figure, its entity's reading, its template's answer; none where it has none. */
-function valueOf(raw: unknown, unit: string, host: ThresholdHost): number | undefined {
-  if (typeof raw === 'number') return Number.isFinite(raw) ? raw : undefined;
-  if (typeof raw !== 'string') return undefined;
-  if (isTemplate(raw)) return figureOf(host.template(raw));
-  if (!isEntityId(raw)) return figureOf(raw);
-  const view = host.entity(raw);
-  return view.number === null ? undefined : inUnit(view.number, view.unit, unit);
 }
 
 /**
@@ -140,7 +108,7 @@ export function thresholdsOf(
   const read = list.flatMap((entry): Read[] => {
     if (typeof entry !== 'object' || entry === null) return [];
     const item = entry as ThresholdItem;
-    const value = valueOf(item.value, unit, host);
+    const value = readFigure(item.value, unit, host).value;
     return value === undefined || !says(item) ? [] : [{ value, below: item.below === true, item }];
   });
   /** The tone a threshold's band is drawn in, and the person's colour as its accent: none for `none`. */

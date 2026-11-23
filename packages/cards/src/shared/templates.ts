@@ -63,11 +63,12 @@ const keyOf = (template: string, entityId: string | undefined): string =>
  * A row's text rendered by Home Assistant, live. During its render a card asks `text(template, entityId)` and gets
  * what the template last rendered to ('' before the first answer, and after an error: never the template itself) —
  * or `line()`, a row's own line, which holds a blank line while Home Assistant has not answered yet, so the title
- * does not move when the words land; asking is what keeps a template subscribed. After the render, what was asked for is reconciled with what is
- * live: a new pair is subscribed to (`render_template`, one subscription however many rows ask for the same pair),
- * a pair no row asked for is released, and every new result draws the card again. Everything is released when the
- * card leaves the page or `hass.connection` changes; the texts are kept, so a card that comes back does not blink.
- * One instance per card: `private readonly texts = new TemplateTexts(this)`.
+ * does not move when the words land, or `answer()`, none until it has; asking is what keeps a template subscribed.
+ * After the render, what was asked for is reconciled with what is live: a new pair is subscribed to
+ * (`render_template`, one subscription however many rows ask for the same pair), a pair no row asked for is released,
+ * and every new result draws the card again. Everything is released when the card leaves the page or
+ * `hass.connection` changes; the texts are kept, so a card that comes back does not blink. One instance per card:
+ * `private readonly texts = new TemplateTexts(this)`, or the base card's (`Card.templates`).
  */
 export class TemplateTexts implements ReactiveController {
   private readonly feeds = new Map<string, Feed>();
@@ -81,7 +82,13 @@ export class TemplateTexts implements ReactiveController {
 
   /** The text a template last rendered to for a row, '' until Home Assistant answers (what a line of parts is built from). */
   text(template: string, entityId?: string): string {
-    return this.ask(template, entityId)?.text ?? '';
+    return this.answer(template, entityId) ?? '';
+  }
+
+  /** What a template last rendered to for a row: undefined until Home Assistant answers, '' after an error. */
+  answer(template: string, entityId?: string): string | undefined {
+    const feed = this.ask(template, entityId);
+    return feed?.answered ? feed.text : undefined;
   }
 
   /**
@@ -89,8 +96,7 @@ export class TemplateTexts implements ReactiveController {
    * title does not move when the words land; an answered '' — a template refused too — is no line at all.
    */
   line(template: string, entityId?: string): string {
-    const feed = this.ask(template, entityId);
-    return feed?.answered ? feed.text : PENDING_LINE;
+    return this.answer(template, entityId) ?? PENDING_LINE;
   }
 
   /** A row's own line as it shows it: a template rendered (held while pending), anything else as written. */

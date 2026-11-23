@@ -19,6 +19,7 @@ import { FontsSettled } from './fonts.js';
 import { headLines, hidesName } from './head-lines.js';
 import type { HeadNameLines } from './heights.js';
 import type { EditorChoices, EditorDefaults, RowsListSpec } from './rows-editor.js';
+import { readFigure, type Own, type OwnHost } from './own-values.js';
 import { ownLine, type OwnLine } from './secondary.js';
 import { isTemplate, TemplateTexts } from './templates.js';
 import type { Band, Thresholds } from './thresholds.js';
@@ -257,7 +258,7 @@ export abstract class Card<C extends FluvyCardConfig = FluvyCardConfig> extends 
     fitPills(this.renderRoot);
   }
 
-  /** The templates among the card's own texts (`ownText`), rendered by Home Assistant: made by the first one asked. */
+  /** The templates among the card's own texts and figures, rendered by Home Assistant: made by the first one asked. */
   private ownTexts: TemplateTexts | undefined;
   /**
    * The entities the card's own texts named in its last render, and those it read beside the ones it watches (`follows`):
@@ -294,11 +295,7 @@ export abstract class Card<C extends FluvyCardConfig = FluvyCardConfig> extends 
     }
     return reader.thresholdsOf(own.thresholds, unit, {
       accents: this.accents,
-      entity: (id) => {
-        this.follows(id);
-        return this.entity(id);
-      },
-      template: (text) => (this.ownTexts ??= new TemplateTexts(this)).text(text, entityId),
+      ...this.ownHost(entityId),
     });
   }
 
@@ -336,6 +333,42 @@ export abstract class Card<C extends FluvyCardConfig = FluvyCardConfig> extends 
     if (isTemplate(own)) this.ownTexts ??= new TemplateTexts(this);
     if (isEntityId(own)) this.ownNamed.add(own);
     return ownLine(this.hass, own, this.ownTexts, this.config?.entity, held);
+  }
+
+  /**
+   * A text of the card's own as `ownText` reads it, a template's answer awaited (`pending` until Home Assistant gives
+   * one) and none where it says nothing (an empty answer, a template that failed), so the card's own words stand in.
+   */
+  protected ownWords(own: unknown): Own<string> {
+    if (!isTemplate(own)) return { value: this.ownText(own)?.text, pending: false };
+    const answer = this.templates.answer(own, this.config?.entity);
+    return { value: answer || undefined, pending: answer === undefined };
+  }
+
+  /**
+   * A figure of the card's own (1.25, #253): a number, an entity's reading in `unit` (watched while it is read) or a
+   * template's answer, asked with `entityId` as its entity (`readFigure`). A card asks for each of its figures every
+   * render, whether it shows or not: a template no render asks for is let go, and subscribed to again (its answer
+   * pending) the next time it is.
+   */
+  protected ownFigure(raw: unknown, unit: string, entityId?: string): Own<number> {
+    return readFigure(raw, unit, this.ownHost(entityId));
+  }
+
+  /** The card's one `TemplateTexts`: its own texts', its figures' and its rows' templates. */
+  protected get templates(): TemplateTexts {
+    return (this.ownTexts ??= new TemplateTexts(this));
+  }
+
+  /** What the card's own values are read with: an entity watched while it is read, a template asked with `entityId`. */
+  private ownHost(entityId: string | undefined): OwnHost {
+    return {
+      entity: (id) => {
+        this.follows(id);
+        return this.entity(id);
+      },
+      template: (text) => this.templates.answer(text, entityId),
+    };
   }
 
   /**
