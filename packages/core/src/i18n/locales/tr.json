@@ -686,6 +686,7 @@
     "state_icons": "Duruma göre simgeler",
     "state_icons_helper": "Her satırda bir durum ve simgesi (ok: mdi:check-circle-outline); listede olmayan durum sözcükleriyle kalır",
     "state_icon_colors_helper": "Her satırda bir durum ve tonu ya da rengi (warning: warning)",
+    "horizontal": "Yatay",
     "exact_colors": "Tam renkler",
     "exact_colors_helper": "Adlar Home Assistant’ın çizdiği gibi, hex kodu yazıldığı gibi. Dokunulmazsa, Fluvy ayarlarındaki tüm kartlarınki"
   },

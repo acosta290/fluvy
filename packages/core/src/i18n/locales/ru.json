@@ -2136,6 +2136,7 @@
     "state_icons": "Иконки по состояниям",
     "state_icons_helper": "В каждой строке состояние и его иконка (ok: mdi:check-circle-outline); состояние не из списка остаётся словами",
     "state_icon_colors_helper": "В каждой строке состояние и его тон или цвет (warning: warning)",
+    "horizontal": "Горизонтальный",
     "exact_colors": "Точные цвета",
     "exact_colors_helper": "Названия так, как их рисует Home Assistant, hex-код как введён. Не задано: как у всех карточек в настройках Fluvy"
   },

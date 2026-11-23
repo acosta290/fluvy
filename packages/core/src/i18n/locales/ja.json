@@ -636,6 +636,7 @@
     "state_icons": "状態ごとのアイコン",
     "state_icons_helper": "1行に状態とそのアイコン（ok: mdi:check-circle-outline）。書かれていない状態は文字のまま",
     "state_icon_colors_helper": "1行に状態とそのトーンまたは色（warning: warning）",
+    "horizontal": "横向き",
     "exact_colors": "正確な色",
     "exact_colors_helper": "色の名前は Home Assistant の色、カラーコードは入力どおり。変更しないときは Fluvy の設定のすべてのカードの値"
   },

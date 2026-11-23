@@ -229,6 +229,11 @@
     "width": 784,
     "height": 352
   },
+  "cover.horizontal": {
+    "example": "eede04ff56c0",
+    "width": 784,
+    "height": 968
+  },
   "fan": {
     "example": "ef3bd1ccf2c9",
     "width": 784,

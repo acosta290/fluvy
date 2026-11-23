@@ -2145,6 +2145,7 @@
     "state_icons": "Ikoner efter tillstånd",
     "state_icons_helper": "Ett tillstånd och dess ikon på varje rad (ok: mdi:check-circle-outline); ett tillstånd som inte står med behåller sina ord",
     "state_icon_colors_helper": "Ett tillstånd och dess ton eller färg på varje rad (warning: warning)",
+    "horizontal": "Horisontell",
     "exact_colors": "Exakta färger",
     "exact_colors_helper": "Namn som Home Assistant ritar dem, en hexkod som den skrivs. Orört: som alla kort, från Fluvys inställningar"
   },

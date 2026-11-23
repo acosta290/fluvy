@@ -13,8 +13,15 @@
  * under the commands, the picture and the ruler whole; under about 200 the steps' stepper stands there too and sets
  * the tilt; a cover with no position declares its favourites, and one whose words hold no row says its angle's
  * figure without the tilt's word; out of reach nothing takes a tap.
+ *
+ * The horizontal card (1.25, #244) on the `cover-horizontal` sheet: its row 24 under the head, the ends' words over the
+ * ruler's ends on the readout label's line and the figure on the knob's centre line, the commands outlined pills 16
+ * under the band. Dragged, the figure follows the finger, its bubble clear of the head, and nothing is sent until the
+ * finger lets go; held, the fine scale's figures stand at its ends. Counted as it comes down, a key sends Home
+ * Assistant's number; each card measures what it declares; at 211 and 152 the readout stands over the ruler; out of
+ * reach nothing takes a drag.
  */
-import { rulerGeometry, dragTo, mousePointer } from './lib/gestures.mjs';
+import { rulerGeometry, dragTo, holdForFine, mousePointer } from './lib/gestures.mjs';
 import { calls, frame, HOUSE_HEIGHTS, reset, settle, startSuite } from './lib/suite.mjs';
 
 const suite = await startSuite();
@@ -331,4 +338,170 @@ for (const width of [211, 152]) {
 }
 
 await page.close();
+
+/* ---------- the horizontal card (1.25, #244), on its own sheet ---------- */
+const across = await suite.sheet('cover-horizontal');
+const acrossPointer = mousePointer(across);
+{
+  const card = cardOf(across, 'Horizontal · part open');
+  const [head, label, value, words, ruler, knob, actions, content] = await Promise.all([
+    rect(card.locator('.fv-card__head')),
+    rect(card.locator('.cv-across .fv-readout__label')),
+    rect(card.locator('.cv-across .fv-readout__value')),
+    card
+      .locator('.cv-across .fv-ruler-labels span')
+      .evaluateAll((spans) => spans.map((span) => span.getBoundingClientRect().toJSON())),
+    rect(card.locator('.cv-across fluvy-ruler')),
+    rect(card.locator('.cv-across .fv-knob')),
+    rect(card.locator('.fv-actions')),
+    card.locator('article').evaluate((el) => {
+      const r = el.getBoundingClientRect();
+      return { left: r.left + 20, right: r.right - 20 };
+    }),
+  ]);
+  const centre = (box) => box.y + box.h / 2;
+  check(
+    'one row 24 under the head: the ends’ words over the ruler’s ends on the label’s line, the ruler to the card’s end',
+    near(label.y, head.bottom + 24) &&
+      words.every((word) => near(word.y, label.y)) &&
+      near(words[0].left, ruler.x) &&
+      near(words[1].right, ruler.right) &&
+      near(ruler.y, label.bottom) &&
+      near(ruler.right, content.right),
+    JSON.stringify({ head: head.bottom, label, words, ruler }),
+  );
+  check(
+    'the figure stands on the knob’s centre line, the commands 16 under the ruler’s band',
+    near(centre(value), centre(knob)) && near(actions.y, ruler.bottom + 16),
+    JSON.stringify({ value: centre(value), knob: centre(knob), actions: actions.y }),
+  );
+  const pill = await card
+    .locator('.fv-action')
+    .first()
+    .evaluate((el) => parseFloat(getComputedStyle(el).borderTopLeftRadius));
+  check('its commands are outlined pills: the pill radius', pill >= 22, String(pill));
+
+  // dragged, the figure follows the finger and nothing is sent; let go, the position once
+  const rulerEl = card.locator('.cv-across fluvy-ruler');
+  const geo = await geometryOf(rulerEl);
+  await reset(across);
+  await acrossPointer.move(geo.at(45), geo.y);
+  await acrossPointer.down();
+  await acrossPointer.move(geo.at(60), geo.y, 6);
+  await acrossPointer.move(geo.at(80), geo.y, 12);
+  await settle(across, 60);
+  const during = await figure(card.locator('.cv-across .fv-readout'));
+  const bubble = await rect(rulerEl.locator('.fv-bubble'));
+  const early = await sent(across);
+  await acrossPointer.up();
+  await settle(across, 400);
+  const after = await sent(across);
+  check(
+    'under the finger the figure follows it, its bubble over the band clear of the head, and nothing is sent',
+    during[0] === '80' && bubble.y > head.bottom && early.length === 0,
+    JSON.stringify({ during, bubble: bubble.y, head: head.bottom, early }),
+  );
+  check(
+    'let go, the position is sent once: cover.set_cover_position 80',
+    after.length === 1 && after[0] === 'cover.set_cover_position {"position":80} cover.hz_living',
+    JSON.stringify(after),
+  );
+}
+{
+  // held still on its knob, the ruler's fine scale: the ends say the figures it reads there
+  const card = cardOf(across, 'Horizontal · open');
+  const ruler = card.locator('.cv-across fluvy-ruler');
+  const ends = () => card.locator('.cv-across .fv-ruler-labels span').allTextContents();
+  let fine = [];
+  await holdForFine(acrossPointer, await geometryOf(ruler), {
+    travel: 0,
+    phase: async (name) => {
+      if (name === 'held') fine = await ends();
+    },
+  });
+  check(
+    'held for the fine scale, its ends say its figures; let go, their words again',
+    fine.length === 2 &&
+      fine.every((end) => /^\d+ %$/.test(end)) &&
+      (await ends()).join(',') === 'Closed,Open',
+    JSON.stringify({ fine, after: await ends() }),
+  );
+}
+{
+  // the blind the drag above sent to 80 % open
+  const card = cardOf(across, 'Horizontal · counted as it comes down');
+  const said = await figure(card.locator('.cv-across .fv-readout'));
+  await reset(across);
+  await card.locator('.cv-across fluvy-ruler .fv-ruler').first().focus();
+  await across.keyboard.press('ArrowRight');
+  await settle(across, 200);
+  const down = await sent(across);
+  check(
+    '80 % open says “20 % down”, lit from the open end; a step towards it sends 81, Home Assistant’s number',
+    JSON.stringify(said) === JSON.stringify(['20', '%', 'down']) &&
+      (await card.locator('.cv-across fluvy-ruler').evaluate((el) => el.origin)) === 100 &&
+      down.length === 1 &&
+      down[0].startsWith('cover.set_cover_position {"position":81}'),
+    JSON.stringify({ said, down }),
+  );
+}
+{
+  const titles = [
+    ['Horizontal · closed, as the mockup', 228],
+    ['Horizontal · its tilt under the commands', 308],
+    ['Horizontal · the tilt as its slats', 364],
+    ['Horizontal · presets and favourites', 372],
+    ['Horizontal · out of reach', 308],
+  ];
+  const heights = [];
+  for (const [title] of titles)
+    heights.push(
+      await cardOf(across, title).evaluate(async (el, module) => {
+        const { houseHeightOf } = await import(module);
+        return {
+          declared: houseHeightOf({ ...el.config, type: `custom:${el.localName}` }, -1, el.hass),
+          drawn: el.shadowRoot.querySelector('article').getBoundingClientRect().height,
+        };
+      }, HOUSE_HEIGHTS),
+    );
+  check(
+    'each card measures what it declares: 228, 80 more with the tilt’s steps under the commands, 136 with its slats, presets and favourites as on the full card, out of reach as live',
+    heights.every(
+      ({ declared, drawn }, index) => declared === titles[index][1] && near(drawn, declared),
+    ),
+    JSON.stringify(heights),
+  );
+}
+for (const width of [211, 152]) {
+  const card = cardOf(across, `Horizontal · ${width}`);
+  const [readout, words, ruler, content] = await Promise.all([
+    rect(card.locator('.cv-across > .fv-readout')),
+    rect(card.locator('.cv-across .fv-ruler-labels')),
+    rect(card.locator('.cv-across fluvy-ruler')),
+    card.locator('article').evaluate((el) => el.getBoundingClientRect().width - 40),
+  ]);
+  check(
+    `at ${width} the readout stands over the ruler, its ends’ words 16 under it, the ruler the card’s width`,
+    near(words.y, readout.bottom + 16) && near(ruler.y, words.bottom) && near(ruler.w, content),
+    JSON.stringify({ readout: readout.bottom, words, ruler }),
+  );
+}
+{
+  const card = cardOf(across, 'Horizontal · out of reach');
+  const ruler = card.locator('.cv-across fluvy-ruler');
+  await ruler.scrollIntoViewIfNeeded();
+  await reset(across);
+  await dragTo(acrossPointer, await geometryOf(ruler), { from: 50, via: 60, to: 80 });
+  await settle(across, 300);
+  check(
+    'out of reach: “—”, its ends’ words kept, and the ruler takes no drag',
+    JSON.stringify(await figure(card.locator('.cv-across .fv-readout'))) ===
+      JSON.stringify(['—']) &&
+      (await card.locator('.cv-across .fv-ruler-labels span').allTextContents()).join(',') ===
+        'Closed,Open' &&
+      (await sent(across)).length === 0,
+  );
+}
+await across.close();
+
 await suite.finish();

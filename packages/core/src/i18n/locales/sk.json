@@ -1443,6 +1443,7 @@
     "state_icons": "Ikony podľa stavu",
     "state_icons_helper": "Na každom riadku stav a jeho ikona (ok: mdi:check-circle-outline); neuvedený stav zostane slovami",
     "state_icon_colors_helper": "Na každom riadku stav a jeho tón alebo farba (warning: warning)",
+    "horizontal": "Vodorovné",
     "exact_colors": "Presné farby",
     "exact_colors_helper": "Názvy tak, ako ich kreslí Home Assistant, hex kód tak, ako je zadaný. Bez zmeny: ako pri všetkých kartách v nastaveniach Fluvy"
   },

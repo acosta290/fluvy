@@ -686,6 +686,7 @@
     "state_icons": "Ícones por estado",
     "state_icons_helper": "Um estado e o seu ícone em cada linha (ok: mdi:check-circle-outline); um estado não indicado mantém as suas palavras",
     "state_icon_colors_helper": "Um estado e o seu tom ou cor em cada linha (warning: warning)",
+    "horizontal": "Horizontal",
     "exact_colors": "Cores exatas",
     "exact_colors_helper": "Os nomes como o Home Assistant os desenha, um código hex tal como escrito. Sem alterar: o de todos os cartões, nas definições do Fluvy"
   },

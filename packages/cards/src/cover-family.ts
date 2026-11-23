@@ -94,6 +94,10 @@ function favoritesBlock(config: LovelaceCardConfig, positioned: boolean, tilts: 
  * card where the house is not there to say), 16 taller where the tilt is drawn as its slats, then each row of presets
  * the cover can go to; else the tilt's readout and stepper over the commands, or its slats and their ruler, and its
  * presets; else the head and the commands. Under them, the favourites the cover can go to.
+ *
+ * The horizontal card (#244) takes a position on one row, 228 in all: the head, 24, the row (the label's 16 line over
+ * the ruler's 44), 16 and the commands; then the tilt under them (16 and its 64 row, or 16 and its slats' 120), each
+ * control's presets under it and the favourites. A cover with no position draws as the full card does.
  */
 export function coverHeight(config: LovelaceCardConfig, features = usualFor(config)): number {
   if (config['variant'] === 'compact') return COMPACT;
@@ -102,6 +106,14 @@ export function coverHeight(config: LovelaceCardConfig, features = usualFor(conf
   const sets = shown && (features & SET_TILT_POSITION) !== 0;
   const slats = sets && config['tilt_style'] === 'slats';
   const positioned = (features & SET_POSITION) !== 0;
+  if (config['variant'] === 'horizontal' && positioned)
+    return (
+      228 +
+      (slats ? 136 : tilt ? 80 : 0) +
+      presetsBlock(config['position_presets']) +
+      (sets ? presetsBlock(config['tilt_presets']) : 0) +
+      favoritesBlock(config, positioned, (features & SET_TILT_POSITION) !== 0)
+    );
   const presets =
     (positioned ? presetsBlock(config['position_presets']) : 0) +
     (sets ? presetsBlock(config['tilt_presets'], positioned) : 0);

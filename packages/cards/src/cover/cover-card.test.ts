@@ -1,5 +1,10 @@
 // @vitest-environment happy-dom
-import type { HassEntity, HomeAssistant, LovelaceCardConfig } from '@fluvy/core';
+import type {
+  HassEntity,
+  HomeAssistant,
+  LovelaceCardConfig,
+  LovelaceGridOptions,
+} from '@fluvy/core';
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { coverHeight as heightOf, presetsOf, usualFor as usualOf } from '../cover-family.js';
 import { familiesDefined } from '../index.js';
@@ -62,6 +67,8 @@ const RULER = {
 
 type Drawn = HTMLElement & {
   setConfig(config: LovelaceCardConfig): void;
+  getCardSize(): number;
+  getGridOptions(): LovelaceGridOptions;
   hass: HomeAssistant;
   width: number;
   updateComplete: Promise<boolean>;
@@ -394,5 +401,141 @@ describe('a tilt under about 200 (found on the way)', () => {
     expect(texts(phone.root, '.dv-cover__side > .fv-readout .fv-readout__label')).toEqual([
       'Position',
     ]);
+  });
+});
+
+describe('the horizontal card (#244)', () => {
+  type Across = Ruler & { length: number; vertical: boolean };
+  /** The horizontal ruler, its ends' words over it and the readout's column. */
+  const across = (root: ParentNode) => ({
+    ruler: root.querySelector<Across>('.cv-across fluvy-ruler'),
+    ends: texts(root, '.cv-across .fv-ruler-labels span'),
+    stacked: root.querySelector('.cv-across')?.classList.contains('cv-across--stacked'),
+    column: root.querySelector<HTMLElement>('.cv-across')?.style.getPropertyValue('--cv-column'),
+  });
+  const LOUVRES = 1 | 2 | 8 | 16 | 32 | 64 | 128;
+
+  it('declares its height from its config: the row, the tilt under the commands, presets, favourites', () => {
+    expect(coverHeight({ variant: 'horizontal' })).toBe(228);
+    expect(coverHeight({ variant: 'horizontal' }, ALL)).toBe(228 + 80);
+    expect(coverHeight({ variant: 'horizontal', show_tilt: false }, ALL)).toBe(228);
+    expect(coverHeight({ variant: 'horizontal', tilt_style: 'slats' })).toBe(228 + 136);
+    // the tilt's presets under the tilt itself, with no name over them
+    expect(
+      coverHeight(
+        { variant: 'horizontal', position_presets: [0, 100], tilt_presets: [0, 100] },
+        ALL,
+      ),
+    ).toBe(228 + 56 + 80 + 56);
+    expect(coverHeight({ variant: 'horizontal', favorites: [{ position: 50 }] })).toBe(228 + 88);
+    // a cover with no position draws as the full card does
+    expect(coverHeight({ variant: 'horizontal' }, LOUVRES)).toBe(coverHeight({}, LOUVRES));
+    // the card as it was is untouched
+    expect(coverHeight({})).toBe(328);
+  });
+
+  it('lays its readout beside the ruler, the ends’ words over it and the tilt under the commands', async () => {
+    const { card, root } = await draw({ variant: 'horizontal' });
+    const row = across(root);
+    // "Position" at 8 a letter: a 64 column, 24 to the ruler, which takes the rest of the 320
+    expect([row.stacked, row.column, row.ruler?.vertical, row.ruler?.length]).toEqual([
+      false,
+      '64px',
+      false,
+      232,
+    ]);
+    expect(row.ends).toEqual(['Closed', 'Open']);
+    expect(figure(root, '.cv-across > .fv-readout')).toEqual(['65', '%']);
+    expect(root.querySelector('fluvy-ruler[vertical], .dv-cover')).toBeNull();
+    expect(root.querySelector('.fv-card.cv-card--across .cv-across + .fv-actions')).not.toBeNull();
+    expect(root.querySelector('.fv-actions + .dv-value .fv-stepper')).not.toBeNull();
+    expect(card.getGridOptions()).toMatchObject({ columns: 12, min_columns: 6 });
+    expect(card.getCardSize()).toBe(6);
+    await slide(card, row.ruler!, 30);
+    expect(sent()).toEqual([['cover', 'set_cover_position', { position: 30 }]]);
+  });
+
+  it('stands its slats under the commands, its position’s presets after them', async () => {
+    const { root } = await draw({
+      variant: 'horizontal',
+      tilt_style: 'slats',
+      position_presets: [0, 100],
+    });
+    expect(root.querySelector('.fv-actions + .cv-presets + .cv-tilt--under')).not.toBeNull();
+    expect(texts(root, '.cv-presets .fv-label')).toEqual([]);
+  });
+
+  it('stands the readout over the ruler in a narrow column, the ends in figures where words do not hold', async () => {
+    const { root } = await draw({ variant: 'horizontal' }, blind(), 152);
+    expect([across(root).stacked, across(root).ruler?.length]).toEqual([true, 112]);
+    expect(across(root).ends).toEqual(['Closed', 'Open']);
+    document.body.replaceChildren();
+    // the person's own words where 112 holds them 8 apart (32 and 64); else their figures, counted as the card counts
+    const own = await draw(
+      { variant: 'horizontal', open_label: 'Fully up', closed_label: 'Shut', direction: 'down' },
+      blind(),
+      152,
+    );
+    expect(across(own.root).ends).toEqual(['Shut', 'Fully up']);
+    document.body.replaceChildren();
+    const longer = await draw(
+      {
+        variant: 'horizontal',
+        open_label: 'Fully open',
+        closed_label: 'Closed',
+        direction: 'down',
+      },
+      blind(),
+      152,
+    );
+    expect(across(longer.root).ends).toEqual(['100 %', '0 %']);
+  });
+
+  it('counts down from the open end, the word after the figure where its column holds it', async () => {
+    const { card, root } = await draw({ variant: 'horizontal', direction: 'down' });
+    const { ruler } = across(root);
+    expect([ruler?.value, ruler?.origin]).toEqual([65, 100]);
+    expect(figure(root, '.cv-across > .fv-readout')).toEqual(['35', '%', 'down']);
+    // the fine scale up, the ends say its figures as the card counts them
+    ruler!.dispatchEvent(
+      new CustomEvent('fluvy-window', { detail: { min: 60, max: 70, fine: true, marks: [] } }),
+    );
+    await card.updateComplete;
+    expect(across(root).ends).toEqual(['40 %', '30 %']);
+  });
+
+  it('keeps its anatomy and its size out of reach', async () => {
+    const gone = blind(
+      { current_position: undefined, current_tilt_position: undefined },
+      'unavailable',
+    );
+    const { root } = await draw({ variant: 'horizontal' }, gone);
+    expect(figure(root, '.cv-across > .fv-readout')).toEqual(['—']);
+    expect(across(root).ruler?.disabled).toBe(true);
+    expect(across(root).ends).toEqual(['Closed', 'Open']);
+    expect(root.querySelector('.fv-actions + .dv-value .fv-stepper')).not.toBeNull();
+  });
+
+  it('is offered by the editor, with the position’s and the tilt’s keys', () => {
+    const options = (items: readonly unknown[]): string[] =>
+      items.flatMap((item) => {
+        const field = item as {
+          name?: string;
+          schema?: readonly unknown[];
+          selector?: { select?: { options: { value: string }[] } };
+        };
+        return field.name === 'variant'
+          ? (field.selector?.select?.options.map((option) => option.value) ?? [])
+          : options(field.schema ?? []);
+      });
+    expect(options(coverEditor.getConfigForm().schema)).toEqual(['full', 'compact', 'horizontal']);
+    const shown = shownNames(
+      visibleFields(
+        coverEditor.getConfigForm().schema,
+        { type: 'custom:fluvy-cover-card', entity: 'cover.office', variant: 'horizontal' },
+        house(blind()),
+      ),
+    );
+    expect(shown).toEqual(expect.arrayContaining(['direction', 'tilt_style', 'slider_style']));
   });
 });

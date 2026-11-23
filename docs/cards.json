@@ -6913,7 +6913,8 @@
         "key": "variant",
         "values": [
           "full",
-          "compact"
+          "compact",
+          "horizontal"
         ],
         "default": "full"
       },
@@ -6936,6 +6937,25 @@
             }
           ],
           "variant": "compact"
+        },
+        "horizontal": {
+          "type": "custom:fluvy-cover-card",
+          "entity": "cover.blinds",
+          "subtitle": "Living room · window",
+          "tilt_angle": 90,
+          "tilt_style": "slats",
+          "favorites": [
+            {
+              "name": "Morning",
+              "position": 60
+            },
+            {
+              "name": "Night",
+              "position": 0,
+              "tilt": 0
+            }
+          ],
+          "variant": "horizontal"
         }
       },
       "layout_pictures": {
@@ -6944,6 +6964,12 @@
           "dark": "images/cards/cover.compact-dark.webp",
           "width": 784,
           "height": 352
+        },
+        "horizontal": {
+          "light": "images/cards/cover.horizontal-light.webp",
+          "dark": "images/cards/cover.horizontal-dark.webp",
+          "width": 784,
+          "height": 968
         }
       },
       "keys": [
@@ -7019,7 +7045,8 @@
           "default": "full",
           "values": {
             "full": "Full",
-            "compact": "Compact"
+            "compact": "Compact",
+            "horizontal": "Horizontal"
           }
         },
         {

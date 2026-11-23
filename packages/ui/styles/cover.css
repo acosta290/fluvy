@@ -206,3 +206,54 @@
 .cv-presets:not(.cv-presets--named) > .fv-chips {
   margin-top: 12px;
 }
+
+/* ---------- the horizontal card (1.25, #244, the reporter's mockup; design/language.md § The cover across) ---------- */
+/* one row 24 under the head: the position's readout in its column (`--cv-column`: its widest figure), the ruler 24
+   beside it taking the rest (16 where 24 leaves it short), the ends' words over the ruler's ends on the readout's
+   label line, and the figure on the knob's centre line: 8 under its label, its 28 centred on the 44 band
+   (16 + 8 + 14 = 16 + 22) */
+.cv-across {
+  display: flex;
+  gap: 24px;
+  margin-top: 24px;
+}
+
+.cv-across--close {
+  gap: 16px;
+}
+
+.cv-across:not(.cv-across--stacked) > .fv-readout {
+  flex: none;
+  width: var(--cv-column);
+}
+
+.cv-across:not(.cv-across--stacked) > .fv-readout .fv-readout__value {
+  margin-top: 8px;
+}
+
+.cv-across__ruler {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.cv-across__ruler > .fv-ruler-labels {
+  margin-top: 0;
+}
+
+/* a column too narrow for the two side by side (half a section): the readout over the ruler, the ends' words 16 under
+   it, as a light's level stands over its ruler */
+.cv-across--stacked {
+  display: block;
+}
+
+.cv-across--stacked > .cv-across__ruler {
+  margin-top: 16px;
+}
+
+/* its commands as the mockup draws them: equal outlined pills, the card's own fill and its hairline (as a button on the
+   page's ground stands), at the pill radius of the house's shape */
+.cv-card--across .fv-action {
+  border-radius: var(--fluvy-radius-pill, 9999px);
+  background: transparent;
+  box-shadow: inset 0 0 0 1px var(--fluvy-edge, var(--fluvy-border));
+}

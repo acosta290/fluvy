@@ -636,6 +636,7 @@
     "state_icons": "Ikonok állapot szerint",
     "state_icons_helper": "Soronként egy állapot és az ikonja (ok: mdi:check-circle-outline); a fel nem sorolt állapot szavakkal marad",
     "state_icon_colors_helper": "Soronként egy állapot és a tónusa vagy színe (warning: warning)",
+    "horizontal": "Vízszintes",
     "exact_colors": "Pontos színek",
     "exact_colors_helper": "A nevek úgy, ahogy a Home Assistant rajzolja őket, a hex kód úgy, ahogy beírták. Érintetlenül: az összes kártyáé, a Fluvy beállításaiból"
   },

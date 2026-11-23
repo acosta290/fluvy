@@ -89,8 +89,12 @@ const features = (data: Data, hass?: HomeAssistant): number => {
   return state && Number.isFinite(said) ? said : USUAL | SET_TILT_POSITION;
 };
 
-/** The full card draws the position and the tilt; the compact one, the head and the commands. */
-const full = (data: Data): boolean => data['variant'] === undefined || data['variant'] === 'full';
+/**
+ * The full card draws the position and the tilt, as the horizontal one does (#244); the compact one, the head and the
+ * commands.
+ */
+const full = (data: Data): boolean =>
+  data['variant'] === undefined || data['variant'] === 'full' || data['variant'] === 'horizontal';
 /** The full card of a cover that takes a position. */
 const positioned = (data: Data, hass?: HomeAssistant): boolean =>
   full(data) && (features(data, hass) & SET_POSITION) !== 0;
@@ -153,7 +157,11 @@ export function getConfigForm(): LovelaceConfigForm {
       headFields({ badge: true }),
       fieldRow(ownTextField('subtitle'), numberField('tilt_angle', 0, 360)),
       fieldRow(
-        selectField('variant', ['full', 'compact']),
+        choiceField('variant', [
+          ['full', 'option.full'],
+          ['compact', 'option.compact'],
+          ['horizontal', 'editor.horizontal'],
+        ]),
         selectField('favorites_style', ['full', 'chips']),
       ),
       fieldRow(boolField('show_tilt'), boolField('show_favorites')),

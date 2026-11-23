@@ -2145,6 +2145,7 @@
     "state_icons": "Ikoner efter tilstand",
     "state_icons_helper": "En tilstand og dens ikon på hver linje (ok: mdi:check-circle-outline); en tilstand, der ikke er nævnt, beholder sine ord",
     "state_icon_colors_helper": "En tilstand og dens tone eller farve på hver linje (warning: warning)",
+    "horizontal": "Vandret",
     "exact_colors": "Præcise farver",
     "exact_colors_helper": "Navne, som Home Assistant tegner dem, en hexkode, som den er skrevet. Uberørt: alle korts, fra Fluvys indstillinger"
   },

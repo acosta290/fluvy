@@ -15,6 +15,17 @@ places with a name of their own.
 
 ![Presets as chips, a blind counted down, and a narrow card with its tilt under the commands](../images/1.22/cover-more.webp)
 
+### The position across
+
+```yaml
+type: custom:fluvy-cover-card
+entity: cover.bedroom_window
+variant: horizontal # the position on one row, its ruler across the card
+```
+
+The figure stands beside a ruler that takes the rest of the card, the ends' words over it and the commands under it;
+the tilt, the presets and the favourites follow the commands. In a narrow column the figure stands over the ruler.
+
 ### A cover counted its own way
 
 Home Assistant counts 0 as closed and 100 as open. These keys turn the card's numbers round; the open and close

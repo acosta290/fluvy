@@ -686,6 +686,7 @@
     "state_icons": "Symbole nach Zustand",
     "state_icons_helper": "Pro Zeile ein Zustand und sein Symbol (ok: mdi:check-circle-outline); ein nicht genannter Zustand bleibt in Worten",
     "state_icon_colors_helper": "Pro Zeile ein Zustand und sein Farbton oder seine Farbe (warning: warning)",
+    "horizontal": "Horizontal",
     "exact_colors": "Exakte Farben",
     "exact_colors_helper": "Namen wie in Home Assistant, Hex-Werte wie eingegeben. Unverändert: wie in den Fluvy-Einstellungen für alle Karten"
   },

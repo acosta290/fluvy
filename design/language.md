@@ -732,6 +732,33 @@ column holds it, the ruler lit from the top down to the knob, `origin` 100). Num
 commands are Home Assistant's. `open_label` and `closed_label` name the position ruler's ends; a word of the person's
 longer than the ends' 56 ends in an ellipsis.
 
+## The cover across (1.25, #244)
+
+The Cover card's position on one row, asked for (`variant: horizontal`; `full` stays the default): the reporter's
+mockup reproduced in the house's forms, the head as every cover's (the circle and its glyph, the name, the room and the
+kind, the state's badge).
+
+- **The row**, 24 under the head: the position's readout at the left in a column as wide as its widest figure (100 %,
+  "down" after it where the cover is counted so) or its label, on the 4 grid, and the house's ruler 24 beside it
+  taking the rest of the card, band 44, in the house's slider style (`ruler`, `bar`, `liquid`), its knob the ruler's
+  ring and dot. The ends' words stand over the ruler's ends ("Closed" at its start, "Open" at its end) on the readout
+  label's 16 line, in the ruler words' 11/500 ink; the figure sits 8 under its label, its 28 line centred on the
+  band (16 + 8 + 14 = 16 + 22), so the figure reads on the knob's centre line. The row is 60: the declared height is
+  228 at 360, by config alone, live or out of reach.
+- **Measured, never a threshold**: the ruler keeps 128 beside the readout (a pixel a percent between the knob's stops)
+  or the 24 closes to 16, then the word "down" gives way; where not even that holds (a narrow column, half a section),
+  the readout stands over the ruler at the card's width, the ends' words on their own line 16 under it. The
+  ends say their words where the ruler holds both 8 apart (the person's own words too, `open_label`, `closed_label`),
+  else their figures as the card counts them ("0 %", "100 %"; "100 %" at the closed end where it counts down); while
+  the fine scale is up, the figures it reads there. The ruler draws left to right whatever the page's direction, and
+  its words stand at its own ends.
+- **The commands** under the row, 16 apart from it, as the mockup draws them: equal outlined pills, the card's own fill
+  and its hairline (as a button on the page's ground stands), at the pill radius of the house's shape, the glyph in the
+  secondary ink; the hover, the press, the disabled look and the dashes out of reach are the button family's.
+- **The tilt** stands under the commands at the card's width: its readout and stepper, or its slats and their ruler
+  (§ The cover's tilt, `under`), its presets under it without a name; the position's presets follow the commands, the
+  favourites close the card, as on the full card. A cover with no position draws as the full card does.
+
 ## Clocks and calendar
 
 - Analog face = the ruler's ticks bent into a circle: majors R/10 in ink, minors R/20 in border-strong (majors only at R 56); hour hand 0.52 R inside the numerals, minute 0.85 R and second 0.88 R over the numerals to the tick ring, widths 6/4/2 (R ≥ 96) · 5/3/2 (72) · 4/3/2 (56), round caps; only the second hand carries a counterweight (cap radius + 8); the cap is the Fluvy knob without halo or lift, 28 / 20 / 16. Numerals 14/600 secondary at 0.75 R (12/600 at R 56). Plain clocks are accent; a weather clock takes the sky's tone (accent at night, solar by day). Digital time 64/72 at −0.03 em, tabular, ink pulled onto the column (−0.06 em, declared `data-align="optical"`); seconds or AM/PM as a 24 unit on the baseline; date 14/500 secondary — the full date in a 320 column, "Thu 17 Sep" in narrow columns and tiles.

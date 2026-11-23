@@ -686,6 +686,7 @@
     "state_icons": "Icone per stato",
     "state_icons_helper": "Uno stato e la sua icona per riga (ok: mdi:check-circle-outline); uno stato non elencato resta in parole",
     "state_icon_colors_helper": "Uno stato e il suo tono o colore per riga (warning: warning)",
+    "horizontal": "Orizzontale",
     "exact_colors": "Colori esatti",
     "exact_colors_helper": "I nomi come li disegna Home Assistant, un codice esadecimale come scritto. Invariato, quello di tutte le schede nelle impostazioni di Fluvy"
   },

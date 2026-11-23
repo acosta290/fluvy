@@ -84,8 +84,11 @@ export interface CoverFavorite {
   tilt?: number;
 }
 
-/** `full` (default): the position ruler, tilt, the actions and the favourites. `compact`: the head and the actions. */
-export type CoverVariant = 'full' | 'compact';
+/**
+ * `full` (default): the position ruler, tilt, the actions and the favourites. `compact`: the head and the actions.
+ * `horizontal` (#244): the full card with its position on one row, its readout beside a ruler across the card.
+ */
+export type CoverVariant = 'full' | 'compact' | 'horizontal';
 
 /** How the tilt is set: its readout and a stepper (`steps`, the default), or its slats and a ruler (`slats`, #203). */
 export type TiltStyle = 'steps' | 'slats';
@@ -142,6 +145,12 @@ const LENGTH_SLATS = 176;
 const PICTURE = 12 + 44;
 /** Between a figure's unit and the word after it (`.cv-said`). */
 const SAID_GAP = 8;
+/**
+ * The horizontal card's row (#244): the gaps between the position's readout and its ruler, best first, and the least
+ * the ruler keeps beside the readout: 128, a pixel a percent between the knob's stops (its 36 stops 14 in from each end).
+ */
+const ACROSS_GAPS = [24, 16] as const;
+const ACROSS_LEAST = 128;
 
 type Percent = number | null;
 
@@ -197,6 +206,10 @@ type SlatsAt = 'side' | 'under' | 'alone';
  * Asked (#203), the tilt is its slats: the window seen from the room, the blind down, its slats turning as the tilt
  * does, over the house's ruler; each control has its presets as chips; and the card counts as its cover does — one
  * that says 100 % where it is closed, one counted as it comes down. Nothing of it until it is asked.
+ *
+ * Asked (`variant: horizontal`, #244, the reporter's mockup), the position is one row: its readout at the left, the
+ * ruler across the rest of the card with its ends' words over it, the commands under them as outlined pills and the
+ * tilt under those; in a column too narrow for the two side by side, the readout stands over the ruler.
  */
 export class FluvyCoverCard extends Card<CoverCardConfig> {
   /** The card's height at a 360 column from its config alone: the whole card (`coverHeight`). */
@@ -295,6 +308,11 @@ export class FluvyCoverCard extends Card<CoverCardConfig> {
     return this.config?.variant === 'compact';
   }
 
+  /** The position on one row, its ruler across the card (#244). */
+  private get horizontal(): boolean {
+    return this.config?.variant === 'horizontal';
+  }
+
   /** What a cover draws where the house is not there to say: its usual parts, its tilt where the config asks for it. */
   private get usual(): number {
     return this.config ? usualFor(this.config) : 0;
@@ -305,19 +323,29 @@ export class FluvyCoverCard extends Card<CoverCardConfig> {
     const view = drawnAs(this.entity(), this.usual);
     const rows = (key: 'position_presets' | 'tilt_presets'): number =>
       presetsOf(this.config?.[key]).length ? 1 : 0;
+    // the horizontal card's position is one row (#244), the tilt a row under the commands, two as its slats
+    const tilts =
+      view.domain === 'cover' &&
+      this.config?.show_tilt !== false &&
+      [SET_TILT_POSITION, OPEN_TILT, CLOSE_TILT].some((bit) => view.supports(bit));
+    const slats = tilts && view.supports(SET_TILT_POSITION) && this.config?.tilt_style === 'slats';
+    const position = !this.horizontal ? 4 : 2 + (slats ? 2 : tilts ? 1 : 0);
     return (
       3 +
-      (view.supports(SET_POSITION) ? 4 + rows('position_presets') : 0) +
+      (view.supports(SET_POSITION) ? position + rows('position_presets') : 0) +
       (view.supports(SET_TILT_POSITION) ? rows('tilt_presets') : 0) +
       (this.favoritesFor(view).length ? 2 : 0)
     );
   }
 
-  /** The full card needs its ruler's width; the compact one — the head and the actions — half a section at least. */
+  /**
+   * The full card needs its ruler's width; the compact one — the head and the actions — half a section at least; the
+   * horizontal one a section, half of one where its readout stands over its ruler.
+   */
   override getGridOptions(): LovelaceGridOptions {
     return this.compact
       ? { columns: 6, rows: 'auto', min_columns: 6 }
-      : { columns: 12, rows: 'auto', min_columns: 8 };
+      : { columns: 12, rows: 'auto', min_columns: this.horizontal ? 6 : 8 };
   }
 
   override disconnectedCallback(): void {
@@ -584,6 +612,103 @@ export class FluvyCoverCard extends Card<CoverCardConfig> {
   }
 
   /**
+   * The horizontal card's row (#244), measured, never a width threshold: the position's readout in a column as wide
+   * as its widest figure (100 %, and "down" after it where the cover is counted so) or its label, on the 4 grid, and
+   * the ruler beside it taking the rest, 24 from it, else 16, where the ruler keeps 128; the word "down" gives way
+   * first. Where not even that holds (half a section, a narrow column), none: the readout stands over the ruler at the
+   * column's width, as a light's level does.
+   */
+  private acrossFit(): {
+    readonly column: number;
+    readonly gap: number;
+    readonly length: number;
+  } | null {
+    const hundred = this.figureWidth('m', {
+      value: formatNumber(this.hass, 100, { digits: 0 }),
+      unit: '%',
+    });
+    const label = this.labelWidth(this.t('cover.position'));
+    const counted = this.down ? this.saidWidth(cardStrings(this.hass, 'down')) : 0;
+    for (const said of counted ? [counted, 0] : [0]) {
+      const column = Math.ceil(Math.max(label, hundred + said) / 4) * 4;
+      for (const gap of ACROSS_GAPS) {
+        const length = this.contentWidth - column - gap;
+        if (length >= ACROSS_LEAST) return { column, gap, length };
+      }
+    }
+    return null;
+  }
+
+  /**
+   * The horizontal ruler's ends, said over them (#244): the ends' words (the config's, else "Closed" and "Open") where
+   * the ruler holds both 8 apart, measured in the ruler words' own type, else their figures as the card counts them
+   * ("0 %" and "100 %"); while its fine scale is up, the figures it reads there.
+   */
+  private acrossEnds(length: number): readonly (readonly [number, string])[] {
+    const figure = (opening: number): string => this.percent(mirror(this.down, opening));
+    const fine = this.fine;
+    if (fine)
+      return [
+        [0, figure(fine.min)],
+        [1, figure(fine.max)],
+      ];
+    const { open, closed } = this.ends();
+    const spoken =
+      this.head.ruler.width('fv-axis', closed) + this.head.ruler.width('fv-axis', open) + 8 <=
+      length;
+    return [
+      [0, spoken ? closed : figure(0)],
+      [1, spoken ? open : figure(100)],
+    ];
+  }
+
+  /**
+   * The position's ruler: up the card's side (`vertical`), or across it (#244); lit from the closed end to the knob,
+   * or from the open end where the position is counted as the blind comes down (`origin` 100). It sends on release,
+   * the knob and the figure following the finger meanwhile.
+   */
+  private positionRuler(
+    view: EntityView,
+    o: {
+      readonly position: Percent;
+      readonly length: number;
+      readonly vertical: boolean;
+      readonly name: string;
+      readonly tone: Tone;
+      readonly unusable: boolean;
+    },
+  ): TemplateResult {
+    return html`<fluvy-ruler
+      ?vertical=${o.vertical}
+      .value=${o.position ?? 0}
+      .min=${0}
+      .max=${100}
+      .step=${1}
+      .origin=${this.down ? 100 : Number.NaN}
+      .length=${o.length}
+      .band=${RULER_BAND}
+      .tone=${o.unusable ? 'neutral' : o.tone}
+      ?inactive=${o.unusable || o.position === null}
+      ?disabled=${o.unusable}
+      .look=${sliderStyleOf(this.config)}
+      ?still=${sliderStill()}
+      unit="%"
+      .label=${`${o.name} · ${this.t('cover.position')}`}
+      .format=${(value: number) => formatNumber(this.hass, mirror(this.down, value), { digits: 0 })}
+      @fluvy-input=${(event: CustomEvent<RulerChangeDetail>) => {
+        this.dragged = event.detail.value;
+      }}
+      @fluvy-change=${(event: CustomEvent<RulerChangeDetail>) => this.moveTo(view, event.detail.value)}
+      @fluvy-cancel=${() => {
+        this.dragged = null;
+      }}
+      @fluvy-window=${(event: CustomEvent<RulerWindowDetail>) => {
+        this.fine = event.detail.fine ? event.detail : null;
+      }}
+    ></fluvy-ruler>`;
+  }
+
+  /**
    * The tilt as its slats (#203): its readout — "Tilt", the figure, the slats' state in words where the column holds
    * them for every figure the tilt can show — with the picture at its end, and under them the house's ruler at the
    * column's width, the ends' words under it. Where the column is short the word gives way first, then the figure
@@ -831,16 +956,18 @@ export class FluvyCoverCard extends Card<CoverCardConfig> {
       value: formatNumber(this.hass, angle || 100, { digits: 0 }),
       unit: tiltUnit,
     };
+    // the position on its own row, its ruler across the card (#244), or up its side with a column beside it
+    const across = canPosition && this.horizontal;
     const side =
-      canPosition && !compact
+      canPosition && !compact && !across
         ? this.sideFit(
             showTilt ? { label: tiltLabel, figure: tiltFigure, canTilt, slats: asSlats } : null,
           )
         : null;
-    // the tilt's own row across the card: on a cover with no position, and under the commands where the side column
-    // cannot hold its stepper, at the position's size there
+    // the tilt's own row across the card: on a cover with no position, under the commands where the side column
+    // cannot hold its stepper and under the horizontal card's, at the position's size there
     const tiltFit =
-      showTilt && !asSlats && (!canPosition || side?.under)
+      showTilt && !asSlats && (!canPosition || across || side?.under)
         ? fitValueRow(this.head.ruler, {
             width: this.contentWidth,
             control: canTilt ? STEPPER : 0,
@@ -867,15 +994,15 @@ export class FluvyCoverCard extends Card<CoverCardConfig> {
             }),
           )
         : nothing;
-    // where the slats stand: beside the position where the column holds them, else under the commands; over the
-    // commands on a cover with no position
+    // where the slats stand: beside the position where the column holds them, else under the commands, as on the
+    // horizontal card; over the commands on a cover with no position
     const slatsAt: SlatsAt | null = !asSlats
       ? null
-      : !side
-        ? 'alone'
-        : side.under
-          ? 'under'
-          : 'side';
+      : across || side?.under
+        ? 'under'
+        : side
+          ? 'side'
+          : 'alone';
     const tiltRow = tiltFit
       ? html`<div class="dv-value ${valueRowClass(tiltFit.layout)}">
           ${tiltReadout}${tiltStepper}${canTilt && tiltFit.layout === 'alone' ? this.readoutTap(view.id, `${name} · ${tiltLabel} ${tiltValue} ${cardTilt === null ? '' : tiltUnit}`) : nothing}
@@ -885,17 +1012,18 @@ export class FluvyCoverCard extends Card<CoverCardConfig> {
       this.renderSlats(view, { name, width, tone, unusable, at });
 
     const ends = this.ends();
-    const positionPresets = side
-      ? this.renderPresets(presetsOf(this.config?.position_presets), {
-          value: said,
-          unusable,
-          word: (preset) => {
-            const opening = figureOf(preset);
-            return opening >= 100 ? ends.open : opening <= 0 ? ends.closed : this.percent(preset);
-          },
-          pick: (preset) => this.moveTo(view, figureOf(preset)),
-        })
-      : nothing;
+    const positionPresets =
+      side || across
+        ? this.renderPresets(presetsOf(this.config?.position_presets), {
+            value: said,
+            unusable,
+            word: (preset) => {
+              const opening = figureOf(preset);
+              return opening >= 100 ? ends.open : opening <= 0 ? ends.closed : this.percent(preset);
+            },
+            pick: (preset) => this.moveTo(view, figureOf(preset)),
+          })
+        : nothing;
     const tiltPresets =
       showTilt && canSetTilt
         ? this.renderPresets(presetsOf(this.config?.tilt_presets), {
@@ -935,6 +1063,29 @@ export class FluvyCoverCard extends Card<CoverCardConfig> {
       );
     };
     const length = slatsAt ? LENGTH_SLATS : LENGTH;
+    // the horizontal card's position (#244): its readout beside the ruler, the ends' words over the ruler's ends on the
+    // readout's label line; where the column cannot hold the two side by side, the readout over them
+    const fit = across ? this.acrossFit() : null;
+    const acrossLength = fit?.length ?? this.contentWidth;
+    const acrossRow = across
+      ? html`<div
+          class="cv-across ${!fit ? 'cv-across--stacked' : fit.gap === 16 ? 'cv-across--close' : ''}"
+          style=${fit ? `--cv-column:${fit.column}px` : nothing}
+        >
+          ${positionReadout(fit?.column ?? this.contentWidth)}
+          <div class="cv-across__ruler">
+            ${rulerLabels(this.acrossEnds(acrossLength))}
+            ${this.positionRuler(view, {
+              position,
+              length: acrossLength,
+              vertical: false,
+              name,
+              tone,
+              unusable,
+            })}
+          </div>
+        </div>`
+      : nothing;
 
     const classLabel = coverClassLabel(this.hass, view.domain, view.deviceClass);
     const { sub, shorter } = this.subtitle(
@@ -955,7 +1106,7 @@ export class FluvyCoverCard extends Card<CoverCardConfig> {
     // the commands in equal cells, two rows where one would leave a cell under a finger's 44
     const cells = actionGap(this.contentWidth, row.length);
     return html`<article
-      class="fv-card dv-card ${unusable ? 'is-unavailable is-off' : ''} ${tinted.cls}"
+      class="fv-card dv-card ${unusable ? 'is-unavailable is-off' : ''} ${this.horizontal ? 'cv-card--across' : ''} ${tinted.cls}"
       style="--dv-action-gap:${cells.gap}px"
       data-card
       data-accent=${colour.accent ?? nothing}
@@ -987,34 +1138,14 @@ export class FluvyCoverCard extends Card<CoverCardConfig> {
                     >${fine ? this.percent(figureOf(fine.min)) : ends.closed}</span
                   >
                 </div>
-                <fluvy-ruler
-                  vertical
-                  .value=${position ?? 0}
-                  .min=${0}
-                  .max=${100}
-                  .step=${1}
-                  .origin=${down ? 100 : Number.NaN}
-                  .length=${length}
-                  .band=${44}
-                  .tone=${unusable ? 'neutral' : tone}
-                  ?inactive=${unusable || position === null}
-                  ?disabled=${unusable}
-                  .look=${sliderStyleOf(this.config)}
-                  ?still=${sliderStill()}
-                  unit="%"
-                  .label=${`${name} · ${this.t('cover.position')}`}
-                  .format=${(value: number) => formatNumber(this.hass, figureOf(value), { digits: 0 })}
-                  @fluvy-input=${(event: CustomEvent<RulerChangeDetail>) => {
-                    this.dragged = event.detail.value;
-                  }}
-                  @fluvy-change=${(event: CustomEvent<RulerChangeDetail>) => this.moveTo(view, event.detail.value)}
-                  @fluvy-cancel=${() => {
-                    this.dragged = null;
-                  }}
-                  @fluvy-window=${(event: CustomEvent<RulerWindowDetail>) => {
-                    this.fine = event.detail.fine ? event.detail : null;
-                  }}
-                ></fluvy-ruler>
+                ${this.positionRuler(view, {
+                  position,
+                  length,
+                  vertical: true,
+                  name,
+                  tone,
+                  unusable,
+                })}
               </div>
               <div class="dv-cover__side">
                 ${positionReadout(side.column)}
@@ -1031,13 +1162,15 @@ export class FluvyCoverCard extends Card<CoverCardConfig> {
                 }
               </div>
             </div>`
-          : slatsAt === 'alone'
-            ? slatsOf('alone', this.contentWidth)
-            : tiltRow
+          : across
+            ? acrossRow
+            : slatsAt === 'alone'
+              ? slatsOf('alone', this.contentWidth)
+              : tiltRow
       }
       ${row.length ? actions(row, (key) => this.command(view, key), cells.columns) : nothing}
       ${positionPresets}
-      ${slatsAt === 'under' ? slatsOf('under', this.contentWidth) : side ? tiltRow : nothing}
+      ${slatsAt === 'under' ? slatsOf('under', this.contentWidth) : side || across ? tiltRow : nothing}
       ${tiltPresets}
       ${
         chipItems.length

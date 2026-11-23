@@ -686,6 +686,7 @@
     "state_icons": "Iconen per status",
     "state_icons_helper": "Per regel een status en zijn icoon (ok: mdi:check-circle-outline); een status die er niet staat, houdt zijn woorden",
     "state_icon_colors_helper": "Per regel een status en zijn tint of kleur (warning: warning)",
+    "horizontal": "Horizontaal",
     "exact_colors": "Exacte kleuren",
     "exact_colors_helper": "Namen zoals Home Assistant ze tekent, een hexcode zoals getypt. Onaangeroerd: die van alle kaarten, uit de instellingen van Fluvy"
   },

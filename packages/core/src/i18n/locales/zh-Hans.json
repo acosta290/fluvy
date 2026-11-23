@@ -2041,6 +2041,7 @@
     "state_icons": "按状态设置图标",
     "state_icons_helper": "每行一个状态及其图标（ok: mdi:check-circle-outline）；未列出的状态仍显示文字",
     "state_icon_colors_helper": "每行一个状态及其色调或颜色（warning: warning）",
+    "horizontal": "横向",
     "exact_colors": "精确颜色",
     "exact_colors_helper": "名称按 Home Assistant 的颜色，十六进制色值按输入。未设置：沿用 Fluvy 设置中所有卡片的值"
   },

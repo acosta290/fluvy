@@ -2145,6 +2145,7 @@
     "state_icons": "Икони по състояние",
     "state_icons_helper": "Състояние и неговата икона на всеки ред (ok: mdi:check-circle-outline); непосочено състояние остава с думи",
     "state_icon_colors_helper": "Състояние и неговият тон или цвят на всеки ред (warning: warning)",
+    "horizontal": "Хоризонтален",
     "exact_colors": "Точни цветове",
     "exact_colors_helper": "Имената, както ги рисува Home Assistant, hex код, както е въведен. Непроменено: като на всички карти, от настройките на Fluvy"
   },

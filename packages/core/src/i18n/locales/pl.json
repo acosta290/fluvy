@@ -1382,6 +1382,7 @@
     "state_icons": "Ikony według stanu",
     "state_icons_helper": "W każdym wierszu stan i jego ikona (ok: mdi:check-circle-outline); stan niewymieniony zostaje słowami",
     "state_icon_colors_helper": "W każdym wierszu stan i jego ton lub kolor (warning: warning)",
+    "horizontal": "Poziomy",
     "exact_colors": "Dokładne kolory",
     "exact_colors_helper": "Nazwy tak, jak rysuje je Home Assistant, kod hex tak, jak wpisano. Nieustawione: wspólne dla wszystkich kart, z ustawień Fluvy"
   },

@@ -33,7 +33,7 @@ The picture above, on the demo house: put your own entities in place of its.
 <table>
 <tbody><tr>
 <td align="center" valign="top" width="50%"><code>variant: compact</code><br><a href="https://acosta290.github.io/fluvy/?card=cover&amp;layout=compact"><picture><source media="(prefers-color-scheme: dark)" srcset="../images/cards/cover.compact-dark.webp"><img src="../images/cards/cover.compact-light.webp" width="392" alt="The Cover card in its compact layout"></picture></a></td>
-<td align="center" valign="top" width="50%"></td>
+<td align="center" valign="top" width="50%"><code>variant: horizontal</code><br><a href="https://acosta290.github.io/fluvy/?card=cover&amp;layout=horizontal"><picture><source media="(prefers-color-scheme: dark)" srcset="../images/cards/cover.horizontal-dark.webp"><img src="../images/cards/cover.horizontal-light.webp" width="392" alt="The Cover card in its horizontal layout"></picture></a></td>
 </tr></tbody>
 </table>
 
@@ -100,7 +100,7 @@ slider_style: house
 | `icon` |  | The card’s icon, in place of the entity’s own. |
 | `subtitle` |  | The line under the title: your own words, an entity’s state or a template. |
 | `tilt_angle` |  | The slats’ angle at 100 % tilt: the tilt then reads in degrees. 0 to 360. |
-| `variant` | `full` | The card’s layout. `full` · `compact`. |
+| `variant` | `full` | The card’s layout. `full` · `compact` · `horizontal`. |
 | `favorites_style` | `full` | Draws the favourites as chips that fill the row, or as content-sized chips. `full` · `chips`. |
 | `show_tilt` | `true` | Shows the tilt control. |
 | `show_favorites` | `true` | Shows the favourite positions. |
@@ -178,6 +178,17 @@ The slats stand beside the position where the card is wide enough, else under th
 places with a name of their own.
 
 ![Presets as chips, a blind counted down, and a narrow card with its tilt under the commands](../images/1.22/cover-more.webp)
+
+### The position across
+
+```yaml
+type: custom:fluvy-cover-card
+entity: cover.bedroom_window
+variant: horizontal # the position on one row, its ruler across the card
+```
+
+The figure stands beside a ruler that takes the rest of the card, the ends' words over it and the commands under it;
+the tilt, the presets and the favourites follow the commands. In a narrow column the figure stands over the ruler.
 
 ### A cover counted its own way
 
