@@ -25,6 +25,11 @@ if (!customElements.get('fluvy-vehicle-card'))
  * compact, strips, half a section, a phone's column, a desktop's column and its band. Then each warning a line says, at
  * half a section's narrowest: a boot, a front boot, a door, a window and a bonnet left open, a low range, a low tank,
  * the AdBlue.
+ *
+ * Then 1.25's (#248, #251, #254), on a Haval H6 hybrid on GWM's integration: the whole card; its engine named by hand
+ * and controls of the person's own (a heated seat, a script that finds it); its tyres in their decimals, the rear right
+ * under its threshold; a badge of its own; small icons at its foot, and saying their states; compact; half a section;
+ * and the picture at half the card's width, and alone, at a 360 column and in half a section.
  */
 
 /** The mock's moment: the times to full are counted from it. */
@@ -616,6 +621,33 @@ const CLIO: readonly StateSeed[] = [
   ['device_tracker.clio_location', 'home', { friendly_name: 'Clio Location' }],
 ];
 
+/**
+ * #248, #251 and #254's car: a Haval H6 hybrid on GWM's integration (one the card does not know), parked at home, read
+ * by the ends of its ids: its tank, its range on it, its mileage, its lock, its tailgate, its next service and its tyres
+ * (the rear right soft, under the threshold its integration gives); its engine a switch, named by hand; a heated seat,
+ * its GPS and its GSM beside them, and a script of the person's own that finds it in a car park.
+ */
+const HAVAL: readonly StateSeed[] = [
+  ['sensor.haval_h6_fuel_level', '58', percent('Haval H6 Fuel level', false)],
+  ['sensor.haval_h6_fuel_range', '486', km('Haval H6 Fuel range')],
+  ['sensor.haval_h6_mileage', '18420', km('Haval H6 Mileage')],
+  ['lock.haval_h6_doors', 'locked', { friendly_name: 'Haval H6 Doors' }],
+  ['binary_sensor.haval_h6_tailgate', 'off', flag('Haval H6 Tailgate', 'opening')],
+  ['switch.haval_h6_engine', 'off', { friendly_name: 'Haval H6 Engine' }],
+  ['switch.haval_h6_seat_heating', 'on', { friendly_name: 'Haval H6 Seat heating' }],
+  ['sensor.haval_h6_tyre_pressure_front_left', '2.4', bar('Haval H6 Tyre pressure front left')],
+  ['sensor.haval_h6_tyre_pressure_front_right', '2.4', bar('Haval H6 Tyre pressure front right')],
+  ['sensor.haval_h6_tyre_pressure_rear_left', '2.3', bar('Haval H6 Tyre pressure rear left')],
+  ['sensor.haval_h6_tyre_pressure_rear_right', '1.9', bar('Haval H6 Tyre pressure rear right')],
+  ['sensor.haval_h6_tyre_threshold', '2.1', bar('Haval H6 Tyre threshold')],
+  ['binary_sensor.haval_h6_gps', 'on', flag('Haval H6 GPS', 'connectivity')],
+  ['sensor.haval_h6_gsm_signal', '4', { friendly_name: 'Haval H6 GSM signal' }],
+  ['sensor.haval_h6_next_service', '3200', km('Haval H6 Next service')],
+  ['device_tracker.haval_h6_location', 'home', { friendly_name: 'Haval H6 Location' }],
+];
+/** A script of the person's own, on no device: it flashes the lights where the car is parked. */
+const FIND_MY_CAR: StateSeed = ['script.find_my_car', 'off', { friendly_name: 'Find my car' }];
+
 /** A Fiesta on Ford's (fordpass) whose integration dropped it: everything out of reach. */
 const FIESTA: readonly StateSeed[] = [
   ['sensor.fordpass_fiesta_fuel', 'unavailable', percent('Fiesta Fuel', false)],
@@ -822,6 +854,38 @@ const card = (device: string, extra: Record<string, unknown> = {}) => ({
   ...extra,
 });
 
+/** The Haval's engine, named by hand: nothing that starts an engine is ever found (#248). */
+const haval = (extra: Record<string, unknown> = {}) =>
+  card('d-haval', { roles: [{ role: 'engine', entity: 'switch.haval_h6_engine' }], ...extra });
+/** Its controls: its lock and its engine, then its heated seat and the script that finds it, of the person's own. */
+const HAVAL_CONTROLS = [
+  'lock',
+  'engine',
+  { entity: 'switch.haval_h6_seat_heating', name: 'Seats', icon: 'fluvy:heater' },
+  { entity: 'script.find_my_car', name: 'Find', icon: 'fluvy:locate' },
+];
+/** Its small icons at the foot (#251): its GPS, its GSM, its next service and its tailgate. */
+const HAVAL_QUICK = [
+  { entity: 'binary_sensor.haval_h6_gps', name: 'GPS', icon: 'fluvy:pin' },
+  { entity: 'sensor.haval_h6_gsm_signal', name: 'GSM', icon: 'fluvy:signal' },
+  { entity: 'sensor.haval_h6_next_service', name: 'Service', icon: 'fluvy:wrench' },
+  { entity: 'binary_sensor.haval_h6_tailgate', name: 'Tailgate' },
+];
+/** Its badge of the person's own (#251): its GPS and its GSM, kept live. */
+const HAVAL_BADGE =
+  "{{ 'GPS ok' if is_state('binary_sensor.haval_h6_gps', 'on') else 'No GPS' }} · GSM {{ states('sensor.haval_h6_gsm_signal') }}/5";
+/** Its tyres' threshold, the integration's own (#251). */
+const HAVAL_LOW = 'sensor.haval_h6_tyre_threshold';
+/** The picture alone (#254): no head, no battery, no line, no controls, no rows. */
+const PICTURE_ALONE = {
+  image: PICTURE,
+  show_head: false,
+  show_hero: false,
+  show_status: false,
+  show_controls: false,
+  show_rows: false,
+};
+
 /** The house with some of its states said otherwise: a frame's own moment (a boot left open, a door). */
 const said =
   (states: Readonly<Record<string, string>>) =>
@@ -856,6 +920,8 @@ export const sheet: SheetSpec = {
     ...XC60,
     ...CLIO,
     ...FIESTA,
+    ...HAVAL,
+    FIND_MY_CAR,
   ],
   registry: {
     entities: Object.fromEntries([
@@ -887,6 +953,8 @@ export const sheet: SheetSpec = {
       ...entries('d-xc60', 'volvo', XC60, volvoKeys('xc60', XC60)),
       ...entries('d-clio', 'renault', CLIO, renaultKeys('clio', CLIO)),
       ...entries('d-fiesta', 'fordpass', FIESTA, fordKeys('fordpass_fiesta', FIESTA)),
+      // GWM's integration keys none of them: the card reads it by its ids' ends
+      ...entries('d-haval', 'gwm', HAVAL),
     ]),
     devices: Object.fromEntries([
       device('d-model-y', 'Model Y', 'Model Y Long Range'),
@@ -905,6 +973,7 @@ export const sheet: SheetSpec = {
       device('d-xc60', 'XC60', 'XC60 T6 Recharge'),
       device('d-clio', 'Clio', 'Clio TCe 90'),
       device('d-fiesta', 'Fiesta', 'Fiesta 1.0 EcoBoost'),
+      device('d-haval', 'Haval H6', 'H6 Hybrid'),
     ]),
   },
   frames: [
@@ -1137,6 +1206,80 @@ export const sheet: SheetSpec = {
       title: 'A desktop’s column · diesel',
       width: 352,
       cards: [card('d-octavia', { image: PICTURE })],
+    },
+    // #248, #251, #254: an engine and controls of the person's own, the tyres in their decimals and one low, a badge
+    // of its own, small icons at the foot, the picture at its own size and alone
+    {
+      title: 'GWM · the whole card',
+      cards: [
+        haval({
+          image: PICTURE,
+          image_size: '60%',
+          badge: HAVAL_BADGE,
+          controls: HAVAL_CONTROLS,
+          show_rows: false,
+          show_tyres: true,
+          tyre_low: HAVAL_LOW,
+          quick_actions: HAVAL_QUICK,
+        }),
+      ],
+    },
+    {
+      title: 'GWM · its engine and its own controls',
+      cards: [haval({ controls: HAVAL_CONTROLS })],
+    },
+    {
+      title: 'GWM · its tyres, one under its threshold',
+      cards: [haval({ show_tyres: true, tyre_low: HAVAL_LOW, show_rows: false })],
+    },
+    {
+      title: 'GWM · a badge of its own',
+      cards: [
+        haval({ badge: HAVAL_BADGE, show_rows: false }),
+        haval({ variant: 'mini', badge: HAVAL_BADGE }),
+      ],
+    },
+    {
+      title: 'GWM · small icons at its foot',
+      cards: [
+        haval({ quick_actions: HAVAL_QUICK, show_rows: false }),
+        haval({
+          quick_actions: HAVAL_QUICK,
+          show_quick_states: true,
+          show_rows: false,
+          show_controls: false,
+        }),
+      ],
+    },
+    {
+      title: 'GWM · compact, its small icons',
+      cards: [
+        haval({ variant: 'compact', controls: ['lock', 'engine'], quick_actions: HAVAL_QUICK }),
+      ],
+    },
+    {
+      title: 'GWM · half a section',
+      width: 360,
+      cards: [
+        haval({ controls: HAVAL_CONTROLS, show_rows: false, quick_actions: HAVAL_QUICK, cols: 6 }),
+        haval({ show_tyres: true, tyre_low: HAVAL_LOW, show_rows: false, cols: 6 }),
+      ],
+    },
+    {
+      title: 'Its picture at half the card’s width',
+      cards: [card('d-model-y', { image: PICTURE, image_size: '50%', show_rows: false })],
+    },
+    {
+      title: 'The picture alone',
+      cards: [card('d-model-y', PICTURE_ALONE), haval({ ...PICTURE_ALONE, image_size: '96px' })],
+    },
+    {
+      title: 'The picture alone · half a section',
+      width: 360,
+      cards: [
+        card('d-model-y', { ...PICTURE_ALONE, cols: 6 }),
+        haval({ ...PICTURE_ALONE, image_size: '80%', cols: 6 }),
+      ],
     },
     // three columns of 360 and their gaps: a phone's probe would squeeze them a third each (each card is measured in
     // its own frame above)

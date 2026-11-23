@@ -6,7 +6,10 @@
  * the head, the battery and a row answer their taps; every frame at a card's width holds its declared height; the
  * strip's round gives way in half a section before a word would be cut; a car out of reach keeps its rounds where they
  * stand when they read; a car that burns fuel draws its tank and a plug-in hybrid both, each opening its own details
- * (#207); and in every language no round's word runs past its cell, nor the line or the head's line past their column.
+ * (#207); an engine named by hand asks before it starts, the person's own controls and small icons act as a room's
+ * rounds do, a tyre under its threshold is said, a badge of the person's own is drawn, and the picture alone is the
+ * card's button (#248, #251, #254); and in every language no round's word runs past its cell, nor the line or the
+ * head's line past their column.
  * Real cards on the playground's simulated hass. Exit code 1 on any failure.
  *   PLAYGROUND=http://127.0.0.1:5196/ node interactions-vehicle.mjs
  */
@@ -309,6 +312,97 @@ const handed = () => page.evaluate(() => window.__handed.splice(0));
     'a hybrid’s strip: its ring in two halves, its charge and its tank on its line',
     strip.halves === 2 && strip.sub.startsWith('64 % · Fuel 54 %'),
     JSON.stringify(strip),
+  );
+}
+
+/* ---------- #248, #251, #254: an engine, controls and small icons of the person's own, its tyres, its picture ---------- */
+{
+  const haval = card(page, 'GWM · the whole card');
+  const whole = await read(haval);
+  check(
+    'GWM: its badge a template of its own, a tyre under its threshold on the line, its engine after the lock, its own controls by their names',
+    whole.badge === 'GPS ok · GSM 4/5' &&
+      whole.line === 'Low tyre pressure' &&
+      whole.rounds.map((r) => r.word).join('|') === 'Locked|Off|Seats|Find' &&
+      whole.rounds[1]?.label === 'Engine · Off',
+    JSON.stringify(whole),
+  );
+  const tyres = await haval.evaluate((el) =>
+    [...el.shadowRoot.querySelectorAll('.vh-tyre')].map((tyre) => ({
+      text: tyre.textContent.replace(/\s+/g, ''),
+      low: tyre.classList.contains('is-low'),
+    })),
+  );
+  check(
+    'its tyres in one decimal, the rear right under its threshold in the warning’s ink',
+    JSON.stringify(tyres) ===
+      JSON.stringify([
+        { text: '2.4bar', low: false },
+        { text: '2.4bar', low: false },
+        { text: '2.3bar', low: false },
+        { text: '1.9bar', low: true },
+      ]),
+    JSON.stringify(tyres),
+  );
+  await reset(page);
+  await haval.locator('.vh-control').nth(1).click();
+  await settle(page, 200);
+  const asked = await handed();
+  check(
+    'starting the engine asks first, nothing called yet',
+    asked.length === 1 &&
+      asked[0].config.tap_action.perform_action === 'switch.turn_on' &&
+      asked[0].config.tap_action.confirmation?.text === 'Start the engine?' &&
+      (await calls(page)).length === 0,
+    JSON.stringify(asked),
+  );
+  await reset(page);
+  await haval.locator('.vh-control').nth(2).click();
+  await haval.locator('.vh-control').nth(3).click();
+  await settle(page, 200);
+  const own = await calls(page);
+  check(
+    'its own controls act at once: the heated seat turns off, the script runs',
+    own.map((c) => c.s).join('|') === 'switch.turn_off|script.turn_on',
+    JSON.stringify(own),
+  );
+  const quick = await haval.evaluate((el) =>
+    [...el.shadowRoot.querySelectorAll('.vh-quick .lt-bulb')].map((b) =>
+      b.getAttribute('aria-label'),
+    ),
+  );
+  check(
+    'its small icons at the foot, in their order',
+    quick.join('|') === 'GPS|GSM|Service|Tailgate',
+    JSON.stringify(quick),
+  );
+  await reset(page);
+  await haval.locator('.vh-quick .lt-bulb').nth(1).click();
+  await settle(page, 200);
+  check(
+    'a small icon of a sensor opens its details',
+    (await moreInfo(page)).at(-1) === 'sensor.haval_h6_gsm_signal',
+    JSON.stringify(await moreInfo(page)),
+  );
+  const alone = card(page, 'The picture alone');
+  const picture = await alone.evaluate((el) => ({
+    parts: [...el.shadowRoot.querySelector('[data-card]').children].map((c) => c.className.trim()),
+    height: Math.round(el.shadowRoot.querySelector('[data-card]').getBoundingClientRect().height),
+  }));
+  check(
+    'the picture alone: no other part, the card as tall as its padding and the picture',
+    picture.parts.length === 1 &&
+      picture.parts[0].startsWith('vh-picture') &&
+      picture.height === 200,
+    JSON.stringify(picture),
+  );
+  await reset(page);
+  await alone.locator('.vh-picture > .fv-tile__tap').click();
+  await settle(page, 200);
+  check(
+    'the picture alone is the card’s button: it opens the battery',
+    (await moreInfo(page)).at(-1) === 'sensor.model_y_battery_level',
+    JSON.stringify(await moreInfo(page)),
   );
 }
 
