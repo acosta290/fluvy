@@ -3335,8 +3335,8 @@
     "style": "Flade",
     "panel": "Panel",
     "card": "Kort",
-    "width_tablet": "Bredde på en tablet (px)",
-    "width_desktop": "Bredde på en computer (px)",
+    "width_tablet": "Bredde på en tablet",
+    "width_desktop": "Bredde på en computer",
     "phone": "På en telefon",
     "top": "Over visningen",
     "drawer": "Skuffe",
@@ -3353,7 +3353,9 @@
     "yaml": "Dette betjeningspanel er skrevet i YAML. Kopiér dette ind i dets fil ved siden af views:",
     "copy": "Kopiér YAML",
     "copied": "YAML kopieret",
-    "copy_failed": "Kunne ikke kopiere: markér teksten, og kopiér den"
+    "copy_failed": "Kunne ikke kopiere: markér teksten, og kopiér den",
+    "unit_screen": "% af skærmen",
+    "unit_dashboard": "% af betjeningspanelet"
   },
   "sidebar": {
     "label": "Sidepanel",

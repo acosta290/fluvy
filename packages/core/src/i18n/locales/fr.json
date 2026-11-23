@@ -3629,8 +3629,8 @@
     "style": "Surface",
     "panel": "Panneau",
     "card": "Carte",
-    "width_tablet": "Largeur sur une tablette (px)",
-    "width_desktop": "Largeur sur un ordinateur (px)",
+    "width_tablet": "Largeur sur une tablette",
+    "width_desktop": "Largeur sur un ordinateur",
     "phone": "Sur un téléphone",
     "top": "Au-dessus de la vue",
     "drawer": "Tiroir",
@@ -3647,7 +3647,9 @@
     "yaml": "Ce tableau de bord est écrit en YAML. Copiez ceci dans son fichier, à côté de views:",
     "copy": "Copier le YAML",
     "copied": "YAML copié",
-    "copy_failed": "Copie impossible : sélectionnez le texte et copiez-le"
+    "copy_failed": "Copie impossible : sélectionnez le texte et copiez-le",
+    "unit_screen": "% de l’écran",
+    "unit_dashboard": "% du tableau de bord"
   },
   "compass": {
     "direction": "Direction",

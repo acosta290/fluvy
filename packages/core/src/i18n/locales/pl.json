@@ -3754,8 +3754,8 @@
     "style": "Powierzchnia",
     "panel": "Panel",
     "card": "Karta",
-    "width_tablet": "Szerokość na tablecie (px)",
-    "width_desktop": "Szerokość na komputerze (px)",
+    "width_tablet": "Szerokość na tablecie",
+    "width_desktop": "Szerokość na komputerze",
     "phone": "Na telefonie",
     "top": "Nad widokiem",
     "drawer": "Szuflada",
@@ -3772,7 +3772,9 @@
     "yaml": "Ten pulpit jest zapisany w YAML. Skopiuj to do jego pliku, obok views:",
     "copy": "Kopiuj YAML",
     "copied": "YAML skopiowany",
-    "copy_failed": "Nie udało się skopiować: zaznacz tekst i skopiuj go"
+    "copy_failed": "Nie udało się skopiować: zaznacz tekst i skopiuj go",
+    "unit_screen": "% ekranu",
+    "unit_dashboard": "% pulpitu"
   },
   "compass": {
     "direction": "Kierunek",

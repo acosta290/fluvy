@@ -3629,8 +3629,8 @@
     "style": "Felület",
     "panel": "Sáv",
     "card": "Kártya",
-    "width_tablet": "Szélesség táblagépen (px)",
-    "width_desktop": "Szélesség asztali gépen (px)",
+    "width_tablet": "Szélesség táblagépen",
+    "width_desktop": "Szélesség asztali gépen",
     "phone": "Telefonon",
     "top": "A nézet fölött",
     "drawer": "Fiók",
@@ -3647,7 +3647,9 @@
     "yaml": "Ez a vezérlőpult YAML-ben van megírva. Másold be ezt a fájljába, a views: mellé",
     "copy": "YAML másolása",
     "copied": "A YAML átmásolva",
-    "copy_failed": "Nem sikerült másolni: jelöld ki a szöveget, és másold ki"
+    "copy_failed": "Nem sikerült másolni: jelöld ki a szöveget, és másold ki",
+    "unit_screen": "A képernyő %-a",
+    "unit_dashboard": "A vezérlőpult %-a"
   },
   "compass": {
     "direction": "Irány",

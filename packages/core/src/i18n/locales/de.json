@@ -3629,8 +3629,8 @@
     "style": "Fläche",
     "panel": "Leiste",
     "card": "Karte",
-    "width_tablet": "Breite auf einem Tablet (px)",
-    "width_desktop": "Breite auf einem Desktop (px)",
+    "width_tablet": "Breite auf einem Tablet",
+    "width_desktop": "Breite auf einem Desktop",
     "phone": "Auf einem Smartphone",
     "top": "Über der Ansicht",
     "drawer": "Ausklappmenü",
@@ -3647,7 +3647,9 @@
     "yaml": "Dieses Dashboard ist in YAML geschrieben. Kopiere das in seine Datei, neben views:",
     "copy": "YAML kopieren",
     "copied": "YAML kopiert",
-    "copy_failed": "Kopieren nicht möglich: Text markieren und kopieren"
+    "copy_failed": "Kopieren nicht möglich: Text markieren und kopieren",
+    "unit_screen": "% des Bildschirms",
+    "unit_dashboard": "% des Dashboards"
   },
   "compass": {
     "direction": "Richtung",

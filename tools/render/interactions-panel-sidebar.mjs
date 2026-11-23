@@ -7,7 +7,7 @@
  * What it proves: a dashboard's card opens it with a tap on its Sidebar row, and the address names the dashboard; it
  * has none until one is chosen, and nothing waits in the bar; *Clock and pages* draws it in the section's picture and
  * is an edit for the bar; where it stands follows the chips (its side, its surface), each device's default width
- * marked; *Your own* opens what it holds, the menu off takes its pages out of the picture and the tabs' row with them,
+ * marked, a width's unit chosen (a share of the screen, a quarter first, none keeping it, px giving the default back); *Your own* opens what it holds, the menu off takes its pages out of the picture and the tabs' row with them,
  * and a list's cards open in Home Assistant's YAML field where its stack editor is not to be had; Save writes it
  * beside the strategy, and the dashboard's row then says it has one; the first card leads to the dashboards of the
  * person's own; a dashboard kept in a YAML file is given the YAML to copy and nothing to save; in every language the
@@ -119,9 +119,37 @@ const errors = (page) => {
     .locator('.fv-chip.is-active, .fv-chip[aria-pressed="true"]')
     .evaluateAll((chips) => chips.map((el) => el.textContent.trim()));
   check(
-    'each choice is marked where the sidebar stands by itself: the start, a panel, 280 and 320, none on a phone',
-    marked.join('|') === 'At the start|Panel|280|320|None',
+    'each choice is marked where the sidebar stands by itself: the start, a panel, 280 and 320 px, none on a phone',
+    marked.join('|') === 'At the start|Panel|px|280|px|320|None',
     marked.join('|'),
+  );
+  // a device's width as a share of the screen (#249): its unit, then its figures in it, a quarter first
+  const placeChips = (text) => place.locator('.fv-chip', { hasText: exact(text) });
+  const markedNow = () =>
+    place
+      .locator('.fv-chip.is-active, .fv-chip[aria-pressed="true"]')
+      .evaluateAll((chips) => chips.map((el) => el.textContent.trim()).join('|'));
+  await placeChips('% of the screen').nth(1).click();
+  await settle(page, 300);
+  const shares = await placeChips('33').count();
+  check(
+    'a desktop’s width as a share of the screen: its unit marked, its figures the shares, a quarter chosen',
+    (await markedNow()) === 'At the start|Panel|px|280|% of the screen|25|None' && shares === 1,
+    await markedNow(),
+  );
+  await placeChips('None').nth(1).click();
+  await settle(page, 300);
+  check(
+    'none keeps the unit chosen',
+    (await markedNow()) === 'At the start|Panel|px|280|% of the screen|None|None',
+    await markedNow(),
+  );
+  await placeChips('px').nth(1).click();
+  await settle(page, 300);
+  check(
+    'px again gives the desktop its own 320, which writes no width',
+    (await markedNow()) === 'At the start|Panel|px|280|px|320|None',
+    await markedNow(),
   );
   await chip(page, 'At the end').click();
   await chip(page, 'Card').click();

@@ -3629,8 +3629,8 @@
     "style": "面",
     "panel": "パネル",
     "card": "カード",
-    "width_tablet": "タブレットでの幅（px）",
-    "width_desktop": "デスクトップでの幅（px）",
+    "width_tablet": "タブレットでの幅",
+    "width_desktop": "デスクトップでの幅",
     "phone": "スマートフォン",
     "top": "ビューの上",
     "drawer": "ドロワー",
@@ -3647,7 +3647,9 @@
     "yaml": "このダッシュボードはYAMLで書かれています。これをファイルのviews:の横にコピーしてください",
     "copy": "YAMLをコピー",
     "copied": "YAMLをコピーしました",
-    "copy_failed": "コピーできませんでした：テキストを選択してコピーしてください"
+    "copy_failed": "コピーできませんでした：テキストを選択してコピーしてください",
+    "unit_screen": "画面の割合（%）",
+    "unit_dashboard": "ダッシュボードの割合（%）"
   },
   "compass": {
     "direction": "方位",

@@ -11,7 +11,7 @@ import {
  * A dashboard's sidebar as the panel edits it: the `fluvy_sidebar:` table as it is written, changed key by key. What
  * a key says is read as the sidebar reads it (`sidebar/config.ts`); what is written is only what a person chose — a
  * choice that is the default takes its key away, so a default is never written into a configuration, and what the
- * panel does not edit (a share for a width, pages written by hand, `views`, `users`) stays as it was written.
+ * panel does not edit (a phone's width, pages written by hand, `views`, `users`) stays as it was written.
  */
 
 /** The table as written. */
@@ -91,21 +91,23 @@ export const withKey = (raw: Raw, key: string, value: unknown, fallback: unknown
     : { ...raw, [key]: value };
 };
 
-/** A device's width in px; undefined where it is a share of the dashboard (the panel offers px alone). */
-export const widthOf = (raw: Raw, device: 'tablet' | 'desktop'): number | undefined => {
-  const { unit, value } = read(raw).width[device];
-  return unit === 'px' ? value : undefined;
-};
+/** A device's width as the sidebar reads it: px, a share of the screen or of the dashboard, or none. */
+export const widthOf = (raw: Raw, device: 'tablet' | 'desktop'): SidebarWidth =>
+  read(raw).width[device];
 
+/** A width as YAML says it: px a bare number, a share with its unit (`25vw`, `24%`). */
 const written = ({ unit, value }: SidebarWidth): string | number =>
-  unit === '%' ? `${value}%` : value;
+  unit === 'px' ? value : `${value}${unit}`;
 
 /**
- * A device's width in px, the other devices' as they stand: each written only where it is not its default, and no
- * `width` at all where every one is.
+ * A device's width, the other devices' as they stand: each written only where it is not its default, and no `width`
+ * at all where every one is. None is none in any unit.
  */
-export function withWidth(raw: Raw, device: 'tablet' | 'desktop', px: number): Raw {
-  const widths = { ...read(raw).width, [device]: { unit: 'px', value: px } satisfies SidebarWidth };
+export function withWidth(raw: Raw, device: 'tablet' | 'desktop', width: SidebarWidth): Raw {
+  const widths = {
+    ...read(raw).width,
+    [device]: width.value ? width : ({ unit: 'px', value: 0 } satisfies SidebarWidth),
+  };
   return withKey(
     raw,
     'width',

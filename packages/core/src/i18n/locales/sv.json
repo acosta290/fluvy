@@ -3335,8 +3335,8 @@
     "style": "Yta",
     "panel": "Panel",
     "card": "Kort",
-    "width_tablet": "Bredd på en surfplatta (px)",
-    "width_desktop": "Bredd på en dator (px)",
+    "width_tablet": "Bredd på en surfplatta",
+    "width_desktop": "Bredd på en dator",
     "phone": "På en telefon",
     "top": "Ovanför vyn",
     "drawer": "Låda",
@@ -3353,7 +3353,9 @@
     "yaml": "Den här kontrollpanelen är skriven i YAML. Kopiera detta till dess fil, bredvid views:",
     "copy": "Kopiera YAML",
     "copied": "YAML kopierad",
-    "copy_failed": "Kunde inte kopiera: markera texten och kopiera den"
+    "copy_failed": "Kunde inte kopiera: markera texten och kopiera den",
+    "unit_screen": "% av skärmen",
+    "unit_dashboard": "% av kontrollpanelen"
   },
   "sidebar": {
     "label": "Sidofält",

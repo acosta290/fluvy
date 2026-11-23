@@ -6,7 +6,8 @@
  *   PLAYGROUND=http://127.0.0.1:5183/ node interactions-dashboard-sidebar.mjs
  * What it proves: beside the views it keeps its width per device (a tablet's 280 at 768 and 1024, a desktop's 320 at
  * 1400), stands from under the header to the window's foot and the view has the rest, nothing reaching past the
- * window; it is first in the row; a phone has none (360, 412) unless the dashboard asks for it above the view or in a
+ * window; a share of the screen (`25vw`, #249) is that share of the window beside Home Assistant's own sidebar and at
+ * any device's size, a share of the dashboard (`25%`) of what is left; it is first in the row; a phone has none (360, 412) unless the dashboard asks for it above the view or in a
  * drawer; its head and its foot stay while the window scrolls and while its middle scrolls; the menu lists the views,
  * marks the open one and follows a tab and a page chosen without the element or its cards being built again; the
  * drawer opens from a 44 round at the side's foot, holds the focus, and closes on the scrim, on Escape and on a page
@@ -835,6 +836,46 @@ if (ENGINE === 'chromium') {
     JSON.stringify(scrolled.side),
   );
   await page.close();
+}
+{
+  // a share of the screen (#249: `25vw`), beside Home Assistant's own sidebar: a quarter of the window whatever the
+  // dashboard is left and whatever this device's size; a share of the dashboard (`25%`) is a quarter of what is left
+  const widths = {};
+  for (const [name, query, width] of [
+    ['screen at 1280', 'sidewidth=25vw', 1280],
+    ['screen at 1600', 'sidewidth=25vw', 1600],
+    ['screen at 1600, 125 %', 'sidewidth=25vw&zoom=125', 1600],
+    ['dashboard at 1280', 'sidewidth=25%25', 1280],
+    ['screen, held to 160', 'sidewidth=5vw', 1280],
+    ['screen on a phone', 'sidewidth=25vw', 412],
+  ]) {
+    const page = await open(`side=menu&frame=1&${query}`, { width, height: 800 });
+    const s = await read(page);
+    widths[name] = { side: s.side?.w ?? 0, mark: s.mark };
+    await page.close();
+  }
+  check(
+    'a share of the screen (25vw) is a quarter of the window beside Home Assistant’s sidebar: 320 at 1280, 400 at 1600',
+    near(widths['screen at 1280'].side, 320) && near(widths['screen at 1600'].side, 400),
+    JSON.stringify(widths),
+  );
+  check(
+    'and stays that share at this device’s size (125 %), where its px grow',
+    near(widths['screen at 1600, 125 %'].side, 400),
+    JSON.stringify(widths['screen at 1600, 125 %']),
+  );
+  check(
+    'a share of the dashboard (25%) is a quarter of what Home Assistant’s sidebar leaves: 256 at 1280',
+    near(widths['dashboard at 1280'].side, 256),
+    JSON.stringify(widths['dashboard at 1280']),
+  );
+  check(
+    'a share is held to 160 at least, and a phone keeps none',
+    near(widths['screen, held to 160'].side, 160) &&
+      widths['screen on a phone'].side === 0 &&
+      widths['screen on a phone'].mark === null,
+    JSON.stringify([widths['screen, held to 160'], widths['screen on a phone']]),
+  );
 }
 {
   const page = await open('side=menu&wall=1', { width: 1024, height: 768 });

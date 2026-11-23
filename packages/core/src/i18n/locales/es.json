@@ -3629,8 +3629,8 @@
     "style": "Superficie",
     "panel": "Banda",
     "card": "Tarjeta",
-    "width_tablet": "Ancho en una tableta (px)",
-    "width_desktop": "Ancho en un ordenador (px)",
+    "width_tablet": "Ancho en una tableta",
+    "width_desktop": "Ancho en un ordenador",
     "phone": "En un móvil",
     "top": "Sobre la vista",
     "drawer": "Cajón",
@@ -3647,7 +3647,9 @@
     "yaml": "Este panel está escrito en YAML. Copia esto en su archivo, junto a views:",
     "copy": "Copiar el YAML",
     "copied": "YAML copiado",
-    "copy_failed": "No se pudo copiar: selecciona el texto y cópialo"
+    "copy_failed": "No se pudo copiar: selecciona el texto y cópialo",
+    "unit_screen": "% de la pantalla",
+    "unit_dashboard": "% del panel"
   },
   "compass": {
     "direction": "Dirección",

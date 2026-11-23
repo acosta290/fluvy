@@ -1449,6 +1449,10 @@ had always had it: it stands in Home Assistant's view row, under the header, and
   blurred as the house blurs.
 - **Never in the way.** The edit mode has none. A wall has it from the top of the screen. It stands inside the
   floating frame and after Home Assistant's own sidebar, grows with the device's size, and wears a view's theme.
+- **Its width** is px (160 to 560), a share of the dashboard (`24%`: of what Home Assistant's sidebar leaves) or,
+  since 1.25 (#249), a share of the screen (`25vw`: of the whole window, the same share at any of the device's sizes,
+  where its px grow with them); a share is held 10 to 50 and between 160 and 560 px. A phone keeps none unless its
+  own width is written.
 - **In the panel.** A dashboard's card in the Dashboards tab has a *Sidebar* row under *Customise* (the sidebar's
   glyph; the accent's circle once the dashboard has one, and its sub then says so), and the tab's first card an
   *Other dashboards* row where the house has dashboards of its own. The row opens a section in the tab's place, as
@@ -1458,7 +1462,9 @@ had always had it: it stands in Home Assistant's view row, under the header, and
   dashboard in small, 148 tall on the page's fill with the control's radius and the hairline: a header strip, the
   view as tiles, and the sidebar at its side as chosen (a panel to the picture's edges with one hairline, a card
   with the view's gap round it, or its blocks alone), its pages as three circles with a line each, the open one in
-  the accent, its head and foot as blocks. *Place* and *Cards* are ordinary cards of chips and switch rows; a
+  the accent, its head and foot as blocks. *Place* and *Cards* are ordinary cards of chips and switch rows (a
+  device's width two rows of chips under its label: its unit, px, % of the screen or % of the dashboard, then its
+  figures in that unit, None first; a unit chosen gives a quarter, px its device's own width); a
   list's cards are Home Assistant's stack editor, 12 under the hint, or its YAML field. A dashboard kept in a file
   gets a *YAML* card: the text on the inset fill in the mono face 13/20, selectable whole, and a quiet button that
   says it copied.

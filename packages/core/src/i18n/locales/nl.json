@@ -3629,8 +3629,8 @@
     "style": "Vlak",
     "panel": "Paneel",
     "card": "Kaart",
-    "width_tablet": "Breedte op een tablet (px)",
-    "width_desktop": "Breedte op een desktop (px)",
+    "width_tablet": "Breedte op een tablet",
+    "width_desktop": "Breedte op een desktop",
     "phone": "Op een telefoon",
     "top": "Boven de weergave",
     "drawer": "Lade",
@@ -3647,7 +3647,9 @@
     "yaml": "Dit dashboard is in YAML geschreven. Kopieer dit naar het bestand, naast views:",
     "copy": "YAML kopiëren",
     "copied": "YAML gekopieerd",
-    "copy_failed": "Kopiëren mislukt: selecteer de tekst en kopieer die"
+    "copy_failed": "Kopiëren mislukt: selecteer de tekst en kopieer die",
+    "unit_screen": "% van het scherm",
+    "unit_dashboard": "% van het dashboard"
   },
   "compass": {
     "direction": "Richting",

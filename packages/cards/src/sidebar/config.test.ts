@@ -90,6 +90,21 @@ describe('a dashboard’s sidebar as its configuration writes it', () => {
       expect(parseWidth(raw)).toBeUndefined();
   });
 
+  it('reads a share of the screen (#249): vw, held 10 to 50 as a share of the dashboard is', () => {
+    expect(parseWidth('25vw')).toEqual({ unit: 'vw', value: 25 });
+    expect(parseWidth(' 33 VW ')).toEqual({ unit: 'vw', value: 33 });
+    expect(parseWidth('5vw')).toEqual({ unit: 'vw', value: 10 });
+    expect(parseWidth('80vw')).toEqual({ unit: 'vw', value: 50 });
+    expect(parseWidth('0vw')).toEqual({ unit: 'px', value: 0 });
+    for (const raw of ['25vh', '25 vw;', 'vw', '25vmin']) expect(parseWidth(raw)).toBeUndefined();
+    // one width for a tablet and a desktop: a phone keeps none
+    expect(parseSidebar({ width: '25vw' })?.width).toEqual({
+      phone: { unit: 'px', value: 0 },
+      tablet: { unit: 'vw', value: 25 },
+      desktop: { unit: 'vw', value: 25 },
+    });
+  });
+
   it('takes one width for a tablet and a desktop, or each device’s own', () => {
     expect(parseSidebar({ width: 300 })?.width).toEqual({
       phone: { unit: 'px', value: 0 },
@@ -109,6 +124,10 @@ describe('a dashboard’s sidebar as its configuration writes it', () => {
   it('writes a width as CSS from its figures alone', () => {
     expect(widthCss({ unit: 'px', value: 300 })).toBe('300px');
     expect(widthCss({ unit: '%', value: 24 })).toBe('clamp(160px, 24%, 560px)');
+    // a share of the screen whatever the device's size, which scales the sidebar's px
+    expect(widthCss({ unit: 'vw', value: 25 })).toBe(
+      'clamp(160px, calc(25vw / var(--fluvy-zoom, 1)), 560px)',
+    );
   });
 
   it('lists the dashboard’s views, or the pages written: each needs its words, and an address or an action', () => {

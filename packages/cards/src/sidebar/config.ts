@@ -29,9 +29,13 @@ export type SidebarDevice = (typeof DEVICES)[number];
 export const TABLET_FROM = 600;
 export const DESKTOP_FROM = 1280;
 
-/** A width: so many px, or a share of the dashboard in percent; 0 px is none. */
+/** How a width is said: px, a share of the dashboard (`%`) or a share of the screen (`vw`, #249). */
+export const WIDTH_UNITS = ['px', 'vw', '%'] as const;
+export type WidthUnit = (typeof WIDTH_UNITS)[number];
+
+/** A width: so many px, or a share of the dashboard or of the screen in percent; 0 px is none. */
 export interface SidebarWidth {
-  readonly unit: 'px' | '%';
+  readonly unit: WidthUnit;
   readonly value: number;
 }
 export type SidebarWidths = Readonly<Record<SidebarDevice, SidebarWidth>>;
@@ -98,17 +102,18 @@ const hold = (value: number, [least, most]: readonly [number, number]): number =
   Math.min(most, Math.max(least, Math.round(value)));
 
 /**
- * A width as written: a number or `'280px'` (px), `'24%'` (a share of the dashboard), held to what a sidebar can be;
- * 0 is none, and what cannot be read is undefined.
+ * A width as written: a number or `'280px'` (px), `'24%'` (a share of the dashboard), `'25vw'` (a share of the screen,
+ * #249), held to what a sidebar can be; 0 is none, and what cannot be read is undefined.
  */
 export function parseWidth(raw: unknown): SidebarWidth | undefined {
   const text = typeof raw === 'number' ? String(raw) : typeof raw === 'string' ? raw.trim() : '';
-  const [, figure, unit] = /^(\d+(?:\.\d+)?)\s*(px|%)?$/.exec(text) ?? [];
+  const [, figure, unit] = /^(\d+(?:\.\d+)?)\s*(px|%|vw)?$/i.exec(text) ?? [];
   if (figure === undefined) return undefined;
   const value = Number(figure);
   if (value === 0) return NONE;
-  return unit === '%'
-    ? { unit: '%', value: hold(value, WIDTH_SHARE) }
+  const share = unit?.toLowerCase();
+  return share === '%' || share === 'vw'
+    ? { unit: share, value: hold(value, WIDTH_SHARE) }
     : { unit: 'px', value: hold(value, WIDTH_PX) };
 }
 
@@ -231,6 +236,11 @@ export function presentationOf(spec: SidebarSpec, device: SidebarDevice): Presen
   return device === 'phone' && spec.phone !== 'none' ? spec.phone : undefined;
 }
 
-/** A width as CSS, from its checked figures alone. */
+/**
+ * A width as CSS, from its checked figures alone. The sidebar stands at the device's size (`--fluvy-zoom`), which
+ * scales its px with the views; a share of the screen is divided back by it, so it stays that share of the screen.
+ */
 export const widthCss = ({ unit, value }: SidebarWidth): string =>
-  unit === '%' ? `clamp(${WIDTH_PX[0]}px, ${value}%, ${WIDTH_PX[1]}px)` : `${value}px`;
+  unit === 'px'
+    ? `${value}px`
+    : `clamp(${WIDTH_PX[0]}px, ${unit === 'vw' ? `calc(${value}vw / var(--fluvy-zoom, 1))` : `${value}%`}, ${WIDTH_PX[1]}px)`;

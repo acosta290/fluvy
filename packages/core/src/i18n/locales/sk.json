@@ -3689,8 +3689,8 @@
     "style": "Povrch",
     "panel": "Pás",
     "card": "Karta",
-    "width_tablet": "Šírka na tablete (px)",
-    "width_desktop": "Šírka na počítači (px)",
+    "width_tablet": "Šírka na tablete",
+    "width_desktop": "Šírka na počítači",
     "phone": "Na telefóne",
     "top": "Nad zobrazením",
     "drawer": "Zásuvka",
@@ -3707,7 +3707,9 @@
     "yaml": "Tento panel je napísaný v YAML. Skopírujte toto do jeho súboru, vedľa views:",
     "copy": "Skopírovať YAML",
     "copied": "YAML skopírovaný",
-    "copy_failed": "Kopírovanie zlyhalo: označte text a skopírujte ho"
+    "copy_failed": "Kopírovanie zlyhalo: označte text a skopírujte ho",
+    "unit_screen": "% obrazovky",
+    "unit_dashboard": "% panela"
   },
   "compass": {
     "direction": "Smer",

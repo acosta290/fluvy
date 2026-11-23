@@ -3629,8 +3629,8 @@
     "style": "Superficie",
     "panel": "Pannello",
     "card": "Scheda",
-    "width_tablet": "Larghezza su un tablet (px)",
-    "width_desktop": "Larghezza su un computer (px)",
+    "width_tablet": "Larghezza su un tablet",
+    "width_desktop": "Larghezza su un computer",
     "phone": "Su un telefono",
     "top": "Sopra la vista",
     "drawer": "Cassetto",
@@ -3647,7 +3647,9 @@
     "yaml": "Questa dashboard è scritta in YAML. Copia questo nel suo file, accanto a views:",
     "copy": "Copia lo YAML",
     "copied": "YAML copiato",
-    "copy_failed": "Copia non riuscita: seleziona il testo e copialo"
+    "copy_failed": "Copia non riuscita: seleziona il testo e copialo",
+    "unit_screen": "% dello schermo",
+    "unit_dashboard": "% della dashboard"
   },
   "compass": {
     "direction": "Direzione",

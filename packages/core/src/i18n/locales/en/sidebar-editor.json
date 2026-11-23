@@ -12,8 +12,8 @@
     "style": "Surface",
     "panel": "Panel",
     "card": "Card",
-    "width_tablet": "Width on a tablet (px)",
-    "width_desktop": "Width on a desktop (px)",
+    "width_tablet": "Width on a tablet",
+    "width_desktop": "Width on a desktop",
     "phone": "On a phone",
     "top": "Above the view",
     "drawer": "Drawer",
@@ -30,6 +30,8 @@
     "yaml": "This dashboard is written in YAML. Copy this into its file, beside views:",
     "copy": "Copy the YAML",
     "copied": "YAML copied",
-    "copy_failed": "Could not copy: select the text and copy it"
+    "copy_failed": "Could not copy: select the text and copy it",
+    "unit_screen": "% of the screen",
+    "unit_dashboard": "% of the dashboard"
   }
 }

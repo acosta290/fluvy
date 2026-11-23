@@ -3629,8 +3629,8 @@
     "style": "Yüzey",
     "panel": "Şerit",
     "card": "Kart",
-    "width_tablet": "Tablette genişlik (px)",
-    "width_desktop": "Masaüstünde genişlik (px)",
+    "width_tablet": "Tablette genişlik",
+    "width_desktop": "Masaüstünde genişlik",
     "phone": "Telefonda",
     "top": "Görünümün üstünde",
     "drawer": "Çekmece",
@@ -3647,7 +3647,9 @@
     "yaml": "Bu panel YAML ile yazılmış. Bunu dosyasına, views: satırının yanına kopyalayın",
     "copy": "YAML’i kopyala",
     "copied": "YAML kopyalandı",
-    "copy_failed": "Kopyalanamadı: metni seçip kopyalayın"
+    "copy_failed": "Kopyalanamadı: metni seçip kopyalayın",
+    "unit_screen": "Ekranın yüzdesi",
+    "unit_dashboard": "Panelin yüzdesi"
   },
   "compass": {
     "direction": "Yön",

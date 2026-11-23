@@ -24,7 +24,8 @@ choices, and a small picture of the dashboard that follows them:
   field; open any dashboard once and come back for the picker.
 
 With a sidebar chosen, *Place* says where it stands: its side, its surface (a panel, one card, or plain), its width on
-a tablet and on a desktop, what a phone gets (none, above the view, or a drawer), whether it folds to its icons and
+a tablet and on a desktop (in px, as a share of the screen, or as a share of the dashboard, each a row of figures), what
+a phone gets (none, above the view, or a drawer), whether it folds to its icons and
 whether the header's tabs give way to its menu. Every change waits in the bar with the panel's others, and **Save**
 writes `fluvy_sidebar:` beside the dashboard's `strategy:`. Only what you chose is written: a choice that is the
 default leaves no key behind, and whatever else the configuration holds stays as it was.
@@ -38,8 +39,8 @@ Home Assistant meanwhile is lost. Two kinds are different:
 - **A dashboard Home Assistant draws by itself** (an Overview nobody has taken control of) has no configuration to
   write beside, and is not listed until it has one.
 
-What the panel does not edit stays as written: a width as a share, pages written by hand, `views`, `users`,
-`subviews`, `card_opacity` and `card_blur`.
+What the panel does not edit stays as written: a phone's width, pages written by hand, `views`, `users`, `subviews`,
+`card_opacity` and `card_blur`.
 
 ## Where the key goes
 
@@ -79,7 +80,7 @@ That is a complete sidebar: a clock at the head, the dashboard's views as its me
 ```yaml
 fluvy_sidebar:
   position: start             # start | end
-  width:                      # or one figure for both: 300, or '24%'
+  width:                      # or one figure for both: 300, '25vw' or '24%'
     phone: 0                  #   0 = none on that device
     tablet: 280
     desktop: 320
@@ -105,7 +106,7 @@ fluvy_sidebar:
 | Key | What it does |
 | --- | --- |
 | `position` | The side it stands on: `start` (the left, in a language read from the left) or `end`. `left` and `right` are read as `start` and `end`. |
-| `width` | How wide it is beside the views, in px (160 to 560) or as a share of the dashboard (`'24%'`, 10 to 50), for each device: a **phone** is a window under 600 px wide, a **tablet** under 1280, a **desktop** above. `0` is no sidebar on that device. One figure is the tablet's and the desktop's. |
+| `width` | How wide it is beside the views, for each device: in px (160 to 560), as a share of the screen (`'25vw'`, 10 to 50: of the whole window, Home Assistant's own sidebar included, and the same share at any of the device's sizes) or as a share of the dashboard (`'24%'`, 10 to 50: of what Home Assistant's sidebar leaves). A share stays between 160 and 560 px. A **phone** is a window under 600 px wide, a **tablet** under 1280, a **desktop** above. `0` is no sidebar on that device. One figure is the tablet's and the desktop's; a phone keeps none. |
 | `phone` | What a phone gets while its width is 0: `none`; `top`, the head's cards and the menu as a row of pills above the view; `drawer`, the whole sidebar in a drawer over the view, opened by a round at the foot of its side and closed by a tap beside it, by Escape or by choosing a page. |
 | `style` | `panel`: from edge to edge on the card's fill, a hairline at its inner edge, under the header as Home Assistant's own sidebar is beside it. `card`: one card, with the view's gap round it. `plain`: no surface, each card on its own. On a surface (`panel`, `card`) the cards draw none of their own and stand in one column, a hairline between them, as in the [Expander](cards/expander.md#guide). |
 | `collapsible` | A round at its foot folds it to a rail of the menu's icons, and unfolds it; each device remembers how it left each dashboard. |
@@ -188,7 +189,7 @@ whole without it.
 | `cards`, `bottomCard` | `footer.cards` (they stay) or `cards` (they scroll) |
 | `glanceBar` | an Alerts card in `footer.cards` (`custom:fluvy-alerts-card`) |
 | `trends` | a Chart card (`custom:fluvy-chart-card`) |
-| `width: {mobile, tablet, desktop}` (shares) | `width: {phone, tablet, desktop}` (px, or `'25%'`) |
+| `width: {mobile, tablet, desktop}` (shares) | `width: {phone, tablet, desktop}` (px, `'25vw'` of the screen, or `'25%'` of the dashboard) |
 | `breakpoints` | fixed: a phone under 600, a tablet under 1280 |
 | `hideOnPath` | `views:` (where it does show), `subviews: false` |
 | `hideTopMenu`, `hideHassSidebar` | [Wall mode](wall.md), or Home Assistant's own kiosk |

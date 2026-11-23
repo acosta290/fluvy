@@ -12,7 +12,15 @@ import {
 } from '../../expander/expander-editor.js';
 import { cardHelpersReachable } from '../../shared/rows-editor.js';
 import '../../shared/side-glyph.js';
-import { PHONES, STYLES, type SidebarPhone, type SidebarStyle } from '../../sidebar/config.js';
+import {
+  PHONES,
+  STYLES,
+  WIDTH_DEFAULTS,
+  WIDTH_UNITS,
+  type SidebarPhone,
+  type SidebarStyle,
+  type WidthUnit,
+} from '../../sidebar/config.js';
 import { copyText } from '../clipboard.js';
 import { SIDEBAR_KEY, type DashboardInfo, type PanelContext } from '../model.js';
 import { choice, gap } from '../sections.js';
@@ -47,6 +55,10 @@ export interface SidebarEditorHost {
 
 /** The widths the panel offers for each device, in px: none first, the device's default among them. */
 const WIDTHS = { tablet: [0, 240, 280, 320, 360], desktop: [0, 280, 320, 360, 400] } as const;
+/** The shares it offers, of the screen or of the dashboard (#249): none first; a quarter where the unit is chosen. */
+const SHARES = [0, 20, 25, 30, 33, 40] as const;
+const SHARE = 25;
+const UNIT_WORD = { vw: 'unit_screen', '%': 'unit_dashboard' } as const;
 /** How long the editor waits for Home Assistant's stack editor before a list opens on the YAML field in its place. */
 const GRACE = 800;
 /** How long the copy button says it copied. */
@@ -84,6 +96,8 @@ export class SidebarEditor {
   /** The copy button said so, and when it stops; the copy failed. */
   private copied: number | undefined;
   private failed = false;
+  /** The unit chosen for a device's width, by dashboard and device: kept while the width is none, which has none. */
+  private readonly units = new Map<string, WidthUnit>();
 
   constructor(private readonly host: SidebarEditorHost) {
     void stackEditor().then(
@@ -264,17 +278,42 @@ export class SidebarEditor {
     const { hass } = ctx;
     const spec = read(raw);
     const none = localize(hass, 'option.none');
-    const width = (device: 'tablet' | 'desktop'): TemplateResult =>
-      html`<p class="fv-label pn-label">${say(hass, `width_${device}`)}</p>
+    // a device's width: its unit (px, a share of the screen, a share of the dashboard), then its figures in that unit
+    const width = (device: 'tablet' | 'desktop'): TemplateResult => {
+      const own = widthOf(raw, device);
+      const kept = `${this.urlPath}|${device}`;
+      const unit = own.value ? own.unit : (this.units.get(kept) ?? 'px');
+      return html`<p class="fv-label pn-label">${say(hass, `width_${device}`)}</p>
         ${choice(
           ctx,
-          WIDTHS[device].map((px) => ({
-            key: String(px),
-            label: px ? String(px) : none,
-            active: widthOf(raw, device) === px,
+          WIDTH_UNITS.map((each) => ({
+            key: each,
+            label: each === 'px' ? 'px' : say(hass, UNIT_WORD[each]),
+            active: unit === each,
           })),
-          (key) => this.change((table) => withWidth(table, device, Number(key))),
+          (key) => {
+            if (key === unit) return;
+            const chosen = key as WidthUnit;
+            this.units.set(kept, chosen);
+            this.change((table) =>
+              withWidth(
+                table,
+                device,
+                chosen === 'px' ? WIDTH_DEFAULTS[device] : { unit: chosen, value: SHARE },
+              ),
+            );
+          },
+        )}
+        ${choice(
+          ctx,
+          (unit === 'px' ? WIDTHS[device] : SHARES).map((value) => ({
+            key: String(value),
+            label: value ? String(value) : none,
+            active: own.value === value,
+          })),
+          (key) => this.change((table) => withWidth(table, device, { unit, value: Number(key) })),
         )}`;
+    };
     return html`<section class="fv-card pn-card">
       ${head({ icon: 'sliders', title: say(hass, 'layout') })}
       <p class="fv-label pn-label">${say(hass, 'side')}</p>

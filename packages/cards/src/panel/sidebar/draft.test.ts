@@ -118,23 +118,41 @@ describe('a dashboard’s sidebar as the panel edits it', () => {
   });
 
   it('writes a device’s width in px beside the others as they stand, and no width where each is its default', () => {
-    expect(widthOf({}, 'tablet')).toBe(280);
-    expect(widthOf({}, 'desktop')).toBe(320);
-    expect(withWidth({}, 'tablet', 240)).toEqual({ width: { tablet: 240 } });
-    expect(withWidth({ width: { tablet: 240 } }, 'desktop', 400)).toEqual({
+    const px = (value: number) => ({ unit: 'px', value }) as const;
+    expect(widthOf({}, 'tablet')).toEqual(px(280));
+    expect(widthOf({}, 'desktop')).toEqual(px(320));
+    expect(withWidth({}, 'tablet', px(240))).toEqual({ width: { tablet: 240 } });
+    expect(withWidth({ width: { tablet: 240 } }, 'desktop', px(400))).toEqual({
       width: { tablet: 240, desktop: 400 },
     });
-    expect(withWidth({ width: { tablet: 240 }, style: 'card' }, 'tablet', 280)).toEqual({
+    expect(withWidth({ width: { tablet: 240 }, style: 'card' }, 'tablet', px(280))).toEqual({
       style: 'card',
     });
-    // a share written by hand stays a share; the panel offers no chip for it
+    // a share written by hand stays a share beside the device changed
     const share = { width: { desktop: '24%', phone: 200 } };
-    expect(widthOf(share, 'desktop')).toBeUndefined();
-    expect(withWidth(share, 'tablet', 0)).toEqual({
+    expect(widthOf(share, 'desktop')).toEqual({ unit: '%', value: 24 });
+    expect(withWidth(share, 'tablet', px(0))).toEqual({
       width: { phone: 200, tablet: 0, desktop: '24%' },
     });
     // one figure for both devices, then one of them changed: each named
-    expect(withWidth({ width: 300 }, 'desktop', 320)).toEqual({ width: { tablet: 300 } });
+    expect(withWidth({ width: 300 }, 'desktop', px(320))).toEqual({ width: { tablet: 300 } });
+  });
+
+  it('writes a share of the screen or of the dashboard with its unit (#249), none in any unit as 0', () => {
+    expect(withWidth({}, 'desktop', { unit: 'vw', value: 25 })).toEqual({
+      width: { desktop: '25vw' },
+    });
+    expect(widthOf({ width: { desktop: '25vw' } }, 'desktop')).toEqual({ unit: 'vw', value: 25 });
+    expect(withWidth({ width: { desktop: '25vw' } }, 'tablet', { unit: '%', value: 30 })).toEqual({
+      width: { tablet: '30%', desktop: '25vw' },
+    });
+    expect(withWidth({ width: { desktop: '25vw' } }, 'desktop', { unit: 'vw', value: 0 })).toEqual({
+      width: { desktop: 0 },
+    });
+    // back to its default in px: no width at all
+    expect(
+      withWidth({ width: { desktop: '25vw' } }, 'desktop', { unit: 'px', value: 320 }),
+    ).toEqual({});
   });
 
   it('edits the three lists where the sidebar reads them, an empty one leaving no key', () => {

@@ -3629,8 +3629,8 @@
     "style": "表面",
     "panel": "面板",
     "card": "卡片",
-    "width_tablet": "平板上的宽度（px）",
-    "width_desktop": "电脑上的宽度（px）",
+    "width_tablet": "平板上的宽度",
+    "width_desktop": "电脑上的宽度",
     "phone": "在手机上",
     "top": "视图上方",
     "drawer": "抽屉",
@@ -3647,7 +3647,9 @@
     "yaml": "此仪表盘使用 YAML 编写。请把以下内容复制到它的文件里，与 views: 并列",
     "copy": "复制 YAML",
     "copied": "YAML 已复制",
-    "copy_failed": "无法复制：选中文本后手动复制"
+    "copy_failed": "无法复制：选中文本后手动复制",
+    "unit_screen": "屏幕占比（%）",
+    "unit_dashboard": "仪表盘占比（%）"
   },
   "compass": {
     "direction": "方向",

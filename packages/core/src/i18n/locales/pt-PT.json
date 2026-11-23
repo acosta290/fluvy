@@ -3629,8 +3629,8 @@
     "style": "Superfície",
     "panel": "Faixa",
     "card": "Cartão",
-    "width_tablet": "Largura num tablet (px)",
-    "width_desktop": "Largura num computador (px)",
+    "width_tablet": "Largura num tablet",
+    "width_desktop": "Largura num computador",
     "phone": "Num telemóvel",
     "top": "Acima da vista",
     "drawer": "Gaveta",
@@ -3647,7 +3647,9 @@
     "yaml": "Este painel está escrito em YAML. Copie isto para o ficheiro dele, ao lado de views:",
     "copy": "Copiar o YAML",
     "copied": "YAML copiado",
-    "copy_failed": "Não foi possível copiar: selecione o texto e copie"
+    "copy_failed": "Não foi possível copiar: selecione o texto e copie",
+    "unit_screen": "% do ecrã",
+    "unit_dashboard": "% do painel"
   },
   "compass": {
     "direction": "Direção",
