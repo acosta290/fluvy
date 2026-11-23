@@ -35,6 +35,11 @@ const STATES = {
     device_class: 'temperature',
   }),
   'scene.evening': state('scene.evening', STAMP, { friendly_name: 'Evening' }),
+  'climate.bedroom_ac': state('climate.bedroom_ac', 'cool', {
+    friendly_name: 'Bedroom AC',
+    hvac_modes: ['off', 'cool', 'heat'],
+    supported_features: 128 + 256,
+  }),
 };
 
 /** The house, with the calls and the details it is asked for kept. */
@@ -366,8 +371,8 @@ describe('a double tap (#179)', () => {
     expect(heard).toEqual([
       'details sensor.office',
       'dom event',
-      'homeassistant.turn_on',
-      'homeassistant.turn_on',
+      'homeassistant.turn_off',
+      'homeassistant.turn_off',
     ]);
   });
 
@@ -411,7 +416,7 @@ describe('a circle’s own actions (#179)', () => {
       tap(circle);
       hold(circle);
       key(circle, 'Enter');
-      expect(heard, size).toEqual(['dom event', 'homeassistant.turn_on', 'dom event']);
+      expect(heard, size).toEqual(['dom event', 'homeassistant.turn_off', 'dom event']);
       document.body.replaceChildren();
     }
   });
@@ -441,6 +446,26 @@ describe('a circle’s own actions (#179)', () => {
     expect(circle.getAttribute('role')).toBeNull();
     tap(circle);
     expect(own.heard).toEqual(['dom event']);
+  });
+
+  it('turn a cooling unit off where they toggle it, as its tile’s own tap does (#252)', async () => {
+    for (const size of ['large', 'compact', 'mini']) {
+      const { root, heard } = await drawn({
+        type: 'custom:fluvy-tile-card',
+        entity: 'climate.bedroom_ac',
+        size,
+        tap_action: TOGGLE,
+        icon_tap_action: TOGGLE,
+      });
+      tap(root.querySelector('.fv-ico--tap')!);
+      expect(heard, size).toEqual(['climate.turn_off']);
+      tap(root.querySelector('.fv-tile__tap')!);
+      expect(heard, size).toEqual(['climate.turn_off', 'climate.turn_off']);
+      // drawn off under the finger, until Home Assistant says so
+      await (root.host as CardElement).updateComplete;
+      expect(root.querySelector('.fv-tile')!.classList.contains('is-on'), size).toBe(false);
+      document.body.replaceChildren();
+    }
   });
 
   it('make a head’s circle a button over the head’s, whose press never reaches the head', async () => {

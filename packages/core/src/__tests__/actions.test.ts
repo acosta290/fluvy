@@ -4,24 +4,33 @@ import {
   confirmationOf,
   goBack,
   navigate,
+  offCall,
   ROUND_TOGGLE,
   runAction,
   SAFE_TOGGLE,
   setDetailsSheets,
   TOGGLE_DOMAINS,
+  toggledState,
   toggleService,
   type ActionConfig,
   type DetailsSheetsOpener,
 } from '../actions.js';
+import { resolveEntity, type EntityView } from '../entity.js';
 import type { HomeAssistant } from '../ha/types.js';
 
 const callService = vi.fn(() => Promise.resolve());
 
-/** A house of states only: `{ 'lock.front': 'locked' }`. */
-const house = (states: Record<string, string> = {}): HomeAssistant =>
+/** What an entity is: its state alone (`'locked'`), or its state and its attributes. */
+type Stated = string | readonly [state: string, attributes: Record<string, unknown>];
+
+/** A house of states: `{ 'lock.front': 'locked', 'climate.den': ['cool', { supported_features: 128 }] }`. */
+const house = (states: Record<string, Stated> = {}): HomeAssistant =>
   ({
     states: Object.fromEntries(
-      Object.entries(states).map(([id, state]) => [id, { entity_id: id, state, attributes: {} }]),
+      Object.entries(states).map(([id, stated]) => {
+        const [state, attributes] = typeof stated === 'string' ? [stated, {}] : stated;
+        return [id, { entity_id: id, state, attributes }];
+      }),
     ),
     callService,
   }) as unknown as HomeAssistant;
@@ -226,6 +235,38 @@ describe('runAction', () => {
           },
           action: 'tap',
         },
+      ]);
+      expect(callService).not.toHaveBeenCalled();
+    });
+
+    it('a cooling unit’s toggle goes as its turn_off, and with its words where it needs them: set to Off (#252)', async () => {
+      const handed = listen('hass-action');
+      const asked = (attributes: Record<string, unknown>) =>
+        runAction(
+          card,
+          house({ 'climate.den': ['cool', attributes] }),
+          { action: 'toggle', confirmation: true },
+          'climate.den',
+        );
+
+      await asked({ supported_features: 128, hvac_modes: ['off', 'cool'] });
+      await asked({ hvac_modes: ['off', 'cool'] });
+
+      const asking = (call: Partial<ActionConfig>) => ({
+        config: {
+          entity: 'climate.den',
+          tap_action: {
+            action: 'perform-action',
+            ...call,
+            target: { entity_id: 'climate.den' },
+            confirmation: true,
+          },
+        },
+        action: 'tap',
+      });
+      expect(handed).toEqual([
+        asking({ perform_action: 'climate.turn_off' }),
+        asking({ perform_action: 'climate.set_hvac_mode', data: { hvac_mode: 'off' } }),
       ]);
       expect(callService).not.toHaveBeenCalled();
     });
@@ -451,24 +492,135 @@ describe('navigate, as Home Assistant keeps its history (#88)', () => {
   });
 });
 
-describe('toggleService', () => {
-  it.each([
-    ['cover.blinds', 'closed', 'cover', 'open_cover'],
-    ['cover.blinds', 'open', 'cover', 'close_cover'],
-    ['valve.garden', 'closed', 'valve', 'open_valve'],
-    ['lock.front', 'locked', 'lock', 'unlock'],
-    ['lock.front', 'unlocked', 'lock', 'lock'],
-    ['vacuum.robot', 'docked', 'vacuum', 'start'],
-    ['vacuum.robot', 'cleaning', 'vacuum', 'pause'],
-    ['media_player.tv', 'playing', 'media_player', 'media_play_pause'],
-    ['scene.evening', '2026-09-17T20:00:00+00:00', 'scene', 'turn_on'],
-    ['script.goodnight', 'off', 'script', 'turn_on'],
-    ['input_button.bell', 'unknown', 'input_button', 'press'],
-    ['automation.porch', 'on', 'automation', 'toggle'],
-    ['light.desk', 'on', 'light', 'turn_off'],
-    ['switch.heater', 'off', 'switch', 'turn_on'],
-    ['group.downstairs', 'on', 'homeassistant', 'turn_off'],
-  ])('%s that is %s: %s.%s', (entity, state, domain, service) => {
-    expect(toggleService(house({ [entity]: state }), entity)).toEqual([domain, service]);
+describe('a toggle, as Home Assistant’s own cards decide it (#252)', () => {
+  /** A climate that turns on and off by itself, and one that only has an Off mode. */
+  const OWN_OFF = { supported_features: 128 + 256, hvac_modes: ['off', 'cool', 'heat'] };
+  const MODES = { hvac_modes: ['off', 'cool', 'heat'] };
+
+  it.each<[entity: string, stated: Stated, call: readonly unknown[]]>([
+    ['cover.blinds', 'closed', ['cover', 'open_cover']],
+    ['cover.blinds', 'closing', ['cover', 'open_cover']],
+    ['cover.blinds', 'open', ['cover', 'close_cover']],
+    ['valve.garden', 'closed', ['valve', 'open_valve']],
+    ['valve.garden', 'closing', ['valve', 'open_valve']],
+    ['valve.garden', 'open', ['valve', 'close_valve']],
+    ['lock.front', 'locked', ['lock', 'unlock']],
+    ['lock.front', 'unlocked', ['lock', 'lock']],
+    ['vacuum.robot', 'docked', ['vacuum', 'start']],
+    ['vacuum.robot', 'cleaning', ['vacuum', 'pause']],
+    ['lawn_mower.back', 'mowing', ['lawn_mower', 'pause']],
+    ['lawn_mower.back', 'docked', ['lawn_mower', 'start_mowing']],
+    ['lawn_mower.back', 'paused', ['lawn_mower', 'start_mowing']],
+    ['media_player.tv', 'playing', ['media_player', 'media_play_pause']],
+    ['media_player.tv', 'paused', ['media_player', 'media_play_pause']],
+    ['media_player.tv', ['off', { supported_features: 128 }], ['media_player', 'turn_on']],
+    ['media_player.tv', ['standby', { supported_features: 128 }], ['media_player', 'turn_on']],
+    // a player that cannot be woken plays, as it did
+    ['media_player.tv', 'off', ['media_player', 'media_play_pause']],
+    ['climate.den', ['cool', OWN_OFF], ['climate', 'turn_off']],
+    ['climate.den', ['heat', OWN_OFF], ['climate', 'turn_off']],
+    ['climate.den', ['dry', OWN_OFF], ['climate', 'turn_off']],
+    ['climate.den', ['off', OWN_OFF], ['climate', 'turn_on']],
+    ['climate.den', ['heat', MODES], ['climate', 'set_hvac_mode', { hvac_mode: 'off' }]],
+    // neither: its own off, for Home Assistant to say why not
+    ['climate.den', ['heat', { hvac_modes: ['heat'] }], ['climate', 'turn_off']],
+    ['water_heater.tank', ['eco', { supported_features: 8 }], ['water_heater', 'turn_off']],
+    ['water_heater.tank', ['off', { supported_features: 8 }], ['water_heater', 'turn_on']],
+    [
+      'water_heater.tank',
+      ['eco', { operation_list: ['off', 'eco'] }],
+      ['water_heater', 'set_operation_mode', { operation_mode: 'off' }],
+    ],
+    ['scene.evening', '2026-09-17T20:00:00+00:00', ['scene', 'turn_on']],
+    ['script.goodnight', 'off', ['script', 'turn_on']],
+    ['input_button.bell', 'unknown', ['input_button', 'press']],
+    ['automation.porch', 'on', ['automation', 'toggle']],
+    ['light.desk', 'on', ['light', 'turn_off']],
+    ['light.desk', 'off', ['light', 'turn_on']],
+    // a state not known comes on, as it did
+    ['light.desk', 'unknown', ['light', 'turn_on']],
+    ['switch.heater', 'off', ['switch', 'turn_on']],
+    ['group.downstairs', 'on', ['homeassistant', 'turn_off']],
+    ['group.downstairs', 'off', ['homeassistant', 'turn_on']],
+    // what is not off, closed or locked goes off
+    ['group.windows', 'open', ['homeassistant', 'turn_off']],
+    ['group.doors', 'locked', ['homeassistant', 'turn_on']],
+  ])('%s that is %j: %j', (entity, stated, call) => {
+    expect(toggleService(house({ [entity]: stated }), entity)).toEqual(call);
+  });
+
+  it('a tap on a cooling unit turns it off, not on', async () => {
+    await runAction(
+      card,
+      house({ 'climate.bedroom_ac': ['cool', OWN_OFF] }),
+      { action: 'toggle' },
+      'climate.bedroom_ac',
+    );
+
+    expect(callService).toHaveBeenCalledExactlyOnceWith(
+      'climate',
+      'turn_off',
+      {},
+      { entity_id: 'climate.bedroom_ac' },
+    );
+  });
+
+  it('a unit without its own off goes to its Off mode, its words in the call', async () => {
+    await runAction(
+      card,
+      house({ 'climate.bedroom_ac': ['heat', MODES] }),
+      { action: 'toggle' },
+      'climate.bedroom_ac',
+    );
+
+    expect(callService).toHaveBeenCalledExactlyOnceWith(
+      'climate',
+      'set_hvac_mode',
+      { hvac_mode: 'off' },
+      { entity_id: 'climate.bedroom_ac' },
+    );
+  });
+
+  it('turns a thermostat off as it takes it: its own off, else its Off mode, else not at all', () => {
+    const view = (id: string, attributes: Record<string, unknown>): EntityView =>
+      resolveEntity(house({ [id]: ['heat', attributes] }), id);
+
+    expect(offCall(view('climate.a', { supported_features: 128 }))).toEqual([
+      'climate',
+      'turn_off',
+    ]);
+    expect(offCall(view('climate.a', { hvac_modes: ['off', 'heat'] }))).toEqual([
+      'climate',
+      'set_hvac_mode',
+      { hvac_mode: 'off' },
+    ]);
+    expect(offCall(view('climate.a', { hvac_modes: ['heat'] }))).toBeUndefined();
+    expect(offCall(view('water_heater.a', { supported_features: 8 }))).toEqual([
+      'water_heater',
+      'turn_off',
+    ]);
+    expect(offCall(view('water_heater.a', { operation_list: ['off', 'eco'] }))).toEqual([
+      'water_heater',
+      'set_operation_mode',
+      { operation_mode: 'off' },
+    ]);
+    expect(offCall(view('humidifier.a', {}))).toEqual(['humidifier', 'turn_off']);
+    expect(offCall(view('light.a', {}))).toBeUndefined();
+  });
+
+  it('the state a toggle reaches, drawn until Home Assistant says it', () => {
+    const domains = ['cover', 'valve', 'lock', 'climate'];
+    expect(domains.map((domain) => toggledState(domain, true))).toEqual([
+      'open',
+      'open',
+      'unlocked',
+      'on',
+    ]);
+    expect(domains.map((domain) => toggledState(domain, false))).toEqual([
+      'closed',
+      'closed',
+      'locked',
+      'off',
+    ]);
   });
 });

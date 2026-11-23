@@ -1,5 +1,5 @@
 import { haptic, setHaptics, type HapticKind } from '@fluvy/ui';
-import { domainOf } from './entity.js';
+import { playerOff, resolveEntity, type EntityView } from './entity.js';
 import type { HomeAssistant, ServiceTarget } from './ha/types.js';
 import type { Sheets } from './settings/schema.js';
 
@@ -102,24 +102,72 @@ export interface ActionConfig {
   [key: string]: unknown;
 }
 
-/** The service a toggle is, by domain: a cover opens, a lock unlocks, a vacuum starts — never a blind `homeassistant.toggle`. */
-export function toggleService(
-  hass: HomeAssistant,
-  entityId: string,
-): [domain: string, service: string] {
-  const domain = domainOf(entityId);
-  const state = hass.states[entityId]?.state;
+/** A call to Home Assistant: a service of a domain, and its data where it takes any. */
+export type HassCall = readonly [domain: string, service: string, data?: Record<string, unknown>];
+
+/** The bits of `supported_features` a toggle reads: a climate that turns off, a water heater on and off, a player on. */
+const CLIMATE_TURN_OFF = 128;
+const WATER_HEATER_ON_OFF = 8;
+const MEDIA_TURN_ON = 128;
+
+/** What Home Assistant's own toggle turns on (`STATES_OFF`); it turns anything else off. */
+const STATES_OFF: ReadonlySet<string> = new Set(['off', 'closed', 'locked']);
+
+/**
+ * The call that turns a thermostat off, as it takes one: a climate's `turn_off` where it says so, else its Off mode; a
+ * water heater's likewise; a humidifier's `turn_off`. None where it has neither (a heat pump with no Off).
+ */
+export function offCall(view: EntityView): HassCall | undefined {
+  const listed = (key: string): boolean => (view.attr<unknown[]>(key) ?? []).includes('off');
+  switch (view.domain) {
+    case 'climate':
+      return view.supports(CLIMATE_TURN_OFF)
+        ? ['climate', 'turn_off']
+        : listed('hvac_modes')
+          ? ['climate', 'set_hvac_mode', { hvac_mode: 'off' }]
+          : undefined;
+    case 'water_heater':
+      return view.supports(WATER_HEATER_ON_OFF)
+        ? ['water_heater', 'turn_off']
+        : listed('operation_list')
+          ? ['water_heater', 'set_operation_mode', { operation_mode: 'off' }]
+          : undefined;
+    case 'humidifier':
+      return ['humidifier', 'turn_off'];
+    default:
+      return undefined;
+  }
+}
+
+/**
+ * The call a toggle is, as Home Assistant's own cards decide it: what is off, closed or locked comes on, anything else
+ * goes off (a state not known comes on), each by its domain's own service — a cover or a valve opens, a lock unlocks,
+ * a running thermostat goes off as it takes it (`offCall`), a vacuum and a mower start or pause, a player asleep wakes
+ * where it can, else plays or pauses — never a blind `homeassistant.toggle`.
+ */
+export function toggleService(hass: HomeAssistant, entityId: string): HassCall {
+  const view = resolveEntity(hass, entityId);
+  const { domain, state } = view;
+  const comesOn = view.status !== 'ok' || STATES_OFF.has(state);
+  const onOff = comesOn ? 'turn_on' : 'turn_off';
   switch (domain) {
     case 'cover':
-      return [domain, state === 'closed' || state === 'closing' ? 'open_cover' : 'close_cover'];
     case 'valve':
-      return [domain, state === 'closed' ? 'open_valve' : 'close_valve'];
+      return [domain, `${state === 'closed' || state === 'closing' ? 'open' : 'close'}_${domain}`];
     case 'lock':
       return [domain, state === 'locked' ? 'unlock' : 'lock'];
     case 'vacuum':
       return [domain, state === 'cleaning' ? 'pause' : 'start'];
+    case 'lawn_mower':
+      return [domain, state === 'mowing' ? 'pause' : 'start_mowing'];
     case 'media_player':
-      return [domain, 'media_play_pause'];
+      return [
+        domain,
+        playerOff(state) && view.supports(MEDIA_TURN_ON) ? 'turn_on' : 'media_play_pause',
+      ];
+    case 'climate':
+    case 'water_heater':
+      return comesOn ? [domain, onOff] : (offCall(view) ?? [domain, onOff]);
     case 'scene':
     case 'script':
       return [domain, 'turn_on'];
@@ -136,15 +184,22 @@ export function toggleService(
     case 'siren':
     case 'input_boolean':
     case 'remote':
-      return [domain, state === 'on' ? 'turn_off' : 'turn_on'];
+      return [domain, onOff];
     default:
-      return ['homeassistant', state === 'on' ? 'turn_off' : 'turn_on'];
+      return ['homeassistant', onOff];
   }
 }
 
+/** The state a toggle reaches, drawn until Home Assistant says it: open or closed, unlocked or locked, on or off. */
+export function toggledState(domain: string, on: boolean): string {
+  if (domain === 'cover' || domain === 'valve') return on ? 'open' : 'closed';
+  if (domain === 'lock') return on ? 'unlocked' : 'locked';
+  return on ? 'on' : 'off';
+}
+
 export function toggleEntity(hass: HomeAssistant, entityId: string): Promise<unknown> {
-  const [domain, service] = toggleService(hass, entityId);
-  return hass.callService(domain, service, {}, { entity_id: entityId });
+  const [domain, service, data = {}] = toggleService(hass, entityId);
+  return hass.callService(domain, service, data, { entity_id: entityId });
 }
 
 export const TOGGLE_DOMAINS = new Set([
@@ -221,11 +276,12 @@ function handOver(
   let action = config;
   if (config.action === 'toggle') {
     if (!entity) return;
-    const [domain, service] = toggleService(hass, entity);
+    const [domain, service, data] = toggleService(hass, entity);
     action = {
       ...config,
       action: 'perform-action',
       perform_action: `${domain}.${service}`,
+      ...(data && { data }),
       target: { entity_id: entity },
     };
   }

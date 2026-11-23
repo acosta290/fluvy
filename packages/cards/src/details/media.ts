@@ -1,12 +1,11 @@
 // the player's words: the media family's, here before the sheet says them
 import '../media/english.js';
-import { formatNumber, numberAttr, textAttr, type EntityView } from '@fluvy/core';
+import { formatNumber, numberAttr, playerOff, textAttr, type EntityView } from '@fluvy/core';
 import { clamp, type DialChangeDetail, type Tone } from '@fluvy/ui';
 import { html, type TemplateResult } from 'lit';
 import { actionsThatFit, Hold, shownStateText } from '../cover/common.js';
 import {
   fitControls,
-  isOff,
   isPlaying,
   MEDIA,
   MEDIA_CONTROLS,
@@ -26,7 +25,7 @@ const SELECT_SOUND_MODE = 65536;
 
 /** In use: on and doing something, or ready to (a television on its input) — not off, idle or out of reach. */
 const inUse = (state: string): boolean =>
-  !isOff(state) && !['idle', 'unavailable', 'unknown', ''].includes(state);
+  !playerOff(state) && !['idle', 'unavailable', 'unknown', ''].includes(state);
 
 /**
  * A player's details: its volume on the dial; under it its switch, the track before, play or pause, the track after
@@ -56,14 +55,14 @@ export class FluvyDetailsMedia extends DetailsSheet {
   /** What plays, by whom; else what the player is doing. */
   protected status(view: EntityView): Status {
     const state = this.stateOf(view);
-    const title = isOff(state) ? '' : textAttr(view, 'media_title');
+    const title = playerOff(state) ? '' : textAttr(view, 'media_title');
     return title
       ? { parts: [title, textAttr(view, 'media_artist')], name: true }
       : { parts: [shownStateText(this.hass, view, state)] };
   }
 
   protected override picture(view: EntityView): string {
-    return isOff(this.stateOf(view)) ? '' : mediaPicture(this.hass, view);
+    return playerOff(this.stateOf(view)) ? '' : mediaPicture(this.hass, view);
   }
 
   /** The day is how long it was on: playing, paused, or a television showing its input. */
@@ -80,7 +79,7 @@ export class FluvyDetailsMedia extends DetailsSheet {
    * as the column holds on one row, the rest giving way in the players' own order (`fitControls`), never play.
    */
   private keysOf(view: EntityView, name: string, state: string, unusable: boolean): Key[] {
-    const off = isOff(state);
+    const off = playerOff(state);
     const muted = view.attr<boolean>('is_volume_muted') === true;
     const playing = isPlaying(state);
     const key = (glyph: string, word: string, disabled: boolean): Omit<Key, 'key'> => ({
@@ -201,7 +200,7 @@ export class FluvyDetailsMedia extends DetailsSheet {
     const level = this.volume.read(
       reported === null ? null : Math.round(clamp(reported, 0, 1) * 100),
     );
-    const lit = !unusable && !isOff(state) && !muted;
+    const lit = !unusable && !playerOff(state) && !muted;
     const words = this.t('media.volume');
     const percent = (value: number): string => formatNumber(this.hass, value, { digits: 0 });
     return html`<div class="dt-hero">

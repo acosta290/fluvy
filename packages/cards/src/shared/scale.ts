@@ -95,9 +95,6 @@ export function ticksOf(scale: Scale, most: number): Ticks {
   return { minor: 1 / whole, major: every / whole };
 }
 
-/** A player that is switched off (a television in standby counts): it has no volume to set. */
-export const playerOff = (state: string): boolean => state === 'off' || state === 'standby';
-
 /** Where an entity stands on its scale: a player's volume in %, a fan's speed, a number's state; null where it cannot say. */
 export function readingOf(view: EntityView): number | null {
   if (view.domain === 'media_player') {

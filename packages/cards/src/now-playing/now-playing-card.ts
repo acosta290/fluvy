@@ -3,6 +3,7 @@ import {
   formatNumber,
   isUsable,
   numberAttr,
+  playerOff,
   resolveEntity,
   stateText,
   strings,
@@ -52,7 +53,6 @@ import {
   fitControls,
   hasPower,
   hasVolume,
-  isOff,
   isPlaying,
   MEDIA,
   mediaControls,
@@ -407,7 +407,7 @@ export class FluvyNowPlayingCard extends Card<NowPlayingCardConfig> {
       if (control === 'power') return power !== null;
       if (control === 'volume')
         return this.config?.show_volume !== false && (gone || hasVolume(view));
-      return !(power && isOff(state));
+      return !(power && playerOff(state));
     });
     const width = this.contentWidth;
     const spread = width < CENTRED_FROM;

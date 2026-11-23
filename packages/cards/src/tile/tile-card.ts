@@ -8,12 +8,14 @@ import {
   itemsOf,
   lightDefaults,
   numberAttr,
+  playerOff,
   relativeTime,
   resolveEntity,
   sliderStill,
   sliderStyleOf,
   stateText,
   TOGGLE_DOMAINS,
+  toggledState,
   toggleEntity,
   valueParts,
   withMinus,
@@ -60,7 +62,6 @@ import {
   NUMBERS,
   numberScale,
   PERCENT,
-  playerOff,
   readingOf,
   scaleText,
   setCall,
@@ -750,20 +751,7 @@ export class FluvyTileCard extends Card<TileCardConfig> {
   private flip(view: EntityView, next: boolean, action: ActionConfig = TOGGLE): void {
     if (!this.hass) return;
     if (confirmationOf(this.hass, action, view.id)) return this.tap(view.id, action);
-    this.expect(
-      view.id,
-      next
-        ? view.domain === 'cover'
-          ? 'open'
-          : view.domain === 'lock'
-            ? 'unlocked'
-            : 'on'
-        : view.domain === 'cover'
-          ? 'closed'
-          : view.domain === 'lock'
-            ? 'locked'
-            : 'off',
-    );
+    this.expect(view.id, toggledState(view.domain, next));
     void toggleEntity(this.hass, view.id);
   }
 

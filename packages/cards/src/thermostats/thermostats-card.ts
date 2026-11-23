@@ -7,6 +7,7 @@ import {
   itemsOf,
   listedName,
   localize,
+  offCall,
   plural,
   type ActionConfig,
   type EntityName,
@@ -131,42 +132,11 @@ interface Unit {
 const TILE_MIN = 120;
 /** An option tile's sides, 12 each. */
 const TILE_SIDES = 24;
-/** The bits of `supported_features` that say a climate turns off by itself, and a water heater. */
-const CLIMATE_TURN_OFF = 128;
-const WATER_HEATER_ON_OFF = 8;
 const ALL_OFF = 'all_off';
 /** A filled chip's words, measured in their own classes, and the pill's 8 on each side of them. */
 const FILLED_CHIP = 'fv-chips fv-chips--fill > fv-chip > fv-chip__pill';
 const FILLED_CHIP_SIDES = 16;
 const PRESET = 'preset:';
-
-/**
- * The service that turns a thermostat off, as it takes one: a climate's `turn_off` where it says so, else its Off
- * mode; a water heater's likewise; a humidifier's `turn_off`. None where it has neither (a heat pump with no Off).
- */
-export function offCall(
-  view: EntityView,
-): readonly [domain: string, service: string, data: Record<string, string>] | undefined {
-  const listed = (key: string): boolean => (view.attr<unknown[]>(key) ?? []).includes('off');
-  switch (view.domain) {
-    case 'climate':
-      return view.supports(CLIMATE_TURN_OFF)
-        ? ['climate', 'turn_off', {}]
-        : listed('hvac_modes')
-          ? ['climate', 'set_hvac_mode', { hvac_mode: 'off' }]
-          : undefined;
-    case 'water_heater':
-      return view.supports(WATER_HEATER_ON_OFF)
-        ? ['water_heater', 'turn_off', {}]
-        : listed('operation_list')
-          ? ['water_heater', 'set_operation_mode', { operation_mode: 'off' }]
-          : undefined;
-    case 'humidifier':
-      return ['humidifier', 'turn_off', {}];
-    default:
-      return undefined;
-  }
-}
 
 /**
  * Every thermostat of a house, a room or a list in one card (#230, requested by @xoatrash, with @waphbs's house-card

@@ -905,6 +905,13 @@ describe('a room’s quick actions (#113)', () => {
         of('media_player.lounge_radio', 'off', 4096 | 16384),
       ]),
     ).toEqual(['media_player.turn_on media_player.lounge']);
+    // a television in standby is asleep as one that is off: it comes on, as its own toggle wakes it (#252)
+    expect(
+      await tapped('media', [
+        at('media_player.lounge', 'standby'),
+        of('media_player.lounge_radio', 'off', 4096 | 16384),
+      ]),
+    ).toEqual(['media_player.turn_on media_player.lounge']);
   });
 
   it('takes no tap where none of its members can act, and is drawn as it reads', async () => {

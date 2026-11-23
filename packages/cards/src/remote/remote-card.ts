@@ -1,6 +1,7 @@
 import {
   haptic,
   isUsable,
+  playerOff,
   relativeTime,
   stateText,
   strings,
@@ -205,9 +206,6 @@ const keysOf = (raw: unknown, fallback: readonly string[]): readonly Key[] => [
 /** A cell of `columns` across `width`, `gap` apart, on a whole pixel: what the division leaves over is a tail at the row's end. */
 const wholeCell = (width: number, gap: number, columns: number): number =>
   Math.max(0, Math.floor((width - gap * (columns - 1)) / columns));
-
-/** The player is switched off (a television in standby counts). */
-const isOff = (state: string): boolean => state === 'off' || state === 'standby';
 
 /** The logos' chunk, fetched once by the first card that draws an app. */
 let logos: Promise<unknown> | undefined;
@@ -561,7 +559,7 @@ export class FluvyRemoteCard extends Card<RemoteCardConfig> {
   private off(): boolean {
     const p = this.player();
     if (isUsable(p))
-      return p.domain === 'media_player' ? isOff(this.stateOf(p)) : this.stateOf(p) === 'off';
+      return p.domain === 'media_player' ? playerOff(this.stateOf(p)) : this.stateOf(p) === 'off';
     const r = this.remoteView();
     return r !== undefined && isUsable(r) && this.stateOf(r) === 'off';
   }
@@ -599,8 +597,8 @@ export class FluvyRemoteCard extends Card<RemoteCardConfig> {
       const level = v.attr<number>('volume_level');
       switch (key) {
         case 'power':
-          if (isOff(state) ? player.supports(MEDIA.TURN_ON) : player.supports(MEDIA.TURN_OFF))
-            return service('media_player', isOff(state) ? 'turn_on' : 'turn_off');
+          if (playerOff(state) ? player.supports(MEDIA.TURN_ON) : player.supports(MEDIA.TURN_OFF))
+            return service('media_player', playerOff(state) ? 'turn_on' : 'turn_off');
           break;
         case 'volume_up':
         case 'volume_down':
@@ -1063,7 +1061,7 @@ export class FluvyRemoteCard extends Card<RemoteCardConfig> {
     const asked = this.remote.volume ?? 'auto';
     const mode: Exclude<VolumeStyle, 'auto'> =
       asked === 'auto' ? (hasLevel ? 'ruler' : 'keys') : asked;
-    const vOff = usable && v.domain === 'media_player' && isOff(this.stateOf(v));
+    const vOff = usable && v.domain === 'media_player' && playerOff(this.stateOf(v));
     const muted = usable && this.muted(v);
     const figure = !usable
       ? '—'

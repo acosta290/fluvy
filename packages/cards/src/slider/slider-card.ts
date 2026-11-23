@@ -1,6 +1,7 @@
 import {
   isUsable,
   PALETTE_ACCENT,
+  playerOff,
   relativeTime,
   sliderStill,
   sliderStyleOf,
@@ -43,7 +44,6 @@ import {
   fanPercentage,
   numberScale,
   PERCENT,
-  playerOff,
   readingOf,
   scaleText,
   setCall,

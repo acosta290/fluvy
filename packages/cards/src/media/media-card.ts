@@ -4,6 +4,7 @@ import {
   formatTime,
   isUsable,
   numberAttr,
+  playerOff,
   relativeTime,
   resolveEntity,
   sliderStill,
@@ -69,7 +70,6 @@ import {
   hasPower,
   hasVolume,
   isActive,
-  isOff,
   isPlaying,
   MEDIA,
   mediaControls,
@@ -489,7 +489,8 @@ export class FluvyMediaCard extends Card<MediaCardConfig> {
    * not report as playing (#101): what it shows, its app or its input, else its name; undefined for any other player.
    */
   private watching(view: EntityView, name: string): string | undefined {
-    if (view.deviceClass !== 'tv' || isOff(view.state) || view.state === 'idle') return undefined;
+    if (view.deviceClass !== 'tv' || playerOff(view.state) || view.state === 'idle')
+      return undefined;
     return textAttr(view, 'app_name') || textAttr(view, 'source') || name;
   }
 
@@ -511,7 +512,7 @@ export class FluvyMediaCard extends Card<MediaCardConfig> {
    */
   private idleLine(view: EntityView, said = ''): string {
     const text = stateText(this.hass, view);
-    const resting = isOff(view.state) || view.state === 'idle';
+    const resting = playerOff(view.state) || view.state === 'idle';
     if (!resting) {
       const shows = [textAttr(view, 'source'), textAttr(view, 'app_name')].find(
         (shown) => shown && shown !== said,
@@ -711,7 +712,7 @@ export class FluvyMediaCard extends Card<MediaCardConfig> {
     const active = still || this.isActive(view);
     const canPlay = still
       ? gone || playable(view)
-      : playable(view) && !(powered && isOff(this.stateOf(view)));
+      : playable(view) && !(powered && playerOff(this.stateOf(view)));
     const items: { readonly round: TemplateResult; readonly mode?: boolean }[] = [];
     if (active && offers(MEDIA.SHUFFLE)) {
       const on = view.attr<boolean>('shuffle') === true;
@@ -1099,7 +1100,7 @@ export class FluvyMediaCard extends Card<MediaCardConfig> {
         case 'previous':
           return active && offers(MEDIA.PREVIOUS);
         case 'play':
-          return still ? gone || playable(view) : playable(view) && !(power && isOff(state));
+          return still ? gone || playable(view) : playable(view) && !(power && playerOff(state));
         case 'next':
           return active && offers(MEDIA.NEXT);
         case 'volume':

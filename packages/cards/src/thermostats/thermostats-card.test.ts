@@ -1,5 +1,5 @@
 // @vitest-environment happy-dom
-import { resolveEntity, type HomeAssistant, type LovelaceCardConfig } from '@fluvy/core';
+import type { HomeAssistant, LovelaceCardConfig } from '@fluvy/core';
 import { ROOM_GLYPHS } from '@fluvy/ui/glyph-sets/rooms';
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { houseHeightOf } from '../house-heights.js';
@@ -8,7 +8,7 @@ import { cardForm, drawEditor, listTitles, shownNames } from '../shared/fixtures
 import { visibleFields } from '../shared/form.js';
 import { thermostatsHeight } from '../thermostats-family.js';
 import { houseThermostats, presetsOffered } from './house.js';
-import { FluvyThermostatsCard, offCall } from './thermostats-card.js';
+import { FluvyThermostatsCard } from './thermostats-card.js';
 import * as thermostatsEditor from './thermostats-editor.js';
 
 // the index fetches the lazy families, the thermostats among them: the card's tag is defined before a page needs it
@@ -486,33 +486,6 @@ describe('the Thermostats card (#230, #219)', () => {
     } finally {
       document.removeEventListener('hass-action', ask);
     }
-  });
-
-  it('turns a thermostat off as it takes it: its own off, else its Off mode, else not at all', () => {
-    const view = (id: string, attributes: Record<string, unknown>) =>
-      resolveEntity(house({ [id]: state(id, 'heat', attributes) }).hass, id);
-    expect(offCall(view('climate.a', { supported_features: 128 }))).toEqual([
-      'climate',
-      'turn_off',
-      {},
-    ]);
-    expect(offCall(view('climate.a', { hvac_modes: ['off', 'heat'] }))).toEqual([
-      'climate',
-      'set_hvac_mode',
-      { hvac_mode: 'off' },
-    ]);
-    expect(offCall(view('climate.a', { hvac_modes: ['heat'] }))).toBeUndefined();
-    expect(offCall(view('water_heater.a', { supported_features: 8 }))).toEqual([
-      'water_heater',
-      'turn_off',
-      {},
-    ]);
-    expect(offCall(view('water_heater.a', { operation_list: ['off', 'eco'] }))).toEqual([
-      'water_heater',
-      'set_operation_mode',
-      { operation_mode: 'off' },
-    ]);
-    expect(offCall(view('humidifier.a', {}))).toEqual(['humidifier', 'turn_off', {}]);
   });
 
   it('the presets they offer between them, each saying how many offer it, set on each one that is on and offers it', async () => {

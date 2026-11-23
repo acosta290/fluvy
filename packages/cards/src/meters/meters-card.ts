@@ -6,6 +6,7 @@ import {
   SAFE_TOGGLE,
   stateText,
   strings,
+  toggledState,
   toggleService,
   valueParts,
   type EntityName,
@@ -853,10 +854,8 @@ export class FluvyMetersCard extends Card<MetersCardConfig> {
   /** The switch flips at once; the valve or switch is called through the card's own helper. */
   private flip(view: EntityView, next: boolean): void {
     if (!this.hass) return;
-    // a valve and a blind open and shut; the rest go on and off
-    const opens = view.domain === 'valve' || view.domain === 'cover';
-    this.expect(view.id, next ? (opens ? 'open' : 'on') : opens ? 'closed' : 'off');
-    const [domain, service] = toggleService(this.hass, view.id);
-    this.call(domain, service, {}, view.id);
+    this.expect(view.id, toggledState(view.domain, next));
+    const [domain, service, data] = toggleService(this.hass, view.id);
+    this.call(domain, service, data, view.id);
   }
 }

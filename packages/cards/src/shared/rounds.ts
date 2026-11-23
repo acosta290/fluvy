@@ -6,6 +6,7 @@ import {
   isUsable,
   lightDefaults,
   localize,
+  playerOff,
   resolveEntity,
   ROUND_TOGGLE,
   stateText,
@@ -320,7 +321,7 @@ export function flipOf(domain: string, views: readonly EntityView[], on: boolean
   if (domain === 'media_player') {
     const playing = usable.filter((view) => view.state === 'playing');
     if (playing.length) return { calls: callsOf(playing, PAUSES) };
-    const awake = usable.filter((view) => view.state !== 'off');
+    const awake = usable.filter((view) => !playerOff(view.state));
     return awake.length
       ? { calls: callsOf(awake, PLAYS), expect: 'playing' }
       : { calls: callsOf(usable, WAKES) };

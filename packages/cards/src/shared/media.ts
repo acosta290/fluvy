@@ -5,6 +5,7 @@
  */
 import {
   numberAttr,
+  playerOff,
   textAttr,
   type EntityView,
   type HaFormSchemaItem,
@@ -36,9 +37,6 @@ export const isPlaying = (state: string): boolean => state === 'playing' || stat
 
 /** Something is on: playing, buffering or paused. */
 export const isActive = (state: string): boolean => isPlaying(state) || state === 'paused';
-
-/** The player is switched off (a television in standby counts). */
-export const isOff = (state: string): boolean => state === 'off' || state === 'standby';
 
 /** The play round can do something: play, pause, or wake a player that is off. */
 export const playable = (view: EntityView): boolean =>
@@ -73,7 +71,8 @@ export function playPauseAction(
   view: EntityView,
   state: string,
 ): { readonly service: 'turn_on' | 'media_play_pause'; readonly expect: string } {
-  if (isOff(state) && view.supports(MEDIA.TURN_ON)) return { service: 'turn_on', expect: 'idle' };
+  if (playerOff(state) && view.supports(MEDIA.TURN_ON))
+    return { service: 'turn_on', expect: 'idle' };
   return { service: 'media_play_pause', expect: isPlaying(state) ? 'paused' : 'playing' };
 }
 
@@ -88,7 +87,7 @@ export interface PowerAction {
  * is on (when it can); null when the player can do neither right now, and then there is no round.
  */
 export function powerAction(view: EntityView, state: string): PowerAction | null {
-  if (isOff(state))
+  if (playerOff(state))
     return view.supports(MEDIA.TURN_ON) ? { service: 'turn_on', expect: 'idle' } : null;
   return view.supports(MEDIA.TURN_OFF) ? { service: 'turn_off', expect: 'off' } : null;
 }

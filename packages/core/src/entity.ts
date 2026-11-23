@@ -209,6 +209,9 @@ export function isActiveState(domain: string, state: string): boolean {
   return !ACTIVE_OFF.has(state);
 }
 
+/** A player that is switched off (a television in standby counts): a toggle wakes it; it has no volume to set. */
+export const playerOff = (state: string): boolean => state === 'off' || state === 'standby';
+
 /** Whether the entity reads as "on/active" for the purposes of a filled tone. */
 export function isActive(view: EntityView): boolean {
   if (view.status !== 'ok') return false;
