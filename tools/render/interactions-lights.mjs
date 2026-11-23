@@ -680,15 +680,30 @@ const ids = (call) => [].concat(call?.d?.entity_id ?? call?.t?.entity_id ?? []);
     dragged.surface === '#ff9800-60' && (await calls(page)).length === 0,
     JSON.stringify(dragged),
   );
-  // a quick colour: the card wears it at once, before the bulb answers
+  // a quick colour: the card wears it at once, before the bulb answers (the house's 140 ms) — its tone the moment it
+  // draws, its fill reaching that tone as its fade ends (read inside the fade, a fill is neither colour)
   await reset(page);
-  await cards('Tint · colour').locator('.lc-swatch').nth(2).click();
-  await settle(page, 60);
-  const red = await surfaceOf(cards('Tint · colour'));
+  const tinted = cards('Tint · colour');
+  await tinted.locator('.lc-swatch').nth(2).click();
+  await tinted.evaluate((el) => el.updateComplete);
+  const red = await surfaceOf(tinted);
+  await tinted.evaluate(async (el) => {
+    const article = el.shadowRoot.querySelector('article');
+    // `getAnimations` brings the style up to date first: the fade the render began is among its transitions until it
+    // ends (a keyframe animation that holds its last frame stays among them for good, and is no fade)
+    const fades = () => article.getAnimations().filter((fade) => 'transitionProperty' in fade);
+    for (let running = fades(); running.length; running = fades())
+      await Promise.allSettled(running.map((fade) => fade.finished));
+  });
+  const faded = await surfaceOf(tinted);
   check(
-    'a tap on red: the lit card turns red before Home Assistant answers',
-    red.lit && red.accent === '#f44336' && red.fill !== full.fill,
-    JSON.stringify(red),
+    'a tap on red: the lit card turns red before Home Assistant answers, its fill fading to the red tone',
+    red.lit &&
+      red.accent === '#f44336' &&
+      red.toneFill !== full.toneFill &&
+      faded.fill === red.toneFill &&
+      faded.fill !== full.fill,
+    JSON.stringify([red, faded.fill]),
   );
   // an off lamp switched on: lit in the same frame
   await reset(page);
