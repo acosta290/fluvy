@@ -3450,7 +3450,10 @@
     "editor.hybrid": "Hybride rechargeable",
     "editor.tank_size": "Capacité du réservoir",
     "editor.tank_size_helper": "Dans l’unité de son contenu (L, gal) : son niveau, quand la voiture ne dit que son contenu",
-    "tyre_pressure_low": "Pression des pneus basse"
+    "tyre_pressure_low": "Pression des pneus basse",
+    "editor.tyre_decimals": "Décimales des pneus",
+    "editor.tyre_low": "Pneu sous-gonflé sous",
+    "editor.tyre_low_helper": "Une pression dans l’unité des pneus, une entité ou un modèle comme {{ states('sensor.x') }}"
   },
   "remote": {
     "key.power": "Marche/arrêt",

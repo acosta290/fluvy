@@ -3372,7 +3372,10 @@
     "editor.hybrid": "插电混动",
     "editor.tank_size": "油箱容量",
     "editor.tank_size_helper": "单位与油箱内容相同（L、gal）：车辆只报告油量时，用于算出油位",
-    "tyre_pressure_low": "胎压偏低"
+    "tyre_pressure_low": "胎压偏低",
+    "editor.tyre_decimals": "胎压小数位",
+    "editor.tyre_low": "胎压低于此值算偏低",
+    "editor.tyre_low_helper": "与轮胎同单位的气压值、实体，或模板，如 {{ states('sensor.x') }}"
   },
   "expander": {
     "card": "折叠面板",

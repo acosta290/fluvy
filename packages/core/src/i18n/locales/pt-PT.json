@@ -3450,7 +3450,10 @@
     "editor.hybrid": "Híbrido plug-in",
     "editor.tank_size": "Capacidade do depósito",
     "editor.tank_size_helper": "Na unidade do conteúdo (L, gal): o nível, quando o carro indica apenas o conteúdo",
-    "tyre_pressure_low": "Pressão dos pneus baixa"
+    "tyre_pressure_low": "Pressão dos pneus baixa",
+    "editor.tyre_decimals": "Casas decimais dos pneus",
+    "editor.tyre_low": "Pneu baixo abaixo de",
+    "editor.tyre_low_helper": "Uma pressão na unidade dos pneus, uma entidade ou um modelo, como {{ states('sensor.x') }}"
   },
   "remote": {
     "key.power": "Liga/desliga",

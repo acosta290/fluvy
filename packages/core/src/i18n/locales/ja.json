@@ -3450,7 +3450,10 @@
     "editor.hybrid": "プラグインハイブリッド",
     "editor.tank_size": "タンク容量",
     "editor.tank_size_helper": "中身と同じ単位（L、gal）: 車が中身の量しか伝えないときの残量に使います",
-    "tyre_pressure_low": "タイヤ空気圧が低い"
+    "tyre_pressure_low": "タイヤ空気圧が低い",
+    "editor.tyre_decimals": "タイヤ空気圧の小数桁",
+    "editor.tyre_low": "タイヤ空気圧が低いとする値",
+    "editor.tyre_low_helper": "タイヤと同じ単位の空気圧、エンティティ、または {{ states('sensor.x') }} のようなテンプレート"
   },
   "remote": {
     "key.power": "電源",

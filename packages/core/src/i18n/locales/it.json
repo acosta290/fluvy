@@ -3450,7 +3450,10 @@
     "editor.hybrid": "Ibrida plug-in",
     "editor.tank_size": "Capacità del serbatoio",
     "editor.tank_size_helper": "Nell’unità del contenuto (L, gal): il suo livello, dove l’auto dice solo cosa contiene",
-    "tyre_pressure_low": "Pressione pneumatici bassa"
+    "tyre_pressure_low": "Pressione pneumatici bassa",
+    "editor.tyre_decimals": "Decimali dei pneumatici",
+    "editor.tyre_low": "Pneumatico sgonfio sotto",
+    "editor.tyre_low_helper": "Una pressione nell’unità dei pneumatici, un’entità o un template come {{ states('sensor.x') }}"
   },
   "remote": {
     "key.power": "Accensione",

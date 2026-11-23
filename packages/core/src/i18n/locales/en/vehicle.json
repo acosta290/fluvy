@@ -139,6 +139,9 @@
     "editor.hybrid": "Plug-in hybrid",
     "editor.tank_size": "Tank size",
     "editor.tank_size_helper": "In the unit of what is in it (L, gal): its level, where the car says only what is in it",
-    "tyre_pressure_low": "Low tyre pressure"
+    "tyre_pressure_low": "Low tyre pressure",
+    "editor.tyre_decimals": "Tyre decimals",
+    "editor.tyre_low": "Low tyre under",
+    "editor.tyre_low_helper": "A pressure in the tyres’ unit, an entity, or a template such as {{ states('sensor.x') }}"
   }
 }

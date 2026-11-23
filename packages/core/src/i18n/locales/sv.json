@@ -3612,7 +3612,10 @@
     "editor.hybrid": "Laddhybrid",
     "editor.tank_size": "Tankvolym",
     "editor.tank_size_helper": "I enheten för det som finns i den (L, gal): dess nivå, där bilen bara anger hur mycket som finns i den",
-    "tyre_pressure_low": "Lågt däcktryck"
+    "tyre_pressure_low": "Lågt däcktryck",
+    "editor.tyre_decimals": "Däcktryckets decimaler",
+    "editor.tyre_low": "Lågt däcktryck under",
+    "editor.tyre_low_helper": "Ett tryck i däckens enhet, en entitet eller en mall som {{ states('sensor.x') }}"
   },
   "web": {
     "card": "Webbsida",

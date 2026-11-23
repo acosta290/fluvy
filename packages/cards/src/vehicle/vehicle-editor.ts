@@ -182,6 +182,8 @@ export const keys = configKeys<VehicleCardConfig>()([
   'show_rows',
   'rows',
   'show_tyres',
+  'tyre_decimals',
+  'tyre_low',
   'low_range',
   'stale_after',
   'range_unit',
@@ -288,6 +290,7 @@ export const defaults: EditorDefaults = () => ({
   show_controls: true,
   show_rows: true,
   show_tyres: false,
+  tyre_decimals: 'auto',
   stale_after: STALE_AFTER,
   range_unit: 'auto',
   range_decimals: 'auto',
@@ -305,6 +308,8 @@ export function getConfigForm(): LovelaceConfigForm {
   const tanked = (data: Readonly<Record<string, unknown>>): boolean =>
     data['energy'] !== 'electric';
   const charged = (data: Readonly<Record<string, unknown>>): boolean => data['energy'] !== 'fuel';
+  const tyred = (data: Readonly<Record<string, unknown>>): boolean =>
+    full(data) && data['show_tyres'] === true;
   const decimals = ['auto', '0', '1', '2'] as const;
   return {
     schema: [
@@ -346,6 +351,14 @@ export function getConfigForm(): LovelaceConfigForm {
       ),
       onlyWhen(notMini, fieldRow(boolField('show_status'), boolField('show_controls'))),
       onlyWhen(full, fieldRow(boolField('show_rows'), boolField('show_tyres'))),
+      // the tyres' decimals where they are drawn; a low tyre where the tyres or the line can say it
+      fieldRow(
+        onlyWhen(tyred, selectField('tyre_decimals', decimals)),
+        onlyWhen(
+          (data) => tyred(data) || (notMini(data) && data['show_status'] !== false),
+          textField('tyre_low'),
+        ),
+      ),
       fieldRow(numberField('low_range', 0, 1000), numberField('stale_after', 0, 1440)),
       fieldRow(unitField('range_unit', ['km', 'mi']), selectField('range_decimals', decimals)),
       fieldRow(unitField('power_unit', ['W', 'kW']), selectField('power_decimals', decimals)),
@@ -367,6 +380,8 @@ export function getConfigForm(): LovelaceConfigForm {
         show_limit: 'editor.show_limit',
         show_status: 'editor.show_status',
         show_tyres: 'editor.show_tyres',
+        tyre_decimals: 'editor.tyre_decimals',
+        tyre_low: 'editor.tyre_low',
         low_range: 'editor.low_range',
         stale_after: 'editor.stale_after',
         range_unit: 'editor.range_unit',
@@ -390,6 +405,8 @@ export function getConfigForm(): LovelaceConfigForm {
           ? s(undefined, 'editor.image_helper')
           : schema.name === 'tank_size'
             ? s(undefined, 'editor.tank_size_helper')
-            : undefined,
+            : schema.name === 'tyre_low'
+              ? s(undefined, 'editor.tyre_low_helper')
+              : undefined,
   };
 }

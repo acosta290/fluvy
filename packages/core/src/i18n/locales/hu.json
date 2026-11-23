@@ -3450,7 +3450,10 @@
     "editor.hybrid": "Konnektoros hibrid",
     "editor.tank_size": "Tankméret",
     "editor.tank_size_helper": "A tartalom mértékegységében (L, gal): a szintje, ha az autó csak a tartalmát jelzi",
-    "tyre_pressure_low": "Alacsony guminyomás"
+    "tyre_pressure_low": "Alacsony guminyomás",
+    "editor.tyre_decimals": "A guminyomás tizedesjegyei",
+    "editor.tyre_low": "Alacsony guminyomás ez alatt",
+    "editor.tyre_low_helper": "Nyomás a gumik mértékegységében, egy entitás vagy egy sablon, például {{ states('sensor.x') }}"
   },
   "remote": {
     "key.power": "Be/ki",

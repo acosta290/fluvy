@@ -3580,7 +3580,10 @@
     "editor.hybrid": "Подключаемый гибрид",
     "editor.tank_size": "Объём бака",
     "editor.tank_size_helper": "В единицах содержимого (L, gal): уровень, если автомобиль сообщает только содержимое",
-    "tyre_pressure_low": "Низкое давление в шинах"
+    "tyre_pressure_low": "Низкое давление в шинах",
+    "editor.tyre_decimals": "Знаков после запятой: шины",
+    "editor.tyre_low": "Порог низкого давления в шинах",
+    "editor.tyre_low_helper": "Давление в единицах шин, объект или шаблон, например {{ states('sensor.x') }}"
   },
   "expander": {
     "card": "Раскрывающийся блок",

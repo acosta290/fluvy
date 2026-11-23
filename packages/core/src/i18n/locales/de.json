@@ -3450,7 +3450,10 @@
     "editor.hybrid": "Plug-in-Hybrid",
     "editor.tank_size": "Tankgröße",
     "editor.tank_size_helper": "In der Einheit des Tankinhalts (L, gal): sein Füllstand, wo das Auto nur den Inhalt meldet",
-    "tyre_pressure_low": "Niedriger Reifendruck"
+    "tyre_pressure_low": "Niedriger Reifendruck",
+    "editor.tyre_decimals": "Dezimalstellen des Reifendrucks",
+    "editor.tyre_low": "Niedriger Reifendruck unter",
+    "editor.tyre_low_helper": "Ein Druck in der Einheit der Reifen, eine Entität oder ein Template wie {{ states('sensor.x') }}"
   },
   "remote": {
     "key.power": "Ein/Aus",

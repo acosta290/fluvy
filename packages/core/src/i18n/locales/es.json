@@ -3450,7 +3450,10 @@
     "editor.hybrid": "Híbrido enchufable",
     "editor.tank_size": "Capacidad del depósito",
     "editor.tank_size_helper": "En la unidad de lo que contiene (L, gal): su nivel, cuando el coche solo dice lo que contiene",
-    "tyre_pressure_low": "Presión de neumáticos baja"
+    "tyre_pressure_low": "Presión de neumáticos baja",
+    "editor.tyre_decimals": "Decimales de los neumáticos",
+    "editor.tyre_low": "Neumático bajo por debajo de",
+    "editor.tyre_low_helper": "Una presión en la unidad de los neumáticos, una entidad o una plantilla como {{ states('sensor.x') }}"
   },
   "remote": {
     "key.power": "Encendido",

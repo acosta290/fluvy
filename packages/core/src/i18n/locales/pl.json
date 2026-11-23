@@ -3376,7 +3376,10 @@
     "editor.hybrid": "Hybryda plug-in",
     "editor.tank_size": "Pojemność zbiornika",
     "editor.tank_size_helper": "W jednostce zawartości (L, gal): poziom tam, gdzie samochód podaje tylko zawartość",
-    "tyre_pressure_low": "Niskie ciśnienie w oponach"
+    "tyre_pressure_low": "Niskie ciśnienie w oponach",
+    "editor.tyre_decimals": "Miejsca dziesiętne ciśnienia opon",
+    "editor.tyre_low": "Niskie ciśnienie opony poniżej",
+    "editor.tyre_low_helper": "Ciśnienie w jednostce opon, encja lub szablon, np. {{ states('sensor.x') }}"
   },
   "wall": {
     "paused": "Tryb ściany wstrzymany",

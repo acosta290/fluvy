@@ -229,6 +229,13 @@ export interface VehicleCardConfig extends FluvyCardConfig, HeadConfig {
   show_rows?: boolean;
   rows?: ReadonlyArray<VehicleRow | RowEntry>;
   show_tyres?: boolean;
+  /** The tyres' decimals (0–2), or `auto`: their sensors' precision, else one under 10; the editor writes them as words. */
+  tyre_decimals?: number | string;
+  /**
+   * Under this pressure a tyre is low (#251): a figure in the tyres' unit, an entity (its reading, in its own unit), or
+   * a template; its figure in the warning's ink, its wheel in the drawing, and "Low tyre pressure" on the line.
+   */
+  tyre_low?: number | string;
   /** Under this range (in the range's unit) it is low; without it, a charge of 20 % or less is. */
   low_range?: number;
   /** Minutes after which a car that has said nothing says when it last did ("Updated 2 h ago"). */
@@ -2151,17 +2158,37 @@ export class FluvyVehicleCard extends Card<VehicleCardConfig> {
   /* ---------- the tyres ---------- */
 
   /**
-   * The decimals every tyre is written in (one count for all four): their sensors' display precision where Home
-   * Assistant's registry gives one, else one where they read under 10 (a bar's 2.3), none above (a psi's 36, a kPa's
-   * 230).
+   * The decimals every tyre is written in (one count for all four): the card's `tyre_decimals`, else their sensors'
+   * display precision where Home Assistant's registry gives one, else one where they read under 10 (a bar's 2.3), none
+   * above (a psi's 36, a kPa's 230).
    */
   private tyreDigits(views: readonly (EntityView | undefined)[]): number {
     const precisions = views.flatMap((v) => {
       const precision = v ? this.hass?.entities?.[v.id]?.display_precision : undefined;
       return typeof precision === 'number' && Number.isFinite(precision) ? [precision] : [];
     });
-    if (precisions.length) return Math.max(...precisions);
-    return this.tyreScale(views) < 10 ? 1 : 0;
+    return this.digits(
+      this.config?.tyre_decimals,
+      precisions.length ? Math.max(...precisions) : this.tyreScale(views) < 10 ? 1 : 0,
+    );
+  }
+
+  /**
+   * The pressure under which a tyre is low (`tyre_low`, #251), and the unit it is said in where it says one: a figure
+   * in the tyres' unit, an entity's reading in its own, a template's answer in the tyres'; none where it cannot be read
+   * (a template Home Assistant has not answered yet). The one place it is read.
+   */
+  private tyreLow(): { readonly value: number; readonly unit: string } | null {
+    const own = this.config?.tyre_low;
+    if (typeof own === 'number') return Number.isFinite(own) ? { value: own, unit: '' } : null;
+    if (isEntityId(own)) {
+      this.follows(own);
+      const v = this.entity(own);
+      return v.status === 'ok' && v.number !== null ? { value: v.number, unit: v.unit } : null;
+    }
+    const text = (this.ownText(own, false)?.text ?? '').trim().replace(',', '.');
+    const value = Number(text);
+    return text && Number.isFinite(value) ? { value, unit: '' } : null;
   }
 
   /** How large the tyres' figures run: their highest reading, else (out of reach) a car's usual 3 bar in their unit. */
@@ -2174,7 +2201,8 @@ export class FluvyVehicleCard extends Card<VehicleCardConfig> {
 
   /**
    * The four tyres, front left to rear right: each one's pressure, all four in the same decimals (`tyreDigits`), or
-   * where it has none what its warning says; low where its integration's warning is on (or its warning of every tyre).
+   * where it has none what its warning says; low where its integration's warning is on (or its warning of every
+   * tyre), or where it reads under `tyre_low` (said in another unit of pressure, brought to the tyre's).
    */
   private tyres(unavailable: boolean): Tyre[] {
     const { warnings } = this.car();
@@ -2182,10 +2210,17 @@ export class FluvyVehicleCard extends Card<VehicleCardConfig> {
     const all = on(warnings.all);
     const views = WHEELS.map((wheel) => this.view(`tyre_${wheel}`));
     const decimals = this.tyreDigits(views);
+    const under = this.tyreLow();
     return WHEELS.map((wheel, index) => {
       const v = views[index];
       const read = v?.status === 'ok' && !unavailable ? v.number : null;
-      const low = !unavailable && (on(warnings[wheel]) || all);
+      const low =
+        !unavailable &&
+        (on(warnings[wheel]) ||
+          all ||
+          (read !== null &&
+            under !== null &&
+            read < convertPressure(under.value, under.unit || (v?.unit ?? ''), v?.unit ?? '')));
       // a tyre with no pressure of its own says what its warning says
       const value =
         read !== null

@@ -3450,7 +3450,10 @@
     "editor.hybrid": "Şarj edilebilir hibrit",
     "editor.tank_size": "Depo hacmi",
     "editor.tank_size_helper": "İçindekinin biriminde (L, gal): aracın yalnızca içindekini bildirdiği yerde doluluğu",
-    "tyre_pressure_low": "Lastik basıncı düşük"
+    "tyre_pressure_low": "Lastik basıncı düşük",
+    "editor.tyre_decimals": "Lastik basıncı ondalıkları",
+    "editor.tyre_low": "Düşük lastik basıncı sınırı",
+    "editor.tyre_low_helper": "Lastiklerin biriminde bir basınç, bir varlık veya {{ states('sensor.x') }} gibi bir şablon"
   },
   "remote": {
     "key.power": "Güç",

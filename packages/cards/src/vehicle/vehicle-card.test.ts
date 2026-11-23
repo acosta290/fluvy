@@ -488,6 +488,54 @@ describe('the vehicle card', () => {
     expect(await pressures(precise, KIA.device)).toEqual(['35.5psi', '—', '—', '—']);
   });
 
+  it('finds a tyre low under its tyre_low: a figure, an entity in its own unit, a template once answered (#251)', async () => {
+    const calm = house({
+      'binary_sensor.model_y_tire_pressure_warning_rear_right': { state: 'off' },
+      'sensor.model_y_charging': { state: 'disconnected' },
+      'binary_sensor.model_y_charge_cable': { state: 'off' },
+      'sensor.model_y_charger_power': { state: '0' },
+    });
+    const states = calm.states as Record<string, HassEntity>;
+    states['sensor.tyre_threshold'] = {
+      entity_id: 'sensor.tyre_threshold',
+      state: '36',
+      attributes: { unit_of_measurement: 'psi' },
+    } as HassEntity;
+    const lowOf = async (tyre_low: unknown) => {
+      const card = await mount({ device: TESLA.device, show_tyres: true, tyre_low }, calm);
+      const read = {
+        low: [...root(card).querySelectorAll('.vh-tyre')].map((tyre) =>
+          tyre.classList.contains('is-low'),
+        ),
+        wheels: [...root(card).querySelectorAll('.vh-car rect.is-low')].length,
+        line: line(card),
+      };
+      document.body.replaceChildren();
+      return read;
+    };
+    const rearRight = { low: [false, false, false, true], wheels: 1, line: 'Low tyre pressure' };
+    expect(await lowOf(2.5)).toEqual(rearRight);
+    expect(await lowOf('2,5')).toEqual(rearRight);
+    // 36 psi is 2.48 bar: the rear right's 2.3 is under it, the front left's 2.9 is not
+    expect(await lowOf('sensor.tyre_threshold')).toEqual(rearRight);
+    // a template Home Assistant has not answered: no tyre is low yet
+    expect(await lowOf("{{ states('sensor.tyre_threshold') }}")).toEqual({
+      low: [false, false, false, false],
+      wheels: 0,
+      line: 'Unplugged · Limit 80 %',
+    });
+  });
+
+  it('writes its tyres in the decimals it asks for', async () => {
+    const card = await mount({ device: TESLA.device, show_tyres: true, tyre_decimals: '2' });
+    expect([...root(card).querySelectorAll('.vh-tyre')].map((tyre) => text(tyre))).toEqual([
+      '2.90bar',
+      '—',
+      '—',
+      '2.30bar',
+    ]);
+  });
+
   it('says its integration’s tyre warning on its line, the tyres drawn or not', async () => {
     const parked = {
       'sensor.model_y_charging': { state: 'disconnected' },

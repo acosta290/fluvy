@@ -3580,7 +3580,10 @@
     "editor.hybrid": "Гібрид із підзарядкою",
     "editor.tank_size": "Об’єм бака",
     "editor.tank_size_helper": "В одиницях вмісту (L, gal): рівень, коли автомобіль повідомляє лише вміст",
-    "tyre_pressure_low": "Низький тиск у шинах"
+    "tyre_pressure_low": "Низький тиск у шинах",
+    "editor.tyre_decimals": "Знаків після коми: шини",
+    "editor.tyre_low": "Поріг низького тиску в шинах",
+    "editor.tyre_low_helper": "Тиск в одиницях шин, сутність або шаблон, наприклад {{ states('sensor.x') }}"
   },
   "expander": {
     "card": "Розгортний блок",

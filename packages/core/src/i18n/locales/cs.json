@@ -3430,7 +3430,10 @@
     "editor.hybrid": "Plug-in hybrid",
     "editor.tank_size": "Objem nádrže",
     "editor.tank_size_helper": "V jednotce obsahu nádrže (L, gal): její stav tam, kde auto hlásí jen obsah",
-    "tyre_pressure_low": "Nízký tlak v pneumatikách"
+    "tyre_pressure_low": "Nízký tlak v pneumatikách",
+    "editor.tyre_decimals": "Desetinná místa tlaku pneumatik",
+    "editor.tyre_low": "Nízký tlak pneumatiky pod",
+    "editor.tyre_low_helper": "Tlak v jednotce pneumatik, entita, nebo šablona jako {{ states('sensor.x') }}"
   },
   "expander": {
     "card": "Rozbalovač",

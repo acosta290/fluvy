@@ -3450,7 +3450,10 @@
     "editor.hybrid": "Plug-in hybride",
     "editor.tank_size": "Tankinhoud",
     "editor.tank_size_helper": "In de eenheid van wat erin zit (L, gal): het niveau, waar de auto alleen zegt wat erin zit",
-    "tyre_pressure_low": "Lage bandenspanning"
+    "tyre_pressure_low": "Lage bandenspanning",
+    "editor.tyre_decimals": "Decimalen van de banden",
+    "editor.tyre_low": "Lage bandenspanning onder",
+    "editor.tyre_low_helper": "Een druk in de eenheid van de banden, een entiteit of een sjabloon zoals {{ states('sensor.x') }}"
   },
   "remote": {
     "key.power": "Aan/uit",
