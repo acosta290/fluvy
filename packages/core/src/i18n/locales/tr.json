@@ -1686,6 +1686,7 @@
     "dashboard.up_to_count": "Liste başına en fazla {count}",
     "cards.levels": "Simgeler seviyeyi gösterir",
     "cards.levels_sub": "Pilin şarjı, sinyalin çubukları, vananın açık ya da kapalı olması",
+    "cards.sheets_history": "Ayrıntılarda son 24 saat",
     "cards.exact": "Tam renkler",
     "cards.exact_sub": "Renk adları Home Assistant’ın çizdiği gibi, hex kodu yazıldığı gibi; paletin tonları değil",
     "scope.activity_who": "Kimin yaptığı",

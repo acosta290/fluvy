@@ -3872,7 +3872,9 @@ may say its own (`details`).
   For a state it is the share of each stretch spent on (open, in use); for a thermostat what it measures. The line
   ends on what the entity reads now. The whole strip is one button to Fluvy's History page for the entity. Where the
   label and the words do not hold on one line the words go under the label, and a state's word gives way before a
-  figure is cut.
+  figure is cut. The house may leave it off a kind (1.25, #243: a speaker's day says little), an action may ask it or
+  not (`history`): the sheet then ends on what its body holds, its own padding under it, and asks the recorder
+  nothing. In the panel the kinds are a chip row under the sheets' row, every one chosen as before.
 - **Out of reach.** The sheet keeps its anatomy: the head in the off skin saying why, its rounds alive; the dial at
   "—" with no knob, the keys and the rows still, the chips dashed, all faded as one; the day in the neutral ink.
 - **Focus.** It opens on Close; Tab walks the sheet and nothing behind it; Escape, Close and a tap on the scrim close

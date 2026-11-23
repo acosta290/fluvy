@@ -3192,6 +3192,7 @@
     "dashboard.up_to_count": "Op til {count} pr. liste",
     "cards.levels": "Ikoner viser niveauet",
     "cards.levels_sub": "Et batteris opladning, et signals streger, en ventil åben eller lukket",
+    "cards.sheets_history": "Arkene viser de seneste 24 timer",
     "cards.exact": "Præcise farver",
     "cards.exact_sub": "Farvenavne, som Home Assistant tegner dem, og en hexkode, som den er skrevet, ikke palettens nuancer",
     "scope.activity_who": "Hvem gjorde det",

@@ -3179,6 +3179,7 @@
     "dashboard.up_to_count": "До {count} в списке",
     "cards.levels": "Значки показывают уровень",
     "cards.levels_sub": "Заряд батареи, деления сигнала, клапан открыт или закрыт",
+    "cards.sheets_history": "Последние 24 часа в подробностях",
     "cards.exact": "Точные цвета",
     "cards.exact_sub": "Названия цветов так, как их рисует Home Assistant, и hex-код как введён, а не оттенки палитры",
     "scope.activity_who": "Кто это сделал",

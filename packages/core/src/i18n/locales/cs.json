@@ -3113,6 +3113,7 @@
     "dashboard.up_to_count": "Až {count} v každém seznamu",
     "cards.levels": "Ikony ukazují úroveň",
     "cards.levels_sub": "Nabití baterie, čárky signálu, ventil otevřený nebo zavřený",
+    "cards.sheets_history": "Panely ukazují posledních 24 hodin",
     "cards.exact": "Přesné barvy",
     "cards.exact_sub": "Názvy barev tak, jak je kreslí Home Assistant, a hex kód tak, jak je zadán, ne odstíny palety",
     "scope.activity_who": "Kdo to udělal",

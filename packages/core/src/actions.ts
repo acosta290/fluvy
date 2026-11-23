@@ -18,13 +18,14 @@ export const moreInfo = (node: EventTarget, entityId: string): void =>
 /**
  * Who opens Fluvy's own details sheets (1.20, #162): the cards' package says so (`details-family.ts`), and answers whether
  * it took the entity — one it has a sheet for, where the action (`own`: its `details`) or else the house asks for
- * Fluvy's. Home Assistant's dialog opens wherever it did not, and where nobody says (a page without the cards).
+ * Fluvy's, its last 24 hours where the action (its `history`, #243) or else the house shows them. Home Assistant's
+ * dialog opens wherever it did not, and where nobody says (a page without the cards).
  */
 export type DetailsSheetsOpener = (
   node: HTMLElement,
   hass: HomeAssistant,
   entityId: string,
-  own: Sheets | undefined,
+  own: Pick<ActionConfig, 'details' | 'history'>,
 ) => boolean;
 let detailsSheets: DetailsSheetsOpener | undefined;
 export const setDetailsSheets = (opener: DetailsSheetsOpener | undefined): void => {
@@ -95,6 +96,8 @@ export interface ActionConfig {
   confirmation?: boolean | ActionConfirmation;
   /** Whose details a `more-info` opens (1.20, #162): Fluvy's sheet or Home Assistant's dialog; unset, the house's. */
   details?: Sheets;
+  /** Whether Fluvy's sheet shows the last 24 hours at its foot (1.25, #243); unset, the house's for its kind. */
+  history?: boolean;
   /** `fire-dom-event` hands the whole action on, so it carries whatever its listener reads (`browser_mod: {…}`). */
   [key: string]: unknown;
 }
@@ -263,7 +266,7 @@ export async function runAction(
   }
   switch (config.action) {
     case 'more-info':
-      if (entity && !detailsSheets?.(node, hass, entity, config.details)) moreInfo(node, entity);
+      if (entity && !detailsSheets?.(node, hass, entity, config)) moreInfo(node, entity);
       return;
     case 'toggle':
       if (entity) {

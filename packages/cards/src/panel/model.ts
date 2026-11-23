@@ -17,6 +17,7 @@ import {
   type EffectiveSettings,
   type LightTint,
   type MessageKey,
+  type SheetKind,
   type SliderStyle,
   type WallSettings,
   type HomeAssistant,
@@ -86,6 +87,15 @@ export const TINT_WORD: Readonly<Record<LightTint, 'never' | 'active' | 'always'
   always: 'always',
 };
 
+/** A details sheet's kind as a room names its set (#243): a cover's sheet is its blinds', a thermostat's its climate. */
+export const SHEET_WORD: Readonly<Record<SheetKind, MessageKey>> = {
+  light: 'room.lights',
+  climate: 'room.climate',
+  cover: 'room.covers',
+  media: 'room.media',
+  fan: 'room.fans',
+};
+
 /** A page background's word (#155): plain as the wall says it, the gradient as a chart's fill does. */
 export const backgroundWord = (
   ctx: Pick<PanelContext, 't' | 'hass'>,
@@ -123,6 +133,7 @@ export type HouseEdit = Partial<
     | 'stateTintStyle'
     | 'statuses'
     | 'sheets'
+    | 'sheetsHistory'
     | 'rooms'
     | 'levelIcons'
     | 'exactColors'
@@ -574,6 +585,13 @@ export function changeLines(ctx: PanelContext): string[] {
   }
   if (house.sheets)
     lines.push(`${t('cards.title')} · ${t('cards.sheets')} · ${onOff(house.sheets === 'fluvy')}`);
+  if (house.sheetsHistory)
+    lines.push(
+      `${t('cards.title')} · ${t('cards.sheets_history')} · ${
+        house.sheetsHistory.map((kind) => localize(ctx.hass, SHEET_WORD[kind])).join(', ') ||
+        localize(ctx.hass, 'option.none')
+      }`,
+    );
   if (house.levelIcons !== undefined)
     lines.push(`${t('cards.title')} · ${t('cards.levels')} · ${onOff(house.levelIcons)}`);
   if (house.exactColors !== undefined)

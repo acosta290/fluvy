@@ -28,6 +28,7 @@ import {
   roomRank,
   type RoomOrder,
   type Scope,
+  SHEET_KINDS,
   chromeOf,
   HA_LOGO_URL,
   SLIDER_STYLES,
@@ -118,6 +119,7 @@ import {
   LINES,
   lookTitle,
   paletteTitle,
+  SHEET_WORD,
   SLIDER_WORD,
   TINT_WORD,
   STATUS_STARTS,
@@ -1032,14 +1034,41 @@ function backgroundCard(ctx: PanelContext): TemplateResult {
 const OPACITY_MARKS = [0, 25, 50, 75, 100] as const;
 
 /**
+ * Which kinds' sheets show their last 24 hours at their foot (#243), under the sheets' row while the house opens them:
+ * a chip a kind, each chosen or not, every one at first, as before; none chosen, no sheet asks the recorder for a day.
+ */
+function sheetsHistory(ctx: PanelContext): TemplateResult {
+  const { shown, admin } = ctx;
+  const kinds = shown.sheetsHistory;
+  return html`<p class="fv-label pn-label">${ctx.t('cards.sheets_history')}</p>
+    ${choice(
+      ctx,
+      SHEET_KINDS.map((kind) => ({
+        key: kind,
+        label: localize(ctx.hass, SHEET_WORD[kind]),
+        active: kinds.includes(kind),
+      })),
+      admin
+        ? (key) =>
+            ctx.editHouse({
+              sheetsHistory: SHEET_KINDS.filter((kind) =>
+                kind === key ? !kinds.includes(kind) : kinds.includes(kind),
+              ),
+            })
+        : null,
+    )}`;
+}
+
+/**
  * Every card's surface where a card says nothing of its own (1.15, #121): how opaque it is, on the ruler a light's
  * brightness is set on (5 % steps, its figure at the row's end), whether what shows through a see-through card is
  * blurred — said always, as a card may be see-through of its own on a solid house — whether it draws its border (1.19,
- * #171), whose details it opens (1.20, #162), whether its icons show their level (1.23, #226), whether it wears the
- * colours it names as they are named (1.25, #250: off, the palette's tones, as before), how a card out of reach looks
- * (1.16, #126: dashed, or as when off) and when a device card shows its state's colour beyond its circle (1.22, #196:
- * never, as before; while it is active; at rest too) and, while it does, as what (a wash, its edge, its control). The
- * house's, an administrator's to set; shown on the preview and the page while it is chosen.
+ * #171), whether a card opens Fluvy's details sheets and which kinds' show their last 24 hours (1.25, #243), whether
+ * its icons show their level (1.23, #226), whether it wears the colours it names as they are named (1.25, #250: off,
+ * the palette's tones, as before), how a card out of reach looks (1.16, #126: dashed, or as when off) and when a device
+ * card shows its state's colour beyond its circle (1.22, #196: never, as before; while it is active; at rest too) and,
+ * while it does, as what (a wash, its edge, its control). The house's, an administrator's to set; shown on the preview
+ * and the page while it is chosen.
  */
 function cardsCard(ctx: PanelContext): TemplateResult {
   const { shown, admin } = ctx;
@@ -1109,6 +1138,9 @@ function cardsCard(ctx: PanelContext): TemplateResult {
         readonly: !admin,
         onToggle: (on) => ctx.editHouse({ sheets: on ? 'fluvy' : 'home-assistant' }),
       })}
+    </div>
+    ${shown.sheets === 'fluvy' ? sheetsHistory(ctx) : nothing}
+    <div class="pn-rows">
       ${listRow({
         icon: 'battery',
         title: ctx.t('cards.levels'),

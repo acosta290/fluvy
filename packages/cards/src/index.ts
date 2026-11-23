@@ -168,7 +168,12 @@ export async function catalogue(): Promise<readonly CatalogueEntry[]> {
 defineStrategies();
 
 // Fluvy's own details sheets (1.20, #162) where the house asks for them, fetched the first time one opens
-setDetailsSheets(detailsSheets(() => lookHandle()?.settings().sheets));
+setDetailsSheets(
+  detailsSheets(
+    () => lookHandle()?.settings().sheets,
+    () => lookHandle()?.settings().sheetsHistory,
+  ),
+);
 
 // a dashboard's own sidebar (1.21, #187), fetched by the first dashboard whose configuration asks for one
 setSidebar(() => import('./sidebar/index.js'));

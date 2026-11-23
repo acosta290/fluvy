@@ -498,6 +498,7 @@
     "dashboard.up_to_count": "Up to {count} per list",
     "cards.levels": "Icons show their level",
     "cards.levels_sub": "A battery’s charge, a signal’s bars, a valve open or shut",
+    "cards.sheets_history": "Sheets show their last 24 hours",
     "cards.exact": "Exact colours",
     "cards.exact_sub": "Colour names as Home Assistant draws them and a hex as typed, not the palette’s shades",
     "scope.activity_who": "Who did it",

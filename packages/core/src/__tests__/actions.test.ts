@@ -73,11 +73,22 @@ describe('runAction', () => {
       await runAction(card, hass, undefined, 'light.desk');
       await runAction(card, hass, { action: 'more-info', details: 'home-assistant' }, 'light.desk');
       await runAction(card, hass, { action: 'more-info', entity: 'fan.attic', details: 'fluvy' });
+      // and whether its last 24 hours show (#243)
+      await runAction(card, hass, { action: 'more-info', history: false }, 'media_player.den');
 
-      expect(opener.mock.calls).toEqual([
-        [card, hass, 'light.desk', undefined],
-        [card, hass, 'light.desk', 'home-assistant'],
-        [card, hass, 'fan.attic', 'fluvy'],
+      expect(
+        opener.mock.calls.map(([node, home, entity, own]) => [
+          node,
+          home,
+          entity,
+          own.details,
+          own.history,
+        ]),
+      ).toEqual([
+        [card, hass, 'light.desk', undefined, undefined],
+        [card, hass, 'light.desk', 'home-assistant', undefined],
+        [card, hass, 'fan.attic', 'fluvy', undefined],
+        [card, hass, 'media_player.den', undefined, false],
       ]);
       // taken: Home Assistant's dialog stays shut
       expect(dialog).toEqual([]);

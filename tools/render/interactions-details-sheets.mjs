@@ -9,7 +9,9 @@
  * key on the knob steps too; the focus starts on Close, never leaves the dialog and goes back to the tile as Escape
  * closes it; the sheet follows the house while it is open; its round opens Home Assistant's own details and its day
  * goes to the History page, each closing it. Every docked sheet stands as tall as it draws, without a scroller, and
- * one out of reach calls nothing.
+ * one out of reach calls nothing. A sheet shows its last 24 hours where the house does for its kind (#243: the lights
+ * alone, `&sheetsday=light`) and an action says nothing else (`history: false`), and one without them asks the
+ * recorder nothing.
  * Real cards on the playground's simulated hass.
  * Exit code 1 on any failure.
  *   PLAYGROUND=http://127.0.0.1:5183/ node interactions-details-sheets.mjs
@@ -355,6 +357,73 @@ const knobOf = (page) => page.locator('body > fluvy-details-light fluvy-dial [da
     JSON.stringify([disabled, await calls(page)]),
   );
   await page.close();
+}
+
+/* ---------- the last 24 hours, where the house and an action show them (#243) ---------- */
+{
+  /** The sheet open now: whether it draws its day, and the recorder's days asked since the last reset. */
+  const day = async (page) => ({
+    drawn: await page.evaluate(() => {
+      const sheet = [...document.body.children].find((el) =>
+        el.localName.startsWith('fluvy-details-'),
+      );
+      return sheet ? Boolean(sheet.shadowRoot.querySelector('.dt-day')) : null;
+    }),
+    asked: await page.evaluate(
+      () =>
+        window.fluvyMock.wsCalls.filter((call) => call.type === 'history/history_during_period')
+          .length,
+    ),
+  });
+  const close = async (page) => {
+    await page.keyboard.press('Escape');
+    await settle(page, 350);
+  };
+  // the house shows them for its lights alone: a lamp's day, a speaker's none, and nothing asked for it
+  const page = await suite.page(
+    'sheet=details-sheets&width=328&lang=en&sheets=fluvy&sheetsday=light',
+    { viewport: PHONE, reducedMotion: 'reduce' },
+  );
+  await reset(page);
+  await tap(page, 'Floor lamp');
+  const lamp = await day(page);
+  await close(page);
+  await reset(page);
+  await tap(page, 'Kitchen speaker');
+  const speaker = await day(page);
+  await close(page);
+  check(
+    'the house shows the lights’ last 24 hours alone: the lamp’s sheet draws its day, the speaker’s none and asks the recorder nothing',
+    lamp.drawn === true && lamp.asked === 1 && speaker.drawn === false && speaker.asked === 0,
+    JSON.stringify({ lamp, speaker }),
+  );
+  await page.close();
+  // an action's own `history: false`, in a house that shows every kind
+  const own = await open(PHONE);
+  const tile = own
+    .locator('[data-frame$="/Tiles · the speakers without their last 24 hours (#243)"] .fv-tile')
+    .first();
+  await tile.scrollIntoViewIfNeeded();
+  await reset(own);
+  const box = await tile.boundingBox();
+  await own.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
+  await settle(own, 350);
+  const quiet = await day(own);
+  check(
+    'a tile’s action with history: false opens the speaker’s sheet without its day, and asks the recorder nothing',
+    quiet.drawn === false && quiet.asked === 0,
+    JSON.stringify(quiet),
+  );
+  await close(own);
+  await reset(own);
+  await tap(own, 'Kitchen speaker');
+  const shown = await day(own);
+  check(
+    'the same speaker from a tile that says nothing shows its day, as before',
+    shown.drawn === true && shown.asked === 1,
+    JSON.stringify(shown),
+  );
+  await own.close();
 }
 
 await suite.finish();

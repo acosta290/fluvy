@@ -128,8 +128,9 @@ other entity, or a card that is not Fluvy's, opens Home Assistant's dialog.
 | Fan | Speed | −, switch, +; **Oscillate**, **Direction**, **Preset** |
 
 Its **…** opens Home Assistant's details; its foot shows the last 24 hours, and a tap there opens
-[History](pages.md#history). The house turns the sheets off in the settings panel (Appearance → Cards); one action
-chooses with `details`:
+[History](pages.md#history). The house turns the sheets off in the settings panel (Appearance → Cards), and chooses
+there which kinds keep their last 24 hours (*Sheets show their last 24 hours*: every kind until chosen). One action
+chooses with `details` and `history`:
 
 ```yaml
 type: custom:fluvy-tile-card
@@ -139,11 +140,23 @@ tap_action:
   details: home-assistant # this tile keeps Home Assistant's dialog; `fluvy` asks for the sheet
 ```
 
+```yaml
+type: custom:fluvy-tile-card
+entity: media_player.kitchen_speaker
+tap_action:
+  action: more-info
+  history: false # its sheet without the last 24 hours; `true` shows them where the house does not
+```
+
+A sheet without its last 24 hours asks Home Assistant's recorder nothing.
+
 A card of your own opens the same, by the house's choice: Fluvy's sheet where it has one, else Home Assistant's
-dialog. Pass your card's element as `from`, so the focus comes back to it:
+dialog. Pass your card's element as `from`, so the focus comes back to it, and `history` to say whether its last 24
+hours show:
 
 ```js
 window.__fluvy?.openDetails('climate.living_room', { from: this });
+window.__fluvy?.openDetails('media_player.kitchen_speaker', { from: this, history: false });
 ```
 
 ## Customisation

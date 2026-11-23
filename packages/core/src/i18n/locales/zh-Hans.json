@@ -3055,6 +3055,7 @@
     "dashboard.up_to_count": "每个列表最多 {count} 项",
     "cards.levels": "图标显示级别",
     "cards.levels_sub": "电池电量、信号格数、阀门开关",
+    "cards.sheets_history": "详情面板显示过去 24 小时",
     "cards.exact": "精确颜色",
     "cards.exact_sub": "颜色名称按 Home Assistant 的颜色显示，十六进制色值按输入显示，而非配色的色调",
     "scope.activity_who": "谁操作的",

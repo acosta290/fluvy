@@ -50,10 +50,11 @@ export type { CardLanguage };
 
 export const SETTINGS_KEY = 'fluvy';
 /**
- * 9 since 1.25: the house says whether its Activity view shows who did each entry (`activityWho`) and whether its
- * cards wear the colours they name as they are named (`exactColors`, #250: Home Assistant's own value for a name, a hex
- * as given): both off where an 8 stored none, every entry and every card as before, so nothing changes on upgrade (a
- * 1.24 bundle reads a 9's as its own, and keeps the fields on a save).
+ * 9 since 1.25: the house says whether its Activity view shows who did each entry (`activityWho`), whether its cards
+ * wear the colours they name as they are named (`exactColors`, #250: Home Assistant's own value for a name, a hex as
+ * given) and which kinds' details sheets show their last 24 hours at their foot (`sheetsHistory`, #243): off, off and
+ * every kind where an 8 stored none, every entry, card and sheet as before, so nothing changes on upgrade (a 1.24
+ * bundle reads a 9's as its own, and keeps the fields on a save).
  * 8 since 1.23: the house says whether Fluvy's icons show what an entity reads (`levelIcons`, #226: a battery's charge,
  * a signal's bars, a valve open or shut): off where a 7 stored none, each icon drawn as it was, so nothing changes on
  * upgrade (a 1.22 bundle reads an 8's as its own, and keeps the field on a save).
@@ -120,6 +121,13 @@ export type MenuIcons = Readonly<Record<IconPlace, boolean>>;
  * player, a fan and their kin): Fluvy's own sheet, or Home Assistant's dialog, as every other entity opens.
  */
 export type Sheets = 'fluvy' | 'home-assistant';
+
+/**
+ * The kinds of details sheet, as the panel names them (1.25, #243): a light's, a thermostat's (a water heater's and a
+ * humidifier's), a cover's (a valve's), a player's and a fan's.
+ */
+export const SHEET_KINDS = ['light', 'climate', 'cover', 'media', 'fan'] as const;
+export type SheetKind = (typeof SHEET_KINDS)[number];
 
 /** When a light card shows its light's colour on its surface: never, while the light is on, or at rest too. */
 export const LIGHT_TINTS = ['off', 'on', 'always'] as const;
@@ -230,6 +238,8 @@ export interface HouseSettings {
   readonly background: PageBackground;
   /** Whose details a Fluvy card opens where its action says none of its own (1.20, #162). */
   readonly sheets: Sheets;
+  /** The kinds whose sheet shows its last 24 hours where an action says nothing of its own (1.25, #243). */
+  readonly sheetsHistory: readonly SheetKind[];
   /** The order every list by room reads the house's rooms in (1.21, #189). */
   readonly rooms: RoomOrder;
   /** Fluvy's icons show what an entity reads where they can (1.23, #226): a battery's charge, a signal's bars, a valve. */
@@ -291,6 +301,7 @@ export interface EffectiveSettings {
   readonly sliders: SliderSettings;
   readonly background: PageBackground;
   readonly sheets: Sheets;
+  readonly sheetsHistory: readonly SheetKind[];
   readonly rooms: RoomOrder;
   readonly levelIcons: boolean;
   readonly exactColors: boolean;
@@ -347,6 +358,8 @@ export const HOUSE_DEFAULTS: HouseSettings = {
   background: BACKGROUND_DEFAULTS,
   // Fluvy's own details sheets from 1.20 on, where Home Assistant's dialog opened before
   sheets: 'fluvy',
+  // every sheet with its last 24 hours, as before 1.25
+  sheetsHistory: SHEET_KINDS,
   // every list by room in its own order, as before 1.21
   rooms: { sort: 'auto', order: [] },
   // every icon of its kind's one glyph, as before 1.23
@@ -445,6 +458,12 @@ export function parseIcons(raw: unknown): MenuIcons {
   };
 }
 
+/** The kinds whose sheets show their last 24 hours: those it knows, each once, in their order; no list is every kind. */
+export const parseSheetKinds = (raw: unknown): readonly SheetKind[] =>
+  Array.isArray(raw)
+    ? SHEET_KINDS.filter((kind) => raw.includes(kind))
+    : HOUSE_DEFAULTS.sheetsHistory;
+
 /** The house's order of its rooms: a sort it knows, and the area ids that come first, each once. */
 export function parseRooms(raw: unknown): RoomOrder {
   const value = isRecord(raw) ? raw : {};
@@ -492,6 +511,7 @@ export function parseHouse(raw: unknown): HouseSettings {
     sliders: parseSliderSettings(value['sliders']),
     background: parseBackground(value['background']),
     sheets: value['sheets'] === 'home-assistant' ? 'home-assistant' : d.sheets,
+    sheetsHistory: parseSheetKinds(value['sheetsHistory']),
     rooms: parseRooms(value['rooms']),
     levelIcons: value['levelIcons'] === true,
     exactColors: value['exactColors'] === true,
@@ -560,6 +580,7 @@ export function resolveSettings(
     sliders: house.sliders,
     background: house.background,
     sheets: house.sheets,
+    sheetsHistory: house.sheetsHistory,
     rooms: house.rooms,
     levelIcons: house.levelIcons,
     exactColors: house.exactColors,

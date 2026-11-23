@@ -3019,6 +3019,7 @@
     "dashboard.up_to_count": "各リスト最大{count}件",
     "cards.levels": "アイコンでレベルを表示",
     "cards.levels_sub": "バッテリーの残量、信号の強さ、バルブの開閉",
+    "cards.sheets_history": "シートに過去24時間を表示",
     "cards.exact": "正確な色",
     "cards.exact_sub": "色の名前は Home Assistant の色で、カラーコードは入力どおりに表示し、パレットの色合いにはしません",
     "scope.activity_who": "誰が操作したか",

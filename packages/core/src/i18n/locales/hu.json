@@ -3130,6 +3130,7 @@
     "dashboard.up_to_count": "Listánként legfeljebb {count}",
     "cards.levels": "Az ikonok mutatják a szintet",
     "cards.levels_sub": "Az akkumulátor töltöttsége, a jel sávjai, a szelep nyitva vagy zárva",
+    "cards.sheets_history": "Az elmúlt 24 óra a részleteknél",
     "cards.exact": "Pontos színek",
     "cards.exact_sub": "A színnevek úgy, ahogy a Home Assistant rajzolja őket, a hex kód úgy, ahogy beírták, nem a paletta árnyalatai",
     "scope.activity_who": "Ki csinálta",

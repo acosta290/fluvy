@@ -13,12 +13,14 @@ import {
   parsePersonal,
   parseRooms,
   parseSavedPalettes,
+  parseSheetKinds,
   parseSliderSettings,
   parseWall,
   PERSONAL_DEFAULTS,
   resolveSettings,
   SettingsStore,
   SETTINGS_VERSION,
+  SHEET_KINDS,
   SLIDER_DEFAULTS,
   pageScope,
   WALL_DEFAULTS,
@@ -84,6 +86,8 @@ describe('parsing stored settings', () => {
         statuses: { warning: '#DC630B', danger: 'red' },
         cards: { opacity: 60, blur: false, unavailable: 'quiet', border: false },
         sheets: 'home-assistant',
+        // a kind once, in their order, nothing that is not one
+        sheetsHistory: ['fan', 'light', 'fan', 'switch', 3],
         // an area's id once, nothing that is not one
         rooms: { sort: 'name', order: ['kitchen', 'kitchen', 3, '', 'hall'] },
         levelIcons: true,
@@ -124,6 +128,7 @@ describe('parsing stored settings', () => {
       sliders: SLIDER_DEFAULTS,
       background: BACKGROUND_DEFAULTS,
       sheets: 'home-assistant',
+      sheetsHistory: ['light', 'fan'],
       rooms: { sort: 'name', order: ['kitchen', 'hall'] },
       levelIcons: true,
       exactColors: true,
@@ -292,6 +297,23 @@ describe('parsing stored settings', () => {
     expect(resolveSettings(parseHouse({ exactColors: true }), PERSONAL_DEFAULTS).exactColors).toBe(
       true,
     );
+  });
+
+  it('reads which kinds’ sheets show their last 24 hours: every kind where an 8 stored none (1.25, #243: nothing changes on upgrade)', () => {
+    // a 1.24 house stored none: every sheet shows its day, as before
+    const upgraded = parseHouse({ version: 8, palette: 'volt' });
+    expect(upgraded.sheetsHistory).toEqual(['light', 'climate', 'cover', 'media', 'fan']);
+    expect(upgraded.version).toBe(SETTINGS_VERSION);
+    expect(SETTINGS_VERSION).toBe(9);
+    expect(HOUSE_DEFAULTS.sheetsHistory).toEqual(SHEET_KINDS);
+    // none chosen is none; anything but a list is every kind
+    expect(parseSheetKinds([])).toEqual([]);
+    for (const broken of ['light', null, { light: true }, 3])
+      expect(parseSheetKinds(broken)).toEqual(SHEET_KINDS);
+    // the house's, whoever looks
+    expect(
+      resolveSettings(parseHouse({ sheetsHistory: ['climate'] }), PERSONAL_DEFAULTS).sheetsHistory,
+    ).toEqual(['climate']);
   });
 
   it('reads the cards’ surface, each broken field as solid and blurred (1.15: nothing changes on upgrade)', () => {

@@ -2786,6 +2786,7 @@
     "dashboard.up_to_count": "Do {count} na listę",
     "cards.levels": "Ikony pokazują poziom",
     "cards.levels_sub": "Naładowanie baterii, kreski sygnału, zawór otwarty lub zamknięty",
+    "cards.sheets_history": "Ostatnie 24 godziny w szczegółach",
     "cards.exact": "Dokładne kolory",
     "cards.exact_sub": "Nazwy kolorów tak, jak rysuje je Home Assistant, i kod hex tak, jak wpisano, nie odcienie palety",
     "scope.activity_who": "Kto to zrobił",

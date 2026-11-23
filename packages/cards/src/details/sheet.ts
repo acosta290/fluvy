@@ -24,6 +24,8 @@ import { DayStrip, type DaySpec } from './history.js';
 import { detailsStyles } from './styles.js';
 
 export interface DetailsConfig extends FluvyCardConfig {
+  /** false: no last 24 hours at its foot, and nothing asked of the recorder (#243: an action's, or the house's). */
+  show_history?: boolean;
   /**
    * Test hook: the sheet drawn in the flow instead of in a modal dialog (the playground), as a phone's sheet or, `wide`,
    * as a wide screen's dialog. Undocumented.
@@ -78,7 +80,8 @@ const keepTouch = { handleEvent: (event: Event): void => event.stopPropagation()
  * dialog's place — a bottom sheet on a phone, a dialog in the middle of a wide screen. One family, each of a kind: the
  * entity's circle in its tone, its name over its area and its state, a round to Home Assistant's own details (its
  * settings, its history, what it relates to) and one to close; then the kind's one control, a dial, the keys and the
- * rows under it (`renderBody`); and at the foot its last 24 hours, a tap from Fluvy's History page. It is a card in
+ * rows under it (`renderBody`); and at the foot its last 24 hours, a tap from Fluvy's History page, where they are not
+ * turned off (`show_history`, #243). It is a card in
  * all but where it stands: it reads the look, speaks the person's language, shows a change at once and calls Home
  * Assistant as a card does. Opened on the page's body, it follows Home Assistant through the card that opened it and
  * reads at that card's size (#190).
@@ -420,7 +423,7 @@ export abstract class DetailsSheet extends Card<DetailsConfig> {
       <div class="dt-body ${unusable ? 'is-unavailable' : ''}">
         ${this.renderBody(view, unusable)}
       </div>
-      ${this.renderDay(view, name, unusable)}
+      ${this.config?.show_history === false ? nothing : this.renderDay(view, name, unusable)}
     </div>`;
   }
 

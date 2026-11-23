@@ -1686,6 +1686,7 @@
     "dashboard.up_to_count": "Bis zu {count} je Liste",
     "cards.levels": "Symbole zeigen den Stand",
     "cards.levels_sub": "Ladung einer Batterie, Balken eines Signals, ein Ventil offen oder geschlossen",
+    "cards.sheets_history": "Ansichten zeigen die letzten 24 Stunden",
     "cards.exact": "Exakte Farben",
     "cards.exact_sub": "Farbnamen wie in Home Assistant und Hex-Werte wie eingegeben, nicht die Töne der Palette",
     "scope.activity_who": "Wer es war",

@@ -1686,6 +1686,7 @@
     "dashboard.up_to_count": "Fino a {count} per elenco",
     "cards.levels": "Le icone mostrano il livello",
     "cards.levels_sub": "La carica di una batteria, le tacche di un segnale, una valvola aperta o chiusa",
+    "cards.sheets_history": "Ultime 24 ore nei dettagli",
     "cards.exact": "Colori esatti",
     "cards.exact_sub": "I nomi dei colori come li disegna Home Assistant e un codice esadecimale come scritto, non le tinte della palette",
     "scope.activity_who": "Chi è stato",

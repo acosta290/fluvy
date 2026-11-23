@@ -220,7 +220,7 @@ describe('who opens the details', () => {
   afterEach(() => wait(30));
   const takes = (id: string, houseSays: Sheets | undefined, own?: Sheets): boolean => {
     document.body.replaceChildren();
-    return detailsSheets(() => houseSays)(node, hass, id, own);
+    return detailsSheets(() => houseSays)(node, hass, id, own ? { details: own } : {});
   };
 
   it('takes the kinds with a sheet where the house asks for Fluvy’s, and no other entity', () => {
@@ -302,6 +302,71 @@ describe('who opens the details', () => {
     openEntityDetails('switch.plug');
     expect(asked.at(-1)).toBe('switch.plug');
     expect(asked.filter((id) => id === 'switch.plug')).toHaveLength(1);
+  });
+
+  it('shows the last 24 hours where the house does for the kind, an action’s own say first, and asks no recorder without them (#243)', async () => {
+    // the house shows them for its lights and thermostats alone
+    setDetailsSheets(
+      detailsSheets(
+        () => 'fluvy',
+        () => ['light', 'climate'],
+      ),
+    );
+    const card = document.createElement('div');
+    document.body.append(card);
+    /** The sheet a more-info opened: whether it draws its day, and whether the recorder was asked for one. */
+    const opened = async (
+      state: HassEntity,
+      action: Record<string, unknown> = {},
+    ): Promise<{ day: boolean; asked: boolean }> => {
+      const home = house(state);
+      await runAction(card, home, { action: 'more-info', ...action }, state.entity_id);
+      const sheet = await vi.waitFor(() => {
+        const found = [...document.body.children].find((el) =>
+          el.localName.startsWith('fluvy-details-'),
+        ) as Sheet | undefined;
+        expect(found?.shadowRoot?.querySelector('.fv-sheet')).toBeTruthy();
+        return found!;
+      });
+      await sheet.updateComplete;
+      const day = Boolean(sheet.shadowRoot!.querySelector('.dt-day'));
+      const asked = home.callWS.mock.calls.some(
+        ([message]) => (message as { type?: string }).type === 'history/history_during_period',
+      );
+      sheet.remove();
+      return { day, asked };
+    };
+    expect(await opened(FLOOR)).toEqual({ day: true, asked: true });
+    expect(await opened(TANK)).toEqual({ day: true, asked: true });
+    // a player and a fan: none, and nothing asked of the recorder
+    expect(await opened(SPEAKER)).toEqual({ day: false, asked: false });
+    expect(await opened(CEILING_FAN)).toEqual({ day: false, asked: false });
+    // an action's own say, either way
+    expect(await opened(SPEAKER, { history: true })).toEqual({ day: true, asked: true });
+    expect(await opened(FLOOR, { history: false })).toEqual({ day: false, asked: false });
+    // a card of one's own says it too (`__fluvy.openDetails`)
+    const app = Object.assign(document.createElement('home-assistant'), { hass: house(FLOOR) });
+    document.body.append(app);
+    openEntityDetails('light.floor', { history: false });
+    const sheet = await vi.waitFor(() => {
+      const found = document.body.querySelector<Sheet>('fluvy-details-light');
+      expect(found?.shadowRoot?.querySelector('.fv-sheet')).toBeTruthy();
+      return found!;
+    });
+    expect(sheet.shadowRoot!.querySelector('.dt-day')).toBeNull();
+  });
+
+  it('shows every kind’s last 24 hours where nobody says otherwise, as before 1.25', async () => {
+    setDetailsSheets(detailsSheets(() => 'fluvy'));
+    const card = document.createElement('div');
+    document.body.append(card);
+    await runAction(card, house(SPEAKER), { action: 'more-info' }, 'media_player.kitchen');
+    const sheet = await vi.waitFor(() => {
+      const found = document.body.querySelector<Sheet>('fluvy-details-media');
+      expect(found?.shadowRoot?.querySelector('.fv-sheet')).toBeTruthy();
+      return found!;
+    });
+    expect(sheet.shadowRoot!.querySelector('.dt-day')).not.toBeNull();
   });
 
   it('never answers a more-info it was not handed: Home Assistant’s own cards keep the dialog', async () => {

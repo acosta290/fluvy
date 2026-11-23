@@ -3192,6 +3192,7 @@
     "dashboard.up_to_count": "Upp till {count} per lista",
     "cards.levels": "Ikoner visar nivån",
     "cards.levels_sub": "Ett batteris laddning, en signals staplar, en ventil öppen eller stängd",
+    "cards.sheets_history": "Arken visar de senaste 24 timmarna",
     "cards.exact": "Exakta färger",
     "cards.exact_sub": "Färgnamn som Home Assistant ritar dem och en hexkod som den skrivs, inte palettens nyanser",
     "scope.activity_who": "Vem som gjorde det",

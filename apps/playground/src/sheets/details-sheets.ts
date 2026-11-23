@@ -436,5 +436,30 @@ export const sheet: SheetSpec = {
         },
       ],
     },
+    // #243: a sheet without its last 24 hours, as the house or an action asks, and nothing asked of the recorder
+    {
+      title: 'Light · without its last 24 hours (#243)',
+      cards: [{ ...sheetOf('light', 'light.dt_floor'), show_history: false }],
+    },
+    {
+      title: 'Media · without its last 24 hours (#243)',
+      cards: [{ ...sheetOf('media', 'media_player.dt_kitchen'), show_history: false }],
+    },
+    {
+      title: 'Tiles · the speakers without their last 24 hours (#243)',
+      cards: [
+        {
+          type: 'custom:fluvy-tiles-card',
+          columns: 2,
+          tiles: [
+            {
+              entity: 'media_player.dt_kitchen',
+              tap_action: { action: 'more-info', history: false },
+            },
+            { entity: 'media_player.dt_tv', tap_action: { action: 'more-info', history: false } },
+          ],
+        },
+      ],
+    },
   ],
 };
