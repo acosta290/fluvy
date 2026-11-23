@@ -1025,3 +1025,28 @@ describe('what the editor says under a field', () => {
     ).toBeUndefined();
   });
 });
+
+describe('an item’s and a list head’s labels, as Home Assistant’s form asks them', () => {
+  type Asked = FormStub & {
+    computeLabel?: (schema: HaFormSchemaItem, data: unknown) => string | undefined;
+  };
+  // a labeler that names a field by Home Assistant's words, as the Chart card names a state's colour
+  const worded = (schema: HaFormSchemaItem, localize: (key: string) => string) =>
+    localize(`state.${schema.name}`);
+
+  it('hands the card’s and the list’s labelers Home Assistant’s localize, never the form’s data (Series rows drew blank since 1.23)', async () => {
+    const list: RowsListSpec = { ...rows, fields: ['scan'], computeLabel: worded };
+    const editor = await drawEditor(
+      listsEditor({ schema: [boolField('scan')], computeLabel: worded }, [list]),
+      { type: 'custom:x', rows: ['sensor.a'] },
+    );
+    editor.hass = { localize: (key: string) => `HA ${key}` } as unknown as HomeAssistant;
+    await editor.updateComplete;
+    // ha-form calls computeLabel(schema, data): the data is an object, no function to call
+    const data = { entity: 'sensor.a' };
+    const item = editor.shadowRoot!.querySelector<Asked>('.item ha-form')!;
+    expect(item.computeLabel?.({ name: 'on' }, data)).toBe('HA state.on');
+    const head = editor.shadowRoot!.querySelector<Asked>('.list__fields')!;
+    expect(head.computeLabel?.({ name: 'scan' }, data)).toBe('HA state.scan');
+  });
+});
