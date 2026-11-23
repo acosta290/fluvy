@@ -2460,7 +2460,7 @@
     "pref.language": "Język",
     "pref.auto": "Automatycznie",
     "pref.reduce": "Ogranicz animacje",
-    "pref.reduce_sub": "Zgodnie z ustawieniem urządzenia",
+    "pref.reduce_sub": "Niezależnie od ustawień urządzenia",
     "pref.hold": "Przytrzymaj, aby przesunąć",
     "pref.hold_sub": "Na ekranie dotykowym suwak rusza dopiero po krótkim przytrzymaniu",
     "pref.haptics": "Wibracje",

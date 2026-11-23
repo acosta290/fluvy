@@ -2787,7 +2787,7 @@
     "pref.language": "Jazyk",
     "pref.auto": "Automaticky",
     "pref.reduce": "Obmedziť pohyb",
-    "pref.reduce_sub": "Podľa nastavení zariadenia",
+    "pref.reduce_sub": "Bez ohľadu na nastavenia zariadenia",
     "pref.hold": "Podržať na posun",
     "pref.hold_sub": "Na dotykovej obrazovke sa posuvník pohne až po krátkom podržaní",
     "pref.haptics": "Haptická odozva",
