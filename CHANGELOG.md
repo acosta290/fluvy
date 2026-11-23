@@ -52,6 +52,8 @@ Traditional Chinese reads Fluvy in it. Everything else that changes without bein
 - The Activity page's entry details keep every label whole in every language: the label column widens to the
   language's longest label, where French "Changement" and Italian "Cambiamento" ran past it; a dropdown that opens from
   a row's value is as wide as its longest name on the 4 grid.
+- Japanese and Simplified Chinese say what Reduce motion's switch does, whatever the device asks, where they said it
+  followed the device.
 - The Heating schedule card's presets under the week no longer run past the card's edges in Chinese and Japanese on a
   phone, the one that does not fit counted in "+1" as in English, and the empty card's Create button stands on whole
   pixels.
