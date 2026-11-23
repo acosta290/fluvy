@@ -257,6 +257,57 @@ describe('custom:fluvy-home strategy — a house named in Japanese', () => {
     });
   });
 
+  it('reads a house named in Traditional Chinese by Taiwan’s words: its lights, its balcony, its appliances’ plugs, a laundry room that is none', () => {
+    const registry = new HomeRegistry(
+      house([
+        entity('switch.t1', 'on', { friendly_name: '臥室 燈' }),
+        entity('switch.t2', 'off', { friendly_name: '主臥吸頂燈' }),
+        entity('switch.t3', 'off', { friendly_name: '陽台崁燈' }),
+        entity('switch.t4', 'off', { friendly_name: '洗碗機插座' }),
+        entity('switch.t5', 'off', { friendly_name: '廚房快煮壺' }),
+        entity('switch.t6', 'off', { friendly_name: '洗碗機童鎖' }),
+        entity('switch.t7', 'off', { friendly_name: '洗衣間燈' }),
+        entity('switch.t8', 'off', { friendly_name: '排油煙機' }),
+      ]),
+    );
+    const { lights, appliances } = registry;
+    expect(lights).toEqual(
+      expect.arrayContaining(['switch.t1', 'switch.t2', 'switch.t3', 'switch.t7']),
+    );
+    expect(registry.outdoor('switch.t3')).toBe(true);
+    expect(registry.outdoor('switch.t1')).toBe(false);
+    // a dishwasher's, a kettle's and a hood's plugs are those appliances, not lights; a child lock is no appliance, nor
+    // the laundry room's light (洗衣間) a washer
+    for (const id of ['switch.t4', 'switch.t5', 'switch.t8']) {
+      expect(lights, id).not.toContain(id);
+      expect(appliances, id).toContain(id);
+    }
+    expect(appliances).not.toContain('switch.t6');
+    expect(appliances).not.toContain('switch.t7');
+  });
+
+  it('names a Taiwanese house’s energy readings’ roles: the sun, what is bought and sold, the battery, the charger, the house', () => {
+    const registry = powerHouse(
+      [
+        power('sensor.pv', '太陽光電 發電功率'),
+        power('sensor.meter', '電錶 購電'),
+        power('sensor.sold', '售電 功率'),
+        power('sensor.storage', '儲能電池 功率'),
+        power('sensor.wallbox', '電動車充電座'),
+        power('sensor.house', '全屋用電'),
+      ],
+      'zh-Hant',
+    );
+    expect(findEnergyRoles(registry, null)).toMatchObject({
+      solarPowers: [{ id: 'sensor.pv' }],
+      gridImport: 'sensor.meter',
+      gridExport: 'sensor.sold',
+      batteryPowers: [{ id: 'sensor.storage' }],
+      charger: 'sensor.wallbox',
+      homePower: 'sensor.house',
+    });
+  });
+
   it('reads a Russian house by its names as written: its lights, its garden, its appliances’ switches, a lock that is none', () => {
     const registry = new HomeRegistry(
       house([
@@ -1232,6 +1283,13 @@ describe('custom:fluvy-home strategy — a place named by its device, no separat
         ['客厅和餐厅温度', '客厅和餐厅'],
         ['客厅温度与湿度', '客厅'],
         ['客厅与餐厅温度', '客厅与餐厅'],
+      ],
+      'zh-Hant': [
+        ['客廳溫度和濕度', '客廳'],
+        ['客廳和餐廳溫度', '客廳和餐廳'],
+        ['客廳溫度與濕度', '客廳'],
+        ['客廳與餐廳溫度', '客廳與餐廳'],
+        ['主臥溫濕度感測器', '主臥'],
       ],
       ru: [
         ['Датчик температуры и влажности Гостиная', 'Гостиная'],

@@ -21,6 +21,7 @@ export const LANGUAGE_CODES = [
   'cs',
   'pl',
   'zh-Hans',
+  'zh-Hant',
   'ru',
   'uk',
   'bg',
@@ -66,8 +67,8 @@ export interface LanguageInfo {
   readonly joiner?: string;
   /**
    * The script it is written in, where its language is written in more than one (Chinese: Simplified `Hans`,
-   * Traditional `Hant`): a tag whose script is another, said or likely (`zh-Hant`, `zh-TW`, `zh-HK`), is not this
-   * language, so a Traditional reader is never given Simplified by the base language they share.
+   * Traditional `Hant`): a tag whose script is another, said or likely (`zh-TW`, `zh-HK` are Traditional; `zh`,
+   * `zh-CN` Simplified), is not this language, so neither reader is given the other's by the base language they share.
    */
   readonly script?: string;
 }
@@ -191,6 +192,15 @@ export const LANGUAGES: Readonly<Record<LanguageCode, LanguageInfo>> = {
     dayParts: { morning: 5, afternoon: 12, night: 18 },
     script: 'Hans',
   },
+  'zh-Hant': {
+    code: 'zh-Hant',
+    name: '繁體中文',
+    english: 'Chinese (Traditional)',
+    // three greetings, as Taiwan says them: 早安 until noon, 午安 through the afternoon, 晚安 from 18:00 as the last band
+    // (no evening): in Taiwan 晚安 greets the evening as well as parting before sleep
+    dayParts: { morning: 5, afternoon: 12, night: 18 },
+    script: 'Hant',
+  },
   ru: {
     code: 'ru',
     name: 'Русский',
@@ -259,7 +269,7 @@ function variantOf(own: LanguageCode, tag: string): boolean {
 /**
  * The language Fluvy speaks for a tag Home Assistant reports: the tag itself, else the language Home Assistant files
  * under it (`pt` → `pt-PT`); the same for its base (`es-ES` → `es`, `pt-AO` → `pt-PT`); else the first variant
- * shipped for that base in the tag's script (`zh-CN` → `zh-Hans`; `zh-Hant`, `zh-TW`: none), else English.
+ * shipped for that base in the tag's script (`zh-CN` → `zh-Hans`, `zh-TW` → `zh-Hant`), else English.
  */
 export function resolveLanguage(tag: string | undefined): LanguageCode {
   if (!tag) return 'en';

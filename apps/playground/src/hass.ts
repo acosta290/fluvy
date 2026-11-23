@@ -124,6 +124,13 @@ const MEASURE_WORDS: Record<string, Record<string, string>> = {
     power: '电源',
     atmospheric_pressure: '大气压',
   },
+  // Home Assistant's own zh-Hant, its power 電力 as it has it
+  'zh-Hant': {
+    temperature: '溫度',
+    humidity: '濕度',
+    power: '電力',
+    atmospheric_pressure: '氣壓',
+  },
   ru: {
     temperature: 'Температура',
     humidity: 'Влажность',
@@ -169,6 +176,7 @@ const OPENING_WORDS: Record<string, readonly [string, string]> = {
   cs: ['Otevřeno', 'Zavřeno'],
   pl: ['otwarto', 'zamknięto'],
   'zh-Hans': ['已打开', '已关闭'],
+  'zh-Hant': ['開啟', '關閉'],
   ru: ['Открыто', 'Закрыто'],
   uk: ['Відчинено', 'Зачинено'],
   bg: ['Отворено', 'Затворено'],
@@ -191,6 +199,7 @@ const MOTION_WORDS: Record<string, readonly [string, string]> = {
   cs: ['Detekováno', 'Nedetekováno'],
   pl: ['wykryto', 'brak'],
   'zh-Hans': ['已触发', '未触发'],
+  'zh-Hant': ['已觸發', '安全'],
   ru: ['Обнаружено', 'Не обнаружено'],
   uk: ['Виявлено', 'Не виявлено'],
   // Home Assistant's own Bulgarian pair for motion: a participle and a sentence, as it has them

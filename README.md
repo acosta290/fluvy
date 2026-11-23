@@ -234,8 +234,8 @@ a dashboard each — **Rooms** (a tab a floor, or a tab a room), **Energy**, **S
 - **Everywhere**: Home Assistant's own pages in the same design while it wears the Fluvy theme — and left as Home
   Assistant draws them while it wears another.
 - **Your language** — English, Spanish, German, Dutch, Danish, Swedish, French, Italian, Brazilian and European
-  Portuguese, Turkish, Hungarian, Japanese, Slovak, Czech, Polish, Simplified Chinese, Russian, Ukrainian and Bulgarian — in every
-  card, page and dialog, each fetched only when spoken.
+  Portuguese, Turkish, Hungarian, Japanese, Slovak, Czech, Polish, Simplified and Traditional Chinese, Russian,
+  Ukrainian and Bulgarian — in every card, page and dialog, each fetched only when spoken.
 - **No telemetry, no network calls of its own**, no dependency but Lit, pinned to Home Assistant's version.
 
 ## Installation

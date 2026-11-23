@@ -22,6 +22,7 @@ const WORDS = {
   ...CLIMATE,
   en: { ...CLIMATE['en'], 'fan_mode.quiet': 'Quiet' },
   'zh-Hans': { ...CLIMATE['zh-Hans'], 'fan_mode.quiet': '静音' },
+  'zh-Hant': { ...CLIMATE['zh-Hant'], 'fan_mode.quiet': '靜音' },
 };
 const speaking = speakingAttributes(WORDS);
 

@@ -55,6 +55,14 @@
     'Source Han Sans SC', ui-sans-serif, system-ui, sans-serif;
 }
 
+/* Traditional Chinese: a Traditional face, in Taiwan's forms, named before the system's own (a Simplified or a
+   Japanese face draws 骨 and 直 in its own). */
+:host(:lang(zh-Hant)) {
+  --fluvy-font-sans:
+    'Inter', 'PingFang TC', 'Microsoft JhengHei', 'Noto Sans TC', 'Noto Sans CJK TC',
+    'Source Han Sans TC', ui-sans-serif, system-ui, sans-serif;
+}
+
 /* ---------- tones ---------- */
 /* Every tone's four variables on every carrier live in the generated tones.css (from src/tones.ts). The one
    exception a carrier makes: a neutral option that is active is a raised plate, not a page-coloured one. */

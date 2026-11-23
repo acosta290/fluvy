@@ -25,11 +25,12 @@ language, so the card starts from Fluvy's.
 | `sk` | Slovak | `packages/core/src/i18n/locales/sk.json` | — |
 | `cs` | Czech | `packages/core/src/i18n/locales/cs.json` | [@DJjohn07](https://github.com/DJjohn07) |
 | `pl` | Polish | `packages/core/src/i18n/locales/pl.json` | [@paproh](https://github.com/paproh) |
-| `zh-Hans` | Chinese (Simplified) | `packages/core/src/i18n/locales/zh-Hans.json` — `zh`, `zh-CN` and `zh-SG` read it; Traditional Chinese (`zh-Hant`, `zh-TW`, `zh-HK`) is not it | — |
+| `zh-Hans` | Chinese (Simplified) | `packages/core/src/i18n/locales/zh-Hans.json` — `zh`, `zh-CN` and `zh-SG` read it | — |
 | `ru` | Russian | `packages/core/src/i18n/locales/ru.json` | — |
 | `uk` | Ukrainian | `packages/core/src/i18n/locales/uk.json` | — |
 | `bg` | Bulgarian | `packages/core/src/i18n/locales/bg.json` | — |
 | `sv` | Swedish | `packages/core/src/i18n/locales/sv.json` | — |
+| `zh-Hant` | Chinese (Traditional) | `packages/core/src/i18n/locales/zh-Hant.json` — in Taiwan's words; `zh-TW`, `zh-HK` and `zh-MO` read it | — |
 
 ## How a language works
 
@@ -94,10 +95,9 @@ language, so the card starts from Fluvy's.
   "evening", "night"), and, for a language that writes it short beside a day's number, `weekday: 'short'` (the
   calendar's 17日（木）); a language with a mark of its own between two parts of a line names it as `joiner`
   (Japanese 「・」: 17日（木）・イベント4件, where " · " after the bracket would read doubled). A language written in
-  more than one script names its own as `script`: Simplified Chinese is `Hans`, so a tag in the other one, said or
-  by its region (`zh-Hant`, `zh-TW`, `zh-HK`), never falls to it by the base language they share. A Traditional
-  Chinese house reads Fluvy in English, and Home Assistant's own words in Traditional, unless a person chooses
-  Simplified Chinese in the panel.
+  more than one script names its own as `script`: Simplified Chinese is `Hans` and Traditional `Hant`, so a tag
+  reads the one it is written in, said or by its region (`zh-CN` Simplified; `zh-TW`, `zh-HK` Traditional), and
+  never falls to the other by the base language they share.
 - **The integration** has a translation of its own texts (the Repairs it raises, its setup dialog) in
   `custom_components/fluvy/translations/<code>.json`, key for key with `strings.json` — under Home Assistant's code
   for the language where it is not ours (`pt.json` for Portugal's Portuguese).

@@ -157,6 +157,35 @@ describe('the icon a view’s name says', () => {
       ['家电', undefined],
     ];
     expect(chinese.map(([t]) => named(t))).toEqual(chinese.map(([, icon]) => icon));
+    // Traditional Chinese in Taiwan's words; a robot vacuum (機器人) and a body sensor (人體) are no person here either
+    const traditional: ReadonlyArray<readonly [string, string | undefined]> = [
+      ['客廳燈光', 'bulb'],
+      ['冷氣', 'thermo'],
+      ['儲能電池', 'battery'],
+      ['天氣', 'cloud'],
+      ['太陽光電', 'sun'],
+      ['用電', 'bolt'],
+      ['保全', 'shield'],
+      ['主臥', 'rooms'],
+      ['二樓', 'rooms'],
+      ['監視器', 'camera'],
+      ['門鎖', 'lock'],
+      ['音樂', 'speaker'],
+      ['電視', 'film'],
+      ['花園', 'leaf'],
+      ['場景', 'automation'],
+      ['車庫', 'car'],
+      ['行事曆', 'calendar'],
+      ['家人', 'person'],
+      ['人體感應器', 'chart'],
+      ['澆水', 'drop'],
+      ['循環扇', 'fan'],
+      ['窗簾', 'blinds'],
+      ['掃地機器人', 'vacuum'],
+      ['總覽', 'home'],
+      ['家電', undefined],
+    ];
+    expect(traditional.map(([t]) => named(t))).toEqual(traditional.map(([, icon]) => icon));
     // Russian, a word by its start in any case (the kitchen's кухня and кухне), ё read as е and й as itself
     const russian: ReadonlyArray<readonly [string, string | undefined]> = [
       ['Свет', 'bulb'],

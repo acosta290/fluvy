@@ -8,8 +8,9 @@
 import { readCatalogue, writeCatalogue, type Table, type Words } from './lib.js';
 
 const code = process.argv[2];
-if (!code || code === 'en' || !/^[a-z]{2}(-[A-Z]{2})?$/.test(code)) {
-  console.error('usage: pnpm i18n scaffold <code>   (es, pt-BR)');
+// a language, with its region or its script where Home Assistant files it so (pt-BR, zh-Hant)
+if (!code || code === 'en' || !/^[a-z]{2}(-(?:[A-Z]{2}|[A-Z][a-z]{3}))?$/.test(code)) {
+  console.error('usage: pnpm i18n scaffold <code>   (es, pt-BR, zh-Hant)');
   process.exit(2);
 }
 const english = await readCatalogue('en');

@@ -164,6 +164,17 @@ export const CLIMATE: Words = {
     'preset_mode.boost': '强劲',
     'preset_mode.sleep': '睡眠',
   },
+  'zh-Hant': {
+    'fan_mode.auto': '自動',
+    'fan_mode.low': '低',
+    'fan_mode.medium': '中',
+    'fan_mode.high': '高',
+    'preset_mode.none': '無',
+    'preset_mode.eco': '節能',
+    'preset_mode.comfort': '舒適',
+    'preset_mode.boost': '全速',
+    'preset_mode.sleep': '睡眠',
+  },
   ru: {
     'fan_mode.auto': 'Автоматический',
     'fan_mode.low': 'Низкий',
@@ -326,6 +337,14 @@ export const MATTER_FAN: Words = {
     'preset_mode.natural_wind': '自然风',
     'preset_mode.sleep_wind': '睡眠风',
   },
+  'zh-Hant': {
+    'preset_mode.auto': '自動',
+    'preset_mode.low': '低',
+    'preset_mode.medium': '中',
+    'preset_mode.high': '高',
+    'preset_mode.natural_wind': '自然風',
+    'preset_mode.sleep_wind': '睡眠風',
+  },
   ru: {
     'preset_mode.auto': 'Автоматический',
     'preset_mode.low': 'Низкий',
@@ -452,6 +471,13 @@ export const ROBOROCK: Words = {
     'fan_speed.balanced': '均衡',
     'fan_speed.turbo': '增强',
     'fan_speed.max': '最大',
+    'fan_speed.max_plus': '超速',
+  },
+  'zh-Hant': {
+    'fan_speed.quiet': '安靜',
+    'fan_speed.balanced': '平衡',
+    'fan_speed.turbo': '增壓',
+    'fan_speed.max': '最高',
     'fan_speed.max_plus': '超速',
   },
   ru: {

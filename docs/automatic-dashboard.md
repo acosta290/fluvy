@@ -262,7 +262,7 @@ goes past an option, one card hidden, moved or tuned, is [Customise](#customise)
 | `exclude` | a list of entity ids, patterns of ids, device ids or domains, as a room's `exclude` takes them (`exclude: [climate.water_heater, sensor.inverter_mppt_*]`) | all | what no view shows nor counts, as if the house had none of it (below); the panel offers it in Home Assistant's entity picker, and the settings file never carries it |
 | `edit` | an object of `views`, `cards` and `entities` | all | what was changed on its views and cards, kept as differences: hidden, moved, given options, a list's entities left out, added or put in order ([Customise](#customise), which writes it) |
 | `weather` | a `weather.*` entity | all | the weather of the greeting and the clock (default: the first) |
-| `language` | `en`, `es`, `de`, `nl`, `da`, `sv`, `fr`, `it`, `pt-BR`, `pt-PT`, `tr`, `ja`, `hu`, `sk`, `cs`, `pl`, `zh-Hans`, `ru`, `uk`, `bg` | all | the dashboard's words in that language, whoever opens it |
+| `language` | `en`, `es`, `de`, `nl`, `da`, `sv`, `fr`, `it`, `pt-BR`, `pt-PT`, `tr`, `ja`, `hu`, `sk`, `cs`, `pl`, `zh-Hans`, `zh-Hant`, `ru`, `uk`, `bg` | all | the dashboard's words in that language, whoever opens it |
 
 Two readings whose names differ only past where a card cuts them ("Inverter E1 North MPPT total power" and "Inverter
 E2 South MPPT total power", both "Inverter E…" beside their circles on a phone) read whole where the dashboard asks for

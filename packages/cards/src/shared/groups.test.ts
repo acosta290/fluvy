@@ -148,6 +148,8 @@ describe('short names inside a group', () => {
     ]);
     // 厨房的灯 is 灯
     expect(shortNames('厨房', ['厨房的灯', '厨房吊灯'])).toEqual(['灯', '吊灯']);
+    // and in Traditional: 廚房的吸頂燈 is 吸頂燈
+    expect(shortNames('廚房', ['廚房的吸頂燈', '廚房崁燈'])).toEqual(['吸頂燈', '崁燈']);
   });
 
   it('reads Ukrainian: Cyrillic words stand apart as Latin ones do (uk)', () => {

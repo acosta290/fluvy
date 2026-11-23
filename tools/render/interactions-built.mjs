@@ -4,7 +4,8 @@
  * opened. The playground registers every part of English at start; the bundle registers a lazy family's part only
  * when the family's chunk lands, so this is where a word said outside its chunk shows — as a key. Serves
  * `custom_components/fluvy/frontend` (run `pnpm build` first) on a dashboard's address under a bare stand-in Home
- * Assistant, in English, in German and in the newest languages (Polish, Simplified Chinese), and proves:
+ * Assistant, in English, in German and in newer languages (Polish, Simplified and Traditional Chinese, Russian), and
+ * proves:
  * - a language's chunk lands and its catalogue is read (the chunk's `default`): every word below is the language's own;
  * - a wall's pieces (its way back, its corner both ways, its toast both ways) say their words, and the panel's chunk
  *   never loaded;
@@ -53,7 +54,7 @@ const chunk = (name) =>
 const english = {};
 for (const part of await readdir(join(LOCALES, 'en')))
   Object.assign(english, await readJson(join(LOCALES, 'en', part)));
-const LANGUAGES = ['en', 'de', 'pl', 'zh-Hans', 'ru'];
+const LANGUAGES = ['en', 'de', 'pl', 'zh-Hans', 'zh-Hant', 'ru'];
 const WORDS = { en: english };
 for (const lang of LANGUAGES.slice(1)) WORDS[lang] = await readJson(join(LOCALES, `${lang}.json`));
 

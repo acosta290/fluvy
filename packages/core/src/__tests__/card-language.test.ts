@@ -46,6 +46,10 @@ describe('the language of Fluvy’s words', () => {
     expect((await mounted('zh-Hant')).getAttribute('lang')).toBe('zh-Hans');
     expect((await mounted('en')).getAttribute('lang')).toBe('zh-Hans');
     expect((await mounted('zh-Hans')).hasAttribute('lang')).toBe(false);
+    // and Traditional on a Simplified page: marked, so its Han takes Taiwan's forms; on a Traditional page, none
+    setLanguageOverride('zh-Hant');
+    expect((await mounted('zh-Hans')).getAttribute('lang')).toBe('zh-Hant');
+    expect((await mounted('zh-Hant')).hasAttribute('lang')).toBe(false);
     // English chosen on a page in a language Fluvy does not speak: English is said, so it is marked
     setLanguageOverride('en');
     expect((await mounted('sv')).getAttribute('lang')).toBe('en');
