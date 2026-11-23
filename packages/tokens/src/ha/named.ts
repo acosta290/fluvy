@@ -8,7 +8,8 @@ import type { Hex, PaletteModeColors, RampStep, SemanticRole } from '../types.js
  * two readers: the theme writes the 21 Home Assistant declares (`ha/groups.ts`), and a card's `color` resolves a
  * name through it (`resolveAccent`), so a card asking for "teal" is the teal every Home Assistant surface shows.
  * Each name keeps the tone Home Assistant gives it: pink is the armed alarm's red-rose, cyan the water, teal the
- * presence green-blue, lime the dehumidifier's green, brown the gas — never a second accent.
+ * presence green-blue, lime the dehumidifier's green, brown the gas, amber the lit light's own hue (a light that is on
+ * is the accent, which amber never is) — never a second accent.
  */
 export const HA_COLOR_NAMES = [
   'red',
@@ -71,7 +72,7 @@ export const NAMED_COLORS: Readonly<Record<HaColorName, (colors: PaletteModeColo
   pink: (c) => c.state['security-armed'].ink,
   orange: (c) => statusRamp(c, 'warning', true)['50'] as Hex,
   'deep-orange': (c) => c.state['climate-heat'].ink,
-  amber: (c) => c.state['light-active'].ink,
+  amber: (c) => c.amber,
   yellow: (c) => c.state['energy-solar'].ink,
   lime: (c) => c.state['climate-dry'].ink,
   green: (c) => statusRamp(c, 'success', true)['50'] as Hex,

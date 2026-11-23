@@ -34,6 +34,9 @@ describe('a colour bulb’s quick colours', () => {
       hex: '#0aff00',
     });
     expect(resolveSwatch('picker', 2200, 6500)).toEqual({ kind: 'picker', hex: '' });
+    // Home Assistant's own deep orange (#250), and no black: a bulb glows none
+    expect(resolveSwatch('deep-orange', 2200, 6500)).toMatchObject({ hex: '#ff6f22' });
+    expect(resolveSwatch('black', 2200, 6500)).toBeUndefined();
     expect(resolveSwatch('mauve-ish', 2200, 6500)).toBeUndefined();
     expect(resolveSwatch('constructor', 2200, 6500)).toBeUndefined(); // no colour of the prototype's
     expect(resolveSwatch([1, 2], 2200, 6500)).toBeUndefined();

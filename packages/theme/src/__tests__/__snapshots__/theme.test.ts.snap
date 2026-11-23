@@ -6,7 +6,7 @@ exports[`theme yaml > is the reviewed file (a change to any value shows up here 
 # The default look (Linen). fluvy's settings apply any other palette and shape live, over this file.
 # Fluvy is in the mode Home Assistant is in; Fluvy Light and Fluvy Dark hold to their own.
 Fluvy:
-  fluvy-theme-build: "3272b023"
+  fluvy-theme-build: "2a83ed91"
   fluvy-space-0: "0px"
   fluvy-space-1: "4px"
   fluvy-space-2: "8px"
@@ -467,7 +467,7 @@ Fluvy:
       pink-color: "#844e5c"
       orange-color: "#9d6633"
       deep-orange-color: "#a46455"
-      amber-color: "#856529"
+      amber-color: "#976e3a"
       yellow-color: "#755d1a"
       lime-color: "#7e7b3a"
       green-color: "#4d8446"
@@ -871,7 +871,7 @@ Fluvy:
       pink-color: "#ddb7c0"
       orange-color: "#9d6635"
       deep-orange-color: "#ce9b8f"
-      amber-color: "#cebb9c"
+      amber-color: "#c3a37d"
       yellow-color: "#d0c19c"
       lime-color: "#aeac7d"
       green-color: "#54824d"
@@ -935,7 +935,7 @@ Fluvy:
       graph-color-11: "#5c6f90"
       graph-color-12: "#7092a3"
 Fluvy Light:
-  fluvy-theme-build: "3272b023"
+  fluvy-theme-build: "2a83ed91"
   fluvy-space-0: "0px"
   fluvy-space-1: "4px"
   fluvy-space-2: "8px"
@@ -1396,7 +1396,7 @@ Fluvy Light:
       pink-color: "#844e5c"
       orange-color: "#9d6633"
       deep-orange-color: "#a46455"
-      amber-color: "#856529"
+      amber-color: "#976e3a"
       yellow-color: "#755d1a"
       lime-color: "#7e7b3a"
       green-color: "#4d8446"
@@ -1460,7 +1460,7 @@ Fluvy Light:
       graph-color-11: "#20304c"
       graph-color-12: "#2b5061"
 Fluvy Dark:
-  fluvy-theme-build: "3272b023"
+  fluvy-theme-build: "2a83ed91"
   fluvy-space-0: "0px"
   fluvy-space-1: "4px"
   fluvy-space-2: "8px"
@@ -1921,7 +1921,7 @@ Fluvy Dark:
       pink-color: "#ddb7c0"
       orange-color: "#9d6635"
       deep-orange-color: "#ce9b8f"
-      amber-color: "#cebb9c"
+      amber-color: "#c3a37d"
       yellow-color: "#d0c19c"
       lime-color: "#aeac7d"
       green-color: "#54824d"

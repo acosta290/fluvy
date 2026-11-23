@@ -1,4 +1,5 @@
 import type { EntityView, MessageKey, SliderStyle } from '@fluvy/core';
+import { HA_STANDARD_COLORS } from '@fluvy/tokens/standard';
 import { icon, label, rulerLabels, textWidth, type RulerChangeDetail } from '@fluvy/ui';
 import { css, html, nothing, type TemplateResult } from 'lit';
 import { COLOURED, hexOf } from '../shared/light.js';
@@ -53,33 +54,13 @@ export interface Shown {
 }
 
 /**
- * What a bulb glows when asked for one of Home Assistant's colour names: Home Assistant's own `THEME_COLORS` (the
- * colours its colour picker lists), not the palette's tones — a bulb wears no palette, and "red" must be red on it.
+ * What a bulb glows when asked for one of Home Assistant's colour names: Home Assistant's own (`HA_STANDARD_COLORS`,
+ * the colours its colour picker lists), not the palette's tones — a bulb wears no palette, and "red" must be red on it.
+ * Black is no colour a bulb glows.
  */
-export const BULB_COLORS: Readonly<Record<string, string>> = {
-  red: '#f44336',
-  pink: '#e91e63',
-  purple: '#926bc7',
-  'deep-purple': '#6e41ab',
-  indigo: '#3f51b5',
-  blue: '#2196f3',
-  'light-blue': '#03a9f4',
-  cyan: '#00bcd4',
-  teal: '#009688',
-  green: '#4caf50',
-  'light-green': '#8bc34a',
-  lime: '#cddc39',
-  yellow: '#ffeb3b',
-  amber: '#ffc107',
-  orange: '#ff9800',
-  'deep-orange': '#ff5722',
-  brown: '#795548',
-  'light-grey': '#bdbdbd',
-  grey: '#9e9e9e',
-  'dark-grey': '#606060',
-  'blue-grey': '#607d8b',
-  white: '#ffffff',
-};
+export const BULB_COLORS: Readonly<Record<string, string>> = Object.fromEntries(
+  Object.entries(HA_STANDARD_COLORS).filter(([name]) => name !== 'black'),
+);
 
 /** The colour names the catalogue has a word for (`option.red` …); any other name reads as words of its own. */
 const WORDED: ReadonlySet<string> = new Set([

@@ -2688,8 +2688,8 @@ dashboards' bands — and change only their hero and their words.
   the palette shows whites, so a red bulb among them glows red where Home Assistant's own mean would wash it to a beige
   and its majority mode call it white), and, while a flip waits for Home Assistant, the colour it last glowed (kept for
   the page), so it never flashes the palette's light first. Glowing none, the palette's lit light
-  (`state['light-active']`, never the name amber, which is a near black on Noir). The icon circle, the switch and the
-  rulers take it through the lit-light family `data-accent` remaps; `compact` too.
+  (`state['light-active']`, the accent's twin, never the name amber, an amber of the palette's own). The icon circle,
+  the switch and the rulers take it through the lit-light family `data-accent` remaps; `compact` too.
 - **Whites** (`light_whites`, 1.10, #58): `temperature` (the default since 1.10, the owner's call) shows a lit white
   on one scale, from Home Assistant's own colour for its temperature (its `rgb_color`, marked a white: `WHITE`): its
   hue, and as much of the band's chroma as its share of a candle's (2,200 K) — a candle the warmest, 2,700 K plainly
@@ -4437,8 +4437,9 @@ last entry taken out in the editor — is a card, never a configuration error (#
   from the card. In a tint palette the whole way from the card to the fill is about 1.25, so the rest wash and the
   fill are close in lightness: on and off are told apart by the icon circle (filled when on), the fill's step and the
   state's word. The words keep
-  their usual ink. A named colour is Home Assistant's tone on the palette (amber is the lit light's ink, which a
-  palette may move aside): the palette keeps its harmony, and a hex picks one exactly.
+  their usual ink. A named colour is Home Assistant's tone on the palette (amber is the lit light's own hue, 1.25,
+  #250: a light that is on is the palette's accent, amber never is): the palette keeps its harmony, and a hex picks one
+  exactly.
   **A lit light in its bulb's colour (1.9, #41)**: tiles, a tiles group, a room's tiles, a room's lights row (the
   colour of what is lit, by brightness) and an entities card's light rows wear a lit colour bulb's colour
   (`light_colors`; the house's where the card says none, off), a white its warmth (`light_whites`, 1.10), an off light

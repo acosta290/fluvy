@@ -26,6 +26,7 @@ exports[`sand snapshot > matches the recorded palette 1`] = `
       "90": "#f1dfd1",
       "95": "#faefe6",
     },
+    "amber": "#c4a27d",
     "buttons": {
       "on": "#d5b89f",
       "press": "#42260a",
@@ -240,6 +241,7 @@ exports[`sand snapshot > matches the recorded palette 1`] = `
       "90": "#f6deca",
       "95": "#fdeee2",
     },
+    "amber": "#996e3a",
     "buttons": {
       "on": "#8a5a2b",
       "press": "#f6deca",

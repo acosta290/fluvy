@@ -256,6 +256,8 @@ function deriveMode(
         : buildRole(identity.stateTuning[key], GATES.icon, false),
     ]),
   ) as Record<StateKey, RoleColors>;
+  // a light that is on is the accent on every palette (its twin); Home Assistant's amber stays its own hue
+  const amber = buildRole(identity.stateTuning['light-active'], GATES.icon, false).ink;
 
   // A resting icon circle of a solid palette carries a wash of its fill; in dark a wash of a light fill over
   // charcoal turns khaki, so it sits on the lifted neutral surface instead.
@@ -391,6 +393,7 @@ function deriveMode(
     accentRamp,
     semantic,
     state,
+    amber,
     unavailable,
     graph,
     ...(line ? { line: { edge: line.edge, inset: line.inset } } : {}),

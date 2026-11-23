@@ -1,7 +1,12 @@
 import { describe, expect, it } from 'vitest';
+import { derivePalette } from '../build/derive.js';
+import { deltaE } from '../color/delta-e.js';
 import { fromHex, hueDistance, isHex } from '../color/oklch.js';
 import { RAMP_LIGHTNESS } from '../color/ramp.js';
 import { derivePalettes } from '../build/palettes.js';
+import { haModeVars } from '../ha/groups.js';
+import { customSeed } from '../palettes/custom.js';
+import type { PaletteModeColors } from '../types.js';
 import {
   HA_COLOR_NAMES,
   NAMED_COLORS,
@@ -38,6 +43,45 @@ describe('Home Assistant’s named colours', () => {
     const blueGrey = fromHex(NAMED_COLORS['blue-grey'](c));
     expect(blueGrey.c).toBeLessThan(0.03);
     expect(hueDistance(blueGrey.h, fromHex('#607d8b').h)).toBeLessThan(5);
+  });
+
+  /** Every preset, and a custom palette of each character, in both modes. */
+  const everyMode: [string, PaletteModeColors][] = [
+    ...derivePalettes(),
+    derivePalette(customSeed({ character: 'soft', base: 'warm', accent: '#3a7bd5' })),
+    derivePalette(customSeed({ character: 'vivid', base: 'cool', accent: '#ff4f7b' })),
+    derivePalette(
+      customSeed({ character: 'vivid', base: 'neutral', accent: '#ffb300', fill: 'solid' }),
+    ),
+  ].flatMap((palette) =>
+    (['light', 'dark'] as const).map((mode): [string, PaletteModeColors] => [
+      `${palette.name} ${mode}`,
+      palette[mode],
+    ]),
+  );
+
+  it.each(everyMode)(
+    '%s: amber is an amber, never the accent a light that is on wears (#250)',
+    (_, c) => {
+      const amber = fromHex(NAMED_COLORS.amber(c));
+      // the lit light's own hue, as the palette draws a device's colour: the accent pulls it a little, never away
+      expect(hueDistance(amber.h, 70)).toBeLessThan(25);
+      expect(amber.c).toBeGreaterThan(0.05);
+      // Mist's blue, Flamingo's pink, Noir's near black: a lit light is still the accent, amber is not
+      expect(c.state['light-active']).toEqual(
+        expect.objectContaining({ ink: c.accent.ink, fill: c.accent.fill }),
+      );
+      if (hueDistance(fromHex(c.accent.ink).h, 70) > 30 || fromHex(c.accent.ink).c < 0.03)
+        expect(deltaE(NAMED_COLORS.amber(c), c.accent.ink)).toBeGreaterThan(10);
+    },
+  );
+
+  it('are what the theme writes under Home Assistant’s names; its lit light stays the accent (#250)', () => {
+    for (const [, c] of everyMode) {
+      const vars = new Map(haModeVars(c).flatMap((group) => group.declarations));
+      expect(vars.get('--amber-color')).toBe(NAMED_COLORS.amber(c));
+      expect(vars.get('--state-light-active-color')).toBe(c.accent.ink);
+    }
   });
 
   it('name six greys, each at the lightness of its rung of the ladder', () => {

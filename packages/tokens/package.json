@@ -27,7 +27,8 @@
     "./config": "./src/config.ts",
     "./runtime": "./src/runtime.ts",
     "./community": "./src/palettes/community/index.ts",
-    "./series": "./src/build/series.ts"
+    "./series": "./src/build/series.ts",
+    "./standard": "./src/ha/standard.ts"
   },
   "scripts": {
     "build": "tsc --noEmit -p tsconfig.json && tsx scripts/community.ts && tsx src/build/run.ts",

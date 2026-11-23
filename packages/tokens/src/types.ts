@@ -174,6 +174,11 @@ export interface PaletteModeColors {
    */
   readonly named?: Readonly<Record<SemanticRole, RoleColors>>;
   readonly state: Readonly<Record<StateKey, RoleColors>>;
+  /**
+   * Home Assistant's amber (`--amber-color`, a card's `color: amber`; 1.25, #250): the lit light's own hue drawn as a
+   * domain state is, also where a light that is on is the accent (`Palette.twins`) — a colour, never the accent.
+   */
+  readonly amber: Hex;
   readonly unavailable: UnavailableColors;
   readonly graph: readonly Hex[];
   /** A surface read by its edges (`surface: line | ink`, 1.19); absent, a card lifts off the page by its fill. */

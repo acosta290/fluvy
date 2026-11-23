@@ -171,7 +171,7 @@ describe('a lit light card’s surface (1.9, #41)', () => {
     const noir = derivePalette(seedOf('noir')).light;
     const light = litCss('noir', 'light', 'light', 1);
     expect(light).toContain(`--fluvy-border:${noir.state['light-active'].fillBorder};`);
-    // amber on Noir is a near black: the lit light is the palette's role, never the name
+    // Noir's lit light is its near-black ink, amber an amber: the lit light is the palette's role, never the name
     expect(light).not.toBe(litCss('noir', 'light', accentHex('noir', 'light', 'amber')!, 1));
     expect(litCss('noir', 'light', 'accent', 1)).toContain(
       `--fluvy-border:${noir.accent.fillBorder};`,
