@@ -1001,14 +1001,19 @@ export class FluvyScheduleCard extends Card<ScheduleCardConfig> {
     });
     const room = this.contentWidth;
     const ruler = this.headFit.ruler;
-    // a chip as it is set, on the 4 grid: its sides, its swatch, its name and its figure in the figure's own
-    // (tabular) digits
+    // a chip as it is set, on the 4 grid: its sides, its swatch, and its name with its figure after it in the
+    // figure's own (tabular) digits, measured as one line, as the chip sets them (the space between them alone at a
+    // line's start would count for nothing, and two names of 26 with their figures took 4 past a 288 card in Chinese)
     const chip = (content: number): number => Math.ceil((CHIP_SIDES + content) / 4) * 4;
     const width = ({ look, value }: (typeof items)[number]): number =>
       chip(
         SWATCH +
-          ruler.width('sc-chip', look.name) +
-          (value ? ruler.width('sc-chip > sc-chip__value', ` ${value}`) : 0),
+          ruler.width(
+            'sc-chip > sc-chip__name',
+            value ? `${look.name} ` : look.name,
+            'sc-chip__value',
+            value,
+          ),
       );
     const more = (count: number): number =>
       count ? LEGEND_GAP + chip(ruler.width('sc-chip', `+${count}`)) : 0;
@@ -1037,7 +1042,7 @@ export class FluvyScheduleCard extends Card<ScheduleCardConfig> {
           class="sc-chip ${on ? `is-active ${toneClass(look)}` : ''}"
           data-fit=${CHIP_SIDES}
           data-accent=${(on && look.color && accent(look.color)) || nothing}
-          >${swatch(look, look.key === base, accent)}<span
+          >${swatch(look, look.key === base, accent)}<span class="sc-chip__name"
             >${look.name}${value ? html` <span class="sc-chip__value">${value}</span>` : nothing}</span
           ></span
         >`;
@@ -1060,10 +1065,13 @@ export class FluvyScheduleCard extends Card<ScheduleCardConfig> {
       : s(hass, 'empty_short');
     const create = this.admin;
     const full = s(hass, 'create');
-    const label = ruler.width('fv-btn', full) + 32 <= inner ? full : s(hass, 'create_short');
+    // the button content-sized on the 4 grid, its words and its 16 on each side, so it stands on whole pixels
+    // whatever its words measure (Chinese's 新增暖氣排程 came to 92.016)
+    const label = ruler.pill('fv-btn', full, 32) <= inner ? full : s(hass, 'create_short');
     const button = create
       ? html`<button
           class="fv-btn fv-btn--accent"
+          data-fit="32"
           data-control
           data-target
           @click=${(event: Event) => {
