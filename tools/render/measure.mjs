@@ -1675,9 +1675,14 @@ const frames = await page.evaluate(audit, {
   namespaces: NAMESPACES,
 });
 
+// A sheet whose every frame is drawn for the eye (`data-stress`, as Home Assistant's own tiles in ha-tiles) has nothing
+// to measure, where a page with no frame at all did not draw
+const stressOnly =
+  frames.length === 0 && (await page.evaluate(() => !!document.querySelector('[data-stress]')));
+
 await browser.close();
 
-if (frames.length === 0 && args.empty !== 'pass') {
+if (frames.length === 0 && args.empty !== 'pass' && !stressOnly) {
   console.error(`No frame matched "${args.frame}" in ${pagePath}`);
   process.exit(1);
 }
