@@ -557,10 +557,21 @@ const seeThrough = (data: Readonly<Record<string, unknown>>): boolean =>
   cardOpacity(data as FluvyCardConfig) < 100;
 
 /**
+ * Whether the colours a card names are worn as they are named (`exact_colors`, 1.25, #250: Home Assistant's own value
+ * for a name, a hex as typed), offered by every editor that offers a colour: the house's, shown and never written, until
+ * one is chosen (`editorDefaults`), the word under it saying so.
+ */
+export const exactField = (): HaFormSchemaItem => ({
+  ...boolField('exact_colors'),
+  helper: 'editor.exact_colors_helper',
+});
+
+/**
  * The card's surface beside its colour: how opaque it is (`card_opacity`, 1.15), a percentage on Home Assistant's
  * slider in 5 % steps, its figure in the box beside it, and under it whether it draws its border (`card_border`, 1.19,
- * #171) and, while it is see-through, whether what shows through is blurred (`card_blur`, 1.23, #213) — each the
- * house's, shown and never written, until one is chosen (`editorDefaults`), the word under it saying so.
+ * #171), while it is see-through whether what shows through is blurred (`card_blur`, 1.23, #213), and whether the
+ * colours it names are worn as named (`exactField`) — each the house's, shown and never written, until one is chosen
+ * (`editorDefaults`), the word under it saying so.
  */
 export const cardSurfaceFields = (): HaFormSchemaItem[] => [
   {
@@ -570,6 +581,7 @@ export const cardSurfaceFields = (): HaFormSchemaItem[] => [
   },
   { ...boolField('card_border'), helper: 'editor.card_border_helper' },
   onlyWhen(seeThrough, { ...boolField('card_blur'), helper: 'editor.card_blur_helper' }),
+  exactField(),
 ];
 
 /**

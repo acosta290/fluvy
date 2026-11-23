@@ -6,6 +6,7 @@ import {
   boolField,
   editorWord,
   entityField,
+  exactField,
   fieldRow,
   formLabels,
   textField,
@@ -16,8 +17,8 @@ import type { HelloCardConfig } from './hello-card.js';
 
 /** The hello card's editor: fetched by its `editor()` the first time the card is edited, never by a dashboard. */
 
-/** The greeting names who it greets; its avatar answers a tap and a hold; its colour is its mark's. */
-export const base: readonly BaseKey[] = ['name', ...ACTIONS_BASE, 'color'];
+/** The greeting names who it greets; its avatar answers a tap and a hold; its colour is its mark's, as named or not. */
+export const base: readonly BaseKey[] = ['name', ...ACTIONS_BASE, 'color', 'exact_colors'];
 
 export const keys = configKeys<HelloCardConfig>()([
   'person',
@@ -45,6 +46,7 @@ export function getConfigForm(): LovelaceConfigForm {
       fieldRow(boolField('show_weather'), boolField('show_date')),
       boolField('show_avatar'),
       accentField(),
+      exactField(),
       actionFields(),
     ],
     ...formLabels({ person: 'editor.entity', weather: 'editor.weather' }),

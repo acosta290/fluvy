@@ -4400,6 +4400,24 @@ last entry taken out in the editor — is a card, never a configuration error (#
   - **Dark:** black is the plate under the card (5.5 below it, or as deep as there is) with the dimmest glyph still legible — it never turns white; the other rungs lift above the card, white a near-white glyph on the palest plate a light word still reads on.
   - Between the ends the plates stand an equal CIEDE2000 step apart and the glyphs an equal step in lightness. A plate seen on the card (1.6) keeps a rest wash that is seen too (1.18), as `tint: always` asks. A solid palette's resting circle is still its wash of the plate (none in dark: the glyph alone tells the rungs apart there).
   - **Gates** (build tests, every preset, the community's palettes and a custom one of each character, base and fill, both modes): never above the softest colour's chroma (0.038); glyph 3:1 on the card, the page and its resting circle; on-fill 4.5 and its 80 % state line 4.5; hairline 1.35; on vs off 5.5; plates and glyphs strictly ordered; neighbours 5.5 apart, plate and glyph together; the lit light (the accent's twin) the rung itself.
+- **Exact colours (1.25, #250).** A card may wear the colours it names as they are named, not as the palette's tones
+  of them: its own `exact_colors: true`, or the house's *Exact colours* (§ Settings panel, Cards; off by default, and a
+  card's own `false` wins). A name is Home Assistant's own value (`HA_STANDARD_COLORS`, the table a bulb asked for a
+  name glows too: amber `#ffc107`, deep orange `#ff6f22`), a hex is as typed. It reaches every colour a person names —
+  the card's `color` and `card_color`, an item's, a state's, a threshold's, a chart's series, the house's set of series
+  colours (`--fc-exact` beside the two fitted ones, worn under `:host([exact-colors])`), a lit bulb's own — and none of
+  the palette's (its accent, its statuses, a device's state, an item named `primary`). The family is drawn in the colour
+  and kept legible (`build/exact.ts`): the ink (a glyph, a line, a bar, a ring, the first graph series) is the colour
+  itself, whatever its contrast — a pale yellow line on white is as faint as Home Assistant draws it; the fill is the
+  colour on a solid palette and a fifth of it over the card on a tint one, as Home Assistant's tile draws its icon's
+  plate, its hairline fitted 1.35 off it; the words on the fill and on the colour are the palette's black or white,
+  whichever reads, taken to 4.5; the text form (a figure, a link, a reading in its band) is the colour taken lighter or
+  deeper, lightness only, only as far as 4.5 on the card and the page; the hover, the primary action, the ramp and the
+  other series follow from the colour's own hue and chroma, never the palette's band; the rest wash, the lit surfaces
+  and a card's own surface are derived from that fill as any colour's are. The table and the arithmetic are a chunk of
+  their own, fetched by the first card that asks (its first frame waits for it, as a see-through card's does for its
+  sheet), never by a house of palette tones; the derivations a card keeps are kept apart from the palette's
+  (`|exact` in their keys).
 - **A card's own surface (1.7, the second exception).** `card_color` tints the card itself: `--fluvy-card` becomes a
   wash of the colour's fill over the palette's card (`surfaceWash`: as much of the fill, up to 40 %, as keeps the
   primary and the secondary ink at 4.5 and the fill's hairline at 1.35 over it; with none to spare, the card itself),
@@ -4438,8 +4456,8 @@ last entry taken out in the editor — is a card, never a configuration error (#
   fill are close in lightness: on and off are told apart by the icon circle (filled when on), the fill's step and the
   state's word. The words keep
   their usual ink. A named colour is Home Assistant's tone on the palette (amber is the lit light's own hue, 1.25,
-  #250: a light that is on is the palette's accent, amber never is): the palette keeps its harmony, and a hex picks one
-  exactly.
+  #250: a light that is on is the palette's accent, amber never is): the palette keeps its harmony, and a hex picks its
+  hue (exactly, with exact colours, above).
   **A lit light in its bulb's colour (1.9, #41)**: tiles, a tiles group, a room's tiles, a room's lights row (the
   colour of what is lit, by brightness) and an entities card's light rows wear a lit colour bulb's colour
   (`light_colors`; the house's where the card says none, off), a white its warmth (`light_whites`, 1.10), an off light

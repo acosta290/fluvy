@@ -2135,7 +2135,9 @@
     "state_display": "Вид состояния",
     "state_icons": "Иконки по состояниям",
     "state_icons_helper": "В каждой строке состояние и его иконка (ok: mdi:check-circle-outline); состояние не из списка остаётся словами",
-    "state_icon_colors_helper": "В каждой строке состояние и его тон или цвет (warning: warning)"
+    "state_icon_colors_helper": "В каждой строке состояние и его тон или цвет (warning: warning)",
+    "exact_colors": "Точные цвета",
+    "exact_colors_helper": "Названия так, как их рисует Home Assistant, hex-код как введён. Не задано: как у всех карточек в настройках Fluvy"
   },
   "energy-period-card": {
     "name": "Период энергии",
@@ -3177,6 +3179,8 @@
     "dashboard.up_to_count": "До {count} в списке",
     "cards.levels": "Значки показывают уровень",
     "cards.levels_sub": "Заряд батареи, деления сигнала, клапан открыт или закрыт",
+    "cards.exact": "Точные цвета",
+    "cards.exact_sub": "Названия цветов так, как их рисует Home Assistant, и hex-код как введён, а не оттенки палитры",
     "scope.activity_who": "Кто это сделал",
     "scope.activity_who_sub": "Каждая запись «Активности» называет человека, который за ней стоит, с его фото; фильтр по человеку"
   },

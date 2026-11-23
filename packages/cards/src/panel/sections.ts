@@ -1035,10 +1035,11 @@ const OPACITY_MARKS = [0, 25, 50, 75, 100] as const;
  * Every card's surface where a card says nothing of its own (1.15, #121): how opaque it is, on the ruler a light's
  * brightness is set on (5 % steps, its figure at the row's end), whether what shows through a see-through card is
  * blurred — said always, as a card may be see-through of its own on a solid house — whether it draws its border (1.19,
- * #171), how a card out of reach looks (1.16, #126: dashed, or as when off) and when a device card shows its state's
- * colour beyond its circle (1.22, #196: never, as before; while it is active; at rest too) and, while it does, as what
- * (a wash, its edge, its control). The house's, an administrator's to set; shown on the preview and the page while it
- * is chosen.
+ * #171), whose details it opens (1.20, #162), whether its icons show their level (1.23, #226), whether it wears the
+ * colours it names as they are named (1.25, #250: off, the palette's tones, as before), how a card out of reach looks
+ * (1.16, #126: dashed, or as when off) and when a device card shows its state's colour beyond its circle (1.22, #196:
+ * never, as before; while it is active; at rest too) and, while it does, as what (a wash, its edge, its control). The
+ * house's, an administrator's to set; shown on the preview and the page while it is chosen.
  */
 function cardsCard(ctx: PanelContext): TemplateResult {
   const { shown, admin } = ctx;
@@ -1116,6 +1117,15 @@ function cardsCard(ctx: PanelContext): TemplateResult {
         on: shown.levelIcons,
         readonly: !admin,
         onToggle: (on) => ctx.editHouse({ levelIcons: on }),
+      })}
+      ${listRow({
+        icon: 'palette',
+        title: ctx.t('cards.exact'),
+        sub: ctx.t('cards.exact_sub'),
+        trailing: 'switch',
+        on: shown.exactColors,
+        readonly: !admin,
+        onToggle: (on) => ctx.editHouse({ exactColors: on }),
       })}
     </div>
     <p class="fv-label pn-label">${ctx.t('cards.unavailable')}</p>

@@ -190,6 +190,7 @@ const SHARED: ReadonlySet<string> = new Set([
   'card_opacity',
   'card_border',
   'card_blur',
+  'exact_colors',
   'unavailable',
   'show_icon',
   'show_badge',

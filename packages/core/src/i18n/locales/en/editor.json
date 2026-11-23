@@ -277,6 +277,8 @@
     "state_display": "State shown as",
     "state_icons": "Icons by state",
     "state_icons_helper": "A state and its icon on each line (ok: mdi:check-circle-outline); a state left out keeps its words",
-    "state_icon_colors_helper": "A state and its tone or colour on each line (warning: warning)"
+    "state_icon_colors_helper": "A state and its tone or colour on each line (warning: warning)",
+    "exact_colors": "Exact colours",
+    "exact_colors_helper": "Names as Home Assistant draws them, a hex as typed. Untouched: every card’s, from Fluvy’s settings"
   }
 }

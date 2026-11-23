@@ -1,6 +1,7 @@
 import {
   cardBlur,
   cardDefaults,
+  exactDefault,
   fireEvent,
   guard,
   localize,
@@ -1354,9 +1355,10 @@ export function withoutLists(
  * (`show_badge`), and a name on one line (`name_lines`, a small tile's too); on a card of a list
  * (`hide_empty`), a list that stays in sight while it is empty, its items by Home Assistant's names where it may name
  * them otherwise (`names`); on a card with a surface (`card_opacity`), the house's opacity, border and blur for every
- * card (the blur as it falls at the card's opacity: none at 0 %); on a card of entities (`unavailable`), how the
- * house draws every card out of reach; on a card with a slider (`slider_style`), the house's style and the words
- * under it; on a device card (`tint_style`), when the house's devices show their state's colour, and as what.
+ * card (the blur as it falls at the card's opacity: none at 0 %); on a card with a colour (`exact_colors`), whether
+ * the house wears its colours as named; on a card of entities (`unavailable`), how the house draws every card out of
+ * reach; on a card with a slider (`slider_style`), the house's style and the words under it; on a device card
+ * (`tint_style`), when the house's devices show their state's colour, and as what.
  */
 export function editorDefaults(
   form: LovelaceConfigForm,
@@ -1371,13 +1373,14 @@ export function editorDefaults(
     ...(shows('hide_empty') ? { hide_empty: false } : {}),
     ...(shows('names') ? { names: 'full' } : {}),
   };
-  // the house's opacity and border, its look out of reach and its sliders' words as they are when the editor asks (the
-  // panel may change them meanwhile)
+  // the house's opacity and border, its colours as named, its look out of reach and its sliders' words as they are when
+  // the editor asks (the panel may change them meanwhile)
   const surface = shows('card_opacity');
+  const exact = shows('exact_colors');
   const away = shows('unavailable');
   const sliders = shows('slider_style');
   const tints = shows('tint_style');
-  return Object.keys(shared).length || surface || away || sliders || tints
+  return Object.keys(shared).length || surface || exact || away || sliders || tints
     ? (config, hass) => ({
         ...shared,
         ...(surface
@@ -1387,6 +1390,7 @@ export function editorDefaults(
               card_blur: cardBlur(config),
             }
           : {}),
+        ...(exact ? { exact_colors: exactDefault() } : {}),
         ...(away ? { unavailable: cardDefaults().unavailable } : {}),
         ...(sliders ? { slider_style: 'house', slider_words: sliderDefaults().words } : {}),
         ...(tints ? { tint: tintDefaults().tint, tint_style: tintDefaults().style } : {}),
@@ -1397,10 +1401,10 @@ export function editorDefaults(
 
 /**
  * The keys whose default is the house's (fluvy's settings) on a card that leaves them to it: the ones `editorDefaults`
- * reads there — a card's surface, its look out of reach, the words under its slider, when a device shows its state's
- * colour and as what — and the ones a card's own defaults read there: a light's colours on its tile, its row or its
- * room, the hours a chart of the past shows (`hours`, a Chart card's `span`), a gauge's style and whether it moves, and
- * a chart's style with every fine key that style or the house's chart settings decide. Written into a config, such a
+ * reads there — a card's surface and its colours as named, its look out of reach, the words under its slider, when a
+ * device shows its state's colour and as what — and the ones a card's own defaults read there: a light's colours on
+ * its tile, its row or its room, the hours a chart of the past shows (`hours`, a Chart card's `span`), a gauge's style
+ * and whether it moves, and a chart's style with every fine key that style or the house's chart settings decide. Written into a config, such a
  * key stops following the house: what prints a card's defaults as YAML (the docs' and the demo's "all options") says
  * it and never writes it. By the key alone, so a card whose default for one is its own (a tile's `tint`) is not
  * pinned either; a default that names the house out loud (`slider_style: house`, `show_grid: auto`) pins nothing and
@@ -1410,6 +1414,7 @@ export const HOUSE_KEYS: ReadonlySet<string> = new Set([
   'card_opacity',
   'card_border',
   'card_blur',
+  'exact_colors',
   'unavailable',
   'slider_words',
   'tint',

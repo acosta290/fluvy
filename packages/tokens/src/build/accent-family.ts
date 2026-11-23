@@ -38,27 +38,13 @@ export function accentFamily(
   pick: Hex,
   white = false,
 ): AccentFamily {
-  const identity = readIdentity(seed);
-  const { limits, character } = identity;
-  const p = profileOf(seed, colors.mode);
+  const ctx = accentContext(seed, colors);
+  const { limits, character, profile: p } = ctx;
   const base = profileOf(seed, seed.baseMode);
   const color = fromHex(pick);
-  const neutralPeak = identity.neutralPeakChroma * p.neutralChromaScale;
-  const ctx: AccentContext = {
-    mode: colors.mode,
-    profile: p,
-    character,
-    limits,
-    fillStyle: colors.fillStyle,
-    inkBackground: colors.mode === 'light' ? colors.surface.page : colors.surface.card,
-    card: colors.surface.card,
-    textPrimary: colors.text.primary,
-    neutralHue: identity.neutralHue,
-    neutralPeakChroma: neutralPeak,
-  };
   // a pick this close to grey is a grey (as a custom palette's accent is), and so is every grey of the palette's
   // own, whatever its rounding: never lifted into the character's chroma band, where it would read as a colour
-  if (!white && color.c < Math.max(GREY_CHROMA, neutralPeak + 0.003))
+  if (!white && color.c < Math.max(GREY_CHROMA, ctx.neutralPeakChroma + 0.003))
     return neutralFamily(ctx, colors, color);
   // a white's chroma is its share of a candle's, of the most the band gives a candle
   const band = white ? CANDLE : color;
@@ -72,6 +58,24 @@ export function accentFamily(
     lightAccent: !white && character === 'vivid' && color.l > 0.85,
     fill: accentAnchors(color, character, colors.fillStyle).fill,
   });
+}
+
+/** The palette × mode a card's own colour is derived on, as the palette's own accent was (`deriveAccent`). */
+export function accentContext(seed: PaletteSeed, colors: PaletteModeColors): AccentContext {
+  const identity = readIdentity(seed);
+  const p = profileOf(seed, colors.mode);
+  return {
+    mode: colors.mode,
+    profile: p,
+    character: identity.character,
+    limits: identity.limits,
+    fillStyle: colors.fillStyle,
+    inkBackground: colors.mode === 'light' ? colors.surface.page : colors.surface.card,
+    card: colors.surface.card,
+    textPrimary: colors.text.primary,
+    neutralHue: identity.neutralHue,
+    neutralPeakChroma: identity.neutralPeakChroma * p.neutralChromaScale,
+  };
 }
 
 /**

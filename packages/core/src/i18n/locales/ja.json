@@ -635,7 +635,9 @@
     "state_display": "状態の表示",
     "state_icons": "状態ごとのアイコン",
     "state_icons_helper": "1行に状態とそのアイコン（ok: mdi:check-circle-outline）。書かれていない状態は文字のまま",
-    "state_icon_colors_helper": "1行に状態とそのトーンまたは色（warning: warning）"
+    "state_icon_colors_helper": "1行に状態とそのトーンまたは色（warning: warning）",
+    "exact_colors": "正確な色",
+    "exact_colors_helper": "色の名前は Home Assistant の色、カラーコードは入力どおり。変更しないときは Fluvy の設定のすべてのカードの値"
   },
   "strategy": {
     "home": "ホーム",
@@ -3017,6 +3019,8 @@
     "dashboard.up_to_count": "各リスト最大{count}件",
     "cards.levels": "アイコンでレベルを表示",
     "cards.levels_sub": "バッテリーの残量、信号の強さ、バルブの開閉",
+    "cards.exact": "正確な色",
+    "cards.exact_sub": "色の名前は Home Assistant の色で、カラーコードは入力どおりに表示し、パレットの色合いにはしません",
     "scope.activity_who": "誰が操作したか",
     "scope.activity_who_sub": "アクティビティの各項目に操作した人を写真付きで表示（人で絞り込むことも可能）"
   },

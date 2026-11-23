@@ -50,9 +50,10 @@ export type { CardLanguage };
 
 export const SETTINGS_KEY = 'fluvy';
 /**
- * 9 since 1.25: the house says whether its Activity view shows who did each entry (`activityWho`): off where an 8
- * stored none, every entry as it was, so nothing changes on upgrade (a 1.24 bundle reads a 9's as its own, and keeps
- * the field on a save).
+ * 9 since 1.25: the house says whether its Activity view shows who did each entry (`activityWho`) and whether its
+ * cards wear the colours they name as they are named (`exactColors`, #250: Home Assistant's own value for a name, a hex
+ * as given): both off where an 8 stored none, every entry and every card as before, so nothing changes on upgrade (a
+ * 1.24 bundle reads a 9's as its own, and keeps the fields on a save).
  * 8 since 1.23: the house says whether Fluvy's icons show what an entity reads (`levelIcons`, #226: a battery's charge,
  * a signal's bars, a valve open or shut): off where a 7 stored none, each icon drawn as it was, so nothing changes on
  * upgrade (a 1.22 bundle reads an 8's as its own, and keeps the field on a save).
@@ -233,6 +234,11 @@ export interface HouseSettings {
   readonly rooms: RoomOrder;
   /** Fluvy's icons show what an entity reads where they can (1.23, #226): a battery's charge, a signal's bars, a valve. */
   readonly levelIcons: boolean;
+  /**
+   * Every card that says none of its own wears the colours it names as they are named (1.25, #250): Home Assistant's
+   * own value for a name, a hex as given, where it wears the palette's tone of each.
+   */
+  readonly exactColors: boolean;
 }
 
 /** What each person may choose for themselves. */
@@ -287,6 +293,7 @@ export interface EffectiveSettings {
   readonly sheets: Sheets;
   readonly rooms: RoomOrder;
   readonly levelIcons: boolean;
+  readonly exactColors: boolean;
 }
 
 export const HOUSE_DEFAULTS: HouseSettings = {
@@ -344,6 +351,8 @@ export const HOUSE_DEFAULTS: HouseSettings = {
   rooms: { sort: 'auto', order: [] },
   // every icon of its kind's one glyph, as before 1.23
   levelIcons: false,
+  // every colour a card names in the palette's tone of it, as before 1.25
+  exactColors: false,
 };
 export const WALL_DEFAULTS: WallSettings = HOUSE_DEFAULTS.wall;
 
@@ -485,6 +494,7 @@ export function parseHouse(raw: unknown): HouseSettings {
     sheets: value['sheets'] === 'home-assistant' ? 'home-assistant' : d.sheets,
     rooms: parseRooms(value['rooms']),
     levelIcons: value['levelIcons'] === true,
+    exactColors: value['exactColors'] === true,
   };
 }
 
@@ -552,6 +562,7 @@ export function resolveSettings(
     sheets: house.sheets,
     rooms: house.rooms,
     levelIcons: house.levelIcons,
+    exactColors: house.exactColors,
   };
 }
 

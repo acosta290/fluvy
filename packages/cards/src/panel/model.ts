@@ -125,6 +125,7 @@ export type HouseEdit = Partial<
     | 'sheets'
     | 'rooms'
     | 'levelIcons'
+    | 'exactColors'
   >
 >;
 /** A person's preferences, their own to save. */
@@ -575,6 +576,8 @@ export function changeLines(ctx: PanelContext): string[] {
     lines.push(`${t('cards.title')} · ${t('cards.sheets')} · ${onOff(house.sheets === 'fluvy')}`);
   if (house.levelIcons !== undefined)
     lines.push(`${t('cards.title')} · ${t('cards.levels')} · ${onOff(house.levelIcons)}`);
+  if (house.exactColors !== undefined)
+    lines.push(`${t('cards.title')} · ${t('cards.exact')} · ${onOff(house.exactColors)}`);
   if (house.sliders) {
     const { style, words } = house.sliders;
     if (style !== ctx.settings.sliders.style)

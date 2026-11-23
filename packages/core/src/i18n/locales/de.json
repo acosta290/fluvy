@@ -685,7 +685,9 @@
     "state_display": "Zustand anzeigen als",
     "state_icons": "Symbole nach Zustand",
     "state_icons_helper": "Pro Zeile ein Zustand und sein Symbol (ok: mdi:check-circle-outline); ein nicht genannter Zustand bleibt in Worten",
-    "state_icon_colors_helper": "Pro Zeile ein Zustand und sein Farbton oder seine Farbe (warning: warning)"
+    "state_icon_colors_helper": "Pro Zeile ein Zustand und sein Farbton oder seine Farbe (warning: warning)",
+    "exact_colors": "Exakte Farben",
+    "exact_colors_helper": "Namen wie in Home Assistant, Hex-Werte wie eingegeben. Unverändert: wie in den Fluvy-Einstellungen für alle Karten"
   },
   "strategy": {
     "home": "Zuhause",
@@ -1684,6 +1686,8 @@
     "dashboard.up_to_count": "Bis zu {count} je Liste",
     "cards.levels": "Symbole zeigen den Stand",
     "cards.levels_sub": "Ladung einer Batterie, Balken eines Signals, ein Ventil offen oder geschlossen",
+    "cards.exact": "Exakte Farben",
+    "cards.exact_sub": "Farbnamen wie in Home Assistant und Hex-Werte wie eingegeben, nicht die Töne der Palette",
     "scope.activity_who": "Wer es war",
     "scope.activity_who_sub": "Jeder Eintrag in Aktivität nennt die Person dahinter, mit ihrem Bild; ein Filter nach Person"
   },

@@ -40,6 +40,7 @@ chips:
   - name: Bedroom
     path: /fluvy-home/bedroom
 # tint: 'on'
+# exact_colors: false
 # empty_text:
 hide_empty: false
 ```
@@ -53,6 +54,17 @@ hide_empty: false
 | `empty_text` |  | What the card says while it has nothing to show. |
 | `hide_empty` | `false` | Hides the whole card while it has nothing to show. |
 | [`chips`](#chips) |  | The chips, each a tab that opens a path or runs an action. A list: [its items](#chips). |
+
+<details>
+<summary>Its look and its actions, as on every card</summary>
+
+| Option | Default | What it does |
+| --- | --- | --- |
+| `exact_colors` | `false` | Wears the colours the card names as Home Assistant draws them and a hex as typed, not the palette’s tones. Left out, the house’s. |
+
+More about them in [Options every card takes](../customising.md#options-every-card-takes).
+
+</details>
 
 ## Lists
 

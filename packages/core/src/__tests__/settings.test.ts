@@ -87,6 +87,7 @@ describe('parsing stored settings', () => {
         // an area's id once, nothing that is not one
         rooms: { sort: 'name', order: ['kitchen', 'kitchen', 3, '', 'hall'] },
         levelIcons: true,
+        exactColors: true,
         extra: true,
       }),
     ).toEqual({
@@ -125,6 +126,7 @@ describe('parsing stored settings', () => {
       sheets: 'home-assistant',
       rooms: { sort: 'name', order: ['kitchen', 'hall'] },
       levelIcons: true,
+      exactColors: true,
     });
   });
 
@@ -272,6 +274,22 @@ describe('parsing stored settings', () => {
       expect(parseHouse({ activityWho: broken }).activityWho).toBe(false);
     // the house's, whoever reads the page
     expect(resolveSettings(parseHouse({ activityWho: true }), PERSONAL_DEFAULTS).activityWho).toBe(
+      true,
+    );
+  });
+
+  it('reads whether the cards wear their colours as named: off where an 8 stored none (1.25, #250: nothing changes on upgrade)', () => {
+    // a 1.24 house stored none: every colour a card names in the palette's tone of it, as before
+    const upgraded = parseHouse({ version: 8, palette: 'volt' });
+    expect(upgraded.exactColors).toBe(false);
+    expect(upgraded.version).toBe(SETTINGS_VERSION);
+    expect(SETTINGS_VERSION).toBe(9);
+    expect(HOUSE_DEFAULTS.exactColors).toBe(false);
+    // only a true turns them on
+    for (const broken of ['true', 1, null, {}])
+      expect(parseHouse({ exactColors: broken }).exactColors).toBe(false);
+    // the house's, whoever looks
+    expect(resolveSettings(parseHouse({ exactColors: true }), PERSONAL_DEFAULTS).exactColors).toBe(
       true,
     );
   });

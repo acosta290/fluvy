@@ -2144,7 +2144,9 @@
     "state_display": "Tillstånd visas som",
     "state_icons": "Ikoner efter tillstånd",
     "state_icons_helper": "Ett tillstånd och dess ikon på varje rad (ok: mdi:check-circle-outline); ett tillstånd som inte står med behåller sina ord",
-    "state_icon_colors_helper": "Ett tillstånd och dess ton eller färg på varje rad (warning: warning)"
+    "state_icon_colors_helper": "Ett tillstånd och dess ton eller färg på varje rad (warning: warning)",
+    "exact_colors": "Exakta färger",
+    "exact_colors_helper": "Namn som Home Assistant ritar dem, en hexkod som den skrivs. Orört: som alla kort, från Fluvys inställningar"
   },
   "energy-period-card": {
     "name": "Energiperiod",
@@ -3190,6 +3192,8 @@
     "dashboard.up_to_count": "Upp till {count} per lista",
     "cards.levels": "Ikoner visar nivån",
     "cards.levels_sub": "Ett batteris laddning, en signals staplar, en ventil öppen eller stängd",
+    "cards.exact": "Exakta färger",
+    "cards.exact_sub": "Färgnamn som Home Assistant ritar dem och en hexkod som den skrivs, inte palettens nyanser",
     "scope.activity_who": "Vem som gjorde det",
     "scope.activity_who_sub": "Varje post i Aktivitet visar personen bakom den, med bild; ett filter per person"
   },

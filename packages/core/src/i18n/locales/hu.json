@@ -635,7 +635,9 @@
     "state_display": "Állapot megjelenítése",
     "state_icons": "Ikonok állapot szerint",
     "state_icons_helper": "Soronként egy állapot és az ikonja (ok: mdi:check-circle-outline); a fel nem sorolt állapot szavakkal marad",
-    "state_icon_colors_helper": "Soronként egy állapot és a tónusa vagy színe (warning: warning)"
+    "state_icon_colors_helper": "Soronként egy állapot és a tónusa vagy színe (warning: warning)",
+    "exact_colors": "Pontos színek",
+    "exact_colors_helper": "A nevek úgy, ahogy a Home Assistant rajzolja őket, a hex kód úgy, ahogy beírták. Érintetlenül: az összes kártyáé, a Fluvy beállításaiból"
   },
   "strategy": {
     "home": "Otthon",
@@ -3128,6 +3130,8 @@
     "dashboard.up_to_count": "Listánként legfeljebb {count}",
     "cards.levels": "Az ikonok mutatják a szintet",
     "cards.levels_sub": "Az akkumulátor töltöttsége, a jel sávjai, a szelep nyitva vagy zárva",
+    "cards.exact": "Pontos színek",
+    "cards.exact_sub": "A színnevek úgy, ahogy a Home Assistant rajzolja őket, a hex kód úgy, ahogy beírták, nem a paletta árnyalatai",
     "scope.activity_who": "Ki csinálta",
     "scope.activity_who_sub": "A Tevékenység minden bejegyzése megnevezi a mögötte álló személyt, a képével; szűrés személy szerint"
   },

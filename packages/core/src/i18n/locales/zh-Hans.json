@@ -2040,7 +2040,9 @@
     "state_display": "状态显示为",
     "state_icons": "按状态设置图标",
     "state_icons_helper": "每行一个状态及其图标（ok: mdi:check-circle-outline）；未列出的状态仍显示文字",
-    "state_icon_colors_helper": "每行一个状态及其色调或颜色（warning: warning）"
+    "state_icon_colors_helper": "每行一个状态及其色调或颜色（warning: warning）",
+    "exact_colors": "精确颜色",
+    "exact_colors_helper": "名称按 Home Assistant 的颜色，十六进制色值按输入。未设置：沿用 Fluvy 设置中所有卡片的值"
   },
   "energy-period-card": {
     "name": "能源周期",
@@ -3053,6 +3055,8 @@
     "dashboard.up_to_count": "每个列表最多 {count} 项",
     "cards.levels": "图标显示级别",
     "cards.levels_sub": "电池电量、信号格数、阀门开关",
+    "cards.exact": "精确颜色",
+    "cards.exact_sub": "颜色名称按 Home Assistant 的颜色显示，十六进制色值按输入显示，而非配色的色调",
     "scope.activity_who": "谁操作的",
     "scope.activity_who_sub": "活动中的每条记录都显示操作人及其照片；可按人员筛选"
   },

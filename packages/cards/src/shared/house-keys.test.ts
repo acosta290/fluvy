@@ -5,6 +5,7 @@ import {
   HOUSE_DEFAULTS,
   setCardDefaults,
   setChartDefaults,
+  setExactDefault,
   setLightDefaults,
   setSliderDefaults,
   setTintDefaults,
@@ -32,6 +33,7 @@ type Settings = Pick<
   | 'chartSets'
   | 'cards'
   | 'sliders'
+  | 'exactColors'
 >;
 
 /** The house's settings a card's default may read, worn as the look engine wears them (`look/start.ts`). */
@@ -41,6 +43,7 @@ const wear = (house: Settings): void => {
   setChartDefaults({ settings: house.charts, sets: house.chartSets });
   setCardDefaults(house.cards);
   setSliderDefaults(house.sliders);
+  setExactDefault(house.exactColors);
 };
 
 /** A house with every such setting off the factory's, its charts in `style` and its gauges in `gauge`. */
@@ -64,6 +67,7 @@ const moved = (
   chartSets: [],
   cards: { opacity: 60, blur: false, unavailable: 'quiet', border: false },
   sliders: { style: 'bar', words: 'none' },
+  exactColors: true,
 });
 
 /** Every other house: each chart style with a gauge beside it, every gauge among them. */

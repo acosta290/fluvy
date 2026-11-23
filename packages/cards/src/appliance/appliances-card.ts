@@ -390,6 +390,7 @@ export class FluvyAppliancesCard extends Card<AppliancesCardConfig> {
     'card_opacity',
     'card_border',
     'card_blur',
+    'exact_colors',
     'unavailable',
     ...ACTIONS_BASE,
     'show_icon',
@@ -1045,12 +1046,16 @@ export class FluvyAppliancesCard extends Card<AppliancesCardConfig> {
       ...(this.config?.picture ? { picture: this.config.picture } : {}),
       ...(this.config?.picture_min ? { picture_min: this.config.picture_min } : {}),
       ...(this.config?.confirm ? { confirm: this.config.confirm } : {}),
-      // the list's own opacity, border, blur and look out of reach are its cards' (they are its surfaces)
+      // the list's own opacity, border, blur and look out of reach are its cards' (they are its surfaces), and so are
+      // its colours as named (#250: its items' colours are its cards')
       ...(this.config?.card_opacity !== undefined
         ? { card_opacity: this.config.card_opacity }
         : {}),
       ...(this.config?.card_border !== undefined ? { card_border: this.config.card_border } : {}),
       ...(this.config?.card_blur !== undefined ? { card_blur: this.config.card_blur } : {}),
+      ...(this.config?.exact_colors !== undefined
+        ? { exact_colors: this.config.exact_colors }
+        : {}),
       ...(this.config?.unavailable ? { unavailable: this.config.unavailable } : {}),
       ...(this.config?._now ? { _now: this.config._now } : {}),
       ...line.item,

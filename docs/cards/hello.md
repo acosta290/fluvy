@@ -30,6 +30,7 @@ show_weather: true
 show_date: true
 show_avatar: true
 # color:
+# exact_colors: false
 # tap_action:
 #   action: more-info
 # hold_action:
@@ -55,6 +56,7 @@ show_avatar: true
 | Option | Default | What it does |
 | --- | --- | --- |
 | `color` |  | The card’s colour: its circle, its accents and its tints wear it. Left out, the colour of what it shows. |
+| `exact_colors` | `false` | Wears the colours the card names as Home Assistant draws them and a hex as typed, not the palette’s tones. Left out, the house’s. |
 | **Interactions** |  |  |
 | `tap_action` | `more-info` | What a tap on the card does. |
 | `hold_action` | `more-info` | What a long press on the card does. |

@@ -1797,6 +1797,35 @@ describe('the settings panel', () => {
     guest.panel.remove();
   });
 
+  it('lets the house wear the colours its cards name as they are named, off until chosen (1.25, #250)', async () => {
+    const { panel, root, row, button, handle, previews, settle } = await mount();
+    const name = 'Exact colours';
+    // off, by default: nothing changes on upgrade
+    const exact = () => row(name)?.querySelector('.fv-switch');
+    expect(row(name)?.textContent).toContain(
+      'Colour names as Home Assistant draws them and a hex as typed, not the palette’s shades',
+    );
+    expect(exact()?.getAttribute('aria-checked')).toBe('false');
+    row(name)?.querySelector<HTMLElement>('.fv-hit')?.click();
+    await settle();
+    expect(exact()?.getAttribute('aria-checked')).toBe('true');
+    expect(root.querySelector('.pn-bar__text')?.textContent?.trim()).toBe(
+      'Cards · Exact colours · On',
+    );
+    // shown on every card at once, saved only from the bar
+    expect(previews.at(-1)).toEqual({ exactColors: true });
+    button('Save')!.click();
+    await settle();
+    expect(handle.settings().exactColors).toBe(true);
+    panel.remove();
+    // someone who is not an administrator reads it, and changes nothing
+    const guest = await mount(false);
+    guest.row(name)?.querySelector<HTMLElement>('.fv-hit')?.click();
+    await guest.settle();
+    expect(guest.previews.at(-1)).not.toEqual(expect.objectContaining({ exactColors: false }));
+    guest.panel.remove();
+  });
+
   it('lets the house give Home Assistant’s history back in its details dialog, ours until then (1.20, #162)', async () => {
     const { panel, root, row, button, handle, settle } = await mount();
     await handle.store.saveHouse({ scope: 'everywhere' });
@@ -3260,6 +3289,8 @@ describe('the settings panel', () => {
       levelIcons: true,
       // whether the Activity view shows who did each entry (1.25)
       activityWho: true,
+      // whether the cards wear their colours as named (1.25, #250)
+      exactColors: true,
       // a wall's subviews with no way back (1.23, #222)
       wall: { ...WALL_DEFAULTS, subview: 'none' },
     });
@@ -3309,6 +3340,7 @@ describe('the settings panel', () => {
       stateTintStyle: 'edge',
       levelIcons: true,
       activityWho: true,
+      exactColors: true,
       wall: { subview: 'none' },
     });
     expect(exported['personal']).toMatchObject({
@@ -3344,6 +3376,7 @@ describe('the settings panel', () => {
       stateTint: 'off',
       stateTintStyle: 'wash',
       levelIcons: false,
+      exactColors: false,
       wall: WALL_DEFAULTS,
     });
     await handle.store.savePersonal({ language: 'auto', haptics: true, holdToSlide: false });
@@ -3384,6 +3417,7 @@ describe('the settings panel', () => {
       'edge',
     ]);
     expect(handle.settings().levelIcons).toBe(true);
+    expect(handle.settings().exactColors).toBe(true);
     expect(handle.settings().wall.subview).toBe('none');
     expect(saved.at(-1)?.config).toEqual({
       strategy: {

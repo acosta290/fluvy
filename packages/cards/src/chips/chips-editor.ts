@@ -5,6 +5,7 @@ import {
   actionFields,
   emptyFields,
   entityField,
+  exactField,
   fieldRow,
   formLabels,
   iconField,
@@ -18,8 +19,8 @@ import type { ChipsCardConfig } from './chips-card.js';
 
 /** The chips card's editor: fetched by its `editor()` the first time the card is edited, never by a dashboard. */
 
-/** The row's accessible name is the base's `name`; the tabs are its own. */
-export const base: readonly BaseKey[] = ['name'];
+/** The row's accessible name is the base's `name`, its tabs' colours as named the base's too; the tabs are its own. */
+export const base: readonly BaseKey[] = ['name', 'exact_colors'];
 
 export const keys = configKeys<ChipsCardConfig>()(['chips', 'tint', ...EMPTY_KEYS]);
 
@@ -59,6 +60,7 @@ export function getConfigForm(): LovelaceConfigForm {
       textField('name'),
       { name: 'chips', required: true, selector: { object: {} } },
       tintField(),
+      exactField(),
       emptyFields(),
     ],
     ...formLabels({ chips: 'editor.tabs' }),

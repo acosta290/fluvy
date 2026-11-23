@@ -80,6 +80,78 @@ export function legibleUnder(fillStyle: FillStyle, fill: Oklch, ink: Oklch): Okl
     : ensureContrast(fill, toHex(ink), GATES.icon, fill.l > ink.l ? 'lighter' : 'darker');
 }
 
+/**
+ * The hover of an ink: a step of the mode's away from the end of the scale it is near (a lime would turn white, a black
+ * blacker).
+ */
+export function hoverOf(ink: Oklch, p: ModeProfile): Hex {
+  const step = Math.abs(p.accentHoverDelta);
+  return toHex({
+    ...ink,
+    l: ink.l + (ink.l > 0.85 ? -step : ink.l < 0.3 ? step : p.accentHoverDelta),
+  });
+}
+
+/**
+ * A filled button under the pointer steps away from the ink on it (a black glyph on hot orange: the orange lightens),
+ * so the glyph never loses contrast to the hover.
+ */
+export const awayFrom = (fill: Oklch, on: Hex, p: ModeProfile): Oklch => ({
+  ...fill,
+  l: fill.l + (fromHex(on).l > fill.l ? -1 : 1) * Math.abs(p.accentHoverDelta),
+});
+
+/** A fill's hairline: a step towards the ink on the fill, fitted as far as it asks (a near-black plate's goes lighter). */
+export function fillBorderOf(fill: Oklch, p: ModeProfile): Hex {
+  return toHex(
+    ensureContrast(
+      { ...fill, l: fill.l + (inkOn(fill) === 'darker' ? -1 : 1) * Math.abs(p.fillBorderDelta) },
+      toHex(fill),
+      GATES.borderVsCard,
+      inkOn(fill),
+    ),
+  );
+}
+
+/**
+ * The twelve graph series round a hue: two tone rows over the six harmony hues, row one mid, row two one step deeper,
+ * each read as a glyph on the card. The small per-hue stagger inside each row is what keeps neighbours 30° apart
+ * legible; a hue the seeds were never tuned for (a card's own colour) can land two series a hair too close: the
+ * stagger stretches, a little at a time, until every series stands apart — a seeded accent moves nothing.
+ */
+export function seriesAround(ctx: AccentContext, hue: number, peakChroma: number): Hex[] {
+  const p = ctx.profile;
+  const series = (stretch: number): Hex[] =>
+    [0, 1].flatMap((row) =>
+      GRAPH_HARMONY.map((entry) => {
+        const l = p.graphBaseL + (entry.lightnessOffset - row * p.graphToneDelta) * stretch;
+        return toHex(
+          ensureContrast(
+            {
+              l,
+              c: peakChroma * entry.chromaScale * chromaEnvelope(l),
+              h: normalizeHue(hue + entry.hueOffset),
+            },
+            ctx.card,
+            GATES.icon,
+            ctx.mode === 'light' ? 'darker' : 'lighter',
+          ),
+        );
+      }),
+    );
+  let graph = series(1);
+  for (
+    let stretch = 1.1;
+    stretch <= 1.6 && minPairwiseDeltaE(graph) < GATES.graphSeparation;
+    stretch += 0.1
+  )
+    graph = series(stretch);
+  if (graph.length !== GRAPH_SERIES_COUNT) {
+    throw new Error(`Harmony yields ${graph.length} series, expected ${GRAPH_SERIES_COUNT}`);
+  }
+  return graph;
+}
+
 export function deriveAccent(ctx: AccentContext, input: AccentInput): AccentFamily {
   const { mode, profile: p, fillStyle, inkBackground } = ctx;
   const { anchor } = input;
@@ -120,20 +192,6 @@ export function deriveAccent(ctx: AccentContext, input: AccentInput): AccentFami
         inkDirection,
       );
   const accentInk = toHex(accentInkOklch);
-  // hover moves away from the end of the scale the ink is near (a lime would turn white, a black blacker)
-  const hoverDelta =
-    accentInkOklch.l > 0.85
-      ? -Math.abs(p.accentHoverDelta)
-      : accentInkOklch.l < 0.3
-        ? Math.abs(p.accentHoverDelta)
-        : p.accentHoverDelta;
-  const accentHover = toHex({ ...accentInkOklch, l: accentInkOklch.l + hoverDelta });
-  // a filled button under the pointer steps away from the ink on it (a black glyph on hot orange: the orange
-  // lightens), so the glyph never loses contrast to the hover
-  const awayFrom = (fill: Oklch, on: Hex): Oklch => ({
-    ...fill,
-    l: fill.l + (fromHex(on).l > fill.l ? -1 : 1) * Math.abs(p.accentHoverDelta),
-  });
   // a soft ink already clears the text gate and comes back unchanged; a vivid one is taken deeper
   const accentText = toHex(ensureContrast(accentInkOklch, inkBackground, GATES.text, inkDirection));
 
@@ -147,20 +205,7 @@ export function deriveAccent(ctx: AccentContext, input: AccentInput): AccentFami
     accentInkOklch,
   );
   const accentFill = toHex(accentFillOklch);
-  // the hairline starts a step towards the ink on the fill, the way it is fitted (a near-black plate's goes lighter)
-  const accentFillBorder = toHex(
-    ensureContrast(
-      {
-        ...accentFillOklch,
-        l:
-          accentFillOklch.l +
-          (inkOn(accentFillOklch) === 'darker' ? -1 : 1) * Math.abs(p.fillBorderDelta),
-      },
-      accentFill,
-      GATES.borderVsCard,
-      inkOn(accentFillOklch),
-    ),
-  );
+  const accentFillBorder = fillBorderOf(accentFillOklch, p);
   const accentOnFill = toHex(
     ensureContrast(
       anchor ? fromHex(anchor.accentOnFill) : accentAt(p.onFillL, p.onFillChromaScale),
@@ -186,45 +231,9 @@ export function deriveAccent(ctx: AccentContext, input: AccentInput): AccentFami
         ),
   );
 
-  const ramp = buildRamp({ hue: input.hue, peakChroma: input.peakChroma });
-
-  // --- Graph series ---------------------------------------------------------
-  // Two tone rows over the six harmony hues: row one mid, row two one step deeper. The
-  // small per-hue stagger inside each row is what keeps neighbours 30° apart legible.
-  const series = (stretch: number): Hex[] =>
-    [0, 1].flatMap((row) =>
-      GRAPH_HARMONY.map((entry) => {
-        const l = p.graphBaseL + (entry.lightnessOffset - row * p.graphToneDelta) * stretch;
-        return toHex(
-          ensureContrast(
-            {
-              l,
-              c: input.graphPeakChroma * entry.chromaScale * chromaEnvelope(l),
-              h: normalizeHue(input.hue + entry.hueOffset),
-            },
-            ctx.card,
-            GATES.icon,
-            inkDirection,
-          ),
-        );
-      }),
-    );
-  // a hue the seeds were never tuned for (a card's own colour) can land two series a hair too close: the tone
-  // stagger stretches, a little at a time, until every series stands apart — a seeded accent moves nothing
-  let graph = series(1);
-  for (
-    let stretch = 1.1;
-    stretch <= 1.6 && minPairwiseDeltaE(graph) < GATES.graphSeparation;
-    stretch += 0.1
-  )
-    graph = series(stretch);
-  if (graph.length !== GRAPH_SERIES_COUNT) {
-    throw new Error(`Harmony yields ${graph.length} series, expected ${GRAPH_SERIES_COUNT}`);
-  }
-
   return {
     ink: accentInk,
-    hover: accentHover,
+    hover: hoverOf(accentInkOklch, p),
     text: accentText,
     fill: accentFill,
     fillBorder: accentFillBorder,
@@ -235,10 +244,10 @@ export function deriveAccent(ctx: AccentContext, input: AccentInput): AccentFami
         ? { fill: accentFill, hover: toHex(solidHover(accentFillOklch)), on: accentOnFill }
         : {
             fill: accentInk,
-            hover: toHex(awayFrom(accentInkOklch, textOnAccent)),
+            hover: toHex(awayFrom(accentInkOklch, textOnAccent, p)),
             on: textOnAccent,
           },
-    ramp,
-    graph,
+    ramp: buildRamp({ hue: input.hue, peakChroma: input.peakChroma }),
+    graph: seriesAround(ctx, input.hue, input.graphPeakChroma),
   };
 }

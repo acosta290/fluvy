@@ -163,9 +163,10 @@ area: living_room
 card_color: amber
 ```
 
-A colour name is Home Assistant's tone for it on your palette — amber, for one, is the colour of a lit light, which a
-palette may move aside to keep its own accent clear — so the whole dashboard stays in harmony. A `#rrggbb` is exactly
-that colour.
+A colour name is Home Assistant's tone for it on your palette — amber, for one, is the lit light's own hue, even
+where a light that is on wears your palette's accent (1.25) — so the whole dashboard stays in harmony. A `#rrggbb`
+keeps its hue, its strength fitted to your palette (a pastel palette pales it). To wear either exactly, ask for
+[exact colours](#exact-colours).
 
 **Black, the greys and white** (1.9) are six steps of one ladder in your palette's own greys: black, dark grey, blue
 grey, grey, light grey, white, each a step lighter than the one before, and never a colour (blue grey keeps a hint of
@@ -173,16 +174,36 @@ cool). In light mode black is a black icon on a grey plate, and white an outline
 plate deeper than the card and white a bright icon on the lightest plate. A grey you type in (`#000`, `#333333`,
 `#ffffff`) lands on the same ladder by how light it is.
 
-Because names follow the palette, two of them can land on one colour or close to it:
+Because names follow the palette, two of them can land close: on every palette's pale fills, in light and in dark,
+neighbours on the wheel (red and deep orange for one) are hard to tell apart at rest. For items that must stay apart,
+choose names far apart on the wheel (teal and deep orange, blue and pink), give them hex colours, or wear them exactly.
 
-- on the electric palettes amber takes the lit light's colour there: deep purple's on Volt and Iris, teal's on Mint,
-  grey's on Noir in light; and on Volt indigo sits close to amber too;
-- on Mist, blue and amber are close in light;
-- on every palette's pale fills, in light and in dark, neighbours on the wheel (red and deep orange for one) are hard
-  to tell apart at rest.
+### Exact colours
 
-For items that must stay apart, choose names far apart on the wheel (teal and deep orange, blue and pink), or give
-them hex colours.
+`exact_colors: true` on a card, or **Exact colours** for the whole house in the [settings
+panel](settings-panel.md#cards) (1.25), wears every colour the card names as named instead of your palette's tone of
+it: a name is Home Assistant's own value (`amber` is `#ffc107`, `teal` `#009688`, `deep-orange` `#ff6f22`), a hex is
+as typed. It covers the card's `color` and `card_color`, an item's `color`, a state's colour, a threshold's, a chart's
+series and the house's sets of series colours, and a lit bulb's own colour; your palette's own colours (its accent, its
+statuses, a device's state) stay the palette's. A card's own `exact_colors: false` keeps its palette's tones in a house
+that wears them exactly.
+
+The colour is drawn as named and kept legible:
+
+- lines, bars, glyphs and rings are the colour itself (a pale yellow line on a white card is as faint as it is in Home
+  Assistant: you asked for it);
+- a fill is the colour on a solid palette (Volt, Mint, Noir) and a fifth of it over the card on a tint one, as Home
+  Assistant's tile draws its icon's plate;
+- words on a fill are black or white, whichever reads at 4.5:1;
+- a figure or a word written in the colour on the card keeps the colour, taken lighter or deeper only as far as it
+  needs to read at 4.5:1 on the card.
+
+```yaml
+type: custom:fluvy-light-card
+entity: light.kitchen_pendant
+color: amber
+exact_colors: true
+```
 
 ## Dashboard tabs
 

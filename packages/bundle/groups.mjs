@@ -380,10 +380,12 @@ const ITEMS =
 const LIGHT_COLOUR = /\/packages\/cards\/src\/light\/(colour|swatches)\.ts/;
 
 /**
- * Home Assistant's own colours (1.25, #250: its value for each of its colour names, `HA_STANDARD_COLORS`): what a bulb
- * glows when asked for one by name, fetched with the light card's colours.
+ * Colours worn as they are named (1.25, #250): Home Assistant's own value for each of its colour names
+ * (`HA_STANDARD_COLORS`) and the family a colour wears exactly (`@fluvy/tokens/exact`) — fetched by the first card that
+ * asks for its colours exactly, or as the house does, and with the light card's colours, a bulb asked for a colour by
+ * its name glowing Home Assistant's own; a house of the palette's tones never pays for it.
  */
-const EXACT = /\/packages\/tokens\/src\/ha\/standard\.ts/;
+const EXACT = /\/packages\/tokens\/src\/(ha\/standard|build\/exact)\.ts/;
 
 /** The room lights' colour sheet and its hue wheel (#137): fetched the first time a card's colour round is tapped. */
 const LIGHTS_COLOUR = /\/packages\/cards\/src\/lights\/sheet\//;
@@ -534,7 +536,7 @@ const FORMS =
  * Expander card (its editor on its own, before the forms, with the Swipe card's), the Swipe card, a dashboard's own
  * sidebar, the Slider card, the ring, the Cover card, the drive pad, the Vacuum card, the Thermostat card, the platforms' logos, the
  * remote card, the Vehicle card, the Heating schedule card (its sheet on its own), Fluvy's own details, the items card (its sheet on its own), the light card's colours,
- * Home Assistant's own colours, a room's quick actions, the cards' editor, the fields every editor is built of, the view icons, what a see-through
+ * colours worn as they are named, a room's quick actions, the cards' editor, the fields every editor is built of, the view icons, what a see-through
  * card wears, what a quiet one wears, what reads a card's thresholds, what sets a number in place, the slider styles,
  * the switch styles, the page's background, this device's sidebar beside the page, a list in groups, the icon set's
  * other part, what only the chunks fetched later share, and everything else (Fluvy's packages and Lit) in `core`. The

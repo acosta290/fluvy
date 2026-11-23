@@ -392,6 +392,7 @@ export class FluvyEnergyPeriodCard extends Card<EnergyPeriodCardConfig> {
     'card_opacity',
     'card_border',
     'card_blur',
+    'exact_colors',
     'unavailable',
   ];
   static override keys = configKeys<EnergyPeriodCardConfig>()([

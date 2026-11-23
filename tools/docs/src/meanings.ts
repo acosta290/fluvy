@@ -80,6 +80,8 @@ export const MEANINGS: Readonly<Record<string, string>> = {
   empty_text: 'What the card says while it has nothing to show.',
   end_hour: 'The hour the timeline ends at.',
   entity: 'The entity the card is about: what it shows, and what its controls act on.',
+  exact_colors:
+    'Wears the colours the card names as Home Assistant draws them and a hex as typed, not the palette’s tones. Left out, the house’s.',
   exclude: 'Leaves these entities, devices or domains out of what the card counts.',
   expanded: 'Opens the card as the page loads; off, it starts folded.',
   export: 'A sensor of the power going out to the grid, positive.',

@@ -1442,7 +1442,9 @@
     "state_display": "Stav zobrazit jako",
     "state_icons": "Ikony podle stavu",
     "state_icons_helper": "Na každém řádku stav a jeho ikona (ok: mdi:check-circle-outline); neuvedený stav zůstane slovy",
-    "state_icon_colors_helper": "Na každém řádku stav a jeho tón nebo barva (warning: warning)"
+    "state_icon_colors_helper": "Na každém řádku stav a jeho tón nebo barva (warning: warning)",
+    "exact_colors": "Přesné barvy",
+    "exact_colors_helper": "Názvy tak, jak je kreslí Home Assistant, hex kód tak, jak je zadán. Beze změny: podle nastavení Fluvy pro všechny karty"
   },
   "page": {
     "menu": "Otevřít nabídku",
@@ -3111,6 +3113,8 @@
     "dashboard.up_to_count": "Až {count} v každém seznamu",
     "cards.levels": "Ikony ukazují úroveň",
     "cards.levels_sub": "Nabití baterie, čárky signálu, ventil otevřený nebo zavřený",
+    "cards.exact": "Přesné barvy",
+    "cards.exact_sub": "Názvy barev tak, jak je kreslí Home Assistant, a hex kód tak, jak je zadán, ne odstíny palety",
     "scope.activity_who": "Kdo to udělal",
     "scope.activity_who_sub": "Každý záznam v Aktivitě uvádí osobu, která za ním stojí, s její fotkou; filtr podle osoby"
   },

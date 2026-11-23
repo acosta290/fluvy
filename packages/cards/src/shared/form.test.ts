@@ -98,12 +98,24 @@ describe('a colour field', () => {
     });
     document.documentElement.lang = 'en';
     expect(label(formLabels(), 'card_border')).toBe('Card border');
-    // the opacity, the border and the blur always together, wherever a card offers its surface
+    // the opacity, the border, the blur and the colours as named always together, wherever a card offers its surface
     expect(cardSurfaceFields().map((field) => field.name)).toEqual([
       'card_opacity',
       'card_border',
       'card_blur',
+      'exact_colors',
     ]);
+  });
+
+  it('offers the colours as named under the blur, a switch, the house’s until chosen (#250)', () => {
+    const [, , , , , exact] = colourFields();
+    expect(exact).toEqual({
+      name: 'exact_colors',
+      selector: { boolean: {} },
+      helper: 'editor.exact_colors_helper',
+    });
+    document.documentElement.lang = 'en';
+    expect(label(formLabels(), 'exact_colors')).toBe('Exact colours');
   });
 
   it('offers the blur of what shows through under its border, a switch, only while the card is see-through (#213)', () => {
@@ -129,7 +141,7 @@ describe('a colour field', () => {
   });
 
   it('offers how the card looks out of reach after its opacity, dashed or as when off, the house’s until chosen (#126)', () => {
-    const [, , , , , look] = colourFields();
+    const [, , , , , , look] = colourFields();
     expect(look).toMatchObject({
       name: 'unavailable',
       helper: 'editor.unavailable_helper',

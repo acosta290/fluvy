@@ -42,7 +42,7 @@ describe('series colours', () => {
     const { light, dark } = fitSet(SET, 'linen');
     expect(seriesPaint('series-2', withSet)).toEqual({
       className: 'fc-set',
-      style: `--fc-light:${light[1]};--fc-dark:${dark[1]}`,
+      style: `--fc-light:${light[1]};--fc-dark:${dark[1]};--fc-exact:${SET[1]}`,
     });
     // six deep colours read on the light card as they were picked
     expect(light).toEqual(SET);
@@ -155,7 +155,7 @@ describe('the colours of the palette’s a set or a series may name (1.11)', () 
     const { light, dark } = fitSet(garden.sets[0]!.colours, 'linen');
     expect(seriesPaint('series-5', garden)).toEqual({
       className: 'fc-set',
-      style: `--fc-light:${light[4]};--fc-dark:${dark[4]}`,
+      style: `--fc-light:${light[4]};--fc-dark:${dark[4]};--fc-exact:#1e3a8a`,
     });
   });
 

@@ -6,6 +6,7 @@ import {
   resyncCardThemes,
   setCardDefaults,
   setChartDefaults,
+  setExactDefault,
   setLevelGlyphs,
   setLightDefaults,
   setRoomDefaults,
@@ -87,6 +88,7 @@ export type LookPreview = Partial<
     | 'cards'
     | 'rooms'
     | 'levelIcons'
+    | 'exactColors'
   >
 >;
 
@@ -255,12 +257,13 @@ export function startLook(): LookHandle | undefined {
     env.document.documentElement.toggleAttribute(ORIGINAL_HISTORY, !now.history);
     env.document.documentElement.toggleAttribute(ORIGINAL_DETAILS, !now.details);
     env.document.documentElement.toggleAttribute(ACTIVITY_CARD, now.activityCard);
-    // the lights', the devices', the charts', the cards' and the sliders' defaults, and the house's order of its rooms:
-    // every card that leaves them to the house draws again
+    // the lights', the devices', the charts', the cards' (their colours as named too) and the sliders' defaults, and
+    // the house's order of its rooms: every card that leaves them to the house draws again
     setLightDefaults({ tint: now.lightTint, colors: now.lightColors });
     setTintDefaults({ tint: now.stateTint, style: now.stateTintStyle });
     setChartDefaults({ settings: now.charts, sets: now.chartSets });
     setCardDefaults(now.cards, lite);
+    setExactDefault(now.exactColors);
     setSliderDefaults(now.sliders);
     setRoomDefaults(now.rooms);
     // the levels in Fluvy's icons, their chunk fetched the first time the house turns them on

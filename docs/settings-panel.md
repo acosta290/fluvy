@@ -56,9 +56,10 @@ each dashboard's travel in the settings file, and in Home Assistant's backups wi
 ## Cards
 
 How solid every card is, whether it draws its border, how one looks while a device is unavailable, whose details it
-opens, when a device shows its state's colour and whether its icon shows a level, where a card says nothing of its own
-(1.15, 1.19, 1.16, 1.20, 1.22, 1.23). Solid, bordered, dashed, never and off until chosen, so a dashboard looks as it
-did; Fluvy's details sheets are on from 1.20, where Home Assistant's dialog opened before:
+opens, when a device shows its state's colour, whether its icon shows a level and whether it wears the colours it names
+exactly, where a card says nothing of its own (1.15, 1.19, 1.16, 1.20, 1.22, 1.23, 1.25). Solid, bordered, dashed,
+never and off until chosen, so a dashboard looks as it did; Fluvy's details sheets are on from 1.20, where Home
+Assistant's dialog opened before:
 
 | Setting | Values | What a card takes from it |
 | --- | --- | --- |
@@ -70,6 +71,7 @@ did; Fluvy's details sheets are on from 1.20, where Home Assistant's dialog open
 | **Devices show their state's colour** | Never · When active · Always (Never by default) | `tint` on the lock, cover, alarm, vacuum, fan and thermostat cards: their state's colour beyond the circle while the device is active (unlocked, open, armed, cleaning, on, heating), or at rest too where the rest has a colour (a locked lock) — see [a device's state in colour](customising.md#a-devices-state-in-colour) |
 | **Shown as** | Wash · Edge · Control (Wash by default; shown while the colour shows) | `tint_style`: a quiet wash of the colour over the card, its edge alone in the colour, or the control alone (a lock's knob) |
 | **Icons show their level** | on · off (off by default) | where a card draws Fluvy's own glyph for an entity (no `icon` of its own, none set in Home Assistant), what it reads: a battery sensor's charge (empty to 10 %, low to 35, half to 70, full above), a low battery (a battery binary sensor on) and one charging, a signal's bars (in dBm or %), a valve open or shut — see [Fluvy's icons](theme.md#fluvys-icons). Off, each is its kind's one glyph, as before 1.23. Stored as `levelIcons` |
+| **Exact colours** | on · off (off by default) | `exact_colors`: every colour a card names worn as named, Home Assistant's own value for a name (`amber` is `#ffc107`) and a hex as typed, where off each is your palette's tone of it — see [exact colours](theme.md#exact-colours). The palette's own colours (its accent, its statuses, a device's state) stay the palette's. Stored as `exactColors` |
 
 A change shows on every card of the page at once, before it is saved, and the preview stands its cards on a picture
 while they are see-through; a card that sets `card_opacity` or `card_border` keeps its own (its editor shows the
@@ -330,7 +332,7 @@ the browser (`localStorage`, `fluvy:look`) only so that the page paints in the r
 answers.
 
 **Backups.** Because both live in Home Assistant's frontend data, a Home Assistant backup keeps every setting of
-Fluvy's and a restore brings them back: the look and the saved palettes, the cards' opacity and blur, the sliders' style, the statuses' colours, the lights' defaults, the order of the rooms,
+Fluvy's and a restore brings them back: the look and the saved palettes, the cards' opacity and blur, whether they wear their colours exactly, the sliders' style, the statuses' colours, the lights' defaults, the order of the rooms,
 the wall, the Charts tab (the style, the gauge, every detail, motion, the time shown and the points), the house's
 own series colours, and which of Home Assistant's pages and its details dialog's history are Fluvy's. The panel's
 *Preferences › Fluvy › Export* writes the same to a file — the house, the person and the options of every automatic

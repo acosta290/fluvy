@@ -35,7 +35,8 @@ import type { SeriesColour } from './model.js';
 /**
  * How a series is painted: the class it wears — its tone's, or `fc-set`, which wears the mode's of a set's two
  * colours — and what it writes on itself: its ink (`--tone-ink`), or a set's colour fitted to the light card and the
- * dark one (`--fc-light`, `--fc-dark`).
+ * dark one (`--fc-light`, `--fc-dark`) and as it was chosen (`--fc-exact`: what a card that wears its colours as named
+ * wears, 1.25, #250).
  */
 export interface SeriesPaint {
   readonly className: string;
@@ -126,7 +127,8 @@ export const setInks = (colours: readonly string[], set: FittedSet, mode: Palett
 /**
  * The n-th series colour (from 0): the house's saved set's, or the palette's n-th. A colour of the palette's follows
  * it and the mode as drawn; a hex wears the set fitted to each mode, on the palette and the status colours of the look
- * (this person's, or the house's; a preview's while the settings show one), the default's where no look runs.
+ * (this person's, or the house's; a preview's while the settings show one), the default's where no look runs — and as
+ * it was chosen on a card that wears its colours as named.
  */
 function seriesColour(index: number, house: HouseCharts): SeriesPaint {
   const chosen = house.settings.series;
@@ -141,7 +143,10 @@ function seriesColour(index: number, house: HouseCharts): SeriesPaint {
     worn?.look.palette ?? DEFAULT_PALETTE,
     worn?.statuses,
   );
-  return { className: 'fc-set', style: `--fc-light:${light[n]};--fc-dark:${dark[n]}` };
+  return {
+    className: 'fc-set',
+    style: `--fc-light:${light[n]};--fc-dark:${dark[n]};--fc-exact:${colour}`,
+  };
 }
 
 /** How a series paints itself: a tone as its class, a series colour or a colour of its own as its ink; none: its wrapper's. */

@@ -58,13 +58,17 @@ export const chartStyles = css`
   [data-mode='dark'] .fc-chart {
     --fc-boost: 0.06;
   }
-  /* a colour of the house's own set carries itself fitted to the light card and the dark one: it wears the mode's */
+  /* a colour of the house's own set carries itself fitted to the light card and the dark one: it wears the mode's,
+     or itself as chosen on a card that wears its colours as named (#250) */
   .fc-set {
     --tone-ink: var(--fc-light);
   }
   :host([dark]) .fc-set,
   [data-mode='dark'] .fc-set {
     --tone-ink: var(--fc-dark);
+  }
+  :host([exact-colors]) .fc-set {
+    --tone-ink: var(--fc-exact);
   }
   .fc-line {
     fill: none;

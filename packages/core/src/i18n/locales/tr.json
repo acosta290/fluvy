@@ -685,7 +685,9 @@
     "state_display": "Durum gösterimi",
     "state_icons": "Duruma göre simgeler",
     "state_icons_helper": "Her satırda bir durum ve simgesi (ok: mdi:check-circle-outline); listede olmayan durum sözcükleriyle kalır",
-    "state_icon_colors_helper": "Her satırda bir durum ve tonu ya da rengi (warning: warning)"
+    "state_icon_colors_helper": "Her satırda bir durum ve tonu ya da rengi (warning: warning)",
+    "exact_colors": "Tam renkler",
+    "exact_colors_helper": "Adlar Home Assistant’ın çizdiği gibi, hex kodu yazıldığı gibi. Dokunulmazsa, Fluvy ayarlarındaki tüm kartlarınki"
   },
   "strategy": {
     "home": "Ana sayfa",
@@ -1684,6 +1686,8 @@
     "dashboard.up_to_count": "Liste başına en fazla {count}",
     "cards.levels": "Simgeler seviyeyi gösterir",
     "cards.levels_sub": "Pilin şarjı, sinyalin çubukları, vananın açık ya da kapalı olması",
+    "cards.exact": "Tam renkler",
+    "cards.exact_sub": "Renk adları Home Assistant’ın çizdiği gibi, hex kodu yazıldığı gibi; paletin tonları değil",
     "scope.activity_who": "Kimin yaptığı",
     "scope.activity_who_sub": "Etkinlik’teki her kayıt, arkasındaki kişiyi fotoğrafıyla gösterir; kişiye göre filtre"
   },

@@ -46,6 +46,7 @@ name_lines: 1
 # card_color:
 # card_opacity: 100
 # card_border: true
+# exact_colors: false
 # unavailable: dashed
 day: today
 forecast_entity: sensor.so_forecast_today
@@ -114,6 +115,7 @@ variant: full
 | `card_opacity` | `100` | How solid the card’s surface is, in percent: under 100 the view’s background shows through. Left out, the house’s. 0 % to 100 %, in steps of 5. |
 | `card_border` | `true` | Whether the card draws its hairline border. Left out, the house’s. |
 | `card_blur` | `true` | Whether what shows through a see-through card is blurred. Left out, the house’s, and none at 0 %. |
+| `exact_colors` | `false` | Wears the colours the card names as Home Assistant draws them and a hex as typed, not the palette’s tones. Left out, the house’s. |
 | `unavailable` | `dashed` | How the card looks while its entity is unavailable: dashed, or quiet as when it is off. Left out, the house’s. `dashed` · `quiet` (As when off). |
 | **Interactions** |  |  |
 | `tap_action` | `more-info` | What a tap on the card does. |

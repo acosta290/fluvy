@@ -1381,7 +1381,9 @@
     "state_display": "Stan pokazany jako",
     "state_icons": "Ikony według stanu",
     "state_icons_helper": "W każdym wierszu stan i jego ikona (ok: mdi:check-circle-outline); stan niewymieniony zostaje słowami",
-    "state_icon_colors_helper": "W każdym wierszu stan i jego ton lub kolor (warning: warning)"
+    "state_icon_colors_helper": "W każdym wierszu stan i jego ton lub kolor (warning: warning)",
+    "exact_colors": "Dokładne kolory",
+    "exact_colors_helper": "Nazwy tak, jak rysuje je Home Assistant, kod hex tak, jak wpisano. Nieustawione: wspólne dla wszystkich kart, z ustawień Fluvy"
   },
   "energy": {
     "solar": "PV",
@@ -2784,6 +2786,8 @@
     "dashboard.up_to_count": "Do {count} na listę",
     "cards.levels": "Ikony pokazują poziom",
     "cards.levels_sub": "Naładowanie baterii, kreski sygnału, zawór otwarty lub zamknięty",
+    "cards.exact": "Dokładne kolory",
+    "cards.exact_sub": "Nazwy kolorów tak, jak rysuje je Home Assistant, i kod hex tak, jak wpisano, nie odcienie palety",
     "scope.activity_who": "Kto to zrobił",
     "scope.activity_who_sub": "Każdy wpis w Aktywności wskazuje osobę, która za nim stoi, z jej zdjęciem; filtr według osoby"
   },

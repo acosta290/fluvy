@@ -26,6 +26,7 @@ entity: light.living_room_lamp
 | `card_opacity` | 0 to 100; under 100 the view's background shows through. | `card_opacity: 80` |
 | `card_border` | `false` leaves out the hairline. | `card_border: false` |
 | `card_blur` | Under 100, whether what shows through is blurred. | `card_blur: false` |
+| `exact_colors` | `true`: the colours the card names as Home Assistant draws them and a hex as typed, not the palette's tones ([theme](theme.md#exact-colours)). | `exact_colors: true` |
 | `unavailable` | Out of reach: `dashed` (the default) or `quiet` (as when off). The card keeps its size either way. | `unavailable: quiet` |
 | `show_icon` | The head's circle: `auto`, `always` or `never`. | `show_icon: never` |
 | `name_lines` | `2`: the name may take two lines; the head is a line taller whatever the name. `0` hides the name; the head keeps its circle and its line. | `name_lines: 2` |
@@ -34,8 +35,8 @@ entity: light.living_room_lamp
 | `slider_style`, `slider_words` | `ruler`, `bar`, `liquid`, `fill` (a tile) or `house`; the figures under the slider: `ends` or `none`. | `slider_style: bar` |
 | `empty_text`, `hide_empty` | What an empty list says; `hide_empty: true` hides the card until something is listed. | `empty_text: All closed` |
 
-- Left out, `card_opacity`, `card_border`, `card_blur`, `unavailable` and `slider_style` are the house's
-  ([settings panel](settings-panel.md#cards)).
+- Left out, `card_opacity`, `card_border`, `card_blur`, `exact_colors`, `unavailable` and `slider_style` are the
+  house's ([settings panel](settings-panel.md#cards)).
 - **A card at 0 %** is clear: nothing of it is frosted, whatever the house's blur, so only its words, its circles and
   its hairline stand on the view (`card_border: false` takes the hairline too). A lit tile and a light card lit in its
   light's colour stay solid, and the cards an [Expander](cards/expander.md), a [Swipe](cards/swipe.md) card or a
@@ -47,6 +48,21 @@ type: custom:fluvy-room-card
 area: living_room
 card_opacity: 0     # clear: no fill, no frost
 # card_blur: true   # a frosted pane with no fill of its own
+```
+- **Exact colours** (1.25): every colour the card names (its `color` and `card_color`, an item's, a state's, a
+  threshold's, a chart's series, the house's set of series colours, a lit bulb's) is worn as named: Home Assistant's
+  own `#ffc107` for `amber`, a hex as typed. Lines, bars, glyphs and fills are the colour itself (a tint palette's fill
+  is a fifth of it over the card, as Home Assistant's tile draws it); words on a fill are black or white, whichever
+  reads, and a figure written in the colour is taken only as much lighter or deeper as it needs to read.
+
+```yaml
+type: custom:fluvy-tiles-card
+exact_colors: true
+tiles:
+  - entity: light.kitchen_pendant
+    color: amber        # Home Assistant's #ffc107
+  - entity: light.bedside_lamp
+    color: '#e91e63'    # as typed
 ```
 - `show_badge`: the lock, alarm, cover, vacuum, thermostat, appliance, 3D printer, vehicle, humidity, timer, updates,
   gauge, distribution, bars, energy balance, grid, car charger, batteries, energy devices, energy usage and production

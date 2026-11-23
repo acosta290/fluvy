@@ -241,6 +241,10 @@ const BUDGETS = {
   glass: 4096,
   // what a card quiet out of reach wears (1.16): its sheet
   quiet: 4096,
+  // colours worn as they are named (1.25, #250): Home Assistant's own value for each of its colour names and the family
+  // a colour wears exactly, fetched by the first card that asks (or the house), and with the light card's colours.
+  // Measured at 1.0 KB
+  exact: 2048,
   // what reads a card's thresholds (1.22, #204): their values, the band a reading is in, the stretches a chart colours;
   // fetched by the first card that names one
   thresholds: 2048,

@@ -275,6 +275,17 @@ describe('the editors’ contract', () => {
   );
 
   it.each(cards)(
+    '$tag: offers its colours as named wherever it offers a colour, its own or an item’s, and honours it (#250)',
+    ({ editor, lists }) => {
+      const colours = [editor.getConfigForm().schema, ...lists.map((list) => list.schema)].some(
+        (schema) => fields(schema).some((field) => field.selector?.['ui_color'] !== undefined),
+      );
+      expect(names(editor.getConfigForm().schema).includes('exact_colors')).toBe(colours);
+      expect(editor.base.includes('exact_colors')).toBe(colours);
+    },
+  );
+
+  it.each(cards)(
     '$tag: names its entity, and each item its own, in Home Assistant’s parts where one is beside the name (#125)',
     ({ tag, editor, lists }) => {
       for (const { where, schema } of [

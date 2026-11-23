@@ -685,7 +685,9 @@
     "state_display": "État affiché en",
     "state_icons": "Icônes par état",
     "state_icons_helper": "Un état et son icône par ligne (ok: mdi:check-circle-outline) ; un état non listé garde ses mots",
-    "state_icon_colors_helper": "Un état et sa tonalité ou sa couleur par ligne (warning: warning)"
+    "state_icon_colors_helper": "Un état et sa tonalité ou sa couleur par ligne (warning: warning)",
+    "exact_colors": "Couleurs exactes",
+    "exact_colors_helper": "Les noms tels que Home Assistant les dessine, un code hex tel que saisi. Inchangé, celui de toutes les cartes dans les réglages de Fluvy"
   },
   "strategy": {
     "home": "Accueil",
@@ -1684,6 +1686,8 @@
     "dashboard.up_to_count": "Jusqu’à {count} par liste",
     "cards.levels": "Les icônes montrent leur niveau",
     "cards.levels_sub": "La charge d’une batterie, les barres d’un signal, une vanne ouverte ou fermée",
+    "cards.exact": "Couleurs exactes",
+    "cards.exact_sub": "Les noms de couleur tels que Home Assistant les dessine et un code hex tel que saisi, pas les teintes de la palette",
     "scope.activity_who": "Qui l’a fait",
     "scope.activity_who_sub": "Chaque entrée de l’Activité nomme la personne derrière elle, avec sa photo ; un filtre par personne"
   },

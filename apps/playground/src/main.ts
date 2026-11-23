@@ -15,6 +15,7 @@ import {
   setCardDefaults,
   setChartDefaults,
   setDetailsSheets,
+  setExactDefault,
   setLevelGlyphs,
   setLightDefaults,
   setSliderDefaults,
@@ -232,6 +233,9 @@ if (params.has('charts')) {
 // the house's cards' surface, as fluvy's settings would hand it to every card
 if (['opacity', 'blur', 'unavailable', 'border'].some((name) => params.has(name)))
   setCardDefaults(cardsFor(params));
+
+// the house's colours as named (#250), as fluvy's settings would hand them to every card
+if (params.get('exact') === '1') setExactDefault(true);
 
 // the house's slider settings, as fluvy's settings would hand them to every card
 if (params.has('sliders'))

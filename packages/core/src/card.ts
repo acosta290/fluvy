@@ -20,7 +20,7 @@ import {
 } from './i18n/index.js';
 import { layoutHeightOf } from './layout-heights.js';
 import { idsOf, type EntityEntry } from './lists.js';
-import { AccentSheet } from './look/accent.js';
+import { AccentSheet, type ExactColours } from './look/accent.js';
 import { entityName, listedName, type EntityName, type ItemNames } from './names.js';
 import { remember } from './remember.js';
 import { CHART_DEFAULTS, type ChartSettings, type SavedSeries } from './settings/charts.js';
@@ -68,6 +68,8 @@ export interface FluvyCardConfig extends LovelaceCardConfig {
   card_border?: boolean;
   /** Whether what shows through it see-through is blurred (1.23, #213); unset, the house's (`cardBlur`). */
   card_blur?: boolean;
+  /** Whether it wears the colours it names as they are named (1.25, #250); unset, the house's (`exactColors`). */
+  exact_colors?: boolean;
   /** How it looks while what it shows is out of reach (1.16, #126); unset, the house's (`unavailableLook`). */
   unavailable?: UnavailableLook;
   /** The style its sliders are drawn in (1.18, #144); unset or `house`, the house's (`sliderStyleOf`). */
@@ -243,8 +245,8 @@ export function setCardDefaults(next: CardSurface, lite = false): void {
   };
   liteCards = lite;
   // a house of see-through or quiet cards fetches what they wear before they draw (a card's first frame waits for it)
-  if (next.opacity < 100) void fetchGlass();
-  if (next.unavailable === 'quiet') void fetchQuiet();
+  if (next.opacity < 100) void glassChunk.fetch();
+  if (next.unavailable === 'quiet') void quietChunk.fetch();
   wearSurfaces();
 }
 
@@ -313,49 +315,88 @@ const wearSurfaces = (): void => {
 };
 
 /**
+ * What cards wear from a chunk of their own: fetched once, by the first card (or the house) that asks, what it holds
+ * handed to `landed`; `settled` once the fetch is over, landed or failed, so a first frame never waits on one that
+ * cannot land.
+ */
+function wornFrom<T>(load: () => Promise<T>, landed: (module: T) => void) {
+  let fetching: Promise<void> | undefined;
+  const worn = {
+    settled: false,
+    fetch: (): Promise<void> =>
+      (fetching ??= load()
+        .then(landed, () => undefined)
+        .finally(() => {
+          worn.settled = true;
+        })),
+  };
+  return worn;
+}
+
+/**
  * What a see-through card wears (`look/glass.ts`), once the first one (or the house) has fetched it; one that cannot
  * be fetched leaves the cards solid.
  */
 let glass: typeof import('./look/glass.js') | undefined;
-let fetchingGlass: Promise<void> | undefined;
-/** Whether the fetch is over, landed or failed: a first frame never waits on one that cannot land. */
-let glassSettled = false;
-function fetchGlass(): Promise<void> {
-  fetchingGlass ??= import('./look/glass.js')
-    .then(
-      (module) => {
-        glass = module;
-        wearSurfaces();
-      },
-      () => undefined,
-    )
-    .finally(() => {
-      glassSettled = true;
-    });
-  return fetchingGlass;
-}
+const glassChunk = wornFrom(
+  () => import('./look/glass.js'),
+  (module) => {
+    glass = module;
+    wearSurfaces();
+  },
+);
 
 /**
  * What a card quiet out of reach wears (`look/quiet.ts`: one sheet every such card adopts), once the first one (or the
  * house) has fetched it; one that cannot be fetched leaves them dashed.
  */
 let quietSheet: CSSStyleSheet | undefined;
-let fetchingQuiet: Promise<void> | undefined;
-/** Whether the fetch is over, landed or failed: a first frame never waits on one that cannot land. */
-let quietSettled = false;
-function fetchQuiet(): Promise<void> {
-  fetchingQuiet ??= import('./look/quiet.js')
-    .then(
-      (module) => {
-        quietSheet = module.quietSheet;
-        wearSurfaces();
-      },
-      () => undefined,
-    )
-    .finally(() => {
-      quietSettled = true;
-    });
-  return fetchingQuiet;
+const quietChunk = wornFrom(
+  () => import('./look/quiet.js'),
+  (module) => {
+    quietSheet = module.quietSheet;
+    wearSurfaces();
+  },
+);
+
+/**
+ * What wears the colours a card names as they are named (1.25, #250: `@fluvy/tokens/exact`), once the first card that
+ * asks (or the house) has fetched it, every such card drawing again in them; one that cannot be fetched leaves the
+ * palette's tones.
+ */
+let exact: ExactColours | undefined;
+const exactChunk = wornFrom(
+  () => import('@fluvy/tokens/exact'),
+  (module) => {
+    exact = module;
+    for (const card of live) if (exactColors(card.config)) card.requestUpdate();
+  },
+);
+
+/**
+ * Whether a card that says none of its own wears the colours it names as they are named (fluvy's settings → Appearance ›
+ * Cards, 1.25, #250): never, until the house chooses.
+ */
+let houseExact = false;
+
+/** The house's exact colours, as the settings last said (a card's own `exact_colors` wins). */
+export const exactDefault = (): boolean => houseExact;
+
+/** The house's exact colours changed (saved, or previewed in the panel): every card draws again with them. */
+export function setExactDefault(next: boolean): void {
+  if (next === houseExact) return;
+  houseExact = next;
+  if (next) void exactChunk.fetch();
+  for (const card of live) card.requestUpdate();
+}
+
+/**
+ * Whether a card wears the colours it names as they are named (1.25, #250: Home Assistant's own value for a name, a hex
+ * as given): its own `exact_colors` where it is a switch, else the house's.
+ */
+export function exactColors(config: FluvyCardConfig | undefined): boolean {
+  const own = config?.exact_colors;
+  return typeof own === 'boolean' ? own : houseExact;
 }
 
 const isUnavailableLook = (value: unknown): value is UnavailableLook =>
@@ -757,22 +798,28 @@ export abstract class FluvyCard<C extends FluvyCardConfig = FluvyCardConfig>
     this.toggleAttribute('dark', dark);
   }
 
-  /** The card's colour and its items' are written once the render has asked for them, and its surface worn. */
+  /**
+   * The card's colour and its items' are written once the render has asked for them, and its surface worn; a card that
+   * wears its colours as named is marked so (`exact-colors`: a house's set of series colours as chosen, `.fc-set`).
+   */
   protected override updated(changed: PropertyValues): void {
     super.updated(changed);
     this.accents.host(this.config?.color);
     this.accents.surface(this.config?.card_color);
+    this.toggleAttribute('exact-colors', exactColors(this.config));
     this.wearSurface();
   }
 
   /**
-   * What the card's first frame waits for: what a see-through or a quiet card wears, until its fetch is over (one that
-   * failed leaves the card solid or dashed, never waiting); a card that reads more before it draws (its thresholds)
-   * waits for that too.
+   * What the card's first frame waits for: what a see-through or a quiet card wears, and what wears its colours as
+   * named, until its fetch is over (one that failed leaves the card solid, dashed or in the palette's tones, never
+   * waiting); a card that reads more before it draws (its thresholds) waits for that too.
    */
   protected wearing(): Promise<void> | undefined {
-    if (this.surface && cardOpacity(this.config) < 100 && !glassSettled) return fetchGlass();
-    if (this.asksQuiet() && !quietSettled) return fetchQuiet();
+    if (this.surface && cardOpacity(this.config) < 100 && !glassChunk.settled)
+      return glassChunk.fetch();
+    if (this.asksQuiet() && !quietChunk.settled) return quietChunk.fetch();
+    if (exactColors(this.config) && !exactChunk.settled) return exactChunk.fetch();
     return undefined;
   }
 
@@ -829,7 +876,7 @@ export abstract class FluvyCard<C extends FluvyCardConfig = FluvyCardConfig>
       const blur = cardBlur(this.config) ? 'blur' : '';
       if (this.getAttribute('glass') !== blur) this.setAttribute('glass', blur);
       this.style.setProperty('--fv-glass', `${level}%`);
-      if (!glass) void fetchGlass();
+      if (!glass) void glassChunk.fetch();
     } else if (this.hasAttribute('glass')) {
       this.removeAttribute('glass');
       this.style.removeProperty('--fv-glass');
@@ -842,7 +889,7 @@ export abstract class FluvyCard<C extends FluvyCardConfig = FluvyCardConfig>
   /** The quiet sheet adopted after the card's own, once it has landed (fetched by the first card that wears it). */
   private wearQuiet(): void {
     const root = this.renderRoot;
-    if (!quietSheet) void fetchQuiet();
+    if (!quietSheet) void quietChunk.fetch();
     else if (root instanceof ShadowRoot && !root.adoptedStyleSheets.includes(quietSheet))
       root.adoptedStyleSheets = [...root.adoptedStyleSheets, quietSheet];
   }
@@ -983,7 +1030,10 @@ export abstract class FluvyCard<C extends FluvyCardConfig = FluvyCardConfig>
 
   protected override render(): TemplateResult | typeof nothing {
     if (!this.config) return nothing;
-    this.accents.begin();
+    // the colours as named, once their chunk has landed (a card asked for them after its first frame fetches it here)
+    const named = exactColors(this.config);
+    if (named && !exact) void exactChunk.fetch();
+    this.accents.begin(named ? exact : undefined);
     this.quietItems = false;
     return this.renderCard();
   }

@@ -309,6 +309,7 @@ export class FluvyWeatherCard extends Card<WeatherCardConfig> {
     'card_opacity',
     'card_border',
     'card_blur',
+    'exact_colors',
     'unavailable',
     ...ACTIONS_BASE,
     'show_icon',

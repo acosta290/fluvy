@@ -53,6 +53,15 @@ const choiceOf = (paletteKey: string): PaletteChoice =>
 export const colorsOf = (paletteKey: string, mode: PaletteMode): PaletteModeColors =>
   paletteOf(choiceOf(paletteKey), splitStatuses(paletteKey).statuses)[mode];
 
+/**
+ * What wears a colour as it is named (1.25, #250: Home Assistant's own value for a name, a hex as given, drawn exactly),
+ * fetched by the first card that asks (`card.ts`); a card that wears the palette's tones has none.
+ */
+export type ExactColours = typeof import('@fluvy/tokens/exact');
+
+/** What a derivation's key says of a card that wears its colours as named: a family of its own, kept apart. */
+const named = (exact: ExactColours | undefined): string => (exact ? '|exact' : '');
+
 /** A 2D context, once: how the browser itself reads a colour (none where there is no canvas, as under test). */
 let painter: CanvasRenderingContext2D | null | undefined;
 
@@ -75,15 +84,22 @@ function cssColour(text: string): string | undefined {
 
 /**
  * What a card's `color` (a name, a hex, `rgb(…)`, a triplet, or any CSS colour the browser reads) is on this
- * palette × mode; undefined: the accent itself.
+ * palette × mode — a name as the palette has it, or as Home Assistant does where the card wears its colours as named
+ * (`exact`); undefined: the accent itself.
  */
-export function accentHex(paletteKey: string, mode: PaletteMode, choice: unknown): Hex | undefined {
+export function accentHex(
+  paletteKey: string,
+  mode: PaletteMode,
+  choice: unknown,
+  exact?: ExactColours,
+): Hex | undefined {
   if (choice === undefined || choice === null || choice === '') return undefined;
   const colors = colorsOf(paletteKey, mode);
-  const hex = resolveAccent(choice, colors);
+  const resolve = exact?.exactHex ?? resolveAccent;
+  const hex = resolve(choice, colors);
   if (hex || typeof choice !== 'string') return hex;
   const css = cssColour(choice);
-  return css === undefined ? undefined : resolveAccent(css, colors);
+  return css === undefined ? undefined : resolve(css, colors);
 }
 
 /** An item's `primary` or `accent`: the palette's own accent by name, which it wears under a card's colour too. */
@@ -99,14 +115,19 @@ export const WHITE = 'white ';
 const isWhite = (choice: unknown): choice is string =>
   typeof choice === 'string' && /^white #[0-9a-f]{6}$/.test(choice);
 
-/** The family a colour (`#rrggbb`) or a white (`WHITE`) has on a palette × mode. */
-const familyOf = (paletteKey: string, mode: PaletteMode, pick: string): AccentFamily =>
-  accentFamily(
-    seedOf(choiceOf(paletteKey)),
-    colorsOf(paletteKey, mode),
-    pick.slice(-7),
-    pick.startsWith(WHITE),
-  );
+/** The family a colour (`#rrggbb`) or a white (`WHITE`) has on a palette × mode, or worn as named (`exact`). */
+const familyOf = (
+  paletteKey: string,
+  mode: PaletteMode,
+  pick: string,
+  exact: ExactColours | undefined,
+): AccentFamily => {
+  const seed = seedOf(choiceOf(paletteKey));
+  const colors = colorsOf(paletteKey, mode);
+  return exact
+    ? exact.exactFamily(seed, colors, pick.slice(-7))
+    : accentFamily(seed, colors, pick.slice(-7), pick.startsWith(WHITE));
+};
 
 /** What the palette's own accent writes inside a card, kept like a colour's family. */
 export function paletteAccentCss(paletteKey: string, mode: PaletteMode): string {
@@ -122,12 +143,17 @@ export function paletteAccentCss(paletteKey: string, mode: PaletteMode): string 
  * and dividers in the colour's hairline and its inner fills the wash's deeper step (`--fluvy-inset`), derived on the
  * palette × mode and kept like the accent's family.
  */
-export function surfaceCss(paletteKey: string, mode: PaletteMode, pick: Hex): string {
-  const key = `surface|${paletteKey}|${mode}|${pick}`;
+export function surfaceCss(
+  paletteKey: string,
+  mode: PaletteMode,
+  pick: Hex,
+  exact?: ExactColours,
+): string {
+  const key = `surface|${paletteKey}|${mode}|${pick}${named(exact)}`;
   const known = kept.get(key);
   if (known !== undefined) return known;
   const colors = colorsOf(paletteKey, mode);
-  const family = familyOf(paletteKey, mode, pick);
+  const family = familyOf(paletteKey, mode, pick, exact);
   return remember(
     kept,
     key,
@@ -180,12 +206,13 @@ function litRole(
   paletteKey: string,
   mode: PaletteMode,
   source: string,
+  exact: ExactColours | undefined,
 ): readonly [RoleColors, readonly string[]] {
   const colors = colorsOf(paletteKey, mode);
   const state = TONE_STATES[source];
   const status = TONE_STATUSES[source];
   return source.includes('#')
-    ? [familyOf(paletteKey, mode, source), ['accent', 'state-light-active']]
+    ? [familyOf(paletteKey, mode, source, exact), ['accent', 'state-light-active']]
     : state
       ? [colors.state[state], [`state-${state}`]]
       : status
@@ -204,13 +231,14 @@ export function litCss(
   mode: PaletteMode,
   source: string,
   level: number,
+  exact?: ExactColours,
 ): string {
-  const key = `lit|${paletteKey}|${mode}|${source}|${level}`;
+  const key = `lit|${paletteKey}|${mode}|${source}|${level}${named(exact)}`;
   const known = kept.get(key);
   if (known !== undefined) return known;
   const colors = colorsOf(paletteKey, mode);
   const full = source.startsWith(FULL);
-  const [role, names] = litRole(paletteKey, mode, full ? source.slice(FULL.length) : source);
+  const [role, names] = litRole(paletteKey, mode, full ? source.slice(FULL.length) : source, exact);
   return remember(
     kept,
     key,
@@ -222,34 +250,55 @@ export function litCss(
 /** What a sheet's selector may name: a tone of the palette's (`heat`, `accent`) or a colour (`#rrggbb`). */
 const SOURCE = /^(?:#[0-9a-f]{3,8}|[a-z][a-z0-9-]*)$/i;
 
-function textOf(paletteKey: string, mode: PaletteMode, source: string): string {
-  const key = `text|${paletteKey}|${mode}|${source}`;
+function textOf(
+  paletteKey: string,
+  mode: PaletteMode,
+  source: string,
+  exact: ExactColours | undefined,
+): string {
+  const key = `text|${paletteKey}|${mode}|${source}${named(exact)}`;
   return (
     inks.get(key) ??
-    remember(inks, key, textInk(litRole(paletteKey, mode, source)[0], colorsOf(paletteKey, mode)))
+    remember(
+      inks,
+      key,
+      textInk(litRole(paletteKey, mode, source, exact)[0], colorsOf(paletteKey, mode)),
+    )
   );
 }
 
 /** From which level a light card in its light's whole colour wears the fill's inks on a palette × mode (`litFlip`). */
-function flipOf(paletteKey: string, mode: PaletteMode, source: string): number {
-  const key = `${paletteKey}|${mode}|${source}`;
+function flipOf(
+  paletteKey: string,
+  mode: PaletteMode,
+  source: string,
+  exact: ExactColours | undefined,
+): number {
+  const key = `${paletteKey}|${mode}|${source}${named(exact)}`;
   const known = flips.get(key);
   if (known !== undefined) return known;
   return remember(
     flips,
     key,
-    litFlip(litRole(paletteKey, mode, source)[0], colorsOf(paletteKey, mode)),
+    litFlip(litRole(paletteKey, mode, source, exact)[0], colorsOf(paletteKey, mode)),
   );
 }
 
-export function accentCss(paletteKey: string, mode: PaletteMode, pick: string): string {
-  const key = `${paletteKey}|${mode}|${pick}`;
+export function accentCss(
+  paletteKey: string,
+  mode: PaletteMode,
+  pick: string,
+  exact?: ExactColours,
+): string {
+  const key = `${paletteKey}|${mode}|${pick}${named(exact)}`;
   const known = kept.get(key);
   if (known !== undefined) return known;
   return remember(
     kept,
     key,
-    declarationsCss(accentFamilyVars(familyOf(paletteKey, mode, pick), colorsOf(paletteKey, mode))),
+    declarationsCss(
+      accentFamilyVars(familyOf(paletteKey, mode, pick, exact), colorsOf(paletteKey, mode)),
+    ),
   );
 }
 
@@ -275,6 +324,8 @@ export class AccentSheet {
   private texts = new Set<string>();
   /** What writes a see-through card's sheet (1.15, `look/glass.ts`): none while it is solid. */
   private see: GlassWriter | undefined;
+  /** What wears the colours the card names as they are named (1.25, #250): none while it wears the palette's tones. */
+  private exact: ExactColours | undefined;
   private written = '';
 
   /** Adopted once into the card's shadow root, beside its stylesheets. */
@@ -294,12 +345,12 @@ export class AccentSheet {
 
   /** The card's own colour, as configured. */
   host(choice: unknown): void {
-    this.hostPick = accentHex(this.paletteKey, this.mode, choice);
+    this.hostPick = accentHex(this.paletteKey, this.mode, choice, this.exact);
   }
 
   /** The card's own surface colour (`card_color`), as configured: a wash of it as the card's fill, its hairline as the edge. */
   surface(choice: unknown): void {
-    this.surfacePick = accentHex(this.paletteKey, this.mode, choice);
+    this.surfacePick = accentHex(this.paletteKey, this.mode, choice, this.exact);
   }
 
   /** The card is see-through (its writer) or solid (none): its surfaces, its washes and its wells at its opacity. */
@@ -307,8 +358,12 @@ export class AccentSheet {
     this.see = writer;
   }
 
-  /** Forgets the items' colours, the lit surfaces, the edges and the figures' inks before a render asks for them again. */
-  begin(): void {
+  /**
+   * Forgets the items' colours, the lit surfaces, the edges and the figures' inks before a render asks for them again,
+   * in the colours as the card names them this render (`exact`) or the palette's tones of them.
+   */
+  begin(exact?: ExactColours): void {
+    this.exact = exact;
     this.items = new Set();
     this.surfaces = new Set();
     this.edges = new Set();
@@ -324,7 +379,7 @@ export class AccentSheet {
       ? PALETTE_ACCENT
       : isWhite(choice)
         ? choice
-        : accentHex(this.paletteKey, this.mode, choice);
+        : accentHex(this.paletteKey, this.mode, choice, this.exact);
   }
 
   /**
@@ -344,15 +399,14 @@ export class AccentSheet {
    */
   inkOf(source: string): Hex | undefined {
     const paletteKey = this.paletteKey || DEFAULT_PALETTE;
-    const key = `ink|${paletteKey}|${this.mode}|${source}`;
+    const key = `ink|${paletteKey}|${this.mode}|${source}${named(this.exact)}`;
     const known = inks.get(key);
     if (known !== undefined) return known || undefined;
-    const choice = choiceOf(paletteKey);
     const colors = colorsOf(paletteKey, this.mode);
     const state = TONE_STATES[source];
     const status = TONE_STATUSES[source];
     const ink = source.startsWith('#')
-      ? accentFamily(seedOf(choice), colors, source as Hex).ink
+      ? familyOf(paletteKey, this.mode, source, this.exact).ink
       : state
         ? colors.state[state].ink
         : status
@@ -405,7 +459,7 @@ export class AccentSheet {
     if (step >= 1) return { onFill: true };
     return {
       surface: this.lit(FULL + source, step),
-      onFill: step >= flipOf(this.paletteKey, this.mode, source),
+      onFill: step >= flipOf(this.paletteKey, this.mode, source, this.exact),
     };
   }
 
@@ -416,22 +470,23 @@ export class AccentSheet {
    */
   commit(): void {
     const rules: string[] = [];
+    const { paletteKey, mode, exact } = this;
     const host =
-      (this.hostPick ? accentCss(this.paletteKey, this.mode, this.hostPick) : '') +
-      (this.surfacePick ? surfaceCss(this.paletteKey, this.mode, this.surfacePick) : '');
+      (this.hostPick ? accentCss(paletteKey, mode, this.hostPick, exact) : '') +
+      (this.surfacePick ? surfaceCss(paletteKey, mode, this.surfacePick, exact) : '');
     if (host) rules.push(`:host > *{${host}}`);
     for (const value of this.items)
       rules.push(
         `[data-accent="${value}"]{${
           value === PALETTE_ACCENT
-            ? paletteAccentCss(this.paletteKey, this.mode)
-            : accentCss(this.paletteKey, this.mode, value)
+            ? paletteAccentCss(paletteKey, mode)
+            : accentCss(paletteKey, mode, value, exact)
         }}`,
       );
     for (const key of this.surfaces) {
       const dash = key.lastIndexOf('-');
       rules.push(
-        `[data-surface="${key}"]{${litCss(this.paletteKey, this.mode, key.slice(0, dash), Number(key.slice(dash + 1)) / 100)}}`,
+        `[data-surface="${key}"]{${litCss(paletteKey, mode, key.slice(0, dash), Number(key.slice(dash + 1)) / 100, exact)}}`,
       );
     }
     for (const source of this.edges) {
@@ -441,11 +496,9 @@ export class AccentSheet {
     // a source is a tone's name or a colour the card picked (`#rrggbb`): anything else never reaches the sheet
     for (const source of this.texts)
       if (SOURCE.test(source))
-        rules.push(
-          `[data-ink="${source}"]{--fv-ink:${textOf(this.paletteKey, this.mode, source)}}`,
-        );
+        rules.push(`[data-ink="${source}"]{--fv-ink:${textOf(paletteKey, mode, source, exact)}}`);
     const own = rules.join('');
-    const css = this.see ? this.see(this.paletteKey, this.mode, own) : own;
+    const css = this.see ? this.see(paletteKey, mode, own) : own;
     if (css === this.written) return;
     this.written = css;
     this.sheet.replaceSync(css);

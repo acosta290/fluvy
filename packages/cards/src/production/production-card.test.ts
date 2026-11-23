@@ -142,7 +142,8 @@ describe('the production card’s bars, in their styles', () => {
       const root = (await mount(ARRAYS)).shadowRoot!;
       // no look runs here: the set is worn on the default palette
       const { light, dark } = fitSet(colours, 'linen');
-      const worn = (n: number) => `--fc-light:${light[n]};--fc-dark:${dark[n]}`;
+      const worn = (n: number) =>
+        `--fc-light:${light[n]};--fc-dark:${dark[n]};--fc-exact:${colours[n]}`;
       expect(
         new Set(
           [...root.querySelectorAll('.pr-chart g.fc-set')].map((g) => g.getAttribute('style')),

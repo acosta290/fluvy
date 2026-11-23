@@ -203,6 +203,14 @@
           "default": true
         },
         {
+          "key": "exact_colors",
+          "label": "Exact colours",
+          "does": "Wears the colours the card names as Home Assistant draws them and a hex as typed, not the palette’s tones. Left out, the house’s.",
+          "helper": "Names as Home Assistant draws them, a hex as typed. Untouched: every card’s, from Fluvy’s settings",
+          "type": "boolean",
+          "default": false
+        },
+        {
           "key": "unavailable",
           "label": "When unavailable",
           "does": "How the card looks while its entity is unavailable: dashed, or quiet as when it is off. Left out, the house’s.",
@@ -733,6 +741,14 @@
           "helper": "Untouched: every card’s, from Fluvy’s settings; none at 0 %",
           "type": "boolean",
           "default": true
+        },
+        {
+          "key": "exact_colors",
+          "label": "Exact colours",
+          "does": "Wears the colours the card names as Home Assistant draws them and a hex as typed, not the palette’s tones. Left out, the house’s.",
+          "helper": "Names as Home Assistant draws them, a hex as typed. Untouched: every card’s, from Fluvy’s settings",
+          "type": "boolean",
+          "default": false
         },
         {
           "key": "unavailable",
@@ -1280,6 +1296,14 @@
           "default": true
         },
         {
+          "key": "exact_colors",
+          "label": "Exact colours",
+          "does": "Wears the colours the card names as Home Assistant draws them and a hex as typed, not the palette’s tones. Left out, the house’s.",
+          "helper": "Names as Home Assistant draws them, a hex as typed. Untouched: every card’s, from Fluvy’s settings",
+          "type": "boolean",
+          "default": false
+        },
+        {
           "key": "unavailable",
           "label": "When unavailable",
           "does": "How the card looks while its entity is unavailable: dashed, or quiet as when it is off. Left out, the house’s.",
@@ -1677,6 +1701,14 @@
           "helper": "Untouched: every card’s, from Fluvy’s settings; none at 0 %",
           "type": "boolean",
           "default": true
+        },
+        {
+          "key": "exact_colors",
+          "label": "Exact colours",
+          "does": "Wears the colours the card names as Home Assistant draws them and a hex as typed, not the palette’s tones. Left out, the house’s.",
+          "helper": "Names as Home Assistant draws them, a hex as typed. Untouched: every card’s, from Fluvy’s settings",
+          "type": "boolean",
+          "default": false
         },
         {
           "key": "unavailable",
@@ -2083,6 +2115,14 @@
           "default": true
         },
         {
+          "key": "exact_colors",
+          "label": "Exact colours",
+          "does": "Wears the colours the card names as Home Assistant draws them and a hex as typed, not the palette’s tones. Left out, the house’s.",
+          "helper": "Names as Home Assistant draws them, a hex as typed. Untouched: every card’s, from Fluvy’s settings",
+          "type": "boolean",
+          "default": false
+        },
+        {
           "key": "unavailable",
           "label": "When unavailable",
           "does": "How the card looks while its entity is unavailable: dashed, or quiet as when it is off. Left out, the house’s.",
@@ -2463,6 +2503,14 @@
           "helper": "Untouched: every card’s, from Fluvy’s settings; none at 0 %",
           "type": "boolean",
           "default": true
+        },
+        {
+          "key": "exact_colors",
+          "label": "Exact colours",
+          "does": "Wears the colours the card names as Home Assistant draws them and a hex as typed, not the palette’s tones. Left out, the house’s.",
+          "helper": "Names as Home Assistant draws them, a hex as typed. Untouched: every card’s, from Fluvy’s settings",
+          "type": "boolean",
+          "default": false
         },
         {
           "key": "unavailable",
@@ -3040,6 +3088,14 @@
           "default": true
         },
         {
+          "key": "exact_colors",
+          "label": "Exact colours",
+          "does": "Wears the colours the card names as Home Assistant draws them and a hex as typed, not the palette’s tones. Left out, the house’s.",
+          "helper": "Names as Home Assistant draws them, a hex as typed. Untouched: every card’s, from Fluvy’s settings",
+          "type": "boolean",
+          "default": false
+        },
+        {
           "key": "unavailable",
           "label": "When unavailable",
           "does": "How the card looks while its entity is unavailable: dashed, or quiet as when it is off. Left out, the house’s.",
@@ -3495,6 +3551,14 @@
           "default": true
         },
         {
+          "key": "exact_colors",
+          "label": "Exact colours",
+          "does": "Wears the colours the card names as Home Assistant draws them and a hex as typed, not the palette’s tones. Left out, the house’s.",
+          "helper": "Names as Home Assistant draws them, a hex as typed. Untouched: every card’s, from Fluvy’s settings",
+          "type": "boolean",
+          "default": false
+        },
+        {
           "key": "unavailable",
           "label": "When unavailable",
           "does": "How the card looks while its entity is unavailable: dashed, or quiet as when it is off. Left out, the house’s.",
@@ -3815,6 +3879,14 @@
           "helper": "Untouched: every card’s, from Fluvy’s settings; none at 0 %",
           "type": "boolean",
           "default": true
+        },
+        {
+          "key": "exact_colors",
+          "label": "Exact colours",
+          "does": "Wears the colours the card names as Home Assistant draws them and a hex as typed, not the palette’s tones. Left out, the house’s.",
+          "helper": "Names as Home Assistant draws them, a hex as typed. Untouched: every card’s, from Fluvy’s settings",
+          "type": "boolean",
+          "default": false
         },
         {
           "key": "unavailable",
@@ -4423,6 +4495,14 @@
           "default": true
         },
         {
+          "key": "exact_colors",
+          "label": "Exact colours",
+          "does": "Wears the colours the card names as Home Assistant draws them and a hex as typed, not the palette’s tones. Left out, the house’s.",
+          "helper": "Names as Home Assistant draws them, a hex as typed. Untouched: every card’s, from Fluvy’s settings",
+          "type": "boolean",
+          "default": false
+        },
+        {
           "key": "unavailable",
           "label": "When unavailable",
           "does": "How the card looks while its entity is unavailable: dashed, or quiet as when it is off. Left out, the house’s.",
@@ -4882,6 +4962,14 @@
           "helper": "Untouched: every card’s, from Fluvy’s settings; none at 0 %",
           "type": "boolean",
           "default": true
+        },
+        {
+          "key": "exact_colors",
+          "label": "Exact colours",
+          "does": "Wears the colours the card names as Home Assistant draws them and a hex as typed, not the palette’s tones. Left out, the house’s.",
+          "helper": "Names as Home Assistant draws them, a hex as typed. Untouched: every card’s, from Fluvy’s settings",
+          "type": "boolean",
+          "default": false
         },
         {
           "key": "unavailable",
@@ -5364,6 +5452,14 @@
           "default": true
         },
         {
+          "key": "exact_colors",
+          "label": "Exact colours",
+          "does": "Wears the colours the card names as Home Assistant draws them and a hex as typed, not the palette’s tones. Left out, the house’s.",
+          "helper": "Names as Home Assistant draws them, a hex as typed. Untouched: every card’s, from Fluvy’s settings",
+          "type": "boolean",
+          "default": false
+        },
+        {
           "key": "unavailable",
           "label": "When unavailable",
           "does": "How the card looks while its entity is unavailable: dashed, or quiet as when it is off. Left out, the house’s.",
@@ -5705,6 +5801,14 @@
           "default": true
         },
         {
+          "key": "exact_colors",
+          "label": "Exact colours",
+          "does": "Wears the colours the card names as Home Assistant draws them and a hex as typed, not the palette’s tones. Left out, the house’s.",
+          "helper": "Names as Home Assistant draws them, a hex as typed. Untouched: every card’s, from Fluvy’s settings",
+          "type": "boolean",
+          "default": false
+        },
+        {
           "key": "unavailable",
           "label": "When unavailable",
           "does": "How the card looks while its entity is unavailable: dashed, or quiet as when it is off. Left out, the house’s.",
@@ -5889,6 +5993,14 @@
           "helper": "Untouched: every card’s, from Fluvy’s settings; none at 0 %",
           "type": "boolean",
           "default": true
+        },
+        {
+          "key": "exact_colors",
+          "label": "Exact colours",
+          "does": "Wears the colours the card names as Home Assistant draws them and a hex as typed, not the palette’s tones. Left out, the house’s.",
+          "helper": "Names as Home Assistant draws them, a hex as typed. Untouched: every card’s, from Fluvy’s settings",
+          "type": "boolean",
+          "default": false
         },
         {
           "key": "unavailable",
@@ -6426,6 +6538,14 @@
           "helper": "Untouched: every card’s, from Fluvy’s settings; none at 0 %",
           "type": "boolean",
           "default": true
+        },
+        {
+          "key": "exact_colors",
+          "label": "Exact colours",
+          "does": "Wears the colours the card names as Home Assistant draws them and a hex as typed, not the palette’s tones. Left out, the house’s.",
+          "helper": "Names as Home Assistant draws them, a hex as typed. Untouched: every card’s, from Fluvy’s settings",
+          "type": "boolean",
+          "default": false
         },
         {
           "key": "unavailable",
@@ -7096,6 +7216,14 @@
           "default": true
         },
         {
+          "key": "exact_colors",
+          "label": "Exact colours",
+          "does": "Wears the colours the card names as Home Assistant draws them and a hex as typed, not the palette’s tones. Left out, the house’s.",
+          "helper": "Names as Home Assistant draws them, a hex as typed. Untouched: every card’s, from Fluvy’s settings",
+          "type": "boolean",
+          "default": false
+        },
+        {
           "key": "unavailable",
           "label": "When unavailable",
           "does": "How the card looks while its entity is unavailable: dashed, or quiet as when it is off. Left out, the house’s.",
@@ -7500,6 +7628,14 @@
           "default": true
         },
         {
+          "key": "exact_colors",
+          "label": "Exact colours",
+          "does": "Wears the colours the card names as Home Assistant draws them and a hex as typed, not the palette’s tones. Left out, the house’s.",
+          "helper": "Names as Home Assistant draws them, a hex as typed. Untouched: every card’s, from Fluvy’s settings",
+          "type": "boolean",
+          "default": false
+        },
+        {
           "key": "unavailable",
           "label": "When unavailable",
           "does": "How the card looks while its entity is unavailable: dashed, or quiet as when it is off. Left out, the house’s.",
@@ -7886,6 +8022,14 @@
           "default": true
         },
         {
+          "key": "exact_colors",
+          "label": "Exact colours",
+          "does": "Wears the colours the card names as Home Assistant draws them and a hex as typed, not the palette’s tones. Left out, the house’s.",
+          "helper": "Names as Home Assistant draws them, a hex as typed. Untouched: every card’s, from Fluvy’s settings",
+          "type": "boolean",
+          "default": false
+        },
+        {
           "key": "unavailable",
           "label": "When unavailable",
           "does": "How the card looks while its entity is unavailable: dashed, or quiet as when it is off. Left out, the house’s.",
@@ -8208,6 +8352,14 @@
           "helper": "Untouched: every card’s, from Fluvy’s settings; none at 0 %",
           "type": "boolean",
           "default": true
+        },
+        {
+          "key": "exact_colors",
+          "label": "Exact colours",
+          "does": "Wears the colours the card names as Home Assistant draws them and a hex as typed, not the palette’s tones. Left out, the house’s.",
+          "helper": "Names as Home Assistant draws them, a hex as typed. Untouched: every card’s, from Fluvy’s settings",
+          "type": "boolean",
+          "default": false
         },
         {
           "key": "unavailable",
@@ -8666,6 +8818,14 @@
           "default": true
         },
         {
+          "key": "exact_colors",
+          "label": "Exact colours",
+          "does": "Wears the colours the card names as Home Assistant draws them and a hex as typed, not the palette’s tones. Left out, the house’s.",
+          "helper": "Names as Home Assistant draws them, a hex as typed. Untouched: every card’s, from Fluvy’s settings",
+          "type": "boolean",
+          "default": false
+        },
+        {
           "key": "unavailable",
           "label": "When unavailable",
           "does": "How the card looks while its entity is unavailable: dashed, or quiet as when it is off. Left out, the house’s.",
@@ -9114,6 +9274,14 @@
           "helper": "Untouched: every card’s, from Fluvy’s settings; none at 0 %",
           "type": "boolean",
           "default": true
+        },
+        {
+          "key": "exact_colors",
+          "label": "Exact colours",
+          "does": "Wears the colours the card names as Home Assistant draws them and a hex as typed, not the palette’s tones. Left out, the house’s.",
+          "helper": "Names as Home Assistant draws them, a hex as typed. Untouched: every card’s, from Fluvy’s settings",
+          "type": "boolean",
+          "default": false
         },
         {
           "key": "unavailable",
@@ -9631,6 +9799,14 @@
           "default": true
         },
         {
+          "key": "exact_colors",
+          "label": "Exact colours",
+          "does": "Wears the colours the card names as Home Assistant draws them and a hex as typed, not the palette’s tones. Left out, the house’s.",
+          "helper": "Names as Home Assistant draws them, a hex as typed. Untouched: every card’s, from Fluvy’s settings",
+          "type": "boolean",
+          "default": false
+        },
+        {
           "key": "unavailable",
           "label": "When unavailable",
           "does": "How the card looks while its entity is unavailable: dashed, or quiet as when it is off. Left out, the house’s.",
@@ -10119,6 +10295,14 @@
           "helper": "Untouched: every card’s, from Fluvy’s settings; none at 0 %",
           "type": "boolean",
           "default": true
+        },
+        {
+          "key": "exact_colors",
+          "label": "Exact colours",
+          "does": "Wears the colours the card names as Home Assistant draws them and a hex as typed, not the palette’s tones. Left out, the house’s.",
+          "helper": "Names as Home Assistant draws them, a hex as typed. Untouched: every card’s, from Fluvy’s settings",
+          "type": "boolean",
+          "default": false
         },
         {
           "key": "unavailable",
@@ -10846,6 +11030,14 @@
           "helper": "Untouched: every card’s, from Fluvy’s settings; none at 0 %",
           "type": "boolean",
           "default": true
+        },
+        {
+          "key": "exact_colors",
+          "label": "Exact colours",
+          "does": "Wears the colours the card names as Home Assistant draws them and a hex as typed, not the palette’s tones. Left out, the house’s.",
+          "helper": "Names as Home Assistant draws them, a hex as typed. Untouched: every card’s, from Fluvy’s settings",
+          "type": "boolean",
+          "default": false
         },
         {
           "key": "unavailable",
@@ -11710,6 +11902,14 @@
           "default": true
         },
         {
+          "key": "exact_colors",
+          "label": "Exact colours",
+          "does": "Wears the colours the card names as Home Assistant draws them and a hex as typed, not the palette’s tones. Left out, the house’s.",
+          "helper": "Names as Home Assistant draws them, a hex as typed. Untouched: every card’s, from Fluvy’s settings",
+          "type": "boolean",
+          "default": false
+        },
+        {
           "key": "unavailable",
           "label": "When unavailable",
           "does": "How the card looks while its entity is unavailable: dashed, or quiet as when it is off. Left out, the house’s.",
@@ -12237,6 +12437,14 @@
           "default": true
         },
         {
+          "key": "exact_colors",
+          "label": "Exact colours",
+          "does": "Wears the colours the card names as Home Assistant draws them and a hex as typed, not the palette’s tones. Left out, the house’s.",
+          "helper": "Names as Home Assistant draws them, a hex as typed. Untouched: every card’s, from Fluvy’s settings",
+          "type": "boolean",
+          "default": false
+        },
+        {
           "key": "unavailable",
           "label": "When unavailable",
           "does": "How the card looks while its entity is unavailable: dashed, or quiet as when it is off. Left out, the house’s.",
@@ -12729,6 +12937,14 @@
           "default": true
         },
         {
+          "key": "exact_colors",
+          "label": "Exact colours",
+          "does": "Wears the colours the card names as Home Assistant draws them and a hex as typed, not the palette’s tones. Left out, the house’s.",
+          "helper": "Names as Home Assistant draws them, a hex as typed. Untouched: every card’s, from Fluvy’s settings",
+          "type": "boolean",
+          "default": false
+        },
+        {
           "key": "unavailable",
           "label": "When unavailable",
           "does": "How the card looks while its entity is unavailable: dashed, or quiet as when it is off. Left out, the house’s.",
@@ -13042,6 +13258,14 @@
           "helper": "Untouched: every card’s, from Fluvy’s settings; none at 0 %",
           "type": "boolean",
           "default": true
+        },
+        {
+          "key": "exact_colors",
+          "label": "Exact colours",
+          "does": "Wears the colours the card names as Home Assistant draws them and a hex as typed, not the palette’s tones. Left out, the house’s.",
+          "helper": "Names as Home Assistant draws them, a hex as typed. Untouched: every card’s, from Fluvy’s settings",
+          "type": "boolean",
+          "default": false
         },
         {
           "key": "unavailable",
@@ -13571,6 +13795,14 @@
           "helper": "Untouched: every card’s, from Fluvy’s settings; none at 0 %",
           "type": "boolean",
           "default": true
+        },
+        {
+          "key": "exact_colors",
+          "label": "Exact colours",
+          "does": "Wears the colours the card names as Home Assistant draws them and a hex as typed, not the palette’s tones. Left out, the house’s.",
+          "helper": "Names as Home Assistant draws them, a hex as typed. Untouched: every card’s, from Fluvy’s settings",
+          "type": "boolean",
+          "default": false
         },
         {
           "key": "unavailable",
@@ -14113,6 +14345,14 @@
           "default": true
         },
         {
+          "key": "exact_colors",
+          "label": "Exact colours",
+          "does": "Wears the colours the card names as Home Assistant draws them and a hex as typed, not the palette’s tones. Left out, the house’s.",
+          "helper": "Names as Home Assistant draws them, a hex as typed. Untouched: every card’s, from Fluvy’s settings",
+          "type": "boolean",
+          "default": false
+        },
+        {
           "key": "unavailable",
           "label": "When unavailable",
           "does": "How the card looks while its entity is unavailable: dashed, or quiet as when it is off. Left out, the house’s.",
@@ -14449,6 +14689,14 @@
           "helper": "Untouched: every card’s, from Fluvy’s settings; none at 0 %",
           "type": "boolean",
           "default": true
+        },
+        {
+          "key": "exact_colors",
+          "label": "Exact colours",
+          "does": "Wears the colours the card names as Home Assistant draws them and a hex as typed, not the palette’s tones. Left out, the house’s.",
+          "helper": "Names as Home Assistant draws them, a hex as typed. Untouched: every card’s, from Fluvy’s settings",
+          "type": "boolean",
+          "default": false
         },
         {
           "key": "unavailable",
@@ -14837,6 +15085,14 @@
           "helper": "Untouched: every card’s, from Fluvy’s settings; none at 0 %",
           "type": "boolean",
           "default": true
+        },
+        {
+          "key": "exact_colors",
+          "label": "Exact colours",
+          "does": "Wears the colours the card names as Home Assistant draws them and a hex as typed, not the palette’s tones. Left out, the house’s.",
+          "helper": "Names as Home Assistant draws them, a hex as typed. Untouched: every card’s, from Fluvy’s settings",
+          "type": "boolean",
+          "default": false
         },
         {
           "key": "unavailable",
@@ -15556,6 +15812,14 @@
           "helper": "Untouched: every card’s, from Fluvy’s settings; none at 0 %",
           "type": "boolean",
           "default": true
+        },
+        {
+          "key": "exact_colors",
+          "label": "Exact colours",
+          "does": "Wears the colours the card names as Home Assistant draws them and a hex as typed, not the palette’s tones. Left out, the house’s.",
+          "helper": "Names as Home Assistant draws them, a hex as typed. Untouched: every card’s, from Fluvy’s settings",
+          "type": "boolean",
+          "default": false
         },
         {
           "key": "unavailable",
@@ -16321,6 +16585,14 @@
           "default": true
         },
         {
+          "key": "exact_colors",
+          "label": "Exact colours",
+          "does": "Wears the colours the card names as Home Assistant draws them and a hex as typed, not the palette’s tones. Left out, the house’s.",
+          "helper": "Names as Home Assistant draws them, a hex as typed. Untouched: every card’s, from Fluvy’s settings",
+          "type": "boolean",
+          "default": false
+        },
+        {
           "key": "unavailable",
           "label": "When unavailable",
           "does": "How the card looks while its entity is unavailable: dashed, or quiet as when it is off. Left out, the house’s.",
@@ -16989,6 +17261,14 @@
           "default": true
         },
         {
+          "key": "exact_colors",
+          "label": "Exact colours",
+          "does": "Wears the colours the card names as Home Assistant draws them and a hex as typed, not the palette’s tones. Left out, the house’s.",
+          "helper": "Names as Home Assistant draws them, a hex as typed. Untouched: every card’s, from Fluvy’s settings",
+          "type": "boolean",
+          "default": false
+        },
+        {
           "key": "unavailable",
           "label": "When unavailable",
           "does": "How the card looks while its entity is unavailable: dashed, or quiet as when it is off. Left out, the house’s.",
@@ -17434,6 +17714,14 @@
           "default": true
         },
         {
+          "key": "exact_colors",
+          "label": "Exact colours",
+          "does": "Wears the colours the card names as Home Assistant draws them and a hex as typed, not the palette’s tones. Left out, the house’s.",
+          "helper": "Names as Home Assistant draws them, a hex as typed. Untouched: every card’s, from Fluvy’s settings",
+          "type": "boolean",
+          "default": false
+        },
+        {
           "key": "unavailable",
           "label": "When unavailable",
           "does": "How the card looks while its entity is unavailable: dashed, or quiet as when it is off. Left out, the house’s.",
@@ -17614,6 +17902,14 @@
           "type": "colour"
         },
         {
+          "key": "exact_colors",
+          "label": "Exact colours",
+          "does": "Wears the colours the card names as Home Assistant draws them and a hex as typed, not the palette’s tones. Left out, the house’s.",
+          "helper": "Names as Home Assistant draws them, a hex as typed. Untouched: every card’s, from Fluvy’s settings",
+          "type": "boolean",
+          "default": false
+        },
+        {
           "key": "tap_action",
           "label": "Tap action",
           "does": "What a tap on the card does.",
@@ -17694,6 +17990,14 @@
             "on": "When on",
             "always": "Always"
           }
+        },
+        {
+          "key": "exact_colors",
+          "label": "Exact colours",
+          "does": "Wears the colours the card names as Home Assistant draws them and a hex as typed, not the palette’s tones. Left out, the house’s.",
+          "helper": "Names as Home Assistant draws them, a hex as typed. Untouched: every card’s, from Fluvy’s settings",
+          "type": "boolean",
+          "default": false
         },
         {
           "key": "empty_text",
@@ -18288,6 +18592,14 @@
           "default": true
         },
         {
+          "key": "exact_colors",
+          "label": "Exact colours",
+          "does": "Wears the colours the card names as Home Assistant draws them and a hex as typed, not the palette’s tones. Left out, the house’s.",
+          "helper": "Names as Home Assistant draws them, a hex as typed. Untouched: every card’s, from Fluvy’s settings",
+          "type": "boolean",
+          "default": false
+        },
+        {
           "key": "tap_action",
           "label": "Tap action",
           "does": "What a tap on the card does.",
@@ -18516,6 +18828,14 @@
           "helper": "Untouched: every card’s, from Fluvy’s settings; none at 0 %",
           "type": "boolean",
           "default": true
+        },
+        {
+          "key": "exact_colors",
+          "label": "Exact colours",
+          "does": "Wears the colours the card names as Home Assistant draws them and a hex as typed, not the palette’s tones. Left out, the house’s.",
+          "helper": "Names as Home Assistant draws them, a hex as typed. Untouched: every card’s, from Fluvy’s settings",
+          "type": "boolean",
+          "default": false
         },
         {
           "key": "cards",
@@ -18822,6 +19142,14 @@
           "default": true
         },
         {
+          "key": "exact_colors",
+          "label": "Exact colours",
+          "does": "Wears the colours the card names as Home Assistant draws them and a hex as typed, not the palette’s tones. Left out, the house’s.",
+          "helper": "Names as Home Assistant draws them, a hex as typed. Untouched: every card’s, from Fluvy’s settings",
+          "type": "boolean",
+          "default": false
+        },
+        {
           "key": "tap_action",
           "label": "Tap action",
           "does": "What a tap on the card does.",
@@ -19015,6 +19343,14 @@
           "helper": "Untouched: every card’s, from Fluvy’s settings; none at 0 %",
           "type": "boolean",
           "default": true
+        },
+        {
+          "key": "exact_colors",
+          "label": "Exact colours",
+          "does": "Wears the colours the card names as Home Assistant draws them and a hex as typed, not the palette’s tones. Left out, the house’s.",
+          "helper": "Names as Home Assistant draws them, a hex as typed. Untouched: every card’s, from Fluvy’s settings",
+          "type": "boolean",
+          "default": false
         },
         {
           "key": "unavailable",
@@ -19254,6 +19590,14 @@
           "helper": "Untouched: every card’s, from Fluvy’s settings; none at 0 %",
           "type": "boolean",
           "default": true
+        },
+        {
+          "key": "exact_colors",
+          "label": "Exact colours",
+          "does": "Wears the colours the card names as Home Assistant draws them and a hex as typed, not the palette’s tones. Left out, the house’s.",
+          "helper": "Names as Home Assistant draws them, a hex as typed. Untouched: every card’s, from Fluvy’s settings",
+          "type": "boolean",
+          "default": false
         },
         {
           "key": "unavailable",
@@ -19556,6 +19900,14 @@
           "helper": "Untouched: every card’s, from Fluvy’s settings; none at 0 %",
           "type": "boolean",
           "default": true
+        },
+        {
+          "key": "exact_colors",
+          "label": "Exact colours",
+          "does": "Wears the colours the card names as Home Assistant draws them and a hex as typed, not the palette’s tones. Left out, the house’s.",
+          "helper": "Names as Home Assistant draws them, a hex as typed. Untouched: every card’s, from Fluvy’s settings",
+          "type": "boolean",
+          "default": false
         },
         {
           "key": "unavailable",
@@ -19902,6 +20254,14 @@
           "default": true
         },
         {
+          "key": "exact_colors",
+          "label": "Exact colours",
+          "does": "Wears the colours the card names as Home Assistant draws them and a hex as typed, not the palette’s tones. Left out, the house’s.",
+          "helper": "Names as Home Assistant draws them, a hex as typed. Untouched: every card’s, from Fluvy’s settings",
+          "type": "boolean",
+          "default": false
+        },
+        {
           "key": "unavailable",
           "label": "When unavailable",
           "does": "How the card looks while its entity is unavailable: dashed, or quiet as when it is off. Left out, the house’s.",
@@ -20222,6 +20582,14 @@
           "default": true
         },
         {
+          "key": "exact_colors",
+          "label": "Exact colours",
+          "does": "Wears the colours the card names as Home Assistant draws them and a hex as typed, not the palette’s tones. Left out, the house’s.",
+          "helper": "Names as Home Assistant draws them, a hex as typed. Untouched: every card’s, from Fluvy’s settings",
+          "type": "boolean",
+          "default": false
+        },
+        {
           "key": "unavailable",
           "label": "When unavailable",
           "does": "How the card looks while its entity is unavailable: dashed, or quiet as when it is off. Left out, the house’s.",
@@ -20457,6 +20825,14 @@
           "default": true
         },
         {
+          "key": "exact_colors",
+          "label": "Exact colours",
+          "does": "Wears the colours the card names as Home Assistant draws them and a hex as typed, not the palette’s tones. Left out, the house’s.",
+          "helper": "Names as Home Assistant draws them, a hex as typed. Untouched: every card’s, from Fluvy’s settings",
+          "type": "boolean",
+          "default": false
+        },
+        {
           "key": "unavailable",
           "label": "When unavailable",
           "does": "How the card looks while its entity is unavailable: dashed, or quiet as when it is off. Left out, the house’s.",
@@ -20673,6 +21049,14 @@
           "helper": "Untouched: every card’s, from Fluvy’s settings; none at 0 %",
           "type": "boolean",
           "default": true
+        },
+        {
+          "key": "exact_colors",
+          "label": "Exact colours",
+          "does": "Wears the colours the card names as Home Assistant draws them and a hex as typed, not the palette’s tones. Left out, the house’s.",
+          "helper": "Names as Home Assistant draws them, a hex as typed. Untouched: every card’s, from Fluvy’s settings",
+          "type": "boolean",
+          "default": false
         },
         {
           "key": "unavailable",
@@ -21117,6 +21501,14 @@
           "default": true
         },
         {
+          "key": "exact_colors",
+          "label": "Exact colours",
+          "does": "Wears the colours the card names as Home Assistant draws them and a hex as typed, not the palette’s tones. Left out, the house’s.",
+          "helper": "Names as Home Assistant draws them, a hex as typed. Untouched: every card’s, from Fluvy’s settings",
+          "type": "boolean",
+          "default": false
+        },
+        {
           "key": "unavailable",
           "label": "When unavailable",
           "does": "How the card looks while its entity is unavailable: dashed, or quiet as when it is off. Left out, the house’s.",
@@ -21441,6 +21833,14 @@
           "helper": "Untouched: every card’s, from Fluvy’s settings; none at 0 %",
           "type": "boolean",
           "default": true
+        },
+        {
+          "key": "exact_colors",
+          "label": "Exact colours",
+          "does": "Wears the colours the card names as Home Assistant draws them and a hex as typed, not the palette’s tones. Left out, the house’s.",
+          "helper": "Names as Home Assistant draws them, a hex as typed. Untouched: every card’s, from Fluvy’s settings",
+          "type": "boolean",
+          "default": false
         },
         {
           "key": "unavailable",
@@ -21774,6 +22174,14 @@
           "helper": "Untouched: every card’s, from Fluvy’s settings; none at 0 %",
           "type": "boolean",
           "default": true
+        },
+        {
+          "key": "exact_colors",
+          "label": "Exact colours",
+          "does": "Wears the colours the card names as Home Assistant draws them and a hex as typed, not the palette’s tones. Left out, the house’s.",
+          "helper": "Names as Home Assistant draws them, a hex as typed. Untouched: every card’s, from Fluvy’s settings",
+          "type": "boolean",
+          "default": false
         },
         {
           "key": "unavailable",
@@ -22251,6 +22659,14 @@
           "helper": "Untouched: every card’s, from Fluvy’s settings; none at 0 %",
           "type": "boolean",
           "default": true
+        },
+        {
+          "key": "exact_colors",
+          "label": "Exact colours",
+          "does": "Wears the colours the card names as Home Assistant draws them and a hex as typed, not the palette’s tones. Left out, the house’s.",
+          "helper": "Names as Home Assistant draws them, a hex as typed. Untouched: every card’s, from Fluvy’s settings",
+          "type": "boolean",
+          "default": false
         },
         {
           "key": "unavailable",
@@ -22976,6 +23392,14 @@
           "default": true
         },
         {
+          "key": "exact_colors",
+          "label": "Exact colours",
+          "does": "Wears the colours the card names as Home Assistant draws them and a hex as typed, not the palette’s tones. Left out, the house’s.",
+          "helper": "Names as Home Assistant draws them, a hex as typed. Untouched: every card’s, from Fluvy’s settings",
+          "type": "boolean",
+          "default": false
+        },
+        {
           "key": "unavailable",
           "label": "When unavailable",
           "does": "How the card looks while its entity is unavailable: dashed, or quiet as when it is off. Left out, the house’s.",
@@ -23525,6 +23949,14 @@
           "default": true
         },
         {
+          "key": "exact_colors",
+          "label": "Exact colours",
+          "does": "Wears the colours the card names as Home Assistant draws them and a hex as typed, not the palette’s tones. Left out, the house’s.",
+          "helper": "Names as Home Assistant draws them, a hex as typed. Untouched: every card’s, from Fluvy’s settings",
+          "type": "boolean",
+          "default": false
+        },
+        {
           "key": "unavailable",
           "label": "When unavailable",
           "does": "How the card looks while its entity is unavailable: dashed, or quiet as when it is off. Left out, the house’s.",
@@ -23899,6 +24331,14 @@
           "default": true
         },
         {
+          "key": "exact_colors",
+          "label": "Exact colours",
+          "does": "Wears the colours the card names as Home Assistant draws them and a hex as typed, not the palette’s tones. Left out, the house’s.",
+          "helper": "Names as Home Assistant draws them, a hex as typed. Untouched: every card’s, from Fluvy’s settings",
+          "type": "boolean",
+          "default": false
+        },
+        {
           "key": "unavailable",
           "label": "When unavailable",
           "does": "How the card looks while its entity is unavailable: dashed, or quiet as when it is off. Left out, the house’s.",
@@ -24227,6 +24667,14 @@
           "helper": "Untouched: every card’s, from Fluvy’s settings; none at 0 %",
           "type": "boolean",
           "default": true
+        },
+        {
+          "key": "exact_colors",
+          "label": "Exact colours",
+          "does": "Wears the colours the card names as Home Assistant draws them and a hex as typed, not the palette’s tones. Left out, the house’s.",
+          "helper": "Names as Home Assistant draws them, a hex as typed. Untouched: every card’s, from Fluvy’s settings",
+          "type": "boolean",
+          "default": false
         },
         {
           "key": "unavailable",
@@ -24597,6 +25045,14 @@
           "default": true
         },
         {
+          "key": "exact_colors",
+          "label": "Exact colours",
+          "does": "Wears the colours the card names as Home Assistant draws them and a hex as typed, not the palette’s tones. Left out, the house’s.",
+          "helper": "Names as Home Assistant draws them, a hex as typed. Untouched: every card’s, from Fluvy’s settings",
+          "type": "boolean",
+          "default": false
+        },
+        {
           "key": "unavailable",
           "label": "When unavailable",
           "does": "How the card looks while its entity is unavailable: dashed, or quiet as when it is off. Left out, the house’s.",
@@ -24853,6 +25309,14 @@
           "helper": "Untouched: every card’s, from Fluvy’s settings; none at 0 %",
           "type": "boolean",
           "default": true
+        },
+        {
+          "key": "exact_colors",
+          "label": "Exact colours",
+          "does": "Wears the colours the card names as Home Assistant draws them and a hex as typed, not the palette’s tones. Left out, the house’s.",
+          "helper": "Names as Home Assistant draws them, a hex as typed. Untouched: every card’s, from Fluvy’s settings",
+          "type": "boolean",
+          "default": false
         },
         {
           "key": "unavailable",
@@ -25141,6 +25605,14 @@
           "default": true
         },
         {
+          "key": "exact_colors",
+          "label": "Exact colours",
+          "does": "Wears the colours the card names as Home Assistant draws them and a hex as typed, not the palette’s tones. Left out, the house’s.",
+          "helper": "Names as Home Assistant draws them, a hex as typed. Untouched: every card’s, from Fluvy’s settings",
+          "type": "boolean",
+          "default": false
+        },
+        {
           "key": "unavailable",
           "label": "When unavailable",
           "does": "How the card looks while its entity is unavailable: dashed, or quiet as when it is off. Left out, the house’s.",
@@ -25389,6 +25861,14 @@
           "helper": "Untouched: every card’s, from Fluvy’s settings; none at 0 %",
           "type": "boolean",
           "default": true
+        },
+        {
+          "key": "exact_colors",
+          "label": "Exact colours",
+          "does": "Wears the colours the card names as Home Assistant draws them and a hex as typed, not the palette’s tones. Left out, the house’s.",
+          "helper": "Names as Home Assistant draws them, a hex as typed. Untouched: every card’s, from Fluvy’s settings",
+          "type": "boolean",
+          "default": false
         },
         {
           "key": "unavailable",
@@ -25866,6 +26346,14 @@
           "default": true
         },
         {
+          "key": "exact_colors",
+          "label": "Exact colours",
+          "does": "Wears the colours the card names as Home Assistant draws them and a hex as typed, not the palette’s tones. Left out, the house’s.",
+          "helper": "Names as Home Assistant draws them, a hex as typed. Untouched: every card’s, from Fluvy’s settings",
+          "type": "boolean",
+          "default": false
+        },
+        {
           "key": "unavailable",
           "label": "When unavailable",
           "does": "How the card looks while its entity is unavailable: dashed, or quiet as when it is off. Left out, the house’s.",
@@ -26324,6 +26812,14 @@
           "helper": "Untouched: every card’s, from Fluvy’s settings; none at 0 %",
           "type": "boolean",
           "default": true
+        },
+        {
+          "key": "exact_colors",
+          "label": "Exact colours",
+          "does": "Wears the colours the card names as Home Assistant draws them and a hex as typed, not the palette’s tones. Left out, the house’s.",
+          "helper": "Names as Home Assistant draws them, a hex as typed. Untouched: every card’s, from Fluvy’s settings",
+          "type": "boolean",
+          "default": false
         },
         {
           "key": "unavailable",
@@ -26827,6 +27323,14 @@
           "helper": "Untouched: every card’s, from Fluvy’s settings; none at 0 %",
           "type": "boolean",
           "default": true
+        },
+        {
+          "key": "exact_colors",
+          "label": "Exact colours",
+          "does": "Wears the colours the card names as Home Assistant draws them and a hex as typed, not the palette’s tones. Left out, the house’s.",
+          "helper": "Names as Home Assistant draws them, a hex as typed. Untouched: every card’s, from Fluvy’s settings",
+          "type": "boolean",
+          "default": false
         },
         {
           "key": "unavailable",
@@ -27444,6 +27948,14 @@
           "default": true
         },
         {
+          "key": "exact_colors",
+          "label": "Exact colours",
+          "does": "Wears the colours the card names as Home Assistant draws them and a hex as typed, not the palette’s tones. Left out, the house’s.",
+          "helper": "Names as Home Assistant draws them, a hex as typed. Untouched: every card’s, from Fluvy’s settings",
+          "type": "boolean",
+          "default": false
+        },
+        {
           "key": "unavailable",
           "label": "When unavailable",
           "does": "How the card looks while its entity is unavailable: dashed, or quiet as when it is off. Left out, the house’s.",
@@ -27896,6 +28408,14 @@
           "helper": "Untouched: every card’s, from Fluvy’s settings; none at 0 %",
           "type": "boolean",
           "default": true
+        },
+        {
+          "key": "exact_colors",
+          "label": "Exact colours",
+          "does": "Wears the colours the card names as Home Assistant draws them and a hex as typed, not the palette’s tones. Left out, the house’s.",
+          "helper": "Names as Home Assistant draws them, a hex as typed. Untouched: every card’s, from Fluvy’s settings",
+          "type": "boolean",
+          "default": false
         },
         {
           "key": "unavailable",
@@ -28644,6 +29164,14 @@
           "helper": "Untouched: every card’s, from Fluvy’s settings; none at 0 %",
           "type": "boolean",
           "default": true
+        },
+        {
+          "key": "exact_colors",
+          "label": "Exact colours",
+          "does": "Wears the colours the card names as Home Assistant draws them and a hex as typed, not the palette’s tones. Left out, the house’s.",
+          "helper": "Names as Home Assistant draws them, a hex as typed. Untouched: every card’s, from Fluvy’s settings",
+          "type": "boolean",
+          "default": false
         },
         {
           "key": "unavailable",
@@ -29478,6 +30006,14 @@
           "default": true
         },
         {
+          "key": "exact_colors",
+          "label": "Exact colours",
+          "does": "Wears the colours the card names as Home Assistant draws them and a hex as typed, not the palette’s tones. Left out, the house’s.",
+          "helper": "Names as Home Assistant draws them, a hex as typed. Untouched: every card’s, from Fluvy’s settings",
+          "type": "boolean",
+          "default": false
+        },
+        {
           "key": "unavailable",
           "label": "When unavailable",
           "does": "How the card looks while its entity is unavailable: dashed, or quiet as when it is off. Left out, the house’s.",
@@ -29934,6 +30470,14 @@
           "default": true
         },
         {
+          "key": "exact_colors",
+          "label": "Exact colours",
+          "does": "Wears the colours the card names as Home Assistant draws them and a hex as typed, not the palette’s tones. Left out, the house’s.",
+          "helper": "Names as Home Assistant draws them, a hex as typed. Untouched: every card’s, from Fluvy’s settings",
+          "type": "boolean",
+          "default": false
+        },
+        {
           "key": "unavailable",
           "label": "When unavailable",
           "does": "How the card looks while its entity is unavailable: dashed, or quiet as when it is off. Left out, the house’s.",
@@ -30331,6 +30875,14 @@
           "default": true
         },
         {
+          "key": "exact_colors",
+          "label": "Exact colours",
+          "does": "Wears the colours the card names as Home Assistant draws them and a hex as typed, not the palette’s tones. Left out, the house’s.",
+          "helper": "Names as Home Assistant draws them, a hex as typed. Untouched: every card’s, from Fluvy’s settings",
+          "type": "boolean",
+          "default": false
+        },
+        {
           "key": "unavailable",
           "label": "When unavailable",
           "does": "How the card looks while its entity is unavailable: dashed, or quiet as when it is off. Left out, the house’s.",
@@ -30639,6 +31191,14 @@
           "helper": "Untouched: every card’s, from Fluvy’s settings; none at 0 %",
           "type": "boolean",
           "default": true
+        },
+        {
+          "key": "exact_colors",
+          "label": "Exact colours",
+          "does": "Wears the colours the card names as Home Assistant draws them and a hex as typed, not the palette’s tones. Left out, the house’s.",
+          "helper": "Names as Home Assistant draws them, a hex as typed. Untouched: every card’s, from Fluvy’s settings",
+          "type": "boolean",
+          "default": false
         },
         {
           "key": "unavailable",
@@ -30993,6 +31553,14 @@
           "helper": "Untouched: every card’s, from Fluvy’s settings; none at 0 %",
           "type": "boolean",
           "default": true
+        },
+        {
+          "key": "exact_colors",
+          "label": "Exact colours",
+          "does": "Wears the colours the card names as Home Assistant draws them and a hex as typed, not the palette’s tones. Left out, the house’s.",
+          "helper": "Names as Home Assistant draws them, a hex as typed. Untouched: every card’s, from Fluvy’s settings",
+          "type": "boolean",
+          "default": false
         },
         {
           "key": "unavailable",
