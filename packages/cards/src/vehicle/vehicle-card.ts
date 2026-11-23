@@ -57,7 +57,7 @@ import { PENDING_LINE } from '../shared/templates.js';
 import { valueRow } from '../shared/value-row.js';
 import {
   pictureAt,
-  pictureSize,
+  picturePlate,
   vehicleHeight,
   vehicleVariant,
   type VehicleVariant,
@@ -509,14 +509,14 @@ export class FluvyVehicleCard extends Card<VehicleCardConfig> {
         position: relative;
         width: 100%;
       }
-      /* the car's picture over its battery: 2:1 across the column, the whole car on the card (a picture with no ground
-         of its own floats on it); none found, the plate keeps its place with the car's glyph */
+      /* the car's picture over its battery: its plate 2:1 across the column, or at its own size (#254), the whole car on
+         the card (a picture with no ground of its own floats on it); none found, the plate keeps its place with the
+         car's glyph */
       .vh-picture {
         position: relative;
         display: grid;
         place-items: center;
         margin: 16px auto 0;
-        aspect-ratio: 2 / 1;
         border-radius: var(--fluvy-radius-lg);
       }
       /* the card's button where its head is hidden (#254) */
@@ -528,7 +528,10 @@ export class FluvyVehicleCard extends Card<VehicleCardConfig> {
       .vh-card > .vh-hero:first-child > :first-child {
         margin-top: 0;
       }
+      /* the whole car inside its plate, whatever size the plate is given (#254) */
       .vh-picture > img {
+        position: absolute;
+        inset: 0;
         width: 100%;
         height: 100%;
         object-fit: contain;
@@ -829,6 +832,15 @@ export class FluvyVehicleCard extends Card<VehicleCardConfig> {
       }
       .vh-tyres.is-bare .vh-tyre.is-left {
         text-align: left;
+      }
+      /* a column too narrow for a pressure and its unit side by side: the unit under its figure, in the row's 36 */
+      .vh-tyres.is-stacked .vh-tyre {
+        display: flex;
+        flex-direction: column;
+      }
+      .vh-tyres.is-stacked .vh-tyre .fv-unit {
+        margin-left: 0;
+        line-height: 16px;
       }
       .vh-tyre.is-low,
       .vh-tyre.is-low .fv-unit {
@@ -2391,11 +2403,13 @@ export class FluvyVehicleCard extends Card<VehicleCardConfig> {
       ),
     );
     const bare = (this.contentWidth - 32 - CAR_WIDTH - 24) / 2 < widest;
+    // …then, where two columns would not hold it either (half a section), each unit goes under its figure
+    const stacked = bare && (this.contentWidth - 32 - 12) / 2 < widest;
     const low = Object.fromEntries(tyres.map((t) => [t.wheel, t.low]));
     const label = (t: Tyre): string =>
       `${s(this.hass, `tyre_${t.wheel}`)} · ${t.value}${t.unit ? ` ${t.unit}` : ''}`;
     return html`<div
-      class="vh-tyres ${bare ? 'is-bare' : ''}"
+      class="vh-tyres ${bare ? 'is-bare' : ''} ${stacked ? 'is-stacked' : ''}"
       role="group"
       aria-label=${s(this.hass, 'tyres')}
       @click=${() => this.tap(tyres.find((t) => t.low)?.id ?? tyres[0]?.id, { action: 'more-info' })}
@@ -2446,12 +2460,12 @@ export class FluvyVehicleCard extends Card<VehicleCardConfig> {
    */
   private picture(lead: boolean, press?: Press, name = ''): TemplateResult {
     const src = this.pictures.shown(this.pictureSrc());
-    const size = lead || !this.config ? null : pictureSize(this.config);
+    const plate = lead || !this.config ? null : picturePlate(this.config, this.contentWidth);
     const cover =
       press?.onTap || press?.onHold ? pressCover(name, press.onTap, press.onHold) : nothing;
     return html`<span
       class="${lead ? 'vh-face' : 'vh-picture'} ${src ? '' : 'is-empty'}"
-      style=${!size ? nothing : 'share' in size ? `width:${size.share}%` : `height:${size.height}px;aspect-ratio:auto`}
+      style=${plate ? `width:${plate.width}px;height:${plate.height}px` : nothing}
       aria-hidden=${cover === nothing ? 'true' : nothing}
       >${src ? html`<img src=${src} alt="" @error=${this.pictures.failed} />` : glyph('car')}${cover}</span
     >`;

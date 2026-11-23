@@ -419,11 +419,13 @@ describe('the vehicle card', () => {
     expect(at({ ...alone, image: '' })).toBe(40);
 
     const sized = await mount({ device: TESLA.device, image, image_size: '50%' });
-    expect(root(sized).querySelector<HTMLElement>('.vh-picture')?.style.width).toBe('50%');
+    const plate = root(sized).querySelector<HTMLElement>('.vh-picture')?.style;
+    expect([plate?.width, plate?.height]).toEqual(['160px', '80px']);
     expect(root(sized).querySelector('.vh-picture .fv-tile__tap')).toBeNull();
     document.body.replaceChildren();
     const tall = await mount({ device: TESLA.device, image, image_size: '120px' });
     expect(root(tall).querySelector<HTMLElement>('.vh-picture')?.style.height).toBe('120px');
+    expect(root(tall).querySelector<HTMLElement>('.vh-picture')?.style.width).toBe('320px');
     document.body.replaceChildren();
     // the picture alone is the card's button: its tap opens the battery, as the head's would
     const card = await mount({ device: TESLA.device, ...alone, image_size: '60%' });
@@ -569,6 +571,28 @@ describe('the vehicle card', () => {
       wheels: 0,
       line: 'Unplugged · Limit 80 %',
     });
+  });
+
+  it('lets the car from above give way, then puts each unit under its figure, as its column narrows', async () => {
+    // at 8 a letter "2.9" and "bar" side by side are 48 wide: a 360 card holds them beside the car, a 211 in two
+    // columns without it, a 172 (half a section) only with the unit under its figure
+    const layout = async (width: number): Promise<string[]> => {
+      const card = await mount({ device: TESLA.device, show_tyres: true }, house(), width);
+      (card as unknown as { head: { ruler: TextRuler } }).head.ruler.width = (
+        _: string,
+        text: string,
+        __?: string,
+        unit = '',
+      ) => (text.length + unit.length) * 8;
+      card.requestUpdate();
+      await card.updateComplete;
+      const classes = [...(root(card).querySelector('.vh-tyres')?.classList ?? [])];
+      document.body.replaceChildren();
+      return classes.filter((c) => c.startsWith('is-'));
+    };
+    expect(await layout(360)).toEqual([]);
+    expect(await layout(211)).toEqual(['is-bare']);
+    expect(await layout(172)).toEqual(['is-bare', 'is-stacked']);
   });
 
   it('writes its tyres in the decimals it asks for', async () => {

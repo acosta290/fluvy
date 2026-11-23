@@ -34,20 +34,20 @@ export const pictureAt = (config: LovelaceCardConfig): 'hero' | 'head' | null =>
     : null;
 
 /**
- * The size the car's picture over the battery is drawn at (#254): a share of the card's width (`50%`: its 2:1 plate that
- * wide, centred) or a height (`120px`, or a figure: the plate that tall across the column, the car inside it), within
- * 10–100 % and 32–640 px; none where the config names none it can read, and the plate is 2:1 across the column.
+ * The plate the car's picture over the battery is drawn on in a column `width` wide: 2:1 across the column; at a share
+ * of it (`image_size: 50%`, 10–100: #254), 2:1 that wide, centred; or at a height (`120px`, or a figure, 32–640) across
+ * the column, the whole car inside it. Its height on the 4 grid, as the card's is.
  */
-export const pictureSize = (
+export const picturePlate = (
   config: LovelaceCardConfig,
-): { readonly share: number } | { readonly height: number } | null => {
+  width: number,
+): { readonly width: number; readonly height: number } => {
   const [, figure, unit] =
     /^\s*(\d+(?:\.\d+)?)\s*(%|px)?\s*$/.exec(String(config['image_size'] ?? '')) ?? [];
-  if (figure === undefined) return null;
-  const n = Number(figure);
-  return unit === '%'
-    ? { share: Math.min(100, Math.max(10, n)) }
-    : { height: Math.round(Math.min(640, Math.max(32, n))) };
+  const n = Math.min(unit === '%' ? 100 : 640, Math.max(unit === '%' ? 10 : 32, Number(figure)));
+  if (figure !== undefined && unit !== '%') return { width, height: Math.round(n / 4) * 4 };
+  const across = figure === undefined ? width : Math.round((width * n) / 800) * 8;
+  return { width: across, height: Math.round(across / 8) * 4 };
 };
 
 /**
@@ -67,11 +67,6 @@ const rowCount = (config: LovelaceCardConfig): number => {
   return Array.isArray(listed) ? listed.length : 2;
 };
 
-/** The hero's picture at a 360 column: 2:1 across the 320, a share of it, or its own height (`pictureSize`). */
-const picture = (config: LovelaceCardConfig): number => {
-  const size = pictureSize(config);
-  return !size ? 160 : 'share' in size ? Math.round((320 * size.share) / 200) : size.height;
-};
 /** The battery on its ruler (the default): the value row (64) and the marked ruler with its labels (12 + 44 + 4 + 16). */
 const RULER = 64 + 76;
 /** The battery as a ring: the gauge's box at a 360 column (R 88: its ticks, its range under them). */
@@ -98,7 +93,7 @@ const quickLine = (config: LovelaceCardConfig): number => {
  * head (44) where it shows, and each part it shows 16 under what it follows, the first at the padding where the head
  * is hidden (#254). The compact card: the battery's bar (a hybrid's tank's under it, 8 apart), its line (20, 8 under
  * the battery), rows of rounds (44 each, 12 between). The whole card: the car's picture where it is over the battery
- * (`picture`), the battery (on its ruler, or a ring; a lone tank in its place; a hybrid's tank on its own ruler under
+ * (`picturePlate`), the battery (on its ruler, or a ring; a lone tank in its place; a hybrid's tank on its own ruler under
  * it, 16 apart), its line, the controls (64 a row, 12 between), the rows (48 each) and the tyres where asked. At the
  * foot of either, its quick actions' line where it lists any. What the car has never changes it: a part it cannot fill
  * keeps its place, a dash in it (1.9: a card keeps its size); `auto` draws a battery or a tank, each the same height.
@@ -121,7 +116,7 @@ export const vehicleHeight = (config: LovelaceCardConfig): number => {
         : RULER;
   // each part it shows, with the room over it
   const parts = [
-    !compact && pictureAt(config) === 'hero' ? 16 + picture(config) : 0,
+    !compact && pictureAt(config) === 'hero' ? 16 + picturePlate(config, 320).height : 0,
     hero ? 16 + gauge : 0,
     config['show_status'] === false ? 0 : (hero ? 8 : 16) + 20,
     controls ? 16 + (compact ? 44 : CONTROLS) * controls + 12 * (controls - 1) : 0,
