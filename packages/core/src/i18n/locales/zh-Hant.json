@@ -923,7 +923,15 @@
     "trigger.time_pattern": "時間模式",
     "trigger.time": "時間",
     "trigger.homeassistant_stopping": "Home Assistant 停止中",
-    "trigger.homeassistant_starting": "Home Assistant 啟動中"
+    "trigger.homeassistant_starting": "Home Assistant 啟動中",
+    "fact.who": "操作者",
+    "kind.account": "帳號",
+    "kind.integration": "整合",
+    "you": "您",
+    "by": "由{name}操作",
+    "by_you": "由您操作",
+    "by_person": "依人員",
+    "everyone": "所有人"
   },
   "alerts": {
     "preset.low_battery": "低電量",
@@ -2154,7 +2162,9 @@
     "state_display": "狀態顯示為",
     "state_icons": "依狀態設定圖示",
     "state_icons_helper": "每行一個狀態及其圖示（ok: mdi:check-circle-outline）；未列出的狀態仍顯示文字",
-    "state_icon_colors_helper": "每行一個狀態及其色調或顏色（warning: warning）"
+    "state_icon_colors_helper": "每行一個狀態及其色調或顏色（warning: warning）",
+    "exact_colors": "精確顏色",
+    "exact_colors_helper": "名稱依 Home Assistant 的顏色，十六進位色碼依輸入。未設定：沿用 Fluvy 設定中所有卡片的值"
   },
   "energy-period-card": {
     "name": "能源期間",
@@ -3199,7 +3209,11 @@
     "dashboard.up_to": "最多…",
     "dashboard.up_to_count": "每個列表最多 {count} 項",
     "cards.levels": "圖示顯示等級",
-    "cards.levels_sub": "電池電量、訊號格數、閥門開或關"
+    "cards.levels_sub": "電池電量、訊號格數、閥門開或關",
+    "cards.exact": "精確顏色",
+    "cards.exact_sub": "顏色名稱依 Home Assistant 的顏色顯示，十六進位色碼依輸入顯示，而非配色的色調",
+    "scope.activity_who": "誰操作的",
+    "scope.activity_who_sub": "活動中的每筆紀錄都顯示操作者及其照片；可依人員篩選"
   },
   "remote": {
     "key.power": "電源",
