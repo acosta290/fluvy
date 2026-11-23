@@ -1117,11 +1117,13 @@ export class FluvyRowsEditor extends LitElement {
   private readonly addLabel: Labeler = () => this.t('editor.add');
 
   /**
-   * The card's own fields are named by the card, told Home Assistant's own words as a form's contract hands them
-   * (`hass.localize`: a state's, for its colour).
+   * Home Assistant's own words, as the editor's labelers and helpers are told them (a state's, for its colour): its form
+   * hands a labeler the field's data second and a helper nothing, never a localize.
    */
-  private readonly cardLabel: Labeler = (schema) =>
-    this.spec?.computeLabel(schema, (key) => this.hass?.localize?.(key) ?? '');
+  private readonly localize = (key: string): string => this.hass?.localize?.(key) ?? '';
+
+  /** The card's own fields are named by the card, told Home Assistant's own words. */
+  private readonly cardLabel: Labeler = (schema) => this.spec?.computeLabel(schema, this.localize);
 
   /** A section or a divider joins the list's end, to be dragged where it belongs. */
   private addSection(list: RowsListSpec, type: 'section' | 'divider'): void {
@@ -1131,25 +1133,25 @@ export class FluvyRowsEditor extends LitElement {
 
   /**
    * An item's field is named by its list, else by the card, else by the shared item words, told Home Assistant's own
-   * words as `cardLabel` is (`hass.localize`). A form hands its labeler the item's data second, not a localize.
+   * words as `cardLabel` is.
    */
   private labeler(list: RowsListSpec): Labeler {
     let labeler = this.labelers.get(list);
     if (!labeler) {
       const own = this.spec?.computeLabel;
-      const localize = (key: string): string => this.hass?.localize?.(key) ?? '';
       labeler = (schema) =>
-        list.computeLabel?.(schema, localize) ??
-        own?.(schema, localize) ??
-        itemLabels(schema, localize);
+        list.computeLabel?.(schema, this.localize) ??
+        own?.(schema, this.localize) ??
+        itemLabels(schema, this.localize);
       this.labelers.set(list, labeler);
     }
     return labeler;
   }
 
-  /** What is said under an item's field (`itemHelper`). */
+  /** What is said under an item's field (`itemHelper`), told Home Assistant's own words as its labels are. */
   private helper(list: RowsListSpec, item: Item): Labeler {
-    return itemHelper(list, this.spec?.computeHelper, item, this.hass);
+    const helps = itemHelper(list, this.spec?.computeHelper, item, this.hass);
+    return (schema) => helps(schema, this.localize);
   }
 
   /**
@@ -1292,13 +1294,11 @@ export class FluvyRowsEditor extends LitElement {
     // the house's options for the selects, asked once for the card's form and for its lists' items
     const choices = spec.choices?.(this.config, this.hass) ?? {};
     const key = JSON.stringify(choices);
-    // the card's helpers are told what the form shows and the house (one that reads the sensor picked); a field with
-    // a word of its own says it where the card says nothing
+    // the card's helpers are told Home Assistant's words, what the form shows and the house (one that reads the sensor
+    // picked); a field with a word of its own says it where the card says nothing
     const own = spec.computeHelper;
-    const helper = (
-      schema: HaFormSchemaItem,
-      localize: (key: string) => string,
-    ): string | undefined => own?.(schema, localize, data, this.hass) ?? ownHelper(schema);
+    const helper: Labeler = (schema) =>
+      own?.(schema, this.localize, data, this.hass) ?? ownHelper(schema);
     return html`
       <ha-form
         .hass=${this.hass}

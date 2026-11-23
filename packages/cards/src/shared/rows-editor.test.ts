@@ -1049,4 +1049,25 @@ describe('an item’s and a list head’s labels, as Home Assistant’s form ask
     const head = editor.shadowRoot!.querySelector<Asked>('.list__fields')!;
     expect(head.computeLabel?.({ name: 'scan' }, data)).toBe('HA state.scan');
   });
+
+  it('hands the card’s and the list’s helpers Home Assistant’s localize too, where its form hands a helper nothing', async () => {
+    type Helped = FormStub & { computeHelper?: (schema: HaFormSchemaItem) => string | undefined };
+    // a helper that says a field by Home Assistant's words
+    const said = (schema: HaFormSchemaItem, localize: (key: string) => string) =>
+      localize(`helper.${schema.name}`);
+    const list: RowsListSpec = { ...rows, fields: ['scan'], computeHelper: said };
+    const editor = await drawEditor(
+      listsEditor({ schema: [boolField('scan')], computeLabel: worded, computeHelper: said }, [
+        list,
+      ]),
+      { type: 'custom:x', rows: ['sensor.a'] },
+    );
+    editor.hass = { localize: (key: string) => `HA ${key}` } as unknown as HomeAssistant;
+    await editor.updateComplete;
+    // ha-form calls computeHelper(schema), nothing more
+    const item = editor.shadowRoot!.querySelector<Helped>('.item ha-form')!;
+    expect(item.computeHelper?.({ name: 'on' })).toBe('HA helper.on');
+    const head = editor.shadowRoot!.querySelector<Helped>('.list__fields')!;
+    expect(head.computeHelper?.({ name: 'scan' })).toBe('HA helper.scan');
+  });
 });
