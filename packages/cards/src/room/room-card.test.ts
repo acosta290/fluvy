@@ -912,6 +912,13 @@ describe('a room’s quick actions (#113)', () => {
         of('media_player.lounge_radio', 'off', 4096 | 16384),
       ]),
     ).toEqual(['media_player.turn_on media_player.lounge']);
+    // one in standby that cannot be turned on plays, as a player at rest does
+    expect(
+      await tapped('media', [
+        at('media_player.lounge', 'off'),
+        of('media_player.lounge_radio', 'standby', 16384),
+      ]),
+    ).toEqual(['media_player.media_play media_player.lounge_radio']);
   });
 
   it('takes no tap where none of its members can act, and is drawn as it reads', async () => {

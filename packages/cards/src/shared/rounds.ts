@@ -321,7 +321,10 @@ export function flipOf(domain: string, views: readonly EntityView[], on: boolean
   if (domain === 'media_player') {
     const playing = usable.filter((view) => view.state === 'playing');
     if (playing.length) return { calls: callsOf(playing, PAUSES) };
-    const awake = usable.filter((view) => !playerOff(view.state));
+    // a player off is woken; one in standby too where it can be, else it plays as a player at rest does
+    const asleep = (view: EntityView): boolean =>
+      view.state === 'off' || (playerOff(view.state) && view.supports(MEDIA_TURN_ON));
+    const awake = usable.filter((view) => !asleep(view));
     return awake.length
       ? { calls: callsOf(awake, PLAYS), expect: 'playing' }
       : { calls: callsOf(usable, WAKES) };
