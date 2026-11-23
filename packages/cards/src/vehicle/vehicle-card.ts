@@ -34,6 +34,7 @@ import { HeadFit, ROW_NAME_MIN } from '../energy/head.js';
 import { MARK_LABEL, markedRuler } from '../energy/marked-ruler.js';
 import { Card, MORE_INFO, type CardEditor, type HeadConfig } from '../shared/base.js';
 import { toneOf } from '../shared/colour.js';
+import type { AliasSpec } from '../shared/config.js';
 import { spanText, unitWord, withUnit } from '../shared/duration.js';
 import { fitLine, type Segment } from '../shared/fit.js';
 import { durationSeconds, when } from '../shared/job-time.js';
@@ -51,6 +52,7 @@ import {
   vehicleDevice,
   vehicleDevices,
   vehicleEntities,
+  rolesOfMap,
   type NamedRole,
   type VehicleEntities,
   type VehicleRole,
@@ -188,7 +190,10 @@ export interface VehicleCardConfig extends FluvyCardConfig, HeadConfig {
   variant?: VehicleVariant;
   /** Whether its entities are found on its device (the default); off, only `roles` play. */
   scan?: boolean;
-  /** Entities named by hand for a part the card does not find, or plays otherwise: `{ role, entity }`. */
+  /**
+   * Entities named by hand for a part the card does not find, or plays otherwise: `{ role, entity }` (a map of each role
+   * to its entity reads as that list).
+   */
   roles?: readonly NamedRole[];
   /**
    * What it runs on: its battery, its tank, or both (a plug-in hybrid); `auto` (the default), its tank where it has
@@ -404,6 +409,16 @@ export class FluvyVehicleCard extends Card<VehicleCardConfig> {
   static override layoutHeight(config: VehicleCardConfig): number {
     return vehicleHeight(config);
   }
+
+  /** `roles` written as a map (`{ fuel: sensor.x }`) reads as the list it means, in the card and in its editor. */
+  static override aliases: AliasSpec = {
+    upgrade: (config) => {
+      const roles = config['roles'];
+      return roles && typeof roles === 'object' && !Array.isArray(roles)
+        ? { ...config, roles: rolesOfMap(roles as Readonly<Record<string, unknown>>) }
+        : config;
+    },
+  };
 
   static override styles: CSSResultGroup = [
     ...(Card.styles as CSSResultGroup[]),

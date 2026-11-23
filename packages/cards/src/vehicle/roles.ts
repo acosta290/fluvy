@@ -1058,6 +1058,15 @@ export interface NamedRole {
 }
 
 /**
+ * Roles written as a map, each role to its entity (`roles: { fuel: sensor.x }`, as YAML writes them as readily): the
+ * list they mean, an entry that names no entity left out.
+ */
+export const rolesOfMap = (map: Readonly<Record<string, unknown>>): NamedRole[] =>
+  Object.entries(map).flatMap(([role, entity]) =>
+    typeof entity === 'string' && entity ? [{ role, entity }] : [],
+  );
+
+/**
  * Every role the car's device fills — by the entity known most surely to play it, its integration's own over a helper
  * a person attached to it — its doors, windows and tyres' warnings gathered; then the roles named by hand over them
  * (with `scan: false`, those alone). Hidden entities are left out of the search. The entity the card names plays the

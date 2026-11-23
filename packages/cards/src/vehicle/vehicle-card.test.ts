@@ -447,6 +447,20 @@ describe('the vehicle card', () => {
     const card = await mount({ device: 'd-washer' });
     expect(root(card).querySelector('.fv-card--empty')).not.toBeNull();
   });
+
+  it('reads roles written as a map as the list it means, and the editor shows them so (#251)', async () => {
+    const card = await mount({
+      device: TESLA.device,
+      scan: false,
+      roles: { battery: 'sensor.model_y_battery_level', lock: 'lock.model_y_lock', x: 4 },
+    });
+    expect(gauges(card)[0]?.figure).toBe('64%');
+    expect(words(card)).toEqual(['Locked']);
+    expect((card as unknown as { config: { roles: unknown } }).config.roles as unknown[]).toEqual([
+      { role: 'battery', entity: 'sensor.model_y_battery_level' },
+      { role: 'lock', entity: 'lock.model_y_lock' },
+    ]);
+  });
 });
 
 /** A gauge's label, its figure and its range, and its ruler's tone, in order. */
