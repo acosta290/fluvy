@@ -442,9 +442,15 @@ const LOCK_STATES: readonly string[] = [
 const said = (view: Pick<ControlView, 'name' | 'word'>): string =>
   view.word && view.word !== view.name ? `${view.name} · ${view.word}` : view.name;
 
-/** A list's entry as an object: a bare key is `{ control }` (an entity's id `{ entity }`) / `{ row }`. */
-const controlEntry = (raw: VehicleControl | ControlEntry): ControlEntry =>
-  typeof raw === 'string' ? (isEntityId(raw) ? { entity: raw } : { control: raw }) : raw;
+/**
+ * A list's entry as an object: a bare key is `{ control }` (an entity's id `{ entity }`) / `{ row }`; `control: entity`,
+ * the editor's word for one of the person's own, is its `entity` alone.
+ */
+const controlEntry = (raw: VehicleControl | ControlEntry): ControlEntry => {
+  if (typeof raw === 'string') return isEntityId(raw) ? { entity: raw } : { control: raw };
+  const { control, ...own } = raw;
+  return (control as string) === 'entity' ? own : raw;
+};
 const rowEntry = (raw: VehicleRow | RowEntry): RowEntry =>
   typeof raw === 'string' ? { row: raw } : raw;
 

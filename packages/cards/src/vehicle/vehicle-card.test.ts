@@ -781,6 +781,8 @@ describe('the vehicle card', () => {
           'lock',
           { entity: 'switch.model_y_sentry_mode', name: 'Guard', icon: 'mdi:shield-car' },
           'cover.model_y_windows',
+          // the editor's own word for one of the person's own
+          { control: 'entity', entity: 'switch.model_y_charge', name: 'Charger' },
         ],
       },
       hass,
@@ -789,6 +791,7 @@ describe('the vehicle card', () => {
       'Lock · Locked',
       'Guard · Off',
       'Model Y model y windows · Closed',
+      'Charger · On',
     ]);
     const word = root(card).querySelectorAll('.vh-control__word')[1];
     expect(word?.classList.contains('is-name')).toBe(true);
