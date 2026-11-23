@@ -25,10 +25,12 @@ const release = args.includes('--release') || args.includes('--tag');
 /** Each chunk's gzip budget in bytes (`core` is what every page loads; the rest come on demand). */
 const BUDGETS = {
   'fluvy.js': 2048,
-  // 236 KB since 1.9 (the head as the card's button, the grey ladder, the value row, empty lists, the room's contents,
+  // 238 KB since 2026-11-23 (1.25: a toggle decided as Home Assistant's, the cards' exact colours asked for, a card's
+  // own figures from an entity or a template, the chips' plain style, the sheets' kinds, the dialogs' plain base,
+  // settings 9: measured at 237.4 KB). 236 KB since 1.9 (the head as the card's button, the grey ladder, the value row, empty lists, the room's contents,
   // the appliances' announcement and icons, heights read from the house, the judges' fixes; the lazy families'
   // English left core first, about 9 KB): 224 in 1.8, 222 in 1.7, 220 before
-  core: 241_664,
+  core: 243_712,
   // the settings panel and its English. 44 KB since 2026-11-14 (1.21, 3.3 KB: the form Home Assistant's pencil opens on
   // an automatic dashboard, #188, 1.2 KB; the house's order of its rooms and the dashboards' groups by room and chips,
   // #189, 1.0 KB; a dashboard's Sidebar row, its route and its saves beside the strategy, #187, 0.9 KB; what a
@@ -56,8 +58,8 @@ const BUDGETS = {
   strategy: 32_768,
   // the naming words (1.23: every language's, 11.7 KB, out of the strategy's chunk) and the rule that reads a switch's
   // name as a lamp's (#219), fetched with the strategy and by the first card asked for `lamp_switches`; measured at
-  // 11.7 KB
-  words: 12_288,
+  // 11.7 KB. 13 KB since 2026-11-23 (1.25: Traditional Chinese's naming words, #238: measured at 12.3 KB)
+  words: 13_312,
   // the heights the strategy counts with the house: what an entity's capabilities draw, what a room holds
   'house-heights': 4096,
   wall: 16_384,
@@ -117,7 +119,8 @@ const BUDGETS = {
   // 68 KB since 2026-11-11 (1.19: Russian's appliance stems, #167, about 900 B; measured at 66.8 KB); 70 KB since
   // 2026-11-15 (1.22: Bulgarian's appliance stems as written and as an id writes them, 0.9 KB, a head's two lines:
   // measured at 69.2 KB with Danish and Swedish)
-  appliances: 71_680,
+  // 71 KB since 2026-11-23 (1.25: Traditional Chinese's appliance kinds, #238: measured at 70.0 KB)
+  appliances: 72_704,
   // the appliances' pictures: one product drawing a kind, fetched by the first card that draws one
   'appliance-art': 32_768,
   // the automations family: the card, the schedule model and its store. 20 KB since 1.9 (the family's English, the
@@ -215,7 +218,9 @@ const BUDGETS = {
   // room and its rounds in columns (#225); 4 before
   'quick-actions': 5120,
   // the weather card, and the Compass card since 1.23 (#209: the card and its English; its editor goes with the forms)
-  weather: 12_288,
+  // 13.5 KB since 2026-11-23 (1.25: the Compass card's classic face, its letters' fit and its chevron, #247: measured at
+  // 13.0 KB)
+  weather: 13_824,
   // the calendar card: its views, what reads its events, its sheet (1.18: it left core, 9.7 KB of what every page
   // loads, for the release's new card and styles); measured at 11.5 KB
   calendar: 16_384,
@@ -223,7 +228,9 @@ const BUDGETS = {
   // the fields every card's editor is built of: the schema's helpers, a list's row form, and the editors' English
   // (1.15: they left core, 4.3 KB). 9 KB since 2026-11-15 (1.22: a card's thresholds, #204, its state's colours, #196,
   // and a list's names, #200: measured at 8.3 KB)
-  fields: 9216,
+  // 10 KB since 2026-11-23 (1.25: exact colours in every editor, #250, the horizontal cover's word, #244: measured at
+  // 9.0 KB)
+  fields: 10_240,
   // the editors of the cards every page carries: their forms, lists and defaults, fetched with the visual editor
   // (1.11: they left core, 6.3 KB). 14 KB since 1.18 (the TV remote's editor, #143, and the room's colour round, #137,
   // with the sliders' style on every editor that draws one): measured at 12.7 KB; 12 before. 15 KB since 2026-11-13
@@ -233,7 +240,10 @@ const BUDGETS = {
   // card's and the Compass card's editors, a card's own blur, the thermostat's focus, icons and readouts, a chart's
   // states): measured at 17.1 KB, the round's other new cards' editors to come. 20 KB since 2026-11-20 (the Heating
   // schedule's, the Thermostats card's and the Rooms card's editors, the numbers set in place): measured at 19.3 KB
-  forms: 20_480,
+  // 22 KB since 2026-11-23 (1.25: the chips' style and names, #241, the Rooms card's quick actions' taps, #239, the
+  // Bars card's limits as text, #253, the Vehicle card's lists of its own controls and small icons, #248 #251): measured at
+  // 21.4 KB
+  forms: 22_528,
   // 6 KB since 2026-11-13 (1.20: Ukrainian's words for a view's icon, #176, about 400 B; measured at 5.0 KB); 5 since
   // 2026-11-11 (1.19: Russian's, #167, about 800 B); 4 before
   'view-icons': 6144,

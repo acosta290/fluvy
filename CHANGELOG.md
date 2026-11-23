@@ -5,12 +5,129 @@ and the versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
-### Fixed
+### Visible on upgrade
 
+Two changes are choices: the Compass card draws a classic compass face, and a house whose Home Assistant speaks
+Traditional Chinese reads Fluvy in it. Everything else that changes without being asked is a fix:
+
+- A toggle on a climate or a water heater that is heating, cooling or running turns it off, by its own `turn_off` or
+  its Off mode, where every toggle but a light's or a switch's sent `homeassistant.turn_on` unless the state was on: a
+  tile's tap or icon, a chip, a round (#252, reported by @frahal).
+- A toggle on a mowing lawn mower pauses it and starts it otherwise, a group that is open turns off, and a player that
+  is off or in standby wakes where it can (#252, reported by @frahal).
+- Home Assistant's own tile cards keep Home Assistant's own type under the Fluvy theme: names 14/500 over states
+  12/400, following the person's text size, where the theme set 15/600 over 13/500 and cut names (#240, reported by
+  @uberberben).
+- Home Assistant's dialogs and bottom sheets stand on the look's plain colour under the theme's own surface while
+  Fluvy is in use, so a device that fails to resolve the theme's variable no longer shows a see-through details dialog,
+  and the page keeps its text at the size it is laid out in (#242, reported by @zakariakbj).
+- The Chips card centres each tab's glyph and words in a row that fills its line, where every tab sat 8 px to the left
+  and a tab whose words rendered nothing kept a gap after its icon; a glyph keeps its size in a narrow pill (#241,
+  reported by @SentinelXS).
+- A card's `color: amber` is an amber on every palette, where it took the palette's accent (blue on Mist, pink on
+  Flamingo, near black on Noir); Home Assistant's own sunny weather, sun and heat-cool colours under the theme read
+  amber too, and a light that is on still wears the accent (#250, reported by @danielolsson1).
+- The Light card's quick colour `deep-orange` glows Home Assistant's own #ff6f22, where it glowed #ff5722 (#250).
+- The Compass card draws a classic compass face: a bezel band with the ticks across it, bold bars at the four points, a
+  hairline round the open centre and the four letters large outside the band, north in the card's colour, as its author
+  first drew it; `face: ring` keeps the 1.24 look (#247, thanks @twodrops).
+- A house whose Home Assistant speaks Traditional Chinese (zh-Hant, or a browser in zh-TW, zh-HK or zh-MO) reads
+  Fluvy's cards, pages and dialogs in Traditional Chinese where it read English; a person who prefers English chooses it
+  in the panel's Preferences. A house named in Traditional Chinese is read by its own words: the automatic dashboards
+  find its lights, appliances and energy readings by their Taiwan names (#238).
 - A list's items in a card's editor draw their fields again: the Chart card's Series rows came up blank since 1.23.0,
   each throwing `t is not a function`, because Home Assistant's form hands a labeler the item's data where the editor's
-  labelers expected its words (`localize`); a list's head fields (the card's own, shown above its items) are named the
-  same way (#245, by @mdkv4).
+  labelers expected its words (`localize`); a list's head fields are named the same way (#245, by @mdkv4).
+- The Vehicle card draws an entity listed among its `controls` in its row, where it was left out and the card kept an
+  empty gap for it (#248, reported by @SentinelXS).
+- The Vehicle card reads `roles` written as a map of each role to its entity, where the card stopped with an error
+  (#251, reported by @SentinelXS).
+- The Vehicle card writes all four tyres with the same decimals, the sensors' own precision or else one under 10, so
+  2.0 bar no longer reads 2 and a psi sensor's precision shows; it says Low tyre pressure on its line when the car's own
+  tyre warning is on, whether the tyres are shown or not (#251, reported by @SentinelXS).
+- The Vehicle card's tyres in half a section put each unit under its pressure where the two used to overlap, and the
+  car's picture is a whole number of grid steps tall at every width (#254, reported by @SentinelXS).
+- The Bars card draws no badge where `badge_ok` or `badge_warn` is written empty, where it drew an empty pill, and a
+  limit written as words that are not a figure keeps its default (#253).
+- The Activity page's entry details keep every label whole in every language: the label column widens to the
+  language's longest label, where French "Changement" and Italian "Cambiamento" ran past it; a dropdown that opens from
+  a row's value is as wide as its longest name on the 4 grid.
+- The Heating schedule card's presets under the week no longer run past the card's edges in Chinese and Japanese on a
+  phone, the one that does not fit counted in "+1" as in English, and the empty card's Create button stands on whole
+  pixels.
+
+### Added
+
+- Exact colours: `exact_colors: true` on a card, or Exact colours for the whole house in Fluvy's settings › Appearance
+  › Cards, wears every colour you name as named, Home Assistant's own value for a name (`amber` is #ffc107) and a hex as
+  typed, its lines, bars, glyphs and fills in the colour itself and the words on a fill black or white, whichever reads;
+  off by default, and a card's own `exact_colors: false` keeps the palette's tones (#250, asked by @danielolsson1).
+- The Activity page can show who did each entry: the person's picture (or initials) and name where the person glyph
+  was, their face after the name of an automation or script their tap started, a Who line in the entry's detail that
+  opens their details, a search by their name, a By person filter beside the sources and a `who` column in the CSV; an
+  administrator also sees accounts no person stands for, such as Node-RED or Home Assistant Cloud, and nothing is shown
+  where Home Assistant knows no user; off until the house turns on Who did it under Scope, beside the Activity page.
+- Traditional Chinese (zh-Hant), in Taiwan's words: every card, page, dialog and editor, Home Assistant's own words
+  where it has them, the integration's messages, the greeting (早安, 午安, 晚安), a Traditional face for its Han, and a
+  house named in Traditional Chinese read by its words; a first translation that a native speaker is welcome to improve
+  (#238, asked by @monarchsofchaos004-gif).
+- The Vehicle card can start and stop the engine: name its switch or button as the `engine` role and an Engine control
+  appears after the lock, asking before it starts and before it stops (#248, asked by @SentinelXS).
+- The Vehicle card's `controls` take any entity of your own, a switch, a script or a scene, drawn with its name and
+  acting at a tap, with `confirm: true` to ask first (#248, asked by @SentinelXS).
+- The Vehicle card marks a tyre under `tyre_low` (a pressure, an entity or a template) in the warning colour and says
+  so on its line, and `tyre_decimals` sets how many decimals the tyres show (#251, asked by @SentinelXS).
+- The Vehicle card's `badge` shows your own words, an entity's state or a template in place of what the car is doing,
+  and its `quick_actions` add a line of small icons at its foot, each with its own name, icon, colour, actions and
+  state (#251, asked by @SentinelXS).
+- The Vehicle card's `image_size` draws the car's picture at a share of the card's width or at a height, and
+  `show_head` and `show_hero` let the picture stand alone as the whole card (#254, asked by @SentinelXS).
+- The Bars card reads a row's range and limits from the house: `min`, `max`, `low` and `high` each take an entity
+  (another unit of its kind converted, kW for a row in W) or a template as well as a figure, kept live; a limit whose
+  template fails or says no figure keeps its default, and one whose answer is still to come warns of nothing (#253,
+  asked by @SentinelXS).
+- The Bars card's badge takes your own words, an entity's state or a template: the new `badge` says it whatever the
+  rows say, and `badge_ok` and `badge_warn` read the same way, `{count}` filled in after the template answers (#253,
+  asked by @SentinelXS).
+- The Cover card can lay its position on one row (`variant: horizontal`): the figure on the left, the ruler across the
+  rest of the card with its ends' words over it, the commands under them as outlined pills and the tilt under those; in
+  a narrow column the figure stands over the ruler (#244, thanks @xoatrash).
+- The Compass card's editor offers its face, Classic or Ring, and the letters step down together, or stand in the
+  band, where a language's words are too wide for a narrow column; a bearing can be marked with a chevron in a ringed
+  circle riding the ring (`indicator: chevron`), pointing out or in as `arrow_points` says (#247, after @twodrops'
+  design).
+- The Chips card can show a tab's icon alone, its name read aloud and shown under the pointer (`show_name: false`, for
+  every tab or one), and can stand plain on the page with no pill at rest, the open view keeping its pill (`style:
+  plain`, for every tab or one) (#241, asked by @SentinelXS).
+- A dashboard's sidebar can take a share of the screen with `width: 25vw`, the same share beside Home Assistant's own
+  sidebar and at any size of the device, and the settings panel sets each device's width in px, as a share of the
+  screen or as a share of the dashboard (#249, asked by @SentinelXS).
+- The Rooms card's editor gives each quick action its tone, whether it says its state, and its own tap, hold and double
+  tap, as YAML already could (#239, asked by @SentinelXS).
+- The details sheets can leave out their last 24 hours: Appearance › Cards chooses which kinds keep them (every kind
+  until chosen), and an action says its own with `history: false` or `history: true` beside `details`; a sheet without
+  them asks the recorder nothing (#243, asked by @Carl-Primitive).
+
+### Development
+
+- A card's own figures (a number, an entity's reading in the unit it is compared in, a template's answer) are read by
+  one helper, `shared/own-values.ts` (`Card.ownFigure`, `Card.ownWords`), which the thresholds read through too.
+- The accent's hover, its fill's hairline and its graph series are helpers that the palette's accent, a card's colour
+  and a colour worn exactly share; a card's see-through, quiet and exact sheets are fetched through one helper; the
+  settings are version 9 (the house's `activityWho`, `exactColors` and `sheetsHistory`, each as before where an 8
+  stored none).
+- `toggleService` decides as Home Assistant's own toggle does, its `offCall` and the rule of a player that is off live
+  in core once, and `__fluvy.shell.dialogs()` says what each open Home Assistant dialog paints, its mode, variables,
+  colour and box, beside the page's width, pixel ratio, wall mark and size (#242).
+- The rows editor hands a card's and a list's helpers Home Assistant's words, as it hands its labelers since #245.
+- The Vehicle card's editor is a module of its own, fetched only when a card is edited; the Compass card's cardinal
+  points are text laid over its drawing, so the measurer checks them in every language and at every width.
+- `pnpm i18n scaffold` takes a language with its script (zh-Hant) as it takes one with its region (pt-BR); the built
+  bundle's suite speaks Traditional Chinese too.
+- The measurer reads a glyph in a fitted pill as centred with its words; the lights suite reads a quick colour's tap at
+  its target tone and after its fade, never inside it; the playground's Activity page shows who did it with `&who=1`,
+  its chips sheet and the interactions-chips suite hold the tabs centred, alone and plain, and `&sheetsday=` sets the
+  kinds whose sheets show their last 24 hours.
 
 ## [1.24.0] — 2026-11-21
 

@@ -79,13 +79,13 @@ names its English part, or core keeps it, and every module no group names lands 
 (`vite.config.ts`) where core holds one that only the chunks fetched later reach. Lit is bundled, pinned to Home
 Assistant's version. `finish.mjs` writes
 `manifest.json` with every file's size and hash and a **build stamp**, and fails the build when the initial set goes
-over **236 KB gzip** or carries a family's English; `tools/release/check.mjs --release` holds every chunk to its own
+over **238 KB gzip** or carries a family's English; `tools/release/check.mjs --release` holds every chunk to its own
 budget (`BUDGETS`; the facts guard in `tools/docs` holds this table to it):
 
 | Script | Budget (gzip) | What it is |
 | --- | --- | --- |
 | `fluvy.js` | 2 KB | the entry |
-| `core` | 236 KB | what every page loads |
+| `core` | 238 KB | what every page loads |
 | `panel` | 44 KB | the settings panel and its English |
 | `customise` | 14 KB | Customise, the Dashboards tab's section that edits an automatic dashboard's views and cards, and its English: fetched the first time a dashboard is customised |
 | `sidebar-editor` | 6 KB | a dashboard's sidebar in the panel (1.21, #187), the Dashboards tab's section that writes `fluvy_sidebar:` without YAML, and its English: fetched the first time a dashboard's sidebar is opened |
