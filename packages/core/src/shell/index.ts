@@ -1,6 +1,7 @@
 import { PAGE_ATTRIBUTE, WALL_ATTRIBUTE } from '../look/attributes.js';
 import type { MenuIcons } from '../settings/schema.js';
 import { patchChartFont, patchChartSeries } from './charts.js';
+import type { DialogsReport } from './dialogs.js';
 import { adoptLast, insideOf, walkShadow } from './dom.js';
 import { ORIGINAL_ICONS } from './css/chrome.js';
 import { PanelFrames } from './frames.js';
@@ -70,6 +71,8 @@ export interface ShellReport {
 export interface ShellHandle {
   stop(): void;
   report(): ShellReport;
+  /** What Home Assistant's open dialogs and sheets paint, and the page they are on (#242), read in a chunk of its own. */
+  dialogs(): Promise<DialogsReport>;
 }
 
 type LitClass = CustomElementConstructor & { elementStyles?: unknown[] };
@@ -192,21 +195,23 @@ export function createShell(env: ShellEnv, options: { frames?: boolean } = {}): 
     kept = original;
     wall = walled;
     // a wall sheet follows the wall attribute alone (a wall is a wall in every scope), an `always` sheet its marks, an
-    // icons sheet its place's icons; the rest follow the theme
+    // icons sheet its place's icons, an `in-use` sheet the theme or a wall; the rest follow the theme
+    const fills = (spec: ShellSheet): boolean => {
+      switch (spec.choice) {
+        case undefined:
+          return on;
+        case 'always':
+          return true;
+        case 'wall':
+          return walled;
+        case 'in-use':
+          return on || walled;
+        default:
+          return icons[spec.choice];
+      }
+    };
     for (const { spec, sheet } of entries)
-      sheet.replaceSync(
-        !holds(spec)
-          ? ''
-          : spec.choice === 'always'
-            ? cssOf(spec)
-            : spec.choice === 'wall'
-              ? walled
-                ? cssOf(spec)
-                : ''
-              : (spec.choice ? icons[spec.choice] : on)
-                ? cssOf(spec)
-                : '',
-      );
+      sheet.replaceSync(holds(spec) && fills(spec) ? cssOf(spec) : '');
     // Home Assistant's Material icons drawn as ours (or back) on what is already on the page, where that changed
     if (!first && (drawn.sidebar !== icons.sidebar || drawn.settings !== icons.settings))
       redrawSvgIcons(env.document, oursOn);
@@ -294,6 +299,7 @@ export function createShell(env: ShellEnv, options: { frames?: boolean } = {}): 
         frames: frames?.current().map((shell) => shell.report()) ?? [],
       };
     },
+    dialogs: () => import('./dialogs.js').then(({ dialogsOf }) => dialogsOf(env.document)),
   };
 }
 
@@ -336,6 +342,7 @@ export function startShell(env: ShellEnv | undefined = browserEnv()): ShellHandl
       handle = undefined;
     },
     report: shell.report,
+    dialogs: shell.dialogs,
   };
   return handle;
 }

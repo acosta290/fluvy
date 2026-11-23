@@ -124,3 +124,9 @@ It lists every sheet and whether Home Assistant still draws the element it was w
 made, `false` its method is gone, `null` its element is not on this page yet), every patch that stepped aside with what
 it threw (a panel frame's in that frame's own report, under `frames`), and Home Assistant's version. Paste it into an issue; the fix is usually a small one and ships in the next
 release.
+
+With one of Home Assistant's dialogs open (a details dialog, a picker), `await __fluvy.shell.dialogs()` says what each
+open dialog and bottom sheet paints: its mode (`dialog` or `bottom-sheet`), the element it is drawn in, its surface's variables
+(`--wa-color-surface-raised`, `--ha-dialog-surface-background`), the colour, image and box its surface computes, and the
+page's width, pixel ratio, wall mark and size. While Fluvy is in use, a dialog's surface stands on the look's plain colour
+with the theme's laid over it, so a variable a device fails to resolve never leaves a dialog see-through.

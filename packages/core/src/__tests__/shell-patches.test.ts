@@ -347,7 +347,11 @@ describe('the panel frames (HACS)', () => {
       createSheet: () => new CSSStyleSheet(),
       MutationObserver,
     }) as ShellEnv;
-  const shell = (): ShellHandle => ({ stop: () => undefined, report: () => ({}) as never });
+  const shell = (): ShellHandle => ({
+    stop: () => undefined,
+    report: () => ({}) as never,
+    dialogs: () => Promise.resolve({}) as never,
+  });
 
   it('get no shell and no Inter where Fluvy is not in use, and theirs once the page wears it', async () => {
     customElements.define('ha-panel-custom', Panel);

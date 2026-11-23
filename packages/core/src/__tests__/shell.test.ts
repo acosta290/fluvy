@@ -116,6 +116,11 @@ function page() {
 }
 
 const settle = (): Promise<void> => new Promise((resolve) => setTimeout(resolve, 0));
+/** The document's sheet of the registry's `id`, among the sheets on the document in the registry's order. */
+const documentSheet = (document: { adoptedStyleSheets: unknown[] }, id: string): FakeSheet =>
+  document.adoptedStyleSheets[
+    SHEETS.filter((s) => s.target === 'document').findIndex((s) => s.id === id)
+  ] as FakeSheet;
 const sheetOf = (handle: ShellHandle, id: string) =>
   handle.report().sheets.find((s) => s.id === id)!;
 
@@ -172,10 +177,9 @@ describe('shell lifecycle', () => {
     const { env, document, input, classes } = page();
     running = startShell(env)!;
     await settle();
-    // the page's sheet and the wall's page sheet, both on the document
-    expect(document.adoptedStyleSheets).toHaveLength(2);
-    expect((document.adoptedStyleSheets[0] as FakeSheet).css).toBe('');
-    expect((document.adoptedStyleSheets[1] as FakeSheet).css).toBe('');
+    // the page's sheet, its text size and the wall's page sheet, all on the document
+    expect(document.adoptedStyleSheets).toHaveLength(3);
+    for (const sheet of document.adoptedStyleSheets) expect((sheet as FakeSheet).css).toBe('');
     const inputClass = classes.get('ha-input')!.elementStyles;
     expect(inputClass).toHaveLength(2);
     expect(inputClass[0]).toBe('theirs'); // ours goes last: it wins at equal specificity
@@ -187,8 +191,8 @@ describe('shell lifecycle', () => {
     const { env, document, wall, theme } = page();
     running = startShell(env)!;
     await settle();
-    const pageSheet = document.adoptedStyleSheets[0] as FakeSheet;
-    const wallSheet = document.adoptedStyleSheets[1] as FakeSheet;
+    const pageSheet = documentSheet(document, 'page');
+    const wallSheet = documentSheet(document, 'wall:page');
     wall(true);
     expect(wallSheet.css).toBe(SHEETS.find((s) => s.id === 'wall:page')!.css);
     expect(pageSheet.css).toBe(''); // the theme is not on: the rest stay empty
@@ -199,6 +203,62 @@ describe('shell lifecycle', () => {
     expect(wallSheet.css).toBe('');
     expect(pageSheet.css).not.toBe('');
     expect(running.report().sheets.filter((s) => s.id.startsWith('wall:'))).toHaveLength(5);
+  });
+
+  it('keeps the text at its laid-out size while Fluvy is in use: under its theme or its look, and on a wall (#242)', async () => {
+    const { env, document, theme, look, wall } = page();
+    running = startShell(env)!;
+    await settle();
+    const sized = documentSheet(document, 'text-size');
+    const css = SHEETS.find((s) => s.id === 'text-size')!.css;
+    expect(css).toBe('html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }');
+    expect(sized.css).toBe('');
+    theme(true);
+    expect(sized.css).toBe(css);
+    theme(false);
+    look(true);
+    expect(sized.css).toBe(css);
+    look(false);
+    wall(true);
+    expect(sized.css).toBe(css);
+    wall(false);
+    expect(sized.css).toBe('');
+  });
+
+  it('paints a dialog and a bottom sheet on the look’s plain colour, the theme’s surface over it, while Fluvy is in use (#242)', async () => {
+    const { env, classes, theme, wall, mark } = page();
+    classes.set('ha-dialog', { elementStyles: [] });
+    classes.set('ha-bottom-sheet', { elementStyles: [] });
+    running = startShell(env)!;
+    await settle();
+    const drawn = (tag: string): string =>
+      (classes.get(tag)?.elementStyles ?? [])
+        .map((sheet) => (sheet as FakeSheet).css)
+        .find((css) => css.includes('background-image')) ?? '';
+    // the colour said, Fluvy not in use: Home Assistant's own surfaces
+    mark('fluvy-dialog-base', true, '#28241d');
+    expect(drawn('ha-dialog')).toBe('');
+    theme(true);
+    expect(drawn('ha-dialog')).toBe(
+      'wa-dialog::part(dialog) { background-color: #28241d; background-image: linear-gradient(var(--wa-color-surface-raised), var(--wa-color-surface-raised)); }',
+    );
+    // the drawer's own dialog stays see-through: its body is the sheet
+    expect(drawn('ha-bottom-sheet')).toBe(
+      'wa-drawer::part(body) { background-color: #28241d; background-image: linear-gradient(var(--ha-bottom-sheet-surface-background), var(--ha-bottom-sheet-surface-background)); }',
+    );
+    // the mode changes: the colour follows
+    mark('fluvy-dialog-base', true, '#ffffff');
+    expect(drawn('ha-dialog')).toContain('background-color: #ffffff;');
+    // a wall under another theme
+    theme(false);
+    expect(drawn('ha-dialog')).toBe('');
+    wall(true);
+    expect(drawn('ha-dialog')).toContain('background-color: #ffffff;');
+    // a value that is no colour is never put into the sheet, nor is a sheet without one
+    mark('fluvy-dialog-base', true, 'red;}*{display:none');
+    expect(drawn('ha-dialog')).toBe('');
+    mark('fluvy-dialog-base', false);
+    expect(drawn('ha-bottom-sheet')).toBe('');
   });
 
   it('fills a wall’s way back from a subview on the house’s choice, and only on a wall', async () => {
@@ -335,7 +395,7 @@ describe('shell lifecycle', () => {
     running = startShell(env)!;
     await settle();
     theme(true);
-    const pageSheet = document.adoptedStyleSheets[0] as FakeSheet;
+    const pageSheet = documentSheet(document, 'page');
     const inputSheet = classes.get('ha-input')!.elementStyles[1] as FakeSheet;
     expect(pageSheet.css).toBe(SHEETS.find((s) => s.id === 'page')!.css);
     expect(inputSheet.css).toBe(SHEETS.find((s) => s.id === 'input')!.css);
@@ -349,7 +409,7 @@ describe('shell lifecycle', () => {
     running = startShell(env)!;
     await settle();
     look(true);
-    const pageSheet = document.adoptedStyleSheets[0] as FakeSheet;
+    const pageSheet = documentSheet(document, 'page');
     expect(pageSheet.css).toBe(SHEETS.find((s) => s.id === 'page')!.css);
     expect(running.report().active).toBe(true);
     look(false);
@@ -369,6 +429,8 @@ describe('shell lifecycle', () => {
       instances: 0,
       probe: null,
     }); // not defined here
+    // and, asked, the dialogs open on the page (#242): none here
+    await expect(running.dialogs()).resolves.toMatchObject({ open: [], wall: false });
   });
 
   it('starts once, and stop() empties the sheets and lets go of the observer', async () => {
@@ -378,7 +440,7 @@ describe('shell lifecycle', () => {
     await settle();
     theme(true);
     running.stop();
-    expect((document.adoptedStyleSheets[0] as FakeSheet).css).toBe('');
+    expect(documentSheet(document, 'page').css).toBe('');
     expect(isDisconnected()).toBe(true);
     running = startShell(env)!;
     expect(running).toBeDefined();

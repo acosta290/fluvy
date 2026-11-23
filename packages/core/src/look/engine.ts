@@ -11,7 +11,7 @@ import type { EffectiveSettings } from '../settings/schema.js';
 import { ORIGINAL_ICONS } from '../shell/css/chrome.js';
 import { inUse } from '../shell/patches.js';
 import { declarationsOf, lookKey, type Look } from './css.js';
-import { PAGE_ATTRIBUTE, PANEL_ATTRIBUTE } from './attributes.js';
+import { DIALOG_BASE_ATTRIBUTE, PAGE_ATTRIBUTE, PANEL_ATTRIBUTE } from './attributes.js';
 import { themedRule } from './themed.js';
 
 /** The last page rule, for the loader to apply before the app renders (the websocket answers later). */
@@ -53,7 +53,9 @@ interface HassElement extends Element {
  * - in either scope, on the elements Home Assistant themed with a theme of fluvy's (a view, a section, a card's
  *   `theme:`), over the theme file's colours it wrote on them, in the mode Fluvy Light or Fluvy Dark holds to
  *   (`themed.ts`);
- * - always: the cards' token fallback becomes this look, so a fluvy card anywhere else follows it.
+ * - always: the cards' token fallback becomes this look, so a fluvy card anywhere else follows it; and `<html>` says
+ *   the plain colour of Home Assistant's dialogs in it (`DIALOG_BASE_ATTRIBUTE`), which the shell paints under their
+ *   surface (#242).
  * Then, as Home Assistant does after it applies a theme, the page background, the browser's theme colour
  * and the companion app (status bar) are brought up to date — while Fluvy is in use on the page, and once more
  * when Fluvy leaves it.
@@ -73,6 +75,8 @@ export class LookEngine {
   private chromed = false;
   /** The places where the house keeps Home Assistant's own icons, as every document is told them ('' none). */
   private kept = '';
+  /** The dialogs' plain colour in the look and mode applied last, as every document is told it ('' none yet). */
+  private base = '';
 
   /** `early`: the sheet the loader applied from this browser's cache before the build arrived, taken over as is. */
   constructor(
@@ -92,7 +96,7 @@ export class LookEngine {
     document.adoptedStyleSheets = [...document.adoptedStyleSheets, sheet];
     sheet.replaceSync(this.pageCss);
     document.documentElement.toggleAttribute(PAGE_ATTRIBUTE, this.pageCss !== '');
-    this.sayIcons(document);
+    this.say(document);
   }
 
   /**
@@ -101,12 +105,15 @@ export class LookEngine {
    */
   keepIcons(places: string): void {
     this.kept = places;
-    for (const { document } of this.targets) this.sayIcons(document);
+    for (const { document } of this.targets) this.say(document);
   }
 
-  private sayIcons(document: Document): void {
-    if (this.kept) document.documentElement.setAttribute(ORIGINAL_ICONS, this.kept);
-    else document.documentElement.removeAttribute(ORIGINAL_ICONS);
+  /** What every document the look reaches is told on its `<html>`: the icons the house keeps, the dialogs' colour. */
+  private say(document: Document): void {
+    const root = document.documentElement;
+    if (this.kept) root.setAttribute(ORIGINAL_ICONS, this.kept);
+    else root.removeAttribute(ORIGINAL_ICONS);
+    if (this.base) root.setAttribute(DIALOG_BASE_ATTRIBUTE, this.base);
   }
 
   /**
@@ -121,6 +128,7 @@ export class LookEngine {
     this.applied = key;
 
     const declarations = declarationsOf(look, mode, statuses);
+    this.base = declarations.find(([name]) => name === '--ha-dialog-surface-background')?.[1] ?? '';
     const everywhere = scope === 'everywhere';
     this.pageCss = everywhere ? `:root{${declarationsCss(declarations, true)}}` : '';
     this.targets.splice(
@@ -131,6 +139,7 @@ export class LookEngine {
     for (const { document, sheet } of this.targets) {
       sheet.replaceSync(this.pageCss);
       document.documentElement.toggleAttribute(PAGE_ATTRIBUTE, everywhere);
+      this.say(document);
     }
     this.panelSheet.replaceSync(
       everywhere ? '' : `:host([${PANEL_ATTRIBUTE}]){${declarationsCss(declarations)}}`,

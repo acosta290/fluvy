@@ -455,6 +455,12 @@ const BACKGROUND = /\/packages\/core\/src\/look\/background-layer\.ts/;
 const DOCK = /\/packages\/core\/src\/look\/dock\.ts/;
 
 /**
+ * What Home Assistant's open dialogs paint (1.25, #242: `__fluvy.shell.dialogs()`, the reader a person runs on a device
+ * we cannot hold): fetched when it is asked for, never by a page.
+ */
+const SHELL_DIALOGS = /\/packages\/core\/src\/shell\/dialogs\.ts/;
+
+/**
  * A list in groups (1.21, #189): what lays a Tiles or a Scenes card's list out in the house's rooms and floors or its
  * own sections, the short names inside a group, and the scenes as chips — fetched by the first card asked for groups,
  * with the automatic dashboards and with the heights they count with the house; a dashboard of plain lists never pays
@@ -613,6 +619,7 @@ export const GROUPS = [
   { name: 'switch-styles', test: SWITCH_STYLES },
   { name: 'background', test: BACKGROUND },
   { name: 'dock', test: DOCK },
+  { name: 'shell-dialogs', test: SHELL_DIALOGS },
   { name: 'groups', test: GROUPS_OF_A_LIST },
   { name: 'icons', test: ICONS },
   { name: (id) => `icons-${ICON_PARTS.exec(id)?.[1]}`, test: ICON_PARTS },

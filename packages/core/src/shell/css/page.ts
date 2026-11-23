@@ -27,3 +27,11 @@ html {
   scrollbar-width: thin;
   scrollbar-color: var(--scrollbar-thumb-color) transparent;
 }`;
+
+/**
+ * Text at the size it is laid out in while Fluvy is in use on the page (#242): Chrome's text autosizer on Android (the
+ * system's font size, a kiosk's text zoom) grows the words a box shows but not the hidden ones a card measures them by,
+ * so a clock or a greeting fitted to its box drew squeezed. A browser that autosizes nothing (a desktop's) reads it as
+ * nothing; the device's own Size (fluvy's settings) is how a person reads the dashboards larger.
+ */
+export const textSizeCss = 'html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }';

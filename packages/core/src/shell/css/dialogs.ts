@@ -69,3 +69,26 @@ calendar-month::part(button) { width: 40px; height: 40px; margin: 1px 0; }`;
 /** The phone's bottom sheet spans the screen (HA's width assumed a 2 px border; ours is 1). */
 export const resizableSheetCss =
   'dialog { width: calc(100% - 2 * var(--ha-bottom-sheet-border-width, 2px) - var(--safe-area-inset-left, 0px) - var(--safe-area-inset-right, 0px)); }';
+
+/**
+ * A surface of Home Assistant's that can never be see-through (#242): the plain colour the look says on `<html>`
+ * (`DIALOG_BASE_ATTRIBUTE`, a hex: anything else draws nothing), and over it, as an image, the surface Home Assistant
+ * paints there, so a variable that does not resolve on a device leaves the look's colour under the words, never the
+ * dashboard. The dialog's surface is its part `dialog`; the bottom sheet's, its drawer's part `body` (the drawer's own
+ * dialog is see-through on purpose), in the variable every holder of Home Assistant's sets on it (its adaptive dialog,
+ * a picker): one that sets none stands on the look's colour, which is the same surface.
+ */
+const surfaceCss =
+  (part: string, surface: string) =>
+  (hex: string): string =>
+    /^#[0-9a-f]{6}$/i.test(hex)
+      ? `${part} { background-color: ${hex}; background-image: linear-gradient(${surface}, ${surface}); }`
+      : '';
+export const dialogSurfaceCss = surfaceCss(
+  'wa-dialog::part(dialog)',
+  'var(--wa-color-surface-raised)',
+);
+export const sheetSurfaceCss = surfaceCss(
+  'wa-drawer::part(body)',
+  'var(--ha-bottom-sheet-surface-background)',
+);

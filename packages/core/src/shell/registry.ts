@@ -64,10 +64,12 @@ import {
   dialogCss,
   dialogFooterCss,
   dialogHeaderCss,
+  dialogSurfaceCss,
   editCardDialogCss,
   newAutomationDialogCss,
   newDashboardDialogCss,
   resizableSheetCss,
+  sheetSurfaceCss,
   waDialogCss,
 } from './css/dialogs.js';
 import {
@@ -92,7 +94,7 @@ import {
   weatherCss,
 } from './css/more-info.js';
 import { headerBarCss, notificationItemCss, notificationsCss } from './css/notifications.js';
-import { pageCss } from './css/page.js';
+import { pageCss, textSizeCss } from './css/page.js';
 import { viewTabsCss } from './css/tabs.js';
 import { deviceZoomCss } from './css/zoom.js';
 import {
@@ -102,7 +104,11 @@ import {
   wallSubviewBackCss,
   wallSubviewHeaderCss,
 } from './css/wall.js';
-import { WALL_BACK_ATTRIBUTE, WALL_HEADER_ATTRIBUTE } from '../look/attributes.js';
+import {
+  DIALOG_BASE_ATTRIBUTE,
+  WALL_BACK_ATTRIBUTE,
+  WALL_HEADER_ATTRIBUTE,
+} from '../look/attributes.js';
 import type { IconPlace } from '../settings/schema.js';
 import {
   dateRangeNavCss,
@@ -213,8 +219,9 @@ export interface ShellSheet {
    * `settings` (Settings' icon circles) — off, the sheet stays empty and Home Assistant draws its own. `wall`: the sheet
    * fills only while `<html>` carries the wall attribute, and then whatever the theme. `always`: filled whatever the
    * theme, every rule hanging on a mark of ours (a dashboard that wears the look while Home Assistant wears another theme).
+   * `in-use`: filled while Fluvy is in use on the page, its theme or its look (as the sheets without a choice) or a wall.
    */
-  readonly choice?: IconPlace | 'wall' | 'always';
+  readonly choice?: IconPlace | 'wall' | 'always' | 'in-use';
   /** An attribute of `<html>`: the sheet fills only while it is there (and the sheet's own rule holds), a house's choice. */
   readonly when?: string;
   /** The sheet drawn from the value of its `when` attribute (a house's list), in place of `css`. */
@@ -225,6 +232,7 @@ export interface ShellSheet {
 export const SHEETS: readonly ShellSheet[] = [
   // the page and the chrome
   { id: 'page', target: 'document', css: pageCss },
+  { id: 'text-size', target: 'document', css: textSizeCss, choice: 'in-use' },
   { id: 'frame', target: 'home-assistant', css: frameCss, probe: 'home-assistant-main' },
   { id: 'drawer', target: 'ha-drawer', css: drawerCss, probe: '.sidebar-shell' },
   { id: 'sidebar', target: 'ha-sidebar', css: sidebarCss, probe: 'ha-list-item-button' },
@@ -460,6 +468,20 @@ export const SHEETS: readonly ShellSheet[] = [
   { id: 'generic-picker', target: 'ha-generic-picker', css: genericPickerCss },
   { id: 'dialog', target: 'ha-dialog', css: dialogCss },
   { id: 'bottom-sheet', target: 'ha-bottom-sheet', css: bottomSheetCss },
+  // their surfaces on the look's plain colour, the theme's laid over it (#242)
+  ...(
+    [
+      ['dialog-surface', 'ha-dialog', dialogSurfaceCss],
+      ['bottom-sheet-surface', 'ha-bottom-sheet', sheetSurfaceCss],
+    ] as const
+  ).map(([id, target, drawn]): ShellSheet => ({
+    id,
+    target,
+    css: drawn('#ffffff'),
+    choice: 'in-use',
+    when: DIALOG_BASE_ATTRIBUTE,
+    drawn,
+  })),
   { id: 'dialog-footer', target: 'ha-dialog-footer', css: dialogFooterCss },
   { id: 'edit-card-dialog', target: 'hui-dialog-edit-card', css: editCardDialogCss },
   { id: 'card-picker', target: 'hui-card-picker', css: cardPickerCss },

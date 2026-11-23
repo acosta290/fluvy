@@ -103,6 +103,25 @@ describe('the look engine', () => {
     expect(Object.keys(rules())).toEqual(['[fluvy-themed]']);
   });
 
+  it('says the dialogs’ plain colour on <html> in the look and the mode, in either scope (#242)', () => {
+    const { look } = engine();
+    const linen = { palette: 'linen', shape: 'soft', pills: 'round' } as const;
+    const base = (): string | null => document.documentElement.getAttribute('fluvy-dialog-base');
+    look.apply(settings({ look: linen, scope: 'dashboards' }), false);
+    // the theme file's own surface for Linen, light then dark (the lifted card)
+    expect(base()).toBe('#ffffff');
+    look.apply(settings({ look: linen, scope: 'everywhere' }), true);
+    expect(base()).toBe('#28241d');
+    // another palette, its own
+    look.apply(settings({ look: { ...linen, palette: 'volt' }, scope: 'dashboards' }), true);
+    expect(base()).toMatch(/^#[0-9a-f]{6}$/);
+    expect(base()).not.toBe('#28241d');
+    // a panel frame the look reaches is told it too
+    const frame = document.implementation.createHTMLDocument('frame');
+    look.addDocument(frame, new CSSStyleSheet());
+    expect(frame.documentElement.getAttribute('fluvy-dialog-base')).toBe(base());
+  });
+
   it('follows the mode, and does nothing again for the same look', () => {
     const { look, page, text } = engine();
     const volt = settings({

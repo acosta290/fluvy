@@ -261,6 +261,9 @@ const BUDGETS = {
   background: 4096,
   // this device's sidebar beside the page (1.20, #173): what answers the menus' asks
   dock: 1024,
+  // what Home Assistant's open dialogs paint (1.25, #242: `__fluvy.shell.dialogs()`), asked for in the console alone;
+  // measured at 0.7 KB
+  'shell-dialogs': 1024,
   // a list in groups (1.21, #189): the house's rooms and floors or a list's own sections under their labels, the
   // short names inside a group and the scenes as chips; fetched by the first Tiles or Scenes card asked for groups
   groups: 4096,

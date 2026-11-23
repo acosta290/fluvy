@@ -30,3 +30,9 @@ export const WALL_HEADER_ATTRIBUTE = 'fluvy-wall-header';
 export const WALL_BACK_ATTRIBUTE = 'fluvy-wall-way-back';
 /** On `<html>`: how far down the wall's corner sits (Home Assistant's header, in a subview that shows it). */
 export const WALL_TOP_VAR = '--fluvy-wall-top';
+
+/**
+ * On `<html>` (and a panel frame's): the plain colour of Home Assistant's dialogs and sheets in the look and the mode
+ * on the page (a hex), which the shell paints under the theme's own surface (#242).
+ */
+export const DIALOG_BASE_ATTRIBUTE = 'fluvy-dialog-base';
