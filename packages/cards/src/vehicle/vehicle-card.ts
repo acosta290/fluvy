@@ -26,6 +26,7 @@ import {
   listRow,
   pressCover,
   preventMenu,
+  sheetStyles,
   startPress,
   type PressTarget,
   type Tone,
@@ -34,6 +35,7 @@ import { energyStyles } from '@fluvy/ui/styles/energy';
 import { css, html, nothing, svg, type CSSResultGroup, type TemplateResult } from 'lit';
 
 import { HeadFit, ROW_NAME_MIN } from '../energy/head.js';
+import { statesUnder, type QuickStatePosition } from '../room/room-card.js';
 import { MARK_LABEL, markedRuler } from '../energy/marked-ruler.js';
 import { Card, MORE_INFO, type CardEditor, type HeadConfig } from '../shared/base.js';
 import { toneOf } from '../shared/colour.js';
@@ -43,7 +45,14 @@ import { fitLine, type Segment } from '../shared/fit.js';
 import { durationSeconds, when } from '../shared/job-time.js';
 import { BrokenPictures, imageEntity, imageOf } from '../shared/picture.js';
 import { Ticker, MINUTE } from '../shared/ticker.js';
-import { roundOf, roundTap, type RoundSpec, type RoundsHost } from '../shared/rounds.js';
+import {
+  roundOf,
+  roundsIn,
+  roundsOf,
+  roundTap,
+  type RoundSpec,
+  type RoundsHost,
+} from '../shared/rounds.js';
 import { PENDING_LINE } from '../shared/templates.js';
 import { valueRow } from '../shared/value-row.js';
 import {
@@ -242,6 +251,15 @@ export interface VehicleCardConfig extends FluvyCardConfig, HeadConfig {
   show_rows?: boolean;
   rows?: ReadonlyArray<VehicleRow | RowEntry>;
   show_tyres?: boolean;
+  /**
+   * Small rounds at the card's foot (#251), each an entity's (a sensor, a door left ajar, a script) with its own name,
+   * icon, colour, actions and state: as many as one line holds, those that do not giving way from the end.
+   */
+  quick_actions?: ReadonlyArray<string | RoundSpec>;
+  /** Every quick action's state in the pill its round grows into; a quick action may say its own (`show_state`). */
+  show_quick_states?: boolean;
+  /** Where their states stand: `under` their glyphs (the default: the line 20 taller), or `beside` them. */
+  quick_state_position?: QuickStatePosition;
   /** The tyres' decimals (0–2), or `auto`: their sensors' precision, else one under 10; the editor writes them as words. */
   tyre_decimals?: number | string;
   /**
@@ -475,6 +493,7 @@ export class FluvyVehicleCard extends Card<VehicleCardConfig> {
   static override styles: CSSResultGroup = [
     ...(Card.styles as CSSResultGroup[]),
     energyStyles,
+    sheetStyles.rooms,
     css`
       .vh-card {
         position: relative;
@@ -711,6 +730,15 @@ export class FluvyVehicleCard extends Card<VehicleCardConfig> {
       .vh-rows {
         margin-top: 16px;
       }
+      /* the quick actions: one line of rounds at the foot, from its start; 64 tall where their states stand under them */
+      .vh-quick {
+        display: flex;
+        height: 44px;
+        margin-top: 16px;
+      }
+      .vh-quick.is-under {
+        height: 64px;
+      }
       /* a column too narrow for a row's name and its value side by side: the value under the name, in the row's 48 */
       .vh-rows .fv-row--stack {
         flex-wrap: wrap;
@@ -913,6 +941,7 @@ export class FluvyVehicleCard extends Card<VehicleCardConfig> {
       ...Object.values(warnings),
       ...this.rowEntries().flatMap((entry) => (entry.entity ? [entry.entity] : [])),
       ...this.controlEntries().flatMap((entry) => (entry.control ? [] : [entry.entity])),
+      ...this.quickActions().map((item) => item.entity),
       this.config?.image?.trim() === 'auto'
         ? this.devicePicture()
         : imageEntity(this.config?.image),
@@ -2037,6 +2066,36 @@ export class FluvyVehicleCard extends Card<VehicleCardConfig> {
     </button>`;
   }
 
+  /* ---------- the quick actions ---------- */
+
+  /** The quick actions the card lists (#251): an entity's rounds, a word it does not know left out. */
+  private quickActions(): RoundSpec[] {
+    const listed = this.config?.quick_actions;
+    return Array.isArray(listed) && this.variant !== 'mini'
+      ? roundsOf({ hass: this.hass }, listed)
+      : [];
+  }
+
+  /**
+   * The quick actions at the foot (#251), as a room's are drawn (`roundsIn`): 44 rounds 8 apart from the line's start,
+   * as many as it holds, those that do not giving way from the end; each lit in its tone while on, its tap and its
+   * hold, its state in a pill where asked (under its glyph, the line 64 tall, or beside it). The line keeps its place
+   * while none of them can be drawn: the card's height is its config's.
+   */
+  private renderQuick(): TemplateResult | typeof nothing {
+    const c = this.config;
+    if (!c || this.variant === 'mini' || !Array.isArray(c.quick_actions) || !c.quick_actions.length)
+      return nothing;
+    const look = { ...c, states: c.show_quick_states, beside: c.quick_state_position === 'beside' };
+    // the line starts at the column's edge: none of the 12 a room's rounds keep from what is before them
+    const { template } = roundsIn(
+      { ...this.host(), look },
+      this.quickActions(),
+      this.contentWidth + 12,
+    );
+    return html`<div class="vh-quick ${statesUnder(c) ? 'is-under' : ''}">${template}</div>`;
+  }
+
   /* ---------- the rows ---------- */
 
   private rowEntries(): RowEntry[] {
@@ -2387,6 +2446,7 @@ export class FluvyVehicleCard extends Card<VehicleCardConfig> {
       ${this.renderHeroes(r)} ${this.renderLine(r, now)}
       ${this.renderControls(r, this.variant === 'compact')}
       ${this.variant === 'full' ? html`${this.renderRows(r)}${this.renderTyres(r)}` : nothing}
+      ${this.renderQuick()}
     </article>`;
   }
 

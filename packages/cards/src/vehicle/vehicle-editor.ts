@@ -21,6 +21,7 @@ import {
   fieldRow,
   headFields,
   iconField,
+  listed,
   nameIconFields,
   numberField,
   onlyWhen,
@@ -31,6 +32,7 @@ import {
   unitChoices,
 } from '../shared/form.js';
 import type { EditorDefaults, RowsListSpec } from '../shared/rows-editor.js';
+import { roundsList } from '../room/room-editor.js';
 import { VEHICLE_VARIANTS } from '../vehicle-family.js';
 import { VEHICLE_PLATFORMS, VEHICLE_ROLES, type VehicleRole } from './roles.js';
 import {
@@ -187,6 +189,9 @@ export const keys = configKeys<VehicleCardConfig>()([
   'show_tyres',
   'tyre_decimals',
   'tyre_low',
+  'quick_actions',
+  'show_quick_states',
+  'quick_state_position',
   'low_range',
   'stale_after',
   'range_unit',
@@ -197,6 +202,17 @@ export const keys = configKeys<VehicleCardConfig>()([
   'hero_hold_action',
   'hero_double_tap_action',
 ]);
+
+/** What the card draws but for its strip: its line, its controls and its quick actions (the form's data). */
+const notMini = (data: Readonly<Record<string, unknown>>): boolean => data['variant'] !== 'mini';
+/** …its quick actions' states (#251): every one's, or one's of its own. */
+const saysStates = (data: Readonly<Record<string, unknown>>): boolean =>
+  notMini(data) &&
+  listed(data, 'quick_actions').length > 0 &&
+  (data['show_quick_states'] === true ||
+    listed(data, 'quick_actions').some(
+      (item) => (item as { show_state?: unknown } | null)?.show_state === true,
+    ));
 
 export const lists: readonly RowsListSpec[] = [
   {
@@ -268,6 +284,7 @@ export const lists: readonly RowsListSpec[] = [
       actionFields({ hold: 'none' }),
     ],
   },
+  roundsList('quick_actions', 'room-editor.quick_actions', notMini),
   {
     key: 'roles',
     idKey: 'role',
@@ -294,6 +311,8 @@ export const defaults: EditorDefaults = () => ({
   show_rows: true,
   show_tyres: false,
   tyre_decimals: 'auto',
+  show_quick_states: false,
+  quick_state_position: 'under',
   stale_after: STALE_AFTER,
   range_unit: 'auto',
   range_decimals: 'auto',
@@ -304,7 +323,6 @@ export const defaults: EditorDefaults = () => ({
 export function getConfigForm(): LovelaceConfigForm {
   const full = (data: Readonly<Record<string, unknown>>): boolean =>
     (data['variant'] ?? 'full') === 'full';
-  const notMini = (data: Readonly<Record<string, unknown>>): boolean => data['variant'] !== 'mini';
   const hasImage = (data: Readonly<Record<string, unknown>>): boolean =>
     typeof data['image'] === 'string' && data['image'].trim() !== '';
   // a tank's size where one may be drawn; a charge limit where a battery may be; a ring where one gauge is
@@ -363,6 +381,18 @@ export function getConfigForm(): LovelaceConfigForm {
           textField('tyre_low'),
         ),
       ),
+      // what the quick actions say of their state, and where (#251, as a room's)
+      onlyWhen((data) => notMini(data) && listed(data, 'quick_actions').length > 0, {
+        ...boolField('show_quick_states'),
+        helper: 'room-editor.quick_states_help',
+      }),
+      onlyWhen(
+        saysStates,
+        choiceField('quick_state_position', [
+          ['under', 'room-editor.under'],
+          ['beside', 'room-editor.beside'],
+        ]),
+      ),
       fieldRow(numberField('low_range', 0, 1000), numberField('stale_after', 0, 1440)),
       fieldRow(unitField('range_unit', ['km', 'mi']), selectField('range_decimals', decimals)),
       fieldRow(unitField('power_unit', ['W', 'kW']), selectField('power_decimals', decimals)),
@@ -401,6 +431,8 @@ export function getConfigForm(): LovelaceConfigForm {
         image: 'editor.picture',
         show_controls: 'editor.show_actions',
         show_rows: 'editor.show_rows',
+        show_quick_states: 'room-editor.show_quick_states',
+        quick_state_position: 'room-editor.quick_state_position',
       },
     ),
     computeHelper: (schema) =>

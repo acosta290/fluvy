@@ -1,5 +1,6 @@
 import type { LovelaceCardConfig } from '@fluvy/core';
 import type { FamilyEntry } from './energy-family.js';
+import { statesUnder } from './room/room-card.js';
 import { HEAD, ROW_COMPACT, rowsOf } from './shared/heights.js';
 
 /**
@@ -65,11 +66,22 @@ const TYRES = 16 + 96;
 const BAR = 20;
 
 /**
+ * The quick actions at the foot (#251), where the config lists any: one line of rounds 16 under what it follows, 44
+ * tall, 64 where their states stand under their glyphs (`statesUnder`, as a room's).
+ */
+const quickLine = (config: LovelaceCardConfig): number => {
+  const listed = config['quick_actions'];
+  return Array.isArray(listed) && listed.length
+    ? 16 + (statesUnder(config as Parameters<typeof statesUnder>[0]) ? 64 : 44)
+    : 0;
+};
+
+/**
  * The Vehicle card at a 360 column, from its config alone: the strip, 76; the compact card — the head, the battery's
  * bar (a hybrid's tank's under it, 8 apart) and its line, rows of rounds (16 + 44 each, 12 between); the whole card —
  * the head, the car's picture where it is over the battery, the battery (on its ruler, or a ring; a lone tank in its
  * place; a hybrid's tank on its own ruler under it, 16 apart), its line, the controls (16 + 64 a row, 12 between), the
- * rows (16 + 48 each) and the tyres where asked. What the car has never changes it: a part it cannot fill keeps its
+ * rows (16 + 48 each) and the tyres where asked; at the foot of either, its quick actions' line where it lists any. What the car has never changes it: a part it cannot fill keeps its
  * place, a dash in it (1.9: a card keeps its size); `auto` draws a battery or a tank, each the same height.
  */
 export const vehicleHeight = (config: LovelaceCardConfig): number => {
@@ -84,7 +96,8 @@ export const vehicleHeight = (config: LovelaceCardConfig): number => {
       BAR +
       (hybrid ? 8 + BAR : 0) +
       line +
-      (rounds ? 16 + 44 * rounds + 12 * (rounds - 1) : 0)
+      (rounds ? 16 + 44 * rounds + 12 * (rounds - 1) : 0) +
+      quickLine(config)
     );
   }
   const controls = controlRows(config, CONTROLS_A_ROW);
@@ -96,7 +109,8 @@ export const vehicleHeight = (config: LovelaceCardConfig): number => {
     line +
     (controls ? 16 + CONTROLS * controls + 12 * (controls - 1) : 0) +
     (rows ? 16 + ROW_COMPACT * rows : 0) +
-    (config['show_tyres'] === true ? TYRES : 0)
+    (config['show_tyres'] === true ? TYRES : 0) +
+    quickLine(config)
   );
 };
 

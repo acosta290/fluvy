@@ -168,7 +168,14 @@ export type QuickStatePosition = 'under' | 'beside';
  * `show_state`, else the card's `show_quick_states`) and `quick_state_position` does not ask for `beside`. The row and
  * the head are then 20 taller whatever the width draws (what the card declares and what it draws read it alike).
  */
-export function statesUnder(config: RoomCardConfig | undefined): boolean {
+export function statesUnder(
+  config:
+    | Pick<
+        RoomCardConfig,
+        'show_quick_actions' | 'quick_actions' | 'show_quick_states' | 'quick_state_position'
+      >
+    | undefined,
+): boolean {
   if (!config || config.show_quick_actions === false || config.quick_state_position === 'beside')
     return false;
   // no list asks for the room's own sets, each saying what the card says

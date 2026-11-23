@@ -556,6 +556,52 @@ describe('the vehicle card', () => {
     expect(line(fine)).toBe('Unplugged · Limit 80 %');
   });
 
+  it('draws its quick actions at its foot, each acting as a room’s does, the line declared by its config (#251)', async () => {
+    const quick = [
+      { entity: 'binary_sensor.model_y_status', name: 'GSM', icon: 'mdi:signal' },
+      'switch.model_y_sentry_mode',
+      'lights',
+    ];
+    const hass = house();
+    const card = await mount({ device: TESLA.device, quick_actions: quick }, hass);
+    expect(sections(card).at(-1)).toBe('div.vh-quick');
+    const rounds = root(card).querySelectorAll<HTMLElement>('.vh-quick .lt-bulb');
+    // a room's set means nothing on a car: its entities' rounds alone
+    expect([...rounds].map((round) => round.getAttribute('aria-label'))).toEqual([
+      'GSM',
+      'Model Y model y sentry mode',
+    ]);
+    // a sensor opens its details, a switch turns on and off
+    rounds[1]?.click();
+    expect(hass.calls.map(({ domain, service }) => `${domain}.${service}`)).toEqual([
+      'switch.turn_on',
+    ]);
+    expect((card as unknown as { watched(): string[] }).watched()).toContain(
+      'binary_sensor.model_y_status',
+    );
+    document.body.replaceChildren();
+    const said = await mount({
+      device: TESLA.device,
+      quick_actions: quick,
+      show_quick_states: true,
+    });
+    expect(root(said).querySelector('.vh-quick.is-under .rm-quick--under')).not.toBeNull();
+    document.body.replaceChildren();
+    const strip = await mount({ device: TESLA.device, variant: 'mini', quick_actions: quick });
+    expect(root(strip).querySelector('.vh-quick')).toBeNull();
+    const at = (config: Record<string, unknown>) =>
+      FluvyVehicleCard.layoutHeight({ type: 'x', ...config } as LovelaceCardConfig);
+    expect(at({ quick_actions: quick })).toBe(at({}) + 16 + 44);
+    expect(at({ quick_actions: quick, show_quick_states: true })).toBe(at({}) + 16 + 64);
+    expect(
+      at({ quick_actions: quick, show_quick_states: true, quick_state_position: 'beside' }),
+    ).toBe(at({}) + 16 + 44);
+    expect(at({ quick_actions: [{ entity: 'sensor.x', show_state: true }] })).toBe(at({}) + 80);
+    expect(at({ variant: 'compact', quick_actions: quick })).toBe(at({ variant: 'compact' }) + 60);
+    expect(at({ variant: 'mini', quick_actions: quick })).toBe(76);
+    expect(at({ quick_actions: [] })).toBe(at({}));
+  });
+
   it('says a badge of the person’s own: words, an entity’s state, a template once answered; Unavailable first (#251)', async () => {
     const badgeOf = async (
       config: Record<string, unknown>,
