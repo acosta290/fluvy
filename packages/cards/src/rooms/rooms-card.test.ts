@@ -463,4 +463,53 @@ describe('the Rooms card (#225)', () => {
     expect(entryOf(item, list!)).toEqual(entry);
     expect(entryOf(itemOf('kitchen', list!)!, list!)).toBe('kitchen');
   });
+
+  it('its editor gives each quick action its tone, its state and its own tap, hold and double tap (#239)', () => {
+    const [list] = roomsEditor.lists;
+    const rounds = list!.schema.find((field) => field.name === 'quick_actions');
+    const fields = (
+      rounds?.selector as {
+        object: { fields: Record<string, { selector: Record<string, unknown>; label: string }> };
+      }
+    ).object.fields;
+    expect(Object.keys(fields)).toEqual([
+      'entity',
+      'group',
+      'name',
+      'icon',
+      'tone',
+      'color',
+      'show_state',
+      'tap_action',
+      'hold_action',
+      'double_tap_action',
+    ]);
+    // a switch for its state (a choice's words would be written as they are), Home Assistant's actions for its taps,
+    // a double tap nothing until set; each in its words
+    expect(fields['show_state']?.selector).toEqual({ boolean: {} });
+    expect(fields['tap_action']?.selector).toEqual({ ui_action: {} });
+    expect(fields['hold_action']?.selector).toEqual({ ui_action: {} });
+    expect(fields['double_tap_action']?.selector).toEqual({
+      ui_action: { default_action: 'none' },
+    });
+    expect(fields['show_state']?.label).toBe('Show its state');
+    expect(fields['tone']?.label).toBe('Tone');
+    expect(fields['tap_action']?.label).toBe('Tap action');
+    // what it is given is written back as it was, a set's word beside its own actions
+    const entry = {
+      area: 'living',
+      quick_actions: [
+        { group: 'covers', tap_action: { action: 'more-info' } },
+        {
+          entity: 'vacuum.downstairs',
+          tone: 'info',
+          show_state: true,
+          tap_action: { action: 'toggle' },
+          hold_action: { action: 'more-info' },
+          double_tap_action: { action: 'navigate', navigation_path: '/fluvy-home/vacuum' },
+        },
+      ],
+    };
+    expect(entryOf(itemOf(entry, list!)!, list!)).toEqual(entry);
+  });
 });

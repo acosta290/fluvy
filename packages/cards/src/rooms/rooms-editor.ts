@@ -5,6 +5,7 @@ import { ACTIONS_BASE, ICON_ACTIONS_BASE, type BaseKey } from '../shared/base.js
 import { configKeys } from '../shared/config.js';
 import {
   accentField,
+  actionField,
   actionFields,
   areaField,
   boolField,
@@ -69,12 +70,16 @@ const ACTION_WORDS = {
 
 /**
  * A room's rounds inside its form (#225): Home Assistant's list of objects, each a round of an entity, or of one of
- * the room's sets or its thermostat where it names none (`group`), with its own name, icon and colour (its actions and
- * its state are its YAML's, as a room's quick actions write them). A set alone goes back as its word, an entity alone
- * as its id (the list's `write`).
+ * the room's sets or its thermostat where it names none (`group`), with its own name, icon, tone and colour, whether it
+ * says its state, and its own tap, hold and double tap (#239), as the Room card's quick actions have them; each left
+ * empty is what the round does by itself. A set alone goes back as its word, an entity alone as its id (the list's
+ * `write`).
  */
 const roundsField = (): HaFormSchemaItem => {
-  const { computeLabel } = formLabels({ group: 'room-editor.group' });
+  const { computeLabel } = formLabels({
+    group: 'room-editor.group',
+    show_state: 'room-editor.show_state',
+  });
   return {
     name: 'quick_actions',
     selector: {
@@ -89,7 +94,13 @@ const roundsField = (): HaFormSchemaItem => {
             ]),
             textField('name'),
             iconField(),
+            toneField(),
             accentField('color', { item: 'bulb' }),
+            // a switch, not a choice: Home Assistant's list writes a choice's words as they are ("false")
+            boolField('show_state'),
+            actionField('tap_action'),
+            actionField('hold_action'),
+            actionField('double_tap_action', 'none'),
           ].map((field) => [
             field.name,
             {
