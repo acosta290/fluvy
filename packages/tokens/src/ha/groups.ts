@@ -242,13 +242,13 @@ export const HA_GROUPS: readonly HaGroup[] = [
   },
   {
     title:
-      "HA's tiles (the 2026 dashboards, summaries) — the compact tile's type: name 15/600 over state 13/500, no tracking",
+      "HA's tiles (the 2026 dashboards, summaries) — HA's own type: name 14/500 over state 12/400, no tracking",
     shared: [
-      ['--ha-tile-info-primary-font-size', '15px'],
-      ['--ha-tile-info-primary-font-weight', '600'],
+      ['--ha-tile-info-primary-font-size', `calc(${fontSize.m} * var(--ha-font-size-scale, 1))`],
+      ['--ha-tile-info-primary-font-weight', fontWeight.medium],
       ['--ha-tile-info-primary-letter-spacing', '0'],
-      ['--ha-tile-info-secondary-font-size', '13px'],
-      ['--ha-tile-info-secondary-font-weight', '500'],
+      ['--ha-tile-info-secondary-font-size', `calc(${fontSize.s} * var(--ha-font-size-scale, 1))`],
+      ['--ha-tile-info-secondary-font-weight', fontWeight.regular],
       ['--ha-tile-info-secondary-letter-spacing', '0'],
     ],
     perMode: (c) => [['--ha-tile-info-secondary-color', c.text.secondary]],

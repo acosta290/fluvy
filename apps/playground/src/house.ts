@@ -150,7 +150,10 @@ export function mountFrame(
   // the narrowest card's columns (a half section is 6)
   let span = 12;
   for (const { cols, ...config } of frame.cards) {
-    const tag = String(config.type).replace(/^custom:/, '');
+    // a type that cannot be an element's name (`tile`, `entities`) is one of Home Assistant's own cards: its stand-in
+    // draws it (`hui-card.ts`)
+    const type = String(config.type).replace(/^custom:/, '');
+    const tag = type.includes('-') ? type : 'pg-own-card';
     const card = document.createElement(tag) as LovelaceCard;
     try {
       card.setConfig(config);

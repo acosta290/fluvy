@@ -58,8 +58,8 @@ const PLATE = `
   p { margin: 0; }
   .tile { display: flex; align-items: center; gap: 10px; min-height: 54px; padding: 0 10px; }
   .tile .badge { flex-basis: 36px; height: 36px; border-radius: 50%; background: var(--fluvy-inset, var(--fluvy-page)); }
-  .tile .name { margin-left: 0; line-height: 20px; }
-  .tile .state { display: block; margin-left: 0; font-size: 12px; line-height: 16px; color: var(--fluvy-text-secondary); }
+  .tile .name { margin-left: 0; font-size: var(--ha-tile-info-primary-font-size, 14px); font-weight: var(--ha-tile-info-primary-font-weight, 500); line-height: 20px; letter-spacing: var(--ha-tile-info-primary-letter-spacing, 0.1px); }
+  .tile .state { display: block; margin-left: 0; font-size: var(--ha-tile-info-secondary-font-size, 12px); font-weight: var(--ha-tile-info-secondary-font-weight, 400); line-height: 16px; letter-spacing: var(--ha-tile-info-secondary-letter-spacing, 0.4px); color: var(--ha-tile-info-secondary-color, var(--fluvy-text-secondary)); overflow: hidden; text-overflow: ellipsis; }
   .card:has(> .heading) { border: 0; background: none; }
   .heading { padding: 0 4px; font-size: 16px; line-height: 24px; }
   .card:has(> img) { overflow: hidden; }
@@ -103,7 +103,8 @@ const OWN: Readonly<
     content.append(words);
     return [content];
   },
-  // a tile: its icon and its two lines in a row of 56 with its hairline, padded by 10 at the sides alone
+  // a tile: its icon and its two lines in a row of 56 with its hairline, padded by 10 at the sides alone; its words in
+  // the size, weight and tracking a theme gives Home Assistant's own (`--ha-tile-info-*`, #240), else Home Assistant's
   tile: (config, hass) => {
     const state = hass?.states[String(config['entity'] ?? '')];
     const content = document.createElement('div');
