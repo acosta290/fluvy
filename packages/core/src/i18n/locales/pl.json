@@ -3379,7 +3379,11 @@
     "tyre_pressure_low": "Niskie ciśnienie w oponach",
     "editor.tyre_decimals": "Miejsca dziesiętne ciśnienia opon",
     "editor.tyre_low": "Niskie ciśnienie opony poniżej",
-    "editor.tyre_low_helper": "Ciśnienie w jednostce opon, encja lub szablon, np. {{ states('sensor.x') }}"
+    "editor.tyre_low_helper": "Ciśnienie w jednostce opon, encja lub szablon, np. {{ states('sensor.x') }}",
+    "engine": "Silnik",
+    "engine_running": "Pracuje",
+    "start_engine_confirm": "Uruchomić silnik?",
+    "stop_engine_confirm": "Wyłączyć silnik?"
   },
   "wall": {
     "paused": "Tryb ściany wstrzymany",

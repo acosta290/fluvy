@@ -3375,7 +3375,11 @@
     "tyre_pressure_low": "胎压偏低",
     "editor.tyre_decimals": "胎压小数位",
     "editor.tyre_low": "胎压低于此值算偏低",
-    "editor.tyre_low_helper": "与轮胎同单位的气压值、实体，或模板，如 {{ states('sensor.x') }}"
+    "editor.tyre_low_helper": "与轮胎同单位的气压值、实体，或模板，如 {{ states('sensor.x') }}",
+    "engine": "发动机",
+    "engine_running": "运转中",
+    "start_engine_confirm": "启动发动机？",
+    "stop_engine_confirm": "关闭发动机？"
   },
   "expander": {
     "card": "折叠面板",

@@ -3615,7 +3615,11 @@
     "tyre_pressure_low": "Lavt dæktryk",
     "editor.tyre_decimals": "Dæktrykkets decimaler",
     "editor.tyre_low": "Lavt dæktryk under",
-    "editor.tyre_low_helper": "Et tryk i dækkenes enhed, en entitet eller en skabelon som {{ states('sensor.x') }}"
+    "editor.tyre_low_helper": "Et tryk i dækkenes enhed, en entitet eller en skabelon som {{ states('sensor.x') }}",
+    "engine": "Motor",
+    "engine_running": "Kører",
+    "start_engine_confirm": "Start motoren?",
+    "stop_engine_confirm": "Stop motoren?"
   },
   "web": {
     "card": "Webside",

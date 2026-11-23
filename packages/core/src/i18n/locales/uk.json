@@ -3583,7 +3583,11 @@
     "tyre_pressure_low": "Низький тиск у шинах",
     "editor.tyre_decimals": "Знаків після коми: шини",
     "editor.tyre_low": "Поріг низького тиску в шинах",
-    "editor.tyre_low_helper": "Тиск в одиницях шин, сутність або шаблон, наприклад {{ states('sensor.x') }}"
+    "editor.tyre_low_helper": "Тиск в одиницях шин, сутність або шаблон, наприклад {{ states('sensor.x') }}",
+    "engine": "Двигун",
+    "engine_running": "Працює",
+    "start_engine_confirm": "Запустити двигун?",
+    "stop_engine_confirm": "Заглушити двигун?"
   },
   "expander": {
     "card": "Розгортний блок",

@@ -3615,7 +3615,11 @@
     "tyre_pressure_low": "Ниско налягане в гумите",
     "editor.tyre_decimals": "Десетични знаци: гуми",
     "editor.tyre_low": "Ниско налягане под",
-    "editor.tyre_low_helper": "Налягане в единицата на гумите, обект или шаблон, например {{ states('sensor.x') }}"
+    "editor.tyre_low_helper": "Налягане в единицата на гумите, обект или шаблон, например {{ states('sensor.x') }}",
+    "engine": "Двигател",
+    "engine_running": "Работи",
+    "start_engine_confirm": "Стартиране на двигателя?",
+    "stop_engine_confirm": "Спиране на двигателя?"
   },
   "web": {
     "card": "Уеб страница",

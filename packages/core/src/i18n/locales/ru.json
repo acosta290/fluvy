@@ -3583,7 +3583,11 @@
     "tyre_pressure_low": "Низкое давление в шинах",
     "editor.tyre_decimals": "Знаков после запятой: шины",
     "editor.tyre_low": "Порог низкого давления в шинах",
-    "editor.tyre_low_helper": "Давление в единицах шин, объект или шаблон, например {{ states('sensor.x') }}"
+    "editor.tyre_low_helper": "Давление в единицах шин, объект или шаблон, например {{ states('sensor.x') }}",
+    "engine": "Двигатель",
+    "engine_running": "Работает",
+    "start_engine_confirm": "Запустить двигатель?",
+    "stop_engine_confirm": "Заглушить двигатель?"
   },
   "expander": {
     "card": "Раскрывающийся блок",

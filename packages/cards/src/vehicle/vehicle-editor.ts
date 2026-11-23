@@ -99,6 +99,7 @@ const ROLE_WORDS: Readonly<Record<VehicleRole, MessageKey>> = {
   trunk: 'vehicle.trunk',
   frunk: 'vehicle.frunk',
   windows: 'vehicle.windows',
+  engine: 'vehicle.engine',
   sentry: 'vehicle.sentry',
   odometer: 'vehicle.odometer',
   location: 'vehicle.location',

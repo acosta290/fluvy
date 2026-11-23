@@ -3453,7 +3453,11 @@
     "tyre_pressure_low": "Alacsony guminyomás",
     "editor.tyre_decimals": "A guminyomás tizedesjegyei",
     "editor.tyre_low": "Alacsony guminyomás ez alatt",
-    "editor.tyre_low_helper": "Nyomás a gumik mértékegységében, egy entitás vagy egy sablon, például {{ states('sensor.x') }}"
+    "editor.tyre_low_helper": "Nyomás a gumik mértékegységében, egy entitás vagy egy sablon, például {{ states('sensor.x') }}",
+    "engine": "Motor",
+    "engine_running": "Jár",
+    "start_engine_confirm": "Beindítod a motort?",
+    "stop_engine_confirm": "Leállítod a motort?"
   },
   "remote": {
     "key.power": "Be/ki",

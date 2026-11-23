@@ -3453,7 +3453,11 @@
     "tyre_pressure_low": "Niedriger Reifendruck",
     "editor.tyre_decimals": "Dezimalstellen des Reifendrucks",
     "editor.tyre_low": "Niedriger Reifendruck unter",
-    "editor.tyre_low_helper": "Ein Druck in der Einheit der Reifen, eine Entität oder ein Template wie {{ states('sensor.x') }}"
+    "editor.tyre_low_helper": "Ein Druck in der Einheit der Reifen, eine Entität oder ein Template wie {{ states('sensor.x') }}",
+    "engine": "Motor",
+    "engine_running": "Läuft",
+    "start_engine_confirm": "Motor starten?",
+    "stop_engine_confirm": "Motor abstellen?"
   },
   "remote": {
     "key.power": "Ein/Aus",

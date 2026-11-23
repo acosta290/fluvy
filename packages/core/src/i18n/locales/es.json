@@ -3453,7 +3453,11 @@
     "tyre_pressure_low": "Presión de neumáticos baja",
     "editor.tyre_decimals": "Decimales de los neumáticos",
     "editor.tyre_low": "Neumático bajo por debajo de",
-    "editor.tyre_low_helper": "Una presión en la unidad de los neumáticos, una entidad o una plantilla como {{ states('sensor.x') }}"
+    "editor.tyre_low_helper": "Una presión en la unidad de los neumáticos, una entidad o una plantilla como {{ states('sensor.x') }}",
+    "engine": "Motor",
+    "engine_running": "En marcha",
+    "start_engine_confirm": "¿Arrancar el motor?",
+    "stop_engine_confirm": "¿Apagar el motor?"
   },
   "remote": {
     "key.power": "Encendido",

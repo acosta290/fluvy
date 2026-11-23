@@ -1,10 +1,10 @@
 /*
  * The vehicle's glyphs: what a car has that a house does not — its boot and its front boot, its doors and its windows
- * (each drawn as it stands: shut, or open), its charge port, its odometer, a tyre, the pump its tank is filled at and
- * the can its oil comes in — in the set's own hand: 24 grid, 1.75 round stroke, ink 3..21 centred on (12, 12). The car
- * is seen from its side, its nose to the left, so the boot and the front boot read by which end opens. They travel with
- * the vehicle's chunk, which adds them to the set as it lands (`addGlyphs`). Nothing here imports: a tool may read it
- * as it is.
+ * (each drawn as it stands: shut, or open), its charge port, its odometer, a tyre, the pump its tank is filled at,
+ * the can its oil comes in and its engine — in the set's own hand: 24 grid, 1.75 round stroke, ink 3..21 centred on
+ * (12, 12). The car is seen from its side, its nose to the left, so the boot and the front boot read by which end
+ * opens. They travel with the vehicle's chunk, which adds them to the set as it lands (`addGlyphs`). Nothing here
+ * imports: a tool may read it as it is.
  */
 
 /**
@@ -64,6 +64,9 @@ export const VEHICLE_GLYPHS = {
   tyre: '<circle cx="12" cy="12" r="8.75"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.5"/><path d="M12 10.5V7"/><path d="m13.3 12.75 3 1.75"/><path d="m10.7 12.75-3 1.75"/>',
   /** a fuel pump: its column on its foot, its display, its hose looped down and its nozzle hung at the top */
   fuel: '<path d="M5.25 20.25V5.25A1.75 1.75 0 0 1 7 3.5h5.5a1.75 1.75 0 0 1 1.75 1.75v15"/><path d="M3.75 20.25h12"/><rect x="7.5" y="6.25" width="4.5" height="4" rx="1"/><path d="M14.25 12.25h1.25a1.5 1.5 0 0 1 1.5 1.5v3a1.5 1.5 0 0 0 3 0V8.6a1.5 1.5 0 0 0-.44-1.06L16.75 4.75"/>',
+  /** the engine, as a dashboard's engine light draws it: its block, its cap on its stem, its intake, its manifold */
+  engine:
+    '<path d="M7 8.75h7.5l1.5 2h1.5v-1h3v7h-3v-1H16l-1.5 2.5H9l-2-2Z"/><path d="M8.5 5.75h6"/><path d="M11.5 5.75v3"/><path d="M7 11.75H3.5"/><path d="M3.5 9.75v4.5"/>',
   /** an oil can: its body, its cap, its spout raised and a drop under it */
   oil: '<path d="M3.5 10.75a1 1 0 0 1 1-1h8l2.25 2.25v4.5H4.5a1 1 0 0 1-1-1Z"/><path d="m14.75 12.5 5-2.5-5 4.75"/><path d="M8.25 9.75v-2.5"/><path d="M6 7.25h4.5"/><path d="M19.75 13.25c.6.8 1.1 1.45 1.1 2a1.1 1.1 0 0 1-2.2 0c0-.55.5-1.2 1.1-2Z"/>',
 } as const;

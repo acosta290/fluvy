@@ -3453,7 +3453,11 @@
     "tyre_pressure_low": "Pressione pneumatici bassa",
     "editor.tyre_decimals": "Decimali dei pneumatici",
     "editor.tyre_low": "Pneumatico sgonfio sotto",
-    "editor.tyre_low_helper": "Una pressione nell’unità dei pneumatici, un’entità o un template come {{ states('sensor.x') }}"
+    "editor.tyre_low_helper": "Una pressione nell’unità dei pneumatici, un’entità o un template come {{ states('sensor.x') }}",
+    "engine": "Motore",
+    "engine_running": "Acceso",
+    "start_engine_confirm": "Avviare il motore?",
+    "stop_engine_confirm": "Spegnere il motore?"
   },
   "remote": {
     "key.power": "Accensione",

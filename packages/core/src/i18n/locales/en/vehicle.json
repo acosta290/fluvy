@@ -142,6 +142,10 @@
     "tyre_pressure_low": "Low tyre pressure",
     "editor.tyre_decimals": "Tyre decimals",
     "editor.tyre_low": "Low tyre under",
-    "editor.tyre_low_helper": "A pressure in the tyres’ unit, an entity, or a template such as {{ states('sensor.x') }}"
+    "editor.tyre_low_helper": "A pressure in the tyres’ unit, an entity, or a template such as {{ states('sensor.x') }}",
+    "engine": "Engine",
+    "engine_running": "Running",
+    "start_engine_confirm": "Start the engine?",
+    "stop_engine_confirm": "Stop the engine?"
   }
 }

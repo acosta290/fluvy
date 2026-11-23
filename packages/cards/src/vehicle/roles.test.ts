@@ -139,6 +139,21 @@ describe('a car’s entities', () => {
     expect(all(VW.device)).not.toContain('switch.id_4_force_data_refresh');
   });
 
+  it('never finds what starts an engine: a person names it (#248)', () => {
+    const car = custom([
+      ['switch.model_3_engine', 'off'],
+      ['button.model_3_remote_start', 'unknown'],
+      ['switch.model_3_engine_start', 'off'],
+    ]);
+    expect(car.roles.engine).toBeUndefined();
+    expect(Object.values(car.roles)).not.toContain('button.model_3_remote_start');
+    expect(Object.values(car.roles)).not.toContain('switch.model_3_engine_start');
+    expect(
+      vehicleEntities(hass, TESLA.device, [{ role: 'engine', entity: 'switch.model_y_engine' }])
+        .roles.engine,
+    ).toBe('switch.model_y_engine');
+  });
+
   it('gathers a Tesla’s doors and its tyres’ warnings by their wheel', () => {
     const { doors, warnings } = found(TESLA.device);
     expect(doors).toEqual(['binary_sensor.model_y_front_driver_door']);

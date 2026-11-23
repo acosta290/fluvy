@@ -3453,7 +3453,11 @@
     "tyre_pressure_low": "Lastik basıncı düşük",
     "editor.tyre_decimals": "Lastik basıncı ondalıkları",
     "editor.tyre_low": "Düşük lastik basıncı sınırı",
-    "editor.tyre_low_helper": "Lastiklerin biriminde bir basınç, bir varlık veya {{ states('sensor.x') }} gibi bir şablon"
+    "editor.tyre_low_helper": "Lastiklerin biriminde bir basınç, bir varlık veya {{ states('sensor.x') }} gibi bir şablon",
+    "engine": "Motor",
+    "engine_running": "Çalışıyor",
+    "start_engine_confirm": "Motor çalıştırılsın mı?",
+    "stop_engine_confirm": "Motor durdurulsun mu?"
   },
   "remote": {
     "key.power": "Güç",

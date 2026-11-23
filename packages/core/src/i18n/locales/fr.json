@@ -3453,7 +3453,11 @@
     "tyre_pressure_low": "Pression des pneus basse",
     "editor.tyre_decimals": "Décimales des pneus",
     "editor.tyre_low": "Pneu sous-gonflé sous",
-    "editor.tyre_low_helper": "Une pression dans l’unité des pneus, une entité ou un modèle comme {{ states('sensor.x') }}"
+    "editor.tyre_low_helper": "Une pression dans l’unité des pneus, une entité ou un modèle comme {{ states('sensor.x') }}",
+    "engine": "Moteur",
+    "engine_running": "En marche",
+    "start_engine_confirm": "Démarrer le moteur ?",
+    "stop_engine_confirm": "Arrêter le moteur ?"
   },
   "remote": {
     "key.power": "Marche/arrêt",

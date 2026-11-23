@@ -3453,7 +3453,11 @@
     "tyre_pressure_low": "タイヤ空気圧が低い",
     "editor.tyre_decimals": "タイヤ空気圧の小数桁",
     "editor.tyre_low": "タイヤ空気圧が低いとする値",
-    "editor.tyre_low_helper": "タイヤと同じ単位の空気圧、エンティティ、または {{ states('sensor.x') }} のようなテンプレート"
+    "editor.tyre_low_helper": "タイヤと同じ単位の空気圧、エンティティ、または {{ states('sensor.x') }} のようなテンプレート",
+    "engine": "エンジン",
+    "engine_running": "始動中",
+    "start_engine_confirm": "エンジンを始動しますか？",
+    "stop_engine_confirm": "エンジンを停止しますか？"
   },
   "remote": {
     "key.power": "電源",

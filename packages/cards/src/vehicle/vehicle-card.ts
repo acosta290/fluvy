@@ -2,6 +2,7 @@ import {
   deviceNameOf,
   formatNumber,
   isEntityId,
+  isUsable,
   relativeTime,
   stateText,
   strings,
@@ -95,6 +96,7 @@ const s = strings('vehicle');
 /** The round controls, each where the car has what it takes. */
 export type VehicleControl =
   | 'lock'
+  | 'engine'
   | 'climate'
   | 'charging'
   | 'charge_port'
@@ -105,6 +107,7 @@ export type VehicleControl =
   | 'sentry';
 export const VEHICLE_CONTROLS: readonly VehicleControl[] = [
   'lock',
+  'engine',
   'climate',
   'charging',
   'charge_port',
@@ -114,9 +117,13 @@ export const VEHICLE_CONTROLS: readonly VehicleControl[] = [
   'doors',
   'sentry',
 ];
-/** The controls a card shows where it names none: the ones the car has, in this order (its doors and port on request). */
+/**
+ * The controls a card shows where it names none: the ones the car has, in this order (its doors and port on request;
+ * its engine where a person names what starts it).
+ */
 const DEFAULT_CONTROLS: readonly VehicleControl[] = [
   'lock',
+  'engine',
   'climate',
   'charging',
   'trunk',
@@ -1515,6 +1522,8 @@ export class FluvyVehicleCard extends Card<VehicleCardConfig> {
         );
       case 'windows':
         return [open, shut, s(this.hass, 'vented')];
+      case 'engine':
+        return [name, s(this.hass, 'engine_running'), this.t('common.off')];
       case 'sentry':
         return [name];
       default:
@@ -1781,6 +1790,25 @@ export class FluvyVehicleCard extends Card<VehicleCardConfig> {
           ink: opened.length ? 'warning' : '',
           entity: (opened[0] ?? readable[0])?.id,
           act: undefined,
+        };
+      }
+      case 'engine': {
+        // a switch starts it and stops it, a button starts it: each asks first, where its `confirm` does not say not to
+        const v = this.view('engine');
+        if (!v || !isUsable(v) || r.unavailable) return out('engine', v?.id);
+        const switched = v.domain === 'switch';
+        const running = switched && this.stateOf(v) === 'on';
+        const ask = (stop: boolean) =>
+          asks(true, s(this.hass, stop ? 'stop_engine_confirm' : 'start_engine_confirm'));
+        return {
+          ...base,
+          glyph: entry.icon ?? 'engine',
+          word: switched ? (running ? s(this.hass, 'engine_running') : this.t('common.off')) : name,
+          tone: running ? toned('accent') : 'neutral',
+          entity: v.id,
+          act: switched
+            ? service(v.id, running ? 'switch.turn_off' : 'switch.turn_on', ask(running))
+            : service(v.id, 'button.press', ask(false)),
         };
       }
       case 'sentry': {

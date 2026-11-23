@@ -556,6 +556,71 @@ describe('the vehicle card', () => {
     expect(line(fine)).toBe('Unplugged · Limit 80 %');
   });
 
+  it('starts and stops an engine named by hand, asking first both ways unless it says not to (#248)', async () => {
+    const asked: unknown[] = [];
+    const listen = (event: Event) => asked.push((event as CustomEvent).detail.config.tap_action);
+    document.body.addEventListener('hass-action', listen);
+    const engine = (state: string, domain = 'switch'): HomeAssistant & { calls: Calls } => {
+      const hass = house();
+      const id = `${domain}.model_y_engine`;
+      (hass.states as Record<string, HassEntity>)[id] = {
+        entity_id: id,
+        state,
+        attributes: { friendly_name: 'Model Y Engine' },
+      } as HassEntity;
+      return hass;
+    };
+    const roles = (domain = 'switch') => [{ role: 'engine', entity: `${domain}.model_y_engine` }];
+    try {
+      // named, it stands after the lock where the card names no controls of its own
+      const off = await mount({ device: TESLA.device, roles: roles() }, engine('off'));
+      expect(words(off).slice(0, 2)).toEqual(['Locked', 'Off']);
+      expect(labels(off)[1]).toBe('Engine · Off');
+      root(off).querySelectorAll<HTMLButtonElement>('.vh-control')[1]?.click();
+      document.body.replaceChildren();
+      const running = await mount(
+        { device: TESLA.device, roles: roles(), controls: ['engine'] },
+        engine('on'),
+      );
+      expect(words(running)).toEqual(['Running']);
+      expect(root(running).querySelector('.vh-control .fv-ico--accent')).not.toBeNull();
+      root(running).querySelector<HTMLButtonElement>('.vh-control')?.click();
+      document.body.replaceChildren();
+      const button = await mount(
+        { device: TESLA.device, roles: roles('button'), controls: ['engine'] },
+        engine('unknown', 'button'),
+      );
+      expect(words(button)).toEqual(['Engine']);
+      root(button).querySelector<HTMLButtonElement>('.vh-control')?.click();
+      expect(asked).toEqual([
+        expect.objectContaining({
+          perform_action: 'switch.turn_on',
+          confirmation: { text: 'Start the engine?' },
+        }),
+        expect.objectContaining({
+          perform_action: 'switch.turn_off',
+          confirmation: { text: 'Stop the engine?' },
+        }),
+        expect.objectContaining({
+          perform_action: 'button.press',
+          confirmation: { text: 'Start the engine?' },
+        }),
+      ]);
+      document.body.replaceChildren();
+      const hass = engine('off');
+      const quiet = await mount(
+        { device: TESLA.device, roles: roles(), controls: [{ control: 'engine', confirm: false }] },
+        hass,
+      );
+      root(quiet).querySelector<HTMLButtonElement>('.vh-control')?.click();
+      expect(hass.calls).toEqual([
+        { domain: 'switch', service: 'turn_on', target: { entity_id: 'switch.model_y_engine' } },
+      ]);
+    } finally {
+      document.body.removeEventListener('hass-action', listen);
+    }
+  });
+
   it('draws an entity of the person’s own among its controls, in the car’s cell, its name its word (#248)', async () => {
     const hass = house();
     const card = await mount(

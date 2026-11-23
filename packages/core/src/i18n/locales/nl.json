@@ -3453,7 +3453,11 @@
     "tyre_pressure_low": "Lage bandenspanning",
     "editor.tyre_decimals": "Decimalen van de banden",
     "editor.tyre_low": "Lage bandenspanning onder",
-    "editor.tyre_low_helper": "Een druk in de eenheid van de banden, een entiteit of een sjabloon zoals {{ states('sensor.x') }}"
+    "editor.tyre_low_helper": "Een druk in de eenheid van de banden, een entiteit of een sjabloon zoals {{ states('sensor.x') }}",
+    "engine": "Motor",
+    "engine_running": "Draait",
+    "start_engine_confirm": "Motor starten?",
+    "stop_engine_confirm": "Motor uitzetten?"
   },
   "remote": {
     "key.power": "Aan/uit",

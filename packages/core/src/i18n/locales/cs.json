@@ -3433,7 +3433,11 @@
     "tyre_pressure_low": "Nízký tlak v pneumatikách",
     "editor.tyre_decimals": "Desetinná místa tlaku pneumatik",
     "editor.tyre_low": "Nízký tlak pneumatiky pod",
-    "editor.tyre_low_helper": "Tlak v jednotce pneumatik, entita, nebo šablona jako {{ states('sensor.x') }}"
+    "editor.tyre_low_helper": "Tlak v jednotce pneumatik, entita, nebo šablona jako {{ states('sensor.x') }}",
+    "engine": "Motor",
+    "engine_running": "Běží",
+    "start_engine_confirm": "Nastartovat motor?",
+    "stop_engine_confirm": "Vypnout motor?"
   },
   "expander": {
     "card": "Rozbalovač",

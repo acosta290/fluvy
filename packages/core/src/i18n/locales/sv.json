@@ -3615,7 +3615,11 @@
     "tyre_pressure_low": "Lågt däcktryck",
     "editor.tyre_decimals": "Däcktryckets decimaler",
     "editor.tyre_low": "Lågt däcktryck under",
-    "editor.tyre_low_helper": "Ett tryck i däckens enhet, en entitet eller en mall som {{ states('sensor.x') }}"
+    "editor.tyre_low_helper": "Ett tryck i däckens enhet, en entitet eller en mall som {{ states('sensor.x') }}",
+    "engine": "Motor",
+    "engine_running": "Igång",
+    "start_engine_confirm": "Starta motorn?",
+    "stop_engine_confirm": "Stänga av motorn?"
   },
   "web": {
     "card": "Webbsida",
