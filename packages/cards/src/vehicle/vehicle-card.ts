@@ -13,6 +13,7 @@ import {
   type EntityView,
   type FluvyCardConfig,
   type HomeAssistant,
+  type LovelaceCardConfig,
   type MessageKey,
   type LovelaceGridOptions,
 } from '@fluvy/core';
@@ -32,7 +33,15 @@ import {
   type Tone,
 } from '@fluvy/ui';
 import { energyStyles } from '@fluvy/ui/styles/energy';
-import { css, html, nothing, svg, type CSSResultGroup, type TemplateResult } from 'lit';
+import {
+  css,
+  html,
+  nothing,
+  svg,
+  type CSSResultGroup,
+  type PropertyValues,
+  type TemplateResult,
+} from 'lit';
 
 import { chartStyles, drawGauge, resolveGauge } from '../chart/engine/index.js';
 import { waterline } from '../chart/engine/scenes.js';
@@ -43,7 +52,8 @@ import { Card, MORE_INFO, type CardEditor, type HeadConfig, type Press } from '.
 import { toneOf } from '../shared/colour.js';
 import type { AliasSpec } from '../shared/config.js';
 import { spanText, unitWord, withUnit } from '../shared/duration.js';
-import { fitLine, type Segment } from '../shared/fit.js';
+import { firstFit, fitLine, type Segment } from '../shared/fit.js';
+import type { HaMap } from '../shared/ha-map.js';
 import { durationSeconds, when } from '../shared/job-time.js';
 import { BrokenPictures, imageEntity, imageOf } from '../shared/picture.js';
 import { Ticker, MINUTE } from '../shared/ticker.js';
@@ -61,7 +71,9 @@ import {
   pictureAt,
   picturePlate,
   vehicleHeight,
+  vehicleSections,
   vehicleVariant,
+  type VehicleSection,
   type VehicleVariant,
 } from '../vehicle-family.js';
 import { VEHICLE_GLYPHS } from './glyphs.js';
@@ -217,6 +229,12 @@ export interface RowEntry {
   readonly double_tap_action?: ActionConfig;
 }
 
+/**
+ * A tracker on the mini map (#266): its id (`auto`, the car's own), or Home Assistant's own map entry for one
+ * (`{ entity, name, label_mode, color }`), handed to its map as it is.
+ */
+export type MapEntry = string | (Readonly<Record<string, unknown>> & { readonly entity: string });
+
 export interface VehicleCardConfig extends FluvyCardConfig, HeadConfig {
   /** The car's device: everything it has is found on it. */
   device?: string;
@@ -255,6 +273,34 @@ export interface VehicleCardConfig extends FluvyCardConfig, HeadConfig {
    * figure), the card's height following it; none, 2:1 across the column.
    */
   image_size?: string | number;
+  /**
+   * A mini map (#266), Home Assistant's own on a plate: `auto` (the car's own tracker), a tracker, or a list of them,
+   * the car's first. None unless named.
+   */
+  map?: string | readonly MapEntry[];
+  /**
+   * The map's size, as the picture's (`image_size`): a share of the card's width or a height; none, 2:1 across the
+   * column.
+   */
+  map_size?: string | number;
+  /** The map's zoom (1–20); none, as Home Assistant fits its trackers. */
+  map_zoom?: number;
+  /** The map in the card's own mode (`auto`, the default), or always light or dark. */
+  map_theme?: 'auto' | 'light' | 'dark';
+  /** The hours of the trail behind the car on its map (the Map card's key); none by default. */
+  hours_to_show?: number;
+  /** Where it is, in a pill over the map's foot (its address, else its place's word): unless `false`. */
+  show_address?: boolean;
+  /**
+   * Whether the map pans and zooms under a finger (the default); `false`, a still map that opens the tracker's
+   * details.
+   */
+  map_interactive?: boolean;
+  /**
+   * The card's parts in an order of its own (#266): those named are drawn, in that order, the rest are not; none, all
+   * of them as they stand. The strip has no parts.
+   */
+  sections?: readonly VehicleSection[];
   /** Whether the head shows (its circle or picture, its name, where it is and what it does): unless `false` (#254). */
   show_head?: boolean;
   /** Whether the battery (or the tank, or a hybrid's both) shows: unless `false` (#254). */
@@ -434,6 +480,11 @@ const WORD_CLEAR = 2;
 const LIQUID = 64;
 /** How fast a battery's liquid is drawn to fill where the car does not say when it is full, in % an hour. */
 const RISE = 10;
+/** The least a mini map is tall where it names no size (#266): its marker stands clear of the pill over its foot. */
+const MAP_MIN = 128;
+/** The address pill over the map (#266): its sides, and its pin with the 6 after it. */
+const PILL_SIDES = 24;
+const PILL_GLYPH = 16 + 6;
 /** The tyres' car from above: its box in the panel. */
 const CAR_WIDTH = 40;
 /** The wheels, in the order the tyres' panel reads them: the front's left and right, then the rear's. */
@@ -450,6 +501,10 @@ const LOCK_STATES: readonly string[] = [
   'open',
   'opening',
 ];
+
+/** The tracker a map's entry names: the entry itself, or its `entity`. */
+const trackerOf = (entry: unknown): unknown =>
+  typeof entry === 'string' ? entry : (entry as { readonly entity?: unknown } | null)?.entity;
 
 /** The words of a control's state, for the reader: "Lock · Locked". */
 const said = (view: Pick<ControlView, 'name' | 'word'>): string =>
@@ -502,7 +557,8 @@ function carFromAbove(low: Readonly<Partial<Record<Wheel, boolean>>>): TemplateR
  * beside it, the warning's when it runs low — and says on its line what is in it, its AdBlue, its oil and its service
  * when they call; a plug-in hybrid draws its battery and its tank (`energy`). Toyota's, Ford's, Mercedes-Benz's and
  * Stellantis's integrations from HACS are read for their tanks too. Asked to, it draws its battery or its tank as a
- * liquid (#256).
+ * liquid (#256), where it is on Home Assistant's own map with its address in a pill (#266), and its parts in an order
+ * of the person's own (`sections`).
  */
 export class FluvyVehicleCard extends Card<VehicleCardConfig> {
   /** The card's height at a 360 column, for the automatic dashboard's columns. */
@@ -555,6 +611,11 @@ export class FluvyVehicleCard extends Card<VehicleCardConfig> {
       .vh-card {
         position: relative;
         width: 100%;
+      }
+      /* a head that is not the first part (the parts in the card's own order, #266) stands 16 under what it follows, as
+         every part does */
+      .vh-card > .fv-card__head:not(:first-child) {
+        margin-top: 16px;
       }
       /* the car's picture over its battery: its plate 2:1 across the column, or at its own size (#254), the whole car on
          the card (a picture with no ground of its own floats on it); none found, the plate keeps its place with the
@@ -617,6 +678,92 @@ export class FluvyVehicleCard extends Card<VehicleCardConfig> {
       .is-unavailable .vh-face > img {
         filter: grayscale(1);
         opacity: 0.5;
+      }
+      /* the mini map (#266): Home Assistant's own map on the picture's plate, square in the plate's corners (its card's
+         hairline and corners are not drawn here); none to draw, the plate keeps its place with the map's glyph */
+      .vh-map {
+        position: relative;
+        margin: 16px auto 0;
+        overflow: hidden;
+        border-radius: var(--fluvy-radius-lg);
+        background: var(--fluvy-inset, var(--fluvy-page));
+        --ha-card-border-width: 0px;
+        --ha-card-border-radius: 0px;
+        --ha-card-box-shadow: none;
+      }
+      .vh-map__view {
+        position: absolute;
+        inset: 0;
+        z-index: 0;
+        display: grid;
+        place-items: center;
+        color: var(--fluvy-text-secondary);
+      }
+      .vh-map__view > svg {
+        width: 32px;
+        height: 32px;
+      }
+      .vh-map__view > :not(svg) {
+        position: absolute;
+        inset: 0;
+      }
+      /* a still map (asked not to pan): no finger moves it, the plate is one button */
+      .vh-map.is-still > .vh-map__view {
+        pointer-events: none;
+      }
+      .vh-map > .fv-tile__tap {
+        z-index: 1;
+        border-radius: inherit;
+      }
+      /* where it is: a pill on the card's fill (solid on a see-through card too: it lies over the map) at the plate's
+         foot, 8 from its edges — a button 44 tall */
+      .vh-map__where {
+        all: unset;
+        position: absolute;
+        bottom: 0;
+        left: 8px;
+        z-index: 2;
+        display: flex;
+        align-items: center;
+        min-width: 44px;
+        height: 44px;
+        cursor: pointer;
+        -webkit-tap-highlight-color: transparent;
+      }
+      span.vh-map__where {
+        cursor: default;
+      }
+      .vh-map__pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        height: 28px;
+        box-sizing: border-box;
+        border-radius: var(--fluvy-radius-pill, 9999px);
+        background: var(--fv-solid-card, var(--fluvy-card));
+        box-shadow: inset 0 0 0 1px var(--fluvy-border);
+        font-size: 13px;
+        font-weight: 600;
+        line-height: 20px;
+        font-variant-numeric: tabular-nums;
+        white-space: nowrap;
+        transition: scale var(--fv-fast) var(--fv-ease);
+      }
+      .vh-map__pill > svg {
+        flex: none;
+        width: 16px;
+        height: 16px;
+        color: var(--fluvy-accent);
+      }
+      button.vh-map__where:active > .vh-map__pill {
+        scale: 0.96;
+      }
+      .vh-map__where:focus-visible > .vh-map__pill {
+        outline: 2px solid var(--fluvy-accent);
+        outline-offset: 2px;
+      }
+      .is-unavailable .vh-map__pill > svg {
+        color: var(--fluvy-text-secondary);
       }
       /* the battery: its value row and its ruler, one tap (its details, or the card's own) laid over them */
       .vh-hero {
@@ -989,6 +1136,12 @@ export class FluvyVehicleCard extends Card<VehicleCardConfig> {
     | undefined;
   /** A picture that would not load: the plate keeps its place with the car's glyph (until the address changes). */
   private readonly pictures = new BrokenPictures(this);
+  /**
+   * Home Assistant's map on the mini map's plate (`shared/ha-map.ts`, a chunk of its own, #266): asked for by the first
+   * card drawn with a map, which draws it as it lands.
+   */
+  private map: HaMap | undefined;
+  private mapAsked = false;
 
   static override editor(): Promise<CardEditor> {
     return import('./vehicle-editor.js');
@@ -1011,6 +1164,11 @@ export class FluvyVehicleCard extends Card<VehicleCardConfig> {
 
   private get variant(): VehicleVariant {
     return vehicleVariant(this.config);
+  }
+
+  /** The parts the card draws, in its order (`sections`, #266): the config's alone, as its height is. */
+  private get sections(): readonly VehicleSection[] {
+    return this.config && this.variant !== 'mini' ? vehicleSections(this.config) : [];
   }
 
   /* ---------- the car ---------- */
@@ -1044,6 +1202,7 @@ export class FluvyVehicleCard extends Card<VehicleCardConfig> {
       ...this.rowEntries().flatMap((entry) => (entry.entity ? [entry.entity] : [])),
       ...this.controlEntries().flatMap((entry) => (entry.control ? [] : [entry.entity])),
       ...this.quickActions().map((item) => item.entity),
+      ...this.trackers(),
       this.config?.image?.trim() === 'auto'
         ? this.devicePicture()
         : imageEntity(this.config?.image),
@@ -2198,7 +2357,7 @@ export class FluvyVehicleCard extends Card<VehicleCardConfig> {
   /* ---------- the rows ---------- */
 
   private rowEntries(): RowEntry[] {
-    if (this.config?.show_rows === false || this.variant !== 'full') return [];
+    if (!this.sections.includes('rows')) return [];
     const listed = this.config?.rows;
     return (Array.isArray(listed) ? listed : DEFAULT_ROWS).map(rowEntry);
   }
@@ -2447,8 +2606,7 @@ export class FluvyVehicleCard extends Card<VehicleCardConfig> {
     });
   }
 
-  private renderTyres(r: Reading): TemplateResult | typeof nothing {
-    if (this.config?.show_tyres !== true || this.variant !== 'full') return nothing;
+  private renderTyres(r: Reading): TemplateResult {
     const { tyres } = r;
     // the car from above gives way where a column would not hold the widest pressure beside it: the widest its
     // figures run to, in their decimals and their unit, whatever they read now
@@ -2537,6 +2695,124 @@ export class FluvyVehicleCard extends Card<VehicleCardConfig> {
     >`;
   }
 
+  /* ---------- the mini map ---------- */
+
+  /**
+   * What the mini map shows (#266), the car's first: its own tracker (`auto`), an entity, or a list of either — an
+   * entry of Home Assistant's own map kept as it is. One that names no entity is left out.
+   */
+  private mapEntries(): MapEntry[] {
+    const asked = this.config?.map;
+    const own = this.car().roles.location;
+    return (Array.isArray(asked) ? asked : [asked])
+      .map((entry: unknown) => (entry === 'auto' ? own : entry))
+      .filter((entry): entry is MapEntry => isEntityId(trackerOf(entry)));
+  }
+
+  /** The trackers on the mini map, the car's first. */
+  private trackers(): string[] {
+    return this.mapEntries().map(trackerOf).filter(isEntityId);
+  }
+
+  /**
+   * Home Assistant's map card as the mini map asks for it: its trackers, its zoom (1–20) and its trail where the card
+   * names them, fitted to the trackers, in the card's mode or the one it asks for; none while no tracker says where it
+   * is (the plate then keeps its place, empty).
+   */
+  private mapConfig(): LovelaceCardConfig | undefined {
+    const c = this.config;
+    const placed = (id: string): boolean => {
+      const view = this.entity(id);
+      return [view.attr('latitude'), view.attr('longitude')].every(
+        (degrees) => typeof degrees === 'number',
+      );
+    };
+    if (!this.trackers().some(placed)) return undefined;
+    const zoom = Number(c?.map_zoom);
+    const hours = Number(c?.hours_to_show);
+    const theme = c?.map_theme;
+    return {
+      type: 'map',
+      entities: this.mapEntries(),
+      ...(hours > 0 ? { hours_to_show: hours } : {}),
+      ...(zoom >= 1 ? { default_zoom: Math.min(20, zoom) } : {}),
+      auto_fit: true,
+      theme_mode: theme === 'light' || theme === 'dark' ? theme : this.dark ? 'dark' : 'light',
+    };
+  }
+
+  /** The first map drawn fetches what makes Home Assistant's own on its plate. */
+  protected override updated(changed: PropertyValues): void {
+    super.updated(changed);
+    if (this.mapAsked || !this.renderRoot.querySelector('.vh-map')) return;
+    this.mapAsked = true;
+    void import('../shared/ha-map.js').then(({ HaMap }) => {
+      this.map = new HaMap(this, '.vh-map', () => this.mapConfig());
+      this.requestUpdate();
+    });
+  }
+
+  /**
+   * Where the car is, for the map's pill: its address away from home where its integration says one — whole, else as
+   * many of its leading parts as the pill holds ("Carrer de Mallorca 401" of "…, 08013 Barcelona") — else its
+   * tracker's place in Home Assistant's words ("Home", a zone's name, "Away", "Unavailable"), the dash where it has no
+   * tracker. Never cut: `fits` is '' where not even the place's word holds, and the pill is its pin alone.
+   */
+  private where(
+    r: Reading,
+    lead: string | undefined,
+    room: number,
+  ): { readonly said: string; readonly fits: string } {
+    const place = lead ? stateText(this.hass, this.entity(lead)) : '—';
+    const parts = r.address ? r.address.split(', ') : [];
+    const forms = [...parts.map((_, cut) => parts.slice(0, parts.length - cut).join(', ')), place];
+    const holds = (text: string): boolean =>
+      this.head.ruler.pill('vh-map__pill', text, PILL_SIDES + PILL_GLYPH) <= room;
+    const fits = firstFit(forms, holds) ?? place;
+    return { said: forms[0] ?? place, fits: holds(fits) ? fits : '' };
+  }
+
+  /**
+   * The mini map (#266): Home Assistant's own map on the picture's plate (`map_size`; 2:1 across the column where it
+   * names none, 128 at least in a narrow one), its trackers on it — it pans and zooms as Home Assistant's does, or
+   * stands still as one button that opens the car's tracker (`map_interactive: false`). Where it is in a pill over its
+   * foot (`show_address`), which opens the tracker's details too. While no tracker says where it is, or where Home
+   * Assistant's map cannot be made, the plate keeps its size with the map's glyph, the pill saying its state.
+   */
+  private renderMap(r: Reading): TemplateResult {
+    const c = this.config;
+    const plate = picturePlate(c ?? { type: '' }, this.contentWidth, c?.map_size);
+    // 2:1 across the column is too low a map in a narrow one: there it keeps its least height
+    const height = String(c?.map_size ?? '').trim()
+      ? plate.height
+      : Math.max(MAP_MIN, plate.height);
+    const [lead] = this.trackers();
+    const map = this.mapConfig() && this.map?.element;
+    const still = c?.map_interactive === false;
+    const open = lead ? (): void => this.tap(lead, MORE_INFO) : undefined;
+    const where = this.where(r, lead, plate.width - 16);
+    const label = `${s(this.hass, 'location')} · ${where.said}`;
+    const pill = html`<span class="vh-map__pill" data-fit=${where.fits ? PILL_SIDES : 12}
+      >${icon('pin')}${where.fits ? html`<span>${where.fits}</span>` : nothing}</span
+    >`;
+    return html`<div
+      class="vh-map ${map ? '' : 'is-empty'} ${still ? 'is-still' : ''}"
+      style="width:${plate.width}px;height:${height}px"
+    >
+      <div class="vh-map__view" aria-hidden=${map ? nothing : 'true'}>${map || icon('map')}</div>
+      ${still && open ? pressCover(label, open, undefined) : nothing}
+      ${
+        c?.show_address === false
+          ? nothing
+          : open
+            ? html`<button class="vh-map__where" data-target aria-label=${label} @click=${open}>
+                ${pill}
+              </button>`
+            : html`<span class="vh-map__where" aria-label=${label}>${pill}</span>`
+      }
+    </div>`;
+  }
+
   /* ---------- render ---------- */
 
   protected renderCard(): TemplateResult {
@@ -2548,24 +2824,27 @@ export class FluvyVehicleCard extends Card<VehicleCardConfig> {
     const r = this.reading(now);
     this.timed = r.charge === 'charging' || Boolean(r.stale) || Boolean(this.view('updated'));
     if (this.variant === 'mini') return this.renderMini(r);
-    const at = c ? pictureAt(c) : null;
-    // the head and the battery as the config shows them (#254): the picture is the card's button where the head is not
-    const headed = c?.show_head !== false;
+    const sections = this.sections;
+    // each part as the config shows it (#254), in the config's order (#266): the battery's line stands under it, and
+    // the picture is the card's button where the head is not drawn
+    const parts: Readonly<Record<VehicleSection, () => unknown>> = {
+      head: () => this.renderHead(r, c !== undefined && pictureAt(c) === 'head'),
+      image: () =>
+        this.picture(
+          false,
+          sections.includes('head') ? undefined : this.headActions(this.leadEntity(r) ?? c?.entity),
+          r.name,
+        ),
+      map: () => this.renderMap(r),
+      hero: () =>
+        html`${c?.show_hero !== false ? this.renderHeroes(r) : nothing}${this.renderLine(r, now)}`,
+      controls: () => this.renderControls(r, this.variant === 'compact'),
+      rows: () => this.renderRows(r),
+      tyres: () => this.renderTyres(r),
+      quick_actions: () => this.renderQuick(),
+    };
     return html`<article class="fv-card vh-card ${r.unavailable ? 'is-unavailable' : ''}" data-card>
-      ${headed ? this.renderHead(r, at === 'head') : nothing}
-      ${
-        at === 'hero' && this.variant === 'full'
-          ? this.picture(
-              false,
-              headed ? undefined : this.headActions(this.leadEntity(r) ?? c?.entity),
-              r.name,
-            )
-          : nothing
-      }
-      ${c?.show_hero !== false ? this.renderHeroes(r) : nothing} ${this.renderLine(r, now)}
-      ${this.renderControls(r, this.variant === 'compact')}
-      ${this.variant === 'full' ? html`${this.renderRows(r)}${this.renderTyres(r)}` : nothing}
-      ${this.renderQuick()}
+      ${sections.map((key) => parts[key]())}
     </article>`;
   }
 
@@ -2632,9 +2911,12 @@ export class FluvyVehicleCard extends Card<VehicleCardConfig> {
    */
   private renderHead(r: Reading, picture: boolean): TemplateResult {
     const w = this.contentWidth;
-    // where it is, where no row says it (its address away from home, which no row holds), and how long it has said nothing
+    // where it is, where neither the map's pill nor a row says it (its address away from home, which no row holds),
+    // and how long it has said nothing
+    const pilled = this.sections.includes('map') && this.config?.show_address !== false;
+    const address = pilled ? '' : r.address;
     const placeInRows = this.rowEntries().some((entry) => entry.row === 'location');
-    const place = placeInRows ? '' : r.place;
+    const place = pilled || placeInRows ? '' : r.place;
     const line = (...parts: string[]): string => parts.filter(Boolean).join(' · ');
     // the compact card has no value row: how far it goes leads the line (a hybrid's, on both)
     const reach = this.reach(r);
@@ -2642,9 +2924,9 @@ export class FluvyVehicleCard extends Card<VehicleCardConfig> {
       this.variant === 'compact' && this.config?.show_range !== false && reach.number !== null
         ? `${reach.value} ${reach.unit}`
         : '';
-    const sub = line(range, r.address || place, r.stale);
+    const sub = line(range, address || place, r.stale);
     // an address too long for the line gives way to the place's word, then to the time alone: never cut
-    const shorter = r.address
+    const shorter = address
       ? [line(range, place, r.stale), line(range, r.stale), range]
       : [line(range, r.stale), range];
     // a picture in the head is 64 wide, the circle 44: the head is fitted as if its column were 20 narrower
@@ -2660,7 +2942,7 @@ export class FluvyVehicleCard extends Card<VehicleCardConfig> {
       });
     let fitted = fit(sub, shorter);
     // what it does outranks where it is: an address that would take the badge's room gives way to the place's word
-    if (r.address && fitted.badge === nothing) fitted = fit(shorter[0] ?? '', shorter.slice(1));
+    if (address && fitted.badge === nothing) fitted = fit(shorter[0] ?? '', shorter.slice(1));
     const tone: Tone = r.unavailable ? 'off' : r.tone;
     return head({
       icon: fitted.icon ? (this.config?.icon ?? 'car') : null,
@@ -2707,8 +2989,8 @@ export class FluvyVehicleCard extends Card<VehicleCardConfig> {
   }
 
   /**
-   * A gauge on the charge cards' ruler, or as a liquid in the ruler's room (`hero: liquid`, #256): its level (what is in
-   * a tank where it has no level) and its range over it, a battery's limit marked.
+   * A gauge on the charge cards' ruler, or as a liquid in the ruler's room (`hero: liquid`, #256): its level (what is
+   * in a tank where it has no level) and its range over it, a battery's limit marked.
    */
   private renderRuler(r: Reading, g: Gauge): TemplateResult {
     const w = this.contentWidth;

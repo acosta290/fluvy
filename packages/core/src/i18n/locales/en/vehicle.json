@@ -150,6 +150,15 @@
     "editor.show_head": "Show the head",
     "editor.show_hero": "Show the battery",
     "editor.image_size": "Picture size",
-    "editor.image_size_helper": "A share of the card’s width, such as 50%, or a height, such as 120px"
+    "editor.image_size_helper": "A share of the card’s width, such as 50%, or a height, such as 120px",
+    "editor.sections": "Parts, in order",
+    "editor.section_head": "Head",
+    "editor.map_helper": "Home Assistant’s own map of the trackers you choose, the car’s first",
+    "editor.map_auto": "The car’s own tracker",
+    "editor.map_size": "Map size",
+    "editor.map_theme": "Map colours",
+    "editor.map_light": "Light",
+    "editor.show_address": "Show where it is on the map",
+    "editor.map_interactive": "Pan and zoom the map"
   }
 }

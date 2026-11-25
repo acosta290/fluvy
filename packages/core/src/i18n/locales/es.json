@@ -3491,7 +3491,16 @@
     "editor.show_head": "Mostrar la cabecera",
     "editor.show_hero": "Mostrar la batería",
     "editor.image_size": "Tamaño de la imagen",
-    "editor.image_size_helper": "Una parte del ancho de la tarjeta, como 50%, o una altura, como 120px"
+    "editor.image_size_helper": "Una parte del ancho de la tarjeta, como 50%, o una altura, como 120px",
+    "editor.sections": "Partes, en orden",
+    "editor.section_head": "Cabecera",
+    "editor.map_helper": "El mapa de Home Assistant con los rastreadores que elijas, el del coche primero",
+    "editor.map_auto": "El rastreador del coche",
+    "editor.map_size": "Tamaño del mapa",
+    "editor.map_theme": "Colores del mapa",
+    "editor.map_light": "Claro",
+    "editor.show_address": "Mostrar dónde está sobre el mapa",
+    "editor.map_interactive": "Mover y ampliar el mapa"
   },
   "remote": {
     "key.power": "Encendido",

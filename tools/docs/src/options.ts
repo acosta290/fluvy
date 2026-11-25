@@ -11,9 +11,10 @@
  *   it leaves out takes the default the editor shows on a new card, written out. What is no such default is said and
  *   not written (`unset`), since written it would change what the card does, here or in the house it is copied to:
  *   a default that follows the house's settings (`HOUSE_KEYS`), its entities (a thermostat's modes are its device's)
- *   or the rest of the configuration (a grid's columns its layout's), a number's Automatic, what an action's picker
- *   does while none is chosen, and a key with no default at all (a name, a colour, a list). So `full` without its
- *   `unset` keys is `minimal` and defaults of the card's own: the card draws the two alike.
+ *   or the rest of the configuration (a grid's columns its layout's, a car's parts in their order: `DERIVED`), a
+ *   number's Automatic, what an action's picker does while none is chosen, and a key with no default at all (a name,
+ *   a colour, a list). So `full` without its `unset` keys is `minimal` and defaults of the card's own: the card draws
+ *   the two alike.
  *
  * A default may depend on the house's entities (a room whose area has a picture is a photo): read without a house,
  * as the docs do, it is the one the editor shows on a new card. Nothing here reads the page: it loads with what the
@@ -63,6 +64,13 @@ export interface Options {
   /** The keys of `full` that are said and not written: the house's, and those with nothing to write. */
   readonly unset: ReadonlySet<string>;
 }
+
+/**
+ * The keys whose default is what the rest of the configuration draws, whatever that is now (the Vehicle card's parts
+ * in their order, #266): written, the card would stop following it — a map named later would not be drawn — so they
+ * are said and never written.
+ */
+const DERIVED: ReadonlySet<string> = new Set(['sections']);
 
 /** Whether a value says nothing: none, or an empty text, list or map. */
 const empty = (value: unknown): boolean =>
@@ -205,7 +213,7 @@ export function optionsOf(
       unset.add(key);
       full[key] = actionOf(fields.get(key));
     } else {
-      if (follows(key) || automatic(key, defaults[key])) unset.add(key);
+      if (DERIVED.has(key) || follows(key) || automatic(key, defaults[key])) unset.add(key);
       full[key] = written(defaults[key]);
     }
   }

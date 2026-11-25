@@ -1,4 +1,4 @@
-import type { HomeAssistant } from '@fluvy/core';
+import type { HomeAssistant, LovelaceCardConfig } from '@fluvy/core';
 import type {
   CompareMode,
   EnergyCollectionLike,
@@ -25,6 +25,7 @@ import {
 } from '../../../packages/cards/src/energy-model/prefs.js';
 import type { Recorded } from '../../../packages/cards/src/energy-model/recorded.js';
 import { meteredUnit } from '../../../packages/cards/src/energy-usage/series.js';
+import { mapCard } from './hui-card.js';
 
 /**
  * An Energy date picker's collection as Home Assistant makes one (`getEnergyDataCollection`), on the mock's
@@ -276,7 +277,8 @@ class MockDateSelection extends HTMLElement {
 
 /**
  * `window.loadCardHelpers`, as the Energy period card asks it: Home Assistant's date card for a key no picker holds
- * yet. Any other card is not made here (the map's zones and a camera's still stand in, as without the helpers).
+ * yet; and its map card of the trackers a sheet draws a map of (`mapCard`: the Vehicle card's mini map). Any other
+ * card is not made here (the Map card's zones and a camera's still stand in, as without the helpers).
  */
 export function stubCardHelpers(house: () => HomeAssistant, now: Date): void {
   MockDateSelection.houses.set(house().connection, house);
@@ -285,7 +287,8 @@ export function stubCardHelpers(house: () => HomeAssistant, now: Date): void {
   if (!customElements.get('hui-energy-date-selection-card'))
     customElements.define('hui-energy-date-selection-card', MockDateSelection);
   window.loadCardHelpers = async () => ({
-    createCardElement: (config: { readonly type?: string; readonly collection_key?: string }) => {
+    createCardElement: (config: LovelaceCardConfig & { readonly collection_key?: string }) => {
+      if (config.type === 'map') return mapCard(config);
       if (config.type !== 'energy-date-selection') return undefined;
       const card = document.createElement('hui-energy-date-selection-card') as MockDateSelection;
       card.setConfig(config);

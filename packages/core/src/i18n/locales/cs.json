@@ -3472,7 +3472,16 @@
     "editor.show_head": "Zobrazit záhlaví",
     "editor.show_hero": "Zobrazit baterii",
     "editor.image_size": "Velikost obrázku",
-    "editor.image_size_helper": "Podíl šířky karty, například 50%, nebo výška, například 120px"
+    "editor.image_size_helper": "Podíl šířky karty, například 50%, nebo výška, například 120px",
+    "editor.sections": "Části, v pořadí",
+    "editor.section_head": "Záhlaví",
+    "editor.map_helper": "Vlastní mapa Home Assistant se sledovači, které vyberete, první je sledovač auta",
+    "editor.map_auto": "Vlastní sledovač auta",
+    "editor.map_size": "Velikost mapy",
+    "editor.map_theme": "Barvy mapy",
+    "editor.map_light": "Světlý",
+    "editor.show_address": "Zobrazit na mapě, kde je",
+    "editor.map_interactive": "Posouvat a přibližovat mapu"
   },
   "expander": {
     "card": "Rozbalovač",

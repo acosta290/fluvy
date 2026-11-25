@@ -1,8 +1,9 @@
 /**
- * Home Assistant's own map on a plate of ours (1.26) is a chunk of its own: what makes it through Home Assistant's card
- * helpers, fits it again as its plate's size settles and tells it the house and the page's mode is fetched by the
- * first Map card drawn as a map, which reaches it by a dynamic import alone, or the bundler would fold it back into
- * core, which every page loads.
+ * Home Assistant's own map on a plate of ours (1.26, #266) is a chunk of its own: what makes it through Home
+ * Assistant's card helpers, fits it again as its plate's size settles and tells it the house and the page's mode is
+ * fetched by the first Map card drawn as a map and the first Vehicle card asked for one — and each reaches it by a
+ * dynamic import alone, or the bundler would fold it back into the chunk that asks (the Map card's is core, which
+ * every page loads).
  */
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -19,12 +20,13 @@ const statics = (path: string): string[] =>
     (found) => found[1] as string,
   );
 
-const ASKING = ['cards/src/map/map-card.ts'];
+const ASKING = ['cards/src/map/map-card.ts', 'cards/src/vehicle/vehicle-card.ts'];
 
 describe('the map’s chunk', () => {
-  it('holds what makes Home Assistant’s map on a plate, and nothing of the card that asks for it', () => {
+  it('holds what makes Home Assistant’s map on a plate, and nothing of the cards that ask for it', () => {
     expect(chunkOf(at('cards/src/shared/ha-map.ts'))).toBe('ha-map');
     expect(chunkOf(at('cards/src/map/map-card.ts'))).toBe('core');
+    expect(chunkOf(at('cards/src/vehicle/vehicle-card.ts'))).toBe('vehicle');
     // it draws nothing of its own: no module of ours travels with it
     expect(statics('cards/src/shared/ha-map.ts')).toEqual([]);
   });

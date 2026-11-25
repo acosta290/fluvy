@@ -272,6 +272,7 @@ export const UNDECLARED: Readonly<Record<string, string>> = {
   tilt_presets: 'none',
   alert_classes: 'none',
   house_actions: 'none',
+  map: 'none',
 };
 
 /**

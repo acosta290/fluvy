@@ -3671,7 +3671,16 @@
     "editor.show_head": "Visa huvudet",
     "editor.show_hero": "Visa batteriet",
     "editor.image_size": "Bildstorlek",
-    "editor.image_size_helper": "En andel av kortets bredd, till exempel 50%, eller en höjd, till exempel 120px"
+    "editor.image_size_helper": "En andel av kortets bredd, till exempel 50%, eller en höjd, till exempel 120px",
+    "editor.sections": "Delar, i ordning",
+    "editor.section_head": "Huvud",
+    "editor.map_helper": "Home Assistants egen karta med de spårare du väljer, bilens först",
+    "editor.map_auto": "Bilens egen spårare",
+    "editor.map_size": "Kartans storlek",
+    "editor.map_theme": "Kartans färger",
+    "editor.map_light": "Ljus",
+    "editor.show_address": "Visa var den är på kartan",
+    "editor.map_interactive": "Flytta och zooma kartan"
   },
   "web": {
     "card": "Webbsida",

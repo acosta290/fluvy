@@ -3419,7 +3419,16 @@
     "editor.show_head": "Pokaż nagłówek",
     "editor.show_hero": "Pokaż baterię",
     "editor.image_size": "Rozmiar obrazu",
-    "editor.image_size_helper": "Część szerokości karty, np. 50%, lub wysokość, np. 120px"
+    "editor.image_size_helper": "Część szerokości karty, np. 50%, lub wysokość, np. 120px",
+    "editor.sections": "Części, w kolejności",
+    "editor.section_head": "Nagłówek",
+    "editor.map_helper": "Własna mapa Home Assistant z wybranymi lokalizatorami, najpierw samochodu",
+    "editor.map_auto": "Własny lokalizator samochodu",
+    "editor.map_size": "Rozmiar mapy",
+    "editor.map_theme": "Kolory mapy",
+    "editor.map_light": "Jasny",
+    "editor.show_address": "Pokaż na mapie, gdzie jest",
+    "editor.map_interactive": "Przesuwaj i powiększaj mapę"
   },
   "wall": {
     "paused": "Tryb ściany wstrzymany",

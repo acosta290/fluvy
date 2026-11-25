@@ -13510,6 +13510,28 @@
           }
         },
         {
+          "key": "sections",
+          "label": "Parts, in order",
+          "does": "The card’s parts to draw, in this order; a part left out is not drawn. Left out, all of them as they stand.",
+          "type": "choices",
+          "default": [
+            "head",
+            "hero",
+            "controls",
+            "rows"
+          ],
+          "values": {
+            "head": "Head",
+            "image": "Picture",
+            "hero": "Battery",
+            "controls": "Controls",
+            "rows": "Rows",
+            "tyres": "Tyres",
+            "map": "Map",
+            "quick_actions": "Quick actions"
+          }
+        },
+        {
           "key": "energy",
           "label": "Energy",
           "does": "What the car runs on: its battery, its tank, or both; automatic, its tank where it has one and no battery, else its battery.",
@@ -13573,6 +13595,62 @@
           "does": "The picture’s size over the battery: a share of the card’s width (50%) or a height (120px), the card’s height following it.",
           "helper": "A share of the card’s width, such as 50%, or a height, such as 120px",
           "type": "text"
+        },
+        {
+          "key": "map",
+          "label": "Map",
+          "does": "A mini map of where the car is, Home Assistant’s own: `auto` for the car’s own tracker, a tracker, or a list of them, the car’s first.",
+          "helper": "Home Assistant’s own map of the trackers you choose, the car’s first",
+          "type": "choices or text",
+          "default_in_words": "none"
+        },
+        {
+          "key": "map_size",
+          "label": "Map size",
+          "does": "The map’s size: a share of the card’s width (50%) or a height (120px); left out, 2:1 across the card.",
+          "helper": "A share of the card’s width, such as 50%, or a height, such as 120px",
+          "type": "text"
+        },
+        {
+          "key": "map_zoom",
+          "label": "Zoom",
+          "does": "How close the map is drawn; left out, as Home Assistant fits its trackers.",
+          "type": "number",
+          "range": "1 to 20"
+        },
+        {
+          "key": "map_theme",
+          "label": "Map colours",
+          "does": "The map’s colours: the card’s own mode, or always light or dark.",
+          "type": "choice",
+          "default": "auto",
+          "values": {
+            "auto": "Automatic",
+            "light": "Light",
+            "dark": "Dark"
+          }
+        },
+        {
+          "key": "hours_to_show",
+          "label": "Hours of history",
+          "does": "How many hours of the car’s trail its map draws.",
+          "type": "number",
+          "default": 0,
+          "range": "0 to 168"
+        },
+        {
+          "key": "show_address",
+          "label": "Show where it is on the map",
+          "does": "Says where the car is in a pill over the map: its address where its integration gives one, else its place’s name.",
+          "type": "boolean",
+          "default": true
+        },
+        {
+          "key": "map_interactive",
+          "label": "Pan and zoom the map",
+          "does": "Lets a finger pan and zoom the map; off, it is a still picture whose tap opens the car’s tracker.",
+          "type": "boolean",
+          "default": true
         },
         {
           "key": "show_head",

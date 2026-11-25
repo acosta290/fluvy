@@ -3491,7 +3491,16 @@
     "editor.show_head": "Fejléc megjelenítése",
     "editor.show_hero": "Az akku megjelenítése",
     "editor.image_size": "A kép mérete",
-    "editor.image_size_helper": "A kártya szélességének része, például 50%, vagy egy magasság, például 120px"
+    "editor.image_size_helper": "A kártya szélességének része, például 50%, vagy egy magasság, például 120px",
+    "editor.sections": "Részek, sorrendben",
+    "editor.section_head": "Fejléc",
+    "editor.map_helper": "A Home Assistant saját térképe a választott nyomkövetőkkel, elsőként az autóéval",
+    "editor.map_auto": "Az autó saját nyomkövetője",
+    "editor.map_size": "A térkép mérete",
+    "editor.map_theme": "A térkép színei",
+    "editor.map_light": "Világos",
+    "editor.show_address": "A hely megjelenítése a térképen",
+    "editor.map_interactive": "A térkép mozgatása és nagyítása"
   },
   "remote": {
     "key.power": "Be/ki",

@@ -9,8 +9,10 @@
  * (#207); an engine named by hand asks before it starts, the person's own controls and small icons act as a room's
  * rounds do, a tyre under its threshold is said, a badge of the person's own is drawn, and the picture alone is the
  * card's button (#248, #251, #254); the battery and the tank as a liquid in the ruler's room, its bubbles while it
- * charges and its limit's hairline (#256); and in every language no round's word runs past its cell, nor the line or
- * the head's line past their column.
+ * charges and its limit's hairline (#256); the mini map on its plate, its pill and what it opens, a still one as one
+ * button, its plate kept where there is no location, and the card's parts in an order of its own, each 16 under the one
+ * before (#266); and in every language no round's word runs past its cell, nor the line or the head's line past their
+ * column, nor the map's pill past its plate.
  * Real cards on the playground's simulated hass. Exit code 1 on any failure.
  *   PLAYGROUND=http://127.0.0.1:5196/ node interactions-vehicle.mjs
  */
@@ -53,7 +55,25 @@ const overflows = (locator) =>
     }
     for (const line of root.querySelectorAll('.vh-line, .fv-card__sub, .fv-row__sub'))
       if (line.scrollWidth > line.clientWidth + 1) out.push(line.textContent);
+    // the map's pill keeps 8 of its plate clear on each side, whatever it says
+    for (const pill of root.querySelectorAll('.vh-map__pill')) {
+      const plate = pill.closest('.vh-map').getBoundingClientRect();
+      const box = pill.getBoundingClientRect();
+      if (box.left < plate.left + 7.5 || box.right > plate.right - 7.5) out.push(pill.textContent);
+    }
     return out;
+  });
+/** A card's parts, in the order it draws them, each with the room over it (the first: the card's padding). */
+const parts = (locator) =>
+  locator.evaluate((el) => {
+    const article = el.shadowRoot.querySelector('[data-card]');
+    let last = article.getBoundingClientRect().top;
+    return [...article.children].map((part) => {
+      const box = part.getBoundingClientRect();
+      const over = Math.round(box.top - last);
+      last = box.bottom;
+      return { part: part.className.trim().split(/\s+/)[0], over };
+    });
   });
 
 /**
@@ -540,6 +560,161 @@ const handed = () => page.evaluate(() => window.__handed.splice(0));
   );
 }
 
+/* ---------- #266: the mini map ---------- */
+{
+  const map = (title, n = 0) =>
+    card(page, title, n).evaluate((el) => {
+      const root = el.shadowRoot;
+      const plate = root.querySelector('.vh-map');
+      const box = plate.getBoundingClientRect();
+      const own = plate.querySelector('.vh-map__view > pg-own-card');
+      const drawn = own?.shadowRoot.querySelector('ha-map');
+      const pill = plate.querySelector('.vh-map__pill')?.getBoundingClientRect();
+      const where = plate.querySelector('.vh-map__where');
+      return {
+        width: Math.round(box.width),
+        height: Math.round(box.height),
+        empty: plate.classList.contains('is-empty'),
+        still: plate.classList.contains('is-still'),
+        // Home Assistant's map fills the plate
+        fills:
+          own !== null &&
+          own !== undefined &&
+          Math.round(own.getBoundingClientRect().width) === Math.round(box.width) &&
+          Math.round(own.getBoundingClientRect().height) === Math.round(box.height),
+        dark: drawn?.classList.contains('dark') ?? null,
+        markers: [...(drawn?.querySelectorAll('.marker') ?? [])].map((m) => m.textContent),
+        trail: drawn?.querySelectorAll('.trail').length ?? 0,
+        glyph: Boolean(plate.querySelector('.vh-map__view > svg')),
+        said: (plate.querySelector('.vh-map__pill')?.textContent ?? '').trim(),
+        label: where?.getAttribute('aria-label') ?? null,
+        button: where?.tagName === 'BUTTON',
+        target: where && Math.round(where.getBoundingClientRect().height),
+        // the pill 8 from the plate's start and its foot
+        left: pill && Math.round(pill.left - box.left),
+        foot: pill && Math.round(box.bottom - pill.bottom),
+        touch: getComputedStyle(plate.querySelector('.vh-map__view')).pointerEvents,
+        sub: (root.querySelector('.fv-card__sub')?.textContent ?? '').trim(),
+      };
+    });
+  const foot = await map('A mini map at its foot · its address');
+  check(
+    'the map at the foot: Home Assistant’s own on a 2:1 plate, the car’s tracker on it, its address in a pill 8 from the plate’s edges',
+    foot.width === 320 &&
+      foot.height === 160 &&
+      foot.fills &&
+      !foot.empty &&
+      foot.dark === false &&
+      foot.markers.length === 1 &&
+      foot.said === '14 Station Road, Cambridge CB1 2JB' &&
+      foot.label === 'Location · 14 Station Road, Cambridge CB1 2JB' &&
+      foot.left === 8 &&
+      foot.foot === 8 &&
+      foot.target === 44 &&
+      foot.touch !== 'none',
+    JSON.stringify(foot),
+  );
+  check('the head no longer says where it is: the pill does', foot.sub === '', foot.sub);
+  const order = await parts(card(page, 'A mini map at its foot · its address'));
+  check(
+    'the map stands after the controls and before the small icons',
+    order.map((o) => o.part).join('|') ===
+      'fv-card__head|vh-hero|vh-line|vh-controls|vh-map|vh-quick',
+    JSON.stringify(order),
+  );
+  await reset(page);
+  await card(page, 'A mini map at its foot · its address').locator('.vh-map__where').click();
+  await settle(page, 200);
+  check(
+    'the pill opens the tracker’s details',
+    (await moreInfo(page)).at(-1) === 'device_tracker.haval_h6_location',
+    JSON.stringify(await moreInfo(page)),
+  );
+  const home = await map('The map in the picture’s place');
+  check(
+    'at home, the pill says the place’s word',
+    home.said === 'Home' && home.button && !home.empty,
+    JSON.stringify(home),
+  );
+  const still = await map('A still map · the plate one button');
+  check(
+    'a still map: no finger moves it',
+    still.still && still.touch === 'none' && still.fills,
+    JSON.stringify(still),
+  );
+  await reset(page);
+  // a tap on the plate, away from its pill
+  await card(page, 'A still map · the plate one button')
+    .locator('.vh-map')
+    .click({ position: { x: 240, y: 40 } });
+  await settle(page, 200);
+  check(
+    'a still map is one button: a tap on the plate opens the tracker’s details',
+    (await moreInfo(page)).at(-1) === 'device_tracker.ioniq_5_location',
+    JSON.stringify(await moreInfo(page)),
+  );
+  const two = await map('Two cars on one map · their trail, nearer, always dark');
+  check(
+    'two cars on one map, the card’s own first; its own height, its trail, always dark',
+    two.markers.length === 2 && two.height === 200 && two.trail > 0 && two.dark === true,
+    JSON.stringify(two),
+  );
+  const lost = await map('A map with no location · its plate kept', 0);
+  const unplaced = await map('A map with no location · its plate kept', 1);
+  check(
+    'no location: the plate keeps its size with the map’s glyph, the pill says the state',
+    lost.empty &&
+      lost.glyph &&
+      !lost.fills &&
+      lost.height === 160 &&
+      lost.said === 'Unavailable' &&
+      unplaced.empty &&
+      unplaced.glyph &&
+      unplaced.said === 'Home',
+    JSON.stringify({ lost, unplaced }),
+  );
+}
+
+/* ---------- #266: the card's parts in an order of its own ---------- */
+{
+  const own = await parts(
+    card(page, 'Its parts in its own order · controls above the fuel, tyres below'),
+  );
+  check(
+    'the controls above the fuel, the tyres below, then the rows: each 16 under the one before, the line 8 under the battery',
+    own.map((o) => `${o.part}:${o.over}`).join('|') ===
+      'fv-card__head:20|vh-controls:16|vh-hero:16|vh-line:8|vh-tyres:16|vh-rows:16',
+    JSON.stringify(own),
+  );
+  const first = await parts(card(page, 'The map first · no head'));
+  check(
+    'the map first, no head: the plate at the card’s padding, the battery 16 under it',
+    first.map((o) => `${o.part}:${o.over}`).join('|') ===
+      'vh-map:20|vh-hero:16|vh-line:8|vh-controls:16',
+    JSON.stringify(first),
+  );
+  const few = await parts(card(page, 'A head, its battery and its small icons alone'));
+  check(
+    'a head, its battery and its small icons alone',
+    few.map((o) => `${o.part}:${o.over}`).join('|') ===
+      'fv-card__head:20|vh-hero:16|vh-line:8|vh-quick:16',
+    JSON.stringify(few),
+  );
+  const compact = await parts(card(page, 'Compact · its rounds above its bar'));
+  check(
+    'the compact card’s rounds above its bar',
+    compact.map((o) => o.part).join('|') === 'fv-card__head|vh-controls|vh-hero|vh-line',
+    JSON.stringify(compact),
+  );
+  const issue = await parts(card(page, 'The card the issue pointed at, redrawn'));
+  check(
+    'the issue’s card: a head, a row, the picture, the fuel and the map at the foot',
+    issue.map((o) => `${o.part}:${o.over}`).join('|') ===
+      'fv-card__head:20|vh-rows:16|vh-picture:16|vh-hero:16|vh-line:8|vh-map:16',
+    JSON.stringify(issue),
+  );
+}
+
 /* ---------- every card holds its declared height ---------- */
 {
   const heights = await page.evaluate(() =>
@@ -563,6 +738,38 @@ const handed = () => page.evaluate(() => window.__handed.splice(0));
   );
 }
 await page.close();
+
+/* ---------- the map follows the page's mode, and keeps its marker clear of its pill in a narrow column ---------- */
+{
+  const dark = await suite.sheet('vehicle', { extra: '&mode=dark' });
+  const drawn = (title) =>
+    card(dark, title).evaluate((el) =>
+      el.shadowRoot
+        .querySelector('.vh-map__view > pg-own-card')
+        ?.shadowRoot.querySelector('ha-map')
+        ?.classList.contains('dark'),
+    );
+  check(
+    'on a dark page the map is dark, as the card is',
+    (await drawn('The map in the picture’s place')) === true,
+  );
+  await dark.close();
+  const narrow = await suite.sheet('vehicle', { width: 211 });
+  const plate = await card(narrow, 'A mini map at its foot · its address').evaluate((el) => {
+    const box = el.shadowRoot.querySelector('.vh-map').getBoundingClientRect();
+    return {
+      width: Math.round(box.width),
+      height: Math.round(box.height),
+      said: (el.shadowRoot.querySelector('.vh-map__pill')?.textContent ?? '').trim(),
+    };
+  });
+  check(
+    'in a 211 column the map keeps its least height, and its address gives its trailing parts up whole',
+    plate.width === 171 && plate.height === 128 && plate.said === '14 Station Road',
+    JSON.stringify(plate),
+  );
+  await narrow.close();
+}
 
 /* ---------- in half a section, the strip’s round gives way before a word is cut ---------- */
 {

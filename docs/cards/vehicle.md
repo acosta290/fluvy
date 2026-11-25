@@ -43,10 +43,16 @@ show_badge: true
 name_lines: 1
 # badge:
 variant: full
+# sections:
+#   - head
+#   - hero
+#   - controls
+#   - rows
 energy: hybrid
 # tank_size:
 hero: ruler
 # image:
+# map:
 show_head: true
 show_hero: true
 show_range: true
@@ -102,6 +108,7 @@ power_decimals: auto
 | `icon` |  | The card’s icon, in place of the entity’s own. |
 | `badge` |  | Words, an entity’s state or a template of your own in the head’s badge, in place of what the car is doing. |
 | `variant` | `full` | The card’s layout. `full` · `compact` · `mini`. |
+| `sections` | `head`, `hero`, `controls`, `rows` | The card’s parts to draw, in this order; a part left out is not drawn. Left out, all of them as they stand. Any of `head` · `image` (Picture) · `hero` (Battery) · `controls` · `rows` · `tyres` · `map` · `quick_actions`. |
 | `energy` | `auto` | What the car runs on: its battery, its tank, or both; automatic, its tank where it has one and no battery, else its battery. `auto` · `electric` · `fuel` · `hybrid` (Plug-in hybrid). |
 | `tank_size` |  | The tank’s size, so that a car which says only how much is in it shows its level. 0 to 500. |
 | `hero` | `ruler` | Draws the battery or the tank on a ruler, as a ring, or as a liquid. `ruler` · `ring` · `liquid`. |
@@ -109,6 +116,13 @@ power_decimals: auto
 | `image` |  | A picture of the car: an address, an entity whose picture it is, or the integration’s own. |
 | `image_position` | `hero` | Where the car’s picture stands: over its battery or its tank, or in the head. `hero` (Over the battery) · `head` (The head). |
 | `image_size` |  | The picture’s size over the battery: a share of the card’s width (50%) or a height (120px), the card’s height following it. |
+| `map` | none | A mini map of where the car is, Home Assistant’s own: `auto` for the car’s own tracker, a tracker, or a list of them, the car’s first. A list. |
+| `map_size` |  | The map’s size: a share of the card’s width (50%) or a height (120px); left out, 2:1 across the card. |
+| `map_zoom` |  | How close the map is drawn; left out, as Home Assistant fits its trackers. 1 to 20. |
+| `map_theme` | `auto` | The map’s colours: the card’s own mode, or always light or dark. `auto` · `light` · `dark`. |
+| `hours_to_show` | `0` | How many hours of the car’s trail its map draws. 0 to 168. |
+| `show_address` | `true` | Says where the car is in a pill over the map: its address where its integration gives one, else its place’s name. |
+| `map_interactive` | `true` | Lets a finger pan and zoom the map; off, it is a still picture whose tap opens the car’s tracker. |
 | `show_head` | `true` | Shows the head: the car, its name, where it is and what it is doing. |
 | `show_hero` | `true` | Shows the battery or the tank, or a plug-in hybrid’s both. |
 | `show_range` | `true` | Shows the range. |
@@ -336,6 +350,30 @@ show_status: false
 show_controls: false
 show_rows: false # every part hidden: the card is the picture, its tap the card's
 ```
+
+### A liquid, a mini map and its parts in your own order
+
+```yaml
+type: custom:fluvy-vehicle-card
+device: 9b2d…
+hero: liquid    # ruler (the default), ring, liquid
+map: auto       # the car's own tracker; or an entity, or a list, the car's first
+map_size: 160px # as image_size: a share of the card's width, or a height
+map_zoom: 15    # 1 to 20; without it Home Assistant fits the trackers
+sections: [head, map, hero, controls, tyres, rows]
+```
+
+- `hero: liquid` draws the battery or the tank as the gauges' liquid, a hybrid's both: bubbles rise while the battery
+  charges, the charge limit is a line across it, and `animate: false` rests it.
+- The map is Home Assistant's own, with its own tiles: no key and no account, and the car's position is never sent
+  anywhere to look its address up. The pill over its foot says the address the car's integration gives (a sensor named
+  in `roles` as `address`), else the place's name; `show_address: false` hides it.
+- `map_interactive: false` makes it a still picture whose tap opens the tracker: a map that pans can hold a phone's
+  scroll.
+- `map_theme` is `auto` (the card's own mode), `light` or `dark`; `hours_to_show` draws the trail behind the car. An
+  entry of the list may be Home Assistant's own (`{ entity: device_tracker.car, label_mode: icon }`).
+- `sections` names the parts to draw, in their order: `head`, `image`, `map`, `hero` (its line with it), `controls`,
+  `rows`, `tyres`, `quick_actions`. A part left out is not drawn; without the key the card is as it was.
 
 <details>
 <summary>Older names the card still reads</summary>

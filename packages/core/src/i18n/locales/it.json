@@ -3491,7 +3491,16 @@
     "editor.show_head": "Mostra l’intestazione",
     "editor.show_hero": "Mostra la batteria",
     "editor.image_size": "Dimensione dell’immagine",
-    "editor.image_size_helper": "Una parte della larghezza della scheda, come 50%, o un’altezza, come 120px"
+    "editor.image_size_helper": "Una parte della larghezza della scheda, come 50%, o un’altezza, come 120px",
+    "editor.sections": "Parti, in ordine",
+    "editor.section_head": "Intestazione",
+    "editor.map_helper": "La mappa di Home Assistant con i tracker scelti, per primo quello dell’auto",
+    "editor.map_auto": "Il tracker dell’auto",
+    "editor.map_size": "Dimensione della mappa",
+    "editor.map_theme": "Colori della mappa",
+    "editor.map_light": "Chiaro",
+    "editor.show_address": "Mostra dove si trova sulla mappa",
+    "editor.map_interactive": "Sposta e ingrandisci la mappa"
   },
   "remote": {
     "key.power": "Accensione",

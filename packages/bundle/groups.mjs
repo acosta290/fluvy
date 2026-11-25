@@ -458,9 +458,10 @@ const ROUND_GAUGE = /\/packages\/cards\/src\/shared\/round-gauge\.ts/;
 const NUMBER_CONTROLS = /\/packages\/cards\/src\/shared\/number-controls\.ts/;
 
 /**
- * Home Assistant's own map on a plate of ours (1.26: what makes it through Home Assistant's card helpers once its
- * plate has a box, fits it again as the plate's size settles and tells it the house and the page's mode) — fetched by
- * the first Map card drawn as a map; a dashboard without one never pays for it. It left core in 1.26.
+ * Home Assistant's own map on a plate of ours (1.26, #266: what makes it through Home Assistant's card helpers once
+ * its plate has a box, fits it again as the plate's size settles and tells it the house and the page's mode) — fetched
+ * by the first Map card drawn as a map and the first Vehicle card asked for one; a dashboard without a map never pays
+ * for it. It left core in 1.26.
  */
 const HA_MAP = /\/packages\/cards\/src\/shared\/ha-map\.ts/;
 

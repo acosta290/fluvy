@@ -667,12 +667,25 @@ export const MEANINGS: Readonly<Record<string, string>> = {
     'What the car runs on: its battery, its tank, or both; automatic, its tank where it has one and no battery, else its battery.',
   'vehicle.entity':
     'An entity of the car, where its device is not named: the device is found from it.',
+  'vehicle.hours_to_show': 'How many hours of the car’s trail its map draws.',
   'vehicle.image':
     'A picture of the car: an address, an entity whose picture it is, or the integration’s own.',
   'vehicle.image_size':
     'The picture’s size over the battery: a share of the card’s width (50%) or a height (120px), the card’s height following it.',
+  'vehicle.map':
+    'A mini map of where the car is, Home Assistant’s own: `auto` for the car’s own tracker, a tracker, or a list of them, the car’s first.',
+  'vehicle.map_interactive':
+    'Lets a finger pan and zoom the map; off, it is a still picture whose tap opens the car’s tracker.',
+  'vehicle.map_size':
+    'The map’s size: a share of the card’s width (50%) or a height (120px); left out, 2:1 across the card.',
+  'vehicle.map_theme': 'The map’s colours: the card’s own mode, or always light or dark.',
+  'vehicle.map_zoom': 'How close the map is drawn; left out, as Home Assistant fits its trackers.',
   'vehicle.quick_state_position':
     'Where the quick actions’ states stand: under their icons, their line taller, or beside them, the rounds wider.',
+  'vehicle.sections':
+    'The card’s parts to draw, in this order; a part left out is not drawn. Left out, all of them as they stand.',
+  'vehicle.show_address':
+    'Says where the car is in a pill over the map: its address where its integration gives one, else its place’s name.',
   'vehicle.show_head': 'Shows the head: the car, its name, where it is and what it is doing.',
   'vehicle.show_hero': 'Shows the battery or the tank, or a plug-in hybrid’s both.',
   'vehicle.show_quick_states':

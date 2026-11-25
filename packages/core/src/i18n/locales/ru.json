@@ -3638,7 +3638,16 @@
     "editor.show_head": "Показывать заголовок",
     "editor.show_hero": "Показывать батарею",
     "editor.image_size": "Размер изображения",
-    "editor.image_size_helper": "Доля ширины карточки, например 50%, или высота, например 120px"
+    "editor.image_size_helper": "Доля ширины карточки, например 50%, или высота, например 120px",
+    "editor.sections": "Части по порядку",
+    "editor.section_head": "Заголовок",
+    "editor.map_helper": "Собственная карта Home Assistant с выбранными трекерами, трекер автомобиля первым",
+    "editor.map_auto": "Собственный трекер автомобиля",
+    "editor.map_size": "Размер карты",
+    "editor.map_theme": "Цвета карты",
+    "editor.map_light": "Светлый",
+    "editor.show_address": "Показывать место на карте",
+    "editor.map_interactive": "Двигать и масштабировать карту"
   },
   "expander": {
     "card": "Раскрывающийся блок",

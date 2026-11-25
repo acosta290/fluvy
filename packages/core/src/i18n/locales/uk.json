@@ -3638,7 +3638,16 @@
     "editor.show_head": "Показувати заголовок",
     "editor.show_hero": "Показувати батарею",
     "editor.image_size": "Розмір зображення",
-    "editor.image_size_helper": "Частка ширини картки, наприклад 50%, або висота, наприклад 120px"
+    "editor.image_size_helper": "Частка ширини картки, наприклад 50%, або висота, наприклад 120px",
+    "editor.sections": "Порядок частин",
+    "editor.section_head": "Заголовок",
+    "editor.map_helper": "Власна мапа Home Assistant з вибраними трекерами, трекер автомобіля першим",
+    "editor.map_auto": "Власний трекер автомобіля",
+    "editor.map_size": "Розмір мапи",
+    "editor.map_theme": "Кольори мапи",
+    "editor.map_light": "Світлий",
+    "editor.show_address": "Показувати місце на мапі",
+    "editor.map_interactive": "Рухати й масштабувати мапу"
   },
   "expander": {
     "card": "Розгортний блок",

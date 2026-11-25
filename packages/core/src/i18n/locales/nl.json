@@ -3491,7 +3491,16 @@
     "editor.show_head": "Kop tonen",
     "editor.show_hero": "Accu tonen",
     "editor.image_size": "Afbeeldingsgrootte",
-    "editor.image_size_helper": "Een deel van de breedte van de kaart, zoals 50%, of een hoogte, zoals 120px"
+    "editor.image_size_helper": "Een deel van de breedte van de kaart, zoals 50%, of een hoogte, zoals 120px",
+    "editor.sections": "Onderdelen, op volgorde",
+    "editor.section_head": "Kop",
+    "editor.map_helper": "De kaart van Home Assistant zelf met de gekozen trackers, die van de auto eerst",
+    "editor.map_auto": "De eigen tracker van de auto",
+    "editor.map_size": "Kaartgrootte",
+    "editor.map_theme": "Kaartkleuren",
+    "editor.map_light": "Licht",
+    "editor.show_address": "Tonen waar hij is op de kaart",
+    "editor.map_interactive": "Kaart verschuiven en zoomen"
   },
   "remote": {
     "key.power": "Aan/uit",

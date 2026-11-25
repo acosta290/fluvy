@@ -3491,7 +3491,16 @@
     "editor.show_head": "Kopfzeile anzeigen",
     "editor.show_hero": "Batterie anzeigen",
     "editor.image_size": "Bildgröße",
-    "editor.image_size_helper": "Ein Anteil der Kartenbreite wie 50% oder eine Höhe wie 120px"
+    "editor.image_size_helper": "Ein Anteil der Kartenbreite wie 50% oder eine Höhe wie 120px",
+    "editor.sections": "Teile, in Reihenfolge",
+    "editor.section_head": "Kopfzeile",
+    "editor.map_helper": "Home Assistants eigene Karte der gewählten Tracker, der des Autos zuerst",
+    "editor.map_auto": "Der eigene Tracker des Autos",
+    "editor.map_size": "Kartengröße",
+    "editor.map_theme": "Kartenfarben",
+    "editor.map_light": "Hell",
+    "editor.show_address": "Standort auf der Karte anzeigen",
+    "editor.map_interactive": "Karte verschieben und zoomen"
   },
   "remote": {
     "key.power": "Ein/Aus",

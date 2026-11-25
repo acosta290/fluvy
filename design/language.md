@@ -974,7 +974,8 @@ sheet asked for no dial draws its control with it too (§ Details sheets).
   grid: in its own square under a 1.6:1 plate, what it fitted to the people sat under the plate's middle, 1.23,
   #220), is made once the plate has a box (in an Expander, a Swipe's page or a sheet), and is fitted to the people
   again each time the plate's size settles otherwise, by one observer of the plate, never a timer. What makes it is a
-  chunk of its own since 1.26 (`ha-map`, fetched by the first card drawn as a map).
+  chunk of its own since 1.26 (`ha-map`, fetched by the first card drawn as a map), which the Vehicle card's mini map
+  shares.
 
 ## Compass (1.23, #209, by @twodrops)
 
@@ -3862,8 +3863,8 @@ panel) and the controls' row (the map's zone columns as buttons: a circle and it
   the left, the end solid while shut, its lid up while open), a car's door and window (shut and open), the charge port,
   the odometer, a tyre.
 - **Heights** by the config alone (`vehicle-family.ts`): full 460 (its picture over the battery 176 more, a ring 68
-  more, its tyres 112 more, a row 48, the card's own controls 76 a row more; a liquid as the ruler), compact 200, mini
-  76. A car out of reach keeps every part.
+  more, its tyres 112 more, a row 48, the card's own controls 76 a row more; a liquid as the ruler, a mini map 176
+  more), compact 200, mini 76. A car out of reach keeps every part.
 - Its chunk is its own (`vehicle`): every page carries only its tag and height. Its editor went with the forms in 1.25
   (`vehicle-editor.ts`, fetched the first time a card is edited), so a dashboard never loads it.
 
@@ -3959,9 +3960,9 @@ glyph; every addition is off until a config asks for it.
   tap, hold and double tap).
 - **Roles as a map** (`roles: { fuel: sensor.x }`) read as the list they mean, in the card and in its editor.
 
-### The battery or the tank as a liquid (1.26, #256)
+### A liquid, a mini map and its parts in an order of its own (1.26, #256, #266)
 
-Asked by @SentinelXS. Off until a config asks: the card of 1.25 draws as it did.
+Asked by @SentinelXS. Three looks on one card, each off until a config asks: the card of 1.25 draws as it did.
 
 - **The battery or the tank as a liquid** (`hero: liquid`): the gauges' water (§ Charts: the liquid) in the marked
   ruler's room, so the card keeps its height — the value row as it was (the figure and its unit, the range at its
@@ -3975,6 +3976,38 @@ Asked by @SentinelXS. Off until a config asks: the card of 1.25 draws as it did.
     (the house's, the card's `animate: false`, the system's): the water then rests on its first frame, still a wave.
   - **The charge limit** is a hairline across the band at its level (1 px, the text's ink at 32 %), no word: the line
     under the band says "Limit 80 %". A limit of 100 % is the brim itself and has none; `show_limit: false` hides it.
+- **The mini map** (`map`): Home Assistant's own map card on the picture's plate (`map_size`, the grammar of
+  `image_size`: 2:1 across the column, a share of it, or a height; 128 at least where it names none, so its marker
+  stands clear of the pill in a narrow column), radius 16, the inset's fill under it. Home Assistant's card is drawn
+  square in the plate's corners (its hairline, its corners and its shadow are not drawn there: the plate clips it),
+  made once the plate has a box and fitted again as its size settles, by the Map card's own controller
+  (`shared/ha-map.ts`, a chunk both fetch as they first draw a map). It is fitted to its trackers, at `map_zoom` where
+  the card names one, with the trail of `hours_to_show`, in the card's own mode or the one it asks for (`map_theme`).
+  Nothing is geocoded and no key is asked: the car's position never leaves the house.
+  - **Where it is**: a pill over the plate's foot, 8 from its start and its foot (28 tall, the card's fill with its
+    hairline, 13/600, the set's pin at 16 in the accent, 12 a side), inside a button 44 tall that opens the tracker's
+    details. It says the car's address away from home where its integration gives one, else its tracker's place in
+    Home Assistant's words ("Home", a zone's name, "Away", "Unavailable"), the dash where it has no tracker. Never cut:
+    an address gives its trailing parts up whole, at its commas ("14 Station Road" of "…, Cambridge CB1 2JB"), then
+    gives way to the place's word, then the pill is its pin alone; a reader always hears it whole. The head's line no
+    longer says where the car is while the pill does. `show_address: false` hides the pill.
+  - **Still** (`map_interactive: false`): no finger moves the map, and the plate is one button that opens the tracker
+    (the way out of a map that holds a phone's scroll), the pill raised over it.
+  - **Nothing to draw** (no tracker, out of reach, no coordinates, no card helpers): the plate keeps its size with the
+    set's map glyph at 32 in the secondary ink, the pill saying the state.
+  - It stands after the tyres and before the small icons; `sections` puts it anywhere, the picture's place among them.
+    The whole card alone, as the picture.
+- **The parts in an order of its own** (`sections`): `head`, `image`, `map`, `hero`, `controls`, `rows`, `tyres`,
+  `quick_actions`. Those named are drawn, in that order, each once; a part left out is not drawn; a name the card does
+  not know is dropped; none named (an empty list names none), all of them as they stand: the order of 1.25, the map
+  before the small icons. The status line is the battery's: it travels with `hero`, 8 under it, or stands alone in its
+  place where the battery is hidden. A `show_…: false` still hides a part the list names; naming the tyres asks for
+  them. Every part stands 16 under the one before and the first at the card's padding — a head that is not first as
+  any part — so the height is the parts' own, whatever their order (`vehicleSections`, one rule for the card and its
+  declared height). The compact card draws its own parts of the list (the head, the battery, the controls, the small
+  icons); the strip has none. With no head, the picture is still the card's button; a map first with no head opens the
+  card on its plate. In the editor the list offers the parts the card can draw and shows today's order until one is
+  chosen; a part's own switch is shown while no list is set, and while it is off.
 
 ## Drive pad (1.20, #178)
 

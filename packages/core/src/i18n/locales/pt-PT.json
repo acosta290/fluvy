@@ -3491,7 +3491,16 @@
     "editor.show_head": "Mostrar o cabeçalho",
     "editor.show_hero": "Mostrar a bateria",
     "editor.image_size": "Tamanho da imagem",
-    "editor.image_size_helper": "Uma parte da largura do cartão, como 50%, ou uma altura, como 120px"
+    "editor.image_size_helper": "Uma parte da largura do cartão, como 50%, ou uma altura, como 120px",
+    "editor.sections": "Partes, em ordem",
+    "editor.section_head": "Cabeçalho",
+    "editor.map_helper": "O mapa do próprio Home Assistant com os localizadores escolhidos, o do carro primeiro",
+    "editor.map_auto": "O localizador do próprio carro",
+    "editor.map_size": "Tamanho do mapa",
+    "editor.map_theme": "Cores do mapa",
+    "editor.map_light": "Claro",
+    "editor.show_address": "Mostrar onde está no mapa",
+    "editor.map_interactive": "Mover e ampliar o mapa"
   },
   "remote": {
     "key.power": "Liga/desliga",

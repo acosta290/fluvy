@@ -3671,7 +3671,16 @@
     "editor.show_head": "Показване на заглавието",
     "editor.show_hero": "Показване на батерията",
     "editor.image_size": "Размер на изображението",
-    "editor.image_size_helper": "Дял от ширината на картата, например 50%, или височина, например 120px"
+    "editor.image_size_helper": "Дял от ширината на картата, например 50%, или височина, например 120px",
+    "editor.sections": "Части, по ред",
+    "editor.section_head": "Заглавие",
+    "editor.map_helper": "Собствената карта на Home Assistant с избраните тракери, първо този на автомобила",
+    "editor.map_auto": "Собственият тракер на автомобила",
+    "editor.map_size": "Размер на картата",
+    "editor.map_theme": "Цветове на картата",
+    "editor.map_light": "Светъл",
+    "editor.show_address": "Показване на мястото върху картата",
+    "editor.map_interactive": "Местене и мащабиране на картата"
   },
   "web": {
     "card": "Уеб страница",

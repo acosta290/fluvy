@@ -1,10 +1,10 @@
 // @vitest-environment happy-dom
 import type { HaFormSchemaItem, HassEntity, HomeAssistant, LovelaceCardConfig } from '@fluvy/core';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import '../vehicle/english.js';
 import { normaliseConfig } from '../shared/config.js';
 import type { TextRuler } from '../shared/fit.js';
-import { vehicleHeight } from '../vehicle-family.js';
+import { vehicleHeight, vehicleSections } from '../vehicle-family.js';
 import {
   carHouse,
   CARS,
@@ -57,12 +57,14 @@ async function mount(
   letter = 0,
 ): Promise<Mounted> {
   const card = document.createElement('fluvy-vehicle-card') as Mounted;
-  // happy-dom lays out no text: where a test needs words measured, each letter is `letter` wide
-  if (letter)
-    (card as unknown as { head: { ruler: TextRuler } }).head.ruler.width = (
-      _: string,
-      text: string,
-    ) => text.length * letter;
+  // happy-dom lays out no text: where a test needs words measured, each letter is `letter` wide (a pill its words and
+  // its sides, on the 4 grid)
+  if (letter) {
+    const { ruler } = (card as unknown as { head: { ruler: TextRuler } }).head;
+    ruler.width = (_: string, text: string) => text.length * letter;
+    ruler.pill = (_: string, text: string, pad: number) =>
+      Math.ceil((text.length * letter + pad) / 4) * 4;
+  }
   card.setConfig({ type: 'custom:fluvy-vehicle-card', _now: NOW, ...config } as LovelaceCardConfig);
   card.hass = hass;
   (card as unknown as { width: number }).width = width;
@@ -1384,5 +1386,526 @@ describe('the battery and the tank as a liquid (#256)', () => {
     expect(shown({ hero: 'liquid' })).toContain('animate');
     expect(shown({ hero: 'liquid', show_hero: false })).not.toContain('animate');
     expect(shown({ hero: 'liquid', variant: 'compact' })).not.toContain('hero');
+  });
+});
+
+describe('the card’s parts in an order of its own (#266)', () => {
+  const at = (config: Record<string, unknown>) =>
+    FluvyVehicleCard.layoutHeight({ type: 'x', ...config } as LovelaceCardConfig);
+  const parts = (config: Record<string, unknown>) =>
+    vehicleSections({ type: 'x', ...config } as LovelaceCardConfig);
+
+  it('draws all of them as they stand where it names none', () => {
+    expect(parts({})).toEqual(['head', 'hero', 'controls', 'rows']);
+    expect(
+      parts({
+        image: '/local/car.png',
+        show_tyres: true,
+        map: 'auto',
+        quick_actions: ['sensor.x'],
+      }),
+    ).toEqual(['head', 'image', 'hero', 'controls', 'rows', 'tyres', 'map', 'quick_actions']);
+    expect(parts({ show_head: false, show_controls: false, rows: [] })).toEqual(['hero']);
+    // the battery's line alone still stands in its place
+    expect(parts({ show_hero: false })).toContain('hero');
+    expect(parts({ show_hero: false, show_status: false })).not.toContain('hero');
+    // the compact card has no picture, rows, tyres or map
+    expect(
+      parts({ variant: 'compact', image: '/local/car.png', show_tyres: true, map: 'auto' }),
+    ).toEqual(['head', 'hero', 'controls']);
+  });
+
+  it('draws the parts it names, in their order, each once, the rest left out; a name it does not know dropped', () => {
+    expect(parts({ sections: ['controls', 'hero', 'head'] })).toEqual(['controls', 'hero', 'head']);
+    expect(parts({ sections: ['head', 'head', 'rows', 'fuel', 'constructor', 7] })).toEqual([
+      'head',
+      'rows',
+    ]);
+    // an empty list names none: all of them as they stand
+    expect(parts({ sections: [] })).toEqual(['head', 'hero', 'controls', 'rows']);
+    // (only names it does not know: nothing to draw)
+    expect(parts({ sections: ['fuel'] })).toEqual([]);
+    // an explicit `show_…: false` still hides a part it names; naming the tyres asks for them
+    expect(parts({ sections: ['head', 'hero', 'controls'], show_head: false })).toEqual([
+      'hero',
+      'controls',
+    ]);
+    expect(parts({ sections: ['head', 'tyres'] })).toEqual(['head', 'tyres']);
+    expect(parts({ sections: ['head', 'tyres'], show_tyres: false })).toEqual(['head']);
+    // a part with nothing to draw is not drawn for being named: no picture, no map, no quick action
+    expect(parts({ sections: ['image', 'map', 'quick_actions', 'hero'] })).toEqual(['hero']);
+    expect(parts({ sections: ['image'], image: '/x.png', image_position: 'head' })).toEqual([]);
+    expect(parts({ sections: ['map', 'hero'], map: [] })).toEqual(['hero']);
+    expect(parts({ sections: ['rows', 'tyres', 'map', 'head'], variant: 'compact' })).toEqual([
+      'head',
+    ]);
+  });
+
+  it('declares its height by the parts it draws, whatever their order', () => {
+    expect(at({ sections: ['head', 'hero', 'controls', 'rows'] })).toBe(at({}));
+    expect(at({ sections: ['rows', 'controls', 'hero', 'head'] })).toBe(at({}));
+    expect(at({ sections: ['head', 'hero'] })).toBe(40 + 44 + 16 + 140 + 8 + 20);
+    expect(at({ sections: ['hero', 'head'], show_status: false })).toBe(40 + 44 + 16 + 140);
+    expect(at({ sections: ['hero'], show_hero: false })).toBe(40 + 20);
+    expect(at({ sections: ['head', 'tyres'] })).toBe(40 + 44 + 16 + 96);
+    expect(at({ sections: ['controls'] })).toBe(40 + 64);
+    expect(at({ sections: [] })).toBe(at({}));
+    expect(at({ sections: ['fuel'] })).toBe(40);
+    expect(at({ sections: ['hero', 'head'], energy: 'hybrid', hero: 'liquid' })).toBe(
+      40 + 44 + 16 + 140 + 16 + 140 + 8 + 20,
+    );
+    expect(at({ sections: ['controls', 'hero', 'head'], variant: 'compact' })).toBe(
+      at({ variant: 'compact' }),
+    );
+    // the strip has no parts
+    expect(at({ sections: ['head'], variant: 'mini' })).toBe(76);
+  });
+
+  it('draws them in that order: the line under the battery wherever it stands, a head that is not first as a part', async () => {
+    const card = await mount({
+      device: TESLA.device,
+      sections: ['controls', 'hero', 'tyres', 'head'],
+    });
+    expect(sections(card)).toEqual([
+      'div.vh-controls',
+      'div.vh-hero',
+      'p.vh-line',
+      'div.vh-tyres',
+      'div.fv-card__head.fv-card__head--hold.fv-card__head--tap',
+    ]);
+    document.body.replaceChildren();
+    // the line alone where the battery is hidden; rows named alone
+    const line = await mount({
+      device: TESLA.device,
+      sections: ['rows', 'hero'],
+      show_hero: false,
+    });
+    expect(sections(line)).toEqual(['div.vh-rows', 'p.vh-line']);
+    document.body.replaceChildren();
+    // out of reach, the same anatomy
+    const config = { device: TESLA.device, sections: ['hero', 'controls', 'head'] };
+    const anatomy = sections(await mount(config));
+    document.body.replaceChildren();
+    expect(sections(await mount(config, house(away(TESLA))))).toEqual(anatomy);
+  });
+
+  it('draws only the compact card’s parts of them, and none on the strip', async () => {
+    const compact = await mount({
+      device: TESLA.device,
+      variant: 'compact',
+      sections: ['controls', 'rows', 'tyres', 'hero', 'head'],
+    });
+    expect(sections(compact)).toEqual([
+      'div.vh-controls.vh-controls--bare',
+      'div.vh-hero',
+      'p.vh-line',
+      'div.fv-card__head.fv-card__head--hold.fv-card__head--tap',
+    ]);
+    document.body.replaceChildren();
+    const strip = await mount({ device: TESLA.device, variant: 'mini', sections: ['rows'] });
+    expect(root(strip).querySelector('.vh-card--mini')).not.toBeNull();
+    expect(root(strip).querySelector('.fv-row__title')).not.toBeNull();
+  });
+
+  it('says where it is in the head once its rows are not drawn, and keeps the picture the card’s button without a head', async () => {
+    // no row says the place: the head does
+    const card = await mount({ device: TESLA.device, sections: ['head', 'hero'] });
+    expect(text(root(card).querySelector('.fv-card__sub'))).toBe('Home');
+    document.body.replaceChildren();
+    const pictured = await mount({
+      device: TESLA.device,
+      image: 'data:image/svg+xml,%3Csvg%2F%3E',
+      sections: ['hero', 'image'],
+    });
+    expect(sections(pictured)).toEqual(['div.vh-hero', 'p.vh-line', 'span.vh-picture']);
+    expect(root(pictured).querySelector('.vh-picture > .fv-tile__tap')).not.toBeNull();
+  });
+
+  it('offers the parts it can draw in the editor, in today’s order by default, a part’s switch while it has no list', async () => {
+    const { choices, getConfigForm, defaults } = await import('./vehicle-editor.js');
+    const offered = (config: Record<string, unknown>) =>
+      choices({ type: 'x', ...config } as LovelaceCardConfig, undefined)['sections']?.map(
+        (option) => option.value,
+      );
+    expect(offered({})).toEqual(['head', 'hero', 'controls', 'rows', 'tyres']);
+    expect(offered({ image: '/x.png', map: 'auto', quick_actions: ['sensor.x'] })).toEqual([
+      'head',
+      'image',
+      'hero',
+      'controls',
+      'rows',
+      'tyres',
+      'map',
+      'quick_actions',
+    ]);
+    expect(offered({ image: '/x.png', image_position: 'head', variant: 'compact' })).toEqual([
+      'head',
+      'hero',
+      'controls',
+    ]);
+    // every part is named: none is its key
+    for (const option of choices({ type: 'x', image: '/x.png', map: 'auto' }, undefined)[
+      'sections'
+    ] ?? [])
+      expect(option.label).not.toMatch(/[._]/);
+    // what it shows where the config names none: what the card draws, in its order
+    expect(defaults({ type: 'x', show_tyres: true }, undefined)['sections']).toEqual([
+      'head',
+      'hero',
+      'controls',
+      'rows',
+      'tyres',
+    ]);
+    const shown = (data: Record<string, unknown>) =>
+      fieldsShown(getConfigForm().schema, { ...defaults({ type: 'x' }, undefined), ...data });
+    expect(shown({})).toContain('sections');
+    expect(shown({ variant: 'mini' })).not.toContain('sections');
+    for (const name of ['show_head', 'show_hero', 'show_controls', 'show_rows', 'show_tyres']) {
+      expect(shown({}), name).toContain(name);
+      expect(shown({ sections: ['head', 'hero'] }), name).not.toContain(name);
+    }
+    // a part its switch hides can be shown again while a list is set (the tyres' is off by default: the list asks)
+    expect(shown({ sections: ['head', 'hero'], show_head: false })).toContain('show_head');
+    expect(shown({ sections: ['head', 'hero'], show_head: false })).not.toContain('show_hero');
+    // a list that is the one drawn without it changes nothing: the switches stay
+    expect(shown({ sections: ['head', 'hero', 'controls', 'rows'] })).toContain('show_head');
+    // what acts on a part follows the list: the battery's look, its taps, the tyres' decimals
+    expect(shown({ sections: ['head', 'controls'] })).not.toContain('hero');
+    expect(shown({ sections: ['head', 'controls'] })).not.toContain('hero_tap_action');
+    expect(shown({ sections: ['head', 'tyres'] })).toContain('tyre_decimals');
+  });
+});
+
+/** A ResizeObserver a test tells: what changed size, every observer watching it is told. */
+class Sizes {
+  static made: Sizes[] = [];
+  readonly watched = new Set<Element>();
+  constructor(readonly told: () => void) {
+    Sizes.made.push(this);
+  }
+  observe(target: Element): void {
+    this.watched.add(target);
+  }
+  unobserve(target: Element): void {
+    this.watched.delete(target);
+  }
+  disconnect(): void {
+    this.watched.clear();
+  }
+  static change(target: Element): void {
+    for (const one of Sizes.made) if (one.watched.has(target)) one.told();
+  }
+}
+
+/** Home Assistant's map card as its helpers make it: what it was last told. */
+class MapStub extends HTMLElement {
+  static made: MapStub[] = [];
+  config: LovelaceCardConfig | undefined;
+  layout: string | undefined;
+  hass: unknown;
+  constructor() {
+    super();
+    MapStub.made.push(this);
+  }
+  setConfig(config: LovelaceCardConfig): void {
+    this.config = config;
+  }
+}
+if (!customElements.get('vehicle-map-stub')) customElements.define('vehicle-map-stub', MapStub);
+
+describe('the mini map (#266)', () => {
+  /** A car's tracker saying where it is. */
+  const placed = (id: string, state = 'home'): Record<string, Partial<HassEntity>> => ({
+    [id]: {
+      state,
+      attributes: { friendly_name: 'Location', latitude: 52.2053, longitude: 0.1218 },
+    },
+  });
+  const TRACKER = 'device_tracker.model_y_location';
+  const plate = (card: Mounted): HTMLElement =>
+    root(card).querySelector<HTMLElement>('.vh-map') as HTMLElement;
+  /** The plate laid out, and Home Assistant's map made on it. */
+  const laidOut = async (card: Mounted): Promise<void> => {
+    const box = plate(card);
+    Object.defineProperty(box, 'clientWidth', { value: 320, configurable: true });
+    Object.defineProperty(box, 'clientHeight', { value: 160, configurable: true });
+    Sizes.change(box);
+    for (let i = 0; i < 3; i++) {
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      await card.updateComplete;
+    }
+  };
+  const pill = (card: Mounted): string => text(root(card).querySelector('.vh-map__pill'));
+
+  beforeEach(() => {
+    Sizes.made = [];
+    MapStub.made = [];
+    vi.stubGlobal('ResizeObserver', Sizes);
+    window.loadCardHelpers = () =>
+      Promise.resolve({
+        createCardElement: (config: LovelaceCardConfig) => {
+          const element = document.createElement('vehicle-map-stub') as MapStub;
+          element.setConfig(config);
+          return element;
+        },
+      });
+  });
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    delete window.loadCardHelpers;
+  });
+
+  it('draws no map until the card names one, and declares its plate by its size', async () => {
+    const card = await mount({ device: TESLA.device }, house(placed(TRACKER)));
+    expect(root(card).querySelector('.vh-map')).toBeNull();
+    expect(MapStub.made).toHaveLength(0);
+    const at = (config: Record<string, unknown>) =>
+      FluvyVehicleCard.layoutHeight({ type: 'x', ...config } as LovelaceCardConfig);
+    expect(at({ map: 'auto' })).toBe(at({}) + 16 + 160);
+    expect(at({ map: ['auto', 'person.ona'] })).toBe(at({}) + 16 + 160);
+    expect(at({ map: 'auto', map_size: '120px' })).toBe(at({}) + 16 + 120);
+    expect(at({ map: 'auto', map_size: '50%' })).toBe(at({}) + 16 + 80);
+    expect(at({ map: '' })).toBe(at({}));
+    expect(at({ map: [] })).toBe(at({}));
+    expect(at({ map: 'auto', variant: 'compact' })).toBe(at({ variant: 'compact' }));
+    // its other keys never change it
+    expect(
+      at({ map: 'auto', map_zoom: 16, hours_to_show: 6, show_address: false, map_theme: 'dark' }),
+    ).toBe(at({ map: 'auto' }));
+  });
+
+  it('makes Home Assistant’s own map of the car’s tracker once its plate has a box, after the tyres and before the small icons', async () => {
+    const card = await mount(
+      { device: TESLA.device, map: 'auto', show_tyres: true, quick_actions: [TRACKER] },
+      house(placed(TRACKER)),
+    );
+    expect(sections(card).slice(-3)).toEqual(['div.vh-tyres', 'div.vh-map', 'div.vh-quick']);
+    expect(plate(card).style.width).toBe('320px');
+    expect(plate(card).style.height).toBe('160px');
+    // no box yet (folded in an Expander): no map, the plate keeps its place
+    expect(MapStub.made).toHaveLength(0);
+    await laidOut(card);
+    expect(MapStub.made).toHaveLength(1);
+    const map = MapStub.made[0] as MapStub;
+    expect(map.config).toEqual({
+      type: 'map',
+      entities: [TRACKER],
+      auto_fit: true,
+      theme_mode: 'light',
+    });
+    expect(map.layout).toBe('grid');
+    expect(map.hass).toBeDefined();
+    expect(plate(card).contains(map)).toBe(true);
+    expect(plate(card).classList.contains('is-empty')).toBe(false);
+  });
+
+  it('asks it for the trackers, the zoom, the trail and the mode the card names', async () => {
+    const dark = { ...house(placed(TRACKER)), themes: { darkMode: true, themes: {} } };
+    const card = await mount(
+      {
+        device: TESLA.device,
+        map: ['auto', 'person.ona', { entity: 'device_tracker.ev6_location', label_mode: 'icon' }],
+        map_zoom: 31,
+        hours_to_show: 6,
+      },
+      dark as unknown as HomeAssistant,
+    );
+    await laidOut(card);
+    // the car's first, an entry of Home Assistant's own kept as it is, the zoom held to 20, the card's own mode
+    expect(MapStub.made[0]?.config).toEqual({
+      type: 'map',
+      entities: [
+        TRACKER,
+        'person.ona',
+        { entity: 'device_tracker.ev6_location', label_mode: 'icon' },
+      ],
+      hours_to_show: 6,
+      default_zoom: 20,
+      auto_fit: true,
+      theme_mode: 'dark',
+    });
+    document.body.replaceChildren();
+    MapStub.made = [];
+    // always light, whatever the card's mode; what is no entity is left out
+    const light = await mount(
+      { device: TESLA.device, map: ['auto', 'nonsense', { name: 'x' }, 7], map_theme: 'light' },
+      dark as unknown as HomeAssistant,
+    );
+    await laidOut(light);
+    expect(MapStub.made[0]?.config).toEqual({
+      type: 'map',
+      entities: [TRACKER],
+      auto_fit: true,
+      theme_mode: 'light',
+    });
+  });
+
+  it('tells its map again when what it asks of it changes, and the house as it hears of it', async () => {
+    const hass = house(placed(TRACKER));
+    const card = await mount({ device: TESLA.device, map: 'auto' }, hass);
+    await laidOut(card);
+    const map = MapStub.made[0] as MapStub;
+    card.setConfig({
+      type: 'custom:fluvy-vehicle-card',
+      _now: NOW,
+      device: TESLA.device,
+      map: 'auto',
+      map_zoom: 12,
+    } as LovelaceCardConfig);
+    await card.updateComplete;
+    expect(map.config).toMatchObject({ default_zoom: 12 });
+    const next = house(placed(TRACKER, 'not_home'));
+    card.hass = next;
+    await card.updateComplete;
+    expect(map.hass).toBe(next);
+    expect(MapStub.made).toHaveLength(1);
+  });
+
+  it('says where it is in a pill over its foot: its address away from home, else its place; the head no longer does', async () => {
+    // at home: the place's word, in the pill alone
+    const home = await mount({ device: KIA.device, map: 'auto', rows: [] }, house(), 360, 7);
+    expect(pill(home)).toBe('Home');
+    // (its last report is two hours old: the head still says so)
+    expect(text(root(home).querySelector('.fv-card__sub'))).toBe('Updated 2 h ago');
+    document.body.replaceChildren();
+    // away: its address, whole
+    const away = house({ 'device_tracker.ev6_location': { state: 'not_home' } });
+    const card = await mount({ device: KIA.device, map: 'auto', rows: [] }, away, 360, 7);
+    expect(pill(card)).toBe('Carrer de Mallorca 401');
+    expect(text(root(card).querySelector('.fv-card__sub'))).not.toContain('Mallorca');
+    const button = root(card).querySelector<HTMLButtonElement>('button.vh-map__where');
+    expect(button?.getAttribute('aria-label')).toBe('Location · Carrer de Mallorca 401');
+    // it opens the tracker's details
+    const opened: unknown[] = [];
+    const open = (event: Event) => opened.push((event as CustomEvent).detail.entityId);
+    window.addEventListener('hass-more-info', open);
+    button?.click();
+    window.removeEventListener('hass-more-info', open);
+    expect(opened).toEqual(['device_tracker.ev6_location']);
+    document.body.replaceChildren();
+    // without the pill, the head says it as before
+    const plain = await mount(
+      { device: KIA.device, map: 'auto', rows: [], show_address: false },
+      away,
+    );
+    expect(root(plain).querySelector('.vh-map__where')).toBeNull();
+    expect(text(root(plain).querySelector('.fv-card__sub'))).toContain('Carrer de Mallorca 401');
+  });
+
+  it('fits the address by its leading parts, then the place’s word, then the pin alone: never cut', async () => {
+    const address = (state: string): HomeAssistant =>
+      house({
+        'device_tracker.ev6_location': { state: 'not_home' },
+        'sensor.ev6_geocoded_location': { state },
+      });
+    const long = '14 Station Road, Cambridge CB1 2JB, United Kingdom';
+    // at 7 a letter, a pill is its words, its pin's 22 and its sides' 24 on the 4 grid; the plate keeps 8 each side
+    const said = async (width: number): Promise<string> => {
+      const card = await mount({ device: KIA.device, map: 'auto' }, address(long), width, 7);
+      const words = pill(card);
+      // whatever it shows, a reader hears the whole address
+      expect(root(card).querySelector('.vh-map__where')?.getAttribute('aria-label')).toBe(
+        `Location · ${long}`,
+      );
+      document.body.replaceChildren();
+      return words;
+    };
+    expect(await said(460)).toBe(long);
+    expect(await said(360)).toBe('14 Station Road, Cambridge CB1 2JB');
+    expect(await said(240)).toBe('14 Station Road');
+    expect(await said(200)).toBe('Not home');
+    expect(await said(120)).toBe('');
+  });
+
+  it('stands still where it is asked to: no finger moves it, the plate one button that opens the tracker', async () => {
+    const card = await mount(
+      { device: TESLA.device, map: 'auto', map_interactive: false },
+      house(placed(TRACKER)),
+    );
+    expect(plate(card).classList.contains('is-still')).toBe(true);
+    const cover = root(card).querySelector<HTMLButtonElement>('.vh-map > .fv-tile__tap');
+    expect(cover?.getAttribute('aria-label')).toBe('Location · Home');
+    const opened: unknown[] = [];
+    const open = (event: Event) => opened.push((event as CustomEvent).detail.entityId);
+    window.addEventListener('hass-more-info', open);
+    cover?.click();
+    window.removeEventListener('hass-more-info', open);
+    expect(opened).toEqual([TRACKER]);
+    document.body.replaceChildren();
+    // a map a finger moves has no button over it
+    const live = await mount({ device: TESLA.device, map: 'auto' }, house(placed(TRACKER)));
+    expect(plate(live).classList.contains('is-still')).toBe(false);
+    expect(root(live).querySelector('.vh-map > .fv-tile__tap')).toBeNull();
+  });
+
+  it('keeps its plate, empty, where no map can be drawn: no coordinates, out of reach, no tracker, no card helpers', async () => {
+    const empty = async (
+      config: Record<string, unknown>,
+      hass: HomeAssistant,
+    ): Promise<{ said: string; button: boolean }> => {
+      const card = await mount({ map: 'auto', ...config }, hass);
+      await laidOut(card);
+      const box = plate(card);
+      expect(box.classList.contains('is-empty')).toBe(true);
+      expect(box.style.height).toBe('160px');
+      expect(box.querySelector('.vh-map__view > svg')).not.toBeNull();
+      const out = {
+        said: pill(card),
+        button: root(card).querySelector('button.vh-map__where') !== null,
+      };
+      document.body.replaceChildren();
+      return out;
+    };
+    // a tracker that says a place and no coordinates
+    expect(await empty({ device: TESLA.device }, house())).toEqual({ said: 'Home', button: true });
+    // out of reach: the pill says so
+    expect(await empty({ device: TESLA.device }, house(away(TESLA)))).toEqual({
+      said: 'Unavailable',
+      button: true,
+    });
+    // a car with no tracker: a dash, and nothing to open
+    expect(await empty({ device: OCTAVIA.device }, house())).toEqual({ said: '—', button: false });
+    expect(MapStub.made).toHaveLength(0);
+    // Home Assistant's card helpers are not there (a page of ours alone)
+    delete window.loadCardHelpers;
+    expect(await empty({ device: TESLA.device }, house(placed(TRACKER)))).toEqual({
+      said: 'Home',
+      button: true,
+    });
+  });
+
+  it('offers the map’s own keys in the editor once a map is named, and its picker for ids alone', async () => {
+    const { choices, getConfigForm, defaults } = await import('./vehicle-editor.js');
+    const shown = (data: Record<string, unknown>) =>
+      fieldsShown(getConfigForm().schema, {
+        ...defaults({ type: 'x', ...data }, undefined),
+        ...data,
+      });
+    const own = [
+      'map_size',
+      'map_zoom',
+      'map_theme',
+      'hours_to_show',
+      'show_address',
+      'map_interactive',
+    ];
+    expect(shown({})).toContain('map');
+    for (const name of own) {
+      expect(shown({}), name).not.toContain(name);
+      expect(shown({ map: 'auto' }), name).toContain(name);
+      expect(shown({ map: 'auto', variant: 'compact' }), name).not.toContain(name);
+      // named, and left out of the card's parts: nothing to act on
+      expect(shown({ map: 'auto', sections: ['head', 'hero'] }), name).not.toContain(name);
+    }
+    expect(shown({ variant: 'compact' })).not.toContain('map');
+    // a list that holds an entry of Home Assistant's own stays YAML's
+    expect(shown({ map: [{ entity: TRACKER, label_mode: 'icon' }] })).not.toContain('map');
+    // the car's own tracker first, then the house's trackers and people
+    const offered = choices({ type: 'x' }, house())['map']?.map((option) => option.value) ?? [];
+    expect(offered[0]).toBe('auto');
+    expect(offered).toContain(TRACKER);
+    expect(offered.every((id) => id === 'auto' || /^(device_tracker|person)\./.test(id))).toBe(
+      true,
+    );
   });
 });

@@ -102,3 +102,27 @@ show_status: false
 show_controls: false
 show_rows: false # every part hidden: the card is the picture, its tap the card's
 ```
+
+### A liquid, a mini map and its parts in your own order
+
+```yaml
+type: custom:fluvy-vehicle-card
+device: 9b2d…
+hero: liquid    # ruler (the default), ring, liquid
+map: auto       # the car's own tracker; or an entity, or a list, the car's first
+map_size: 160px # as image_size: a share of the card's width, or a height
+map_zoom: 15    # 1 to 20; without it Home Assistant fits the trackers
+sections: [head, map, hero, controls, tyres, rows]
+```
+
+- `hero: liquid` draws the battery or the tank as the gauges' liquid, a hybrid's both: bubbles rise while the battery
+  charges, the charge limit is a line across it, and `animate: false` rests it.
+- The map is Home Assistant's own, with its own tiles: no key and no account, and the car's position is never sent
+  anywhere to look its address up. The pill over its foot says the address the car's integration gives (a sensor named
+  in `roles` as `address`), else the place's name; `show_address: false` hides it.
+- `map_interactive: false` makes it a still picture whose tap opens the tracker: a map that pans can hold a phone's
+  scroll.
+- `map_theme` is `auto` (the card's own mode), `light` or `dark`; `hours_to_show` draws the trail behind the car. An
+  entry of the list may be Home Assistant's own (`{ entity: device_tracker.car, label_mode: icon }`).
+- `sections` names the parts to draw, in their order: `head`, `image`, `map`, `hero` (its line with it), `controls`,
+  `rows`, `tyres`, `quick_actions`. A part left out is not drawn; without the key the card is as it was.

@@ -3491,7 +3491,16 @@
     "editor.show_head": "Başlığı göster",
     "editor.show_hero": "Bataryayı göster",
     "editor.image_size": "Resim boyutu",
-    "editor.image_size_helper": "Kart genişliğinin bir payı (50% gibi) veya bir yükseklik (120px gibi)"
+    "editor.image_size_helper": "Kart genişliğinin bir payı (50% gibi) veya bir yükseklik (120px gibi)",
+    "editor.sections": "Bölümler, sırayla",
+    "editor.section_head": "Başlık",
+    "editor.map_helper": "Home Assistant’ın kendi haritası, seçtiğiniz izleyicilerle; önce aracınki",
+    "editor.map_auto": "Aracın kendi izleyicisi",
+    "editor.map_size": "Harita boyutu",
+    "editor.map_theme": "Harita renkleri",
+    "editor.map_light": "Açık",
+    "editor.show_address": "Haritada nerede olduğunu göster",
+    "editor.map_interactive": "Haritayı kaydır ve yakınlaştır"
   },
   "remote": {
     "key.power": "Güç",

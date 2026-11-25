@@ -3491,7 +3491,16 @@
     "editor.show_head": "ヘッダーを表示",
     "editor.show_hero": "バッテリーを表示",
     "editor.image_size": "画像のサイズ",
-    "editor.image_size_helper": "カードの幅に対する割合（例: 50%）、または高さ（例: 120px）"
+    "editor.image_size_helper": "カードの幅に対する割合（例: 50%）、または高さ（例: 120px）",
+    "editor.sections": "パーツと順序",
+    "editor.section_head": "ヘッダー",
+    "editor.map_helper": "選んだトラッカーを Home Assistant 自身の地図に表示します（車が先頭）",
+    "editor.map_auto": "車のトラッカー",
+    "editor.map_size": "地図のサイズ",
+    "editor.map_theme": "地図の配色",
+    "editor.map_light": "ライト",
+    "editor.show_address": "地図に現在地を表示",
+    "editor.map_interactive": "地図を動かして拡大・縮小"
   },
   "remote": {
     "key.power": "電源",

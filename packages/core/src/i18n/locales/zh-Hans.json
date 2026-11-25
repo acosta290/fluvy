@@ -3413,7 +3413,16 @@
     "editor.show_head": "显示标题栏",
     "editor.show_hero": "显示电池",
     "editor.image_size": "图片大小",
-    "editor.image_size_helper": "卡片宽度的比例，如 50%，或高度，如 120px"
+    "editor.image_size_helper": "卡片宽度的比例，如 50%，或高度，如 120px",
+    "editor.sections": "组成部分及顺序",
+    "editor.section_head": "标题栏",
+    "editor.map_helper": "Home Assistant 自带的地图，显示所选追踪器，车辆排在最前",
+    "editor.map_auto": "车辆自己的追踪器",
+    "editor.map_size": "地图大小",
+    "editor.map_theme": "地图配色",
+    "editor.map_light": "浅色",
+    "editor.show_address": "在地图上显示位置",
+    "editor.map_interactive": "平移和缩放地图"
   },
   "expander": {
     "card": "折叠面板",

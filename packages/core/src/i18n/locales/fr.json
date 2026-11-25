@@ -3491,7 +3491,16 @@
     "editor.show_head": "Afficher l’en-tête",
     "editor.show_hero": "Afficher la batterie",
     "editor.image_size": "Taille de l’image",
-    "editor.image_size_helper": "Une part de la largeur de la carte, comme 50%, ou une hauteur, comme 120px"
+    "editor.image_size_helper": "Une part de la largeur de la carte, comme 50%, ou une hauteur, comme 120px",
+    "editor.sections": "Parties, dans l’ordre",
+    "editor.section_head": "En-tête",
+    "editor.map_helper": "La carte de Home Assistant avec les traceurs choisis, celui de la voiture en premier",
+    "editor.map_auto": "Le traceur de la voiture",
+    "editor.map_size": "Taille de la carte",
+    "editor.map_theme": "Couleurs de la carte",
+    "editor.map_light": "Clair",
+    "editor.show_address": "Afficher où elle est sur la carte",
+    "editor.map_interactive": "Déplacer et zoomer la carte"
   },
   "remote": {
     "key.power": "Marche/arrêt",

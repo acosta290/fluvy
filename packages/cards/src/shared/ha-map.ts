@@ -2,14 +2,14 @@ import type { HomeAssistant, LovelaceCardConfig } from '@fluvy/core';
 import type { ReactiveController, ReactiveControllerHost } from 'lit';
 
 /**
- * Home Assistant's own map card on a plate of ours (the Map card's `map`), a chunk of its own (`ha-map`) fetched by
- * the first card that draws one: Home Assistant's map and its tiles, from its own proxy, with no key and nothing
- * asked of anyone else. It is made once through Home Assistant's card helpers, when its plate has a box, and laid out
- * as in a section's grid (`layout`), filling the plate: in its own shape it was a square under the plate's 16:10, the
- * plate showing its top, so what it fits to the people sat under the plate's middle (#220). One observer of the plate,
- * never a timer: the map is made once the plate has a size (folded in an Expander, or on a Swipe's hidden page, it has
- * none), and fitted again each time its size settles otherwise. It is told the house as the card hears of it, and its
- * config again when what the card asks of it changes (the page turning dark).
+ * Home Assistant's own map card on a plate of ours (the Map card's `map`, the Vehicle card's mini map, #266), a chunk
+ * of its own (`ha-map`) fetched by the first card that draws one: Home Assistant's map and its tiles, from its own
+ * proxy, with no key and nothing asked of anyone else. It is made once through Home Assistant's card helpers, when its
+ * plate has a box, and laid out as in a section's grid (`layout`), filling the plate: in its own shape it was a square
+ * under the plate's 16:10, the plate showing its top, so what it fits to the people sat under the plate's middle
+ * (#220). One observer of the plate, never a timer: the map is made once the plate has a size (folded in an Expander,
+ * or on a Swipe's hidden page, it has none), and fitted again each time its size settles otherwise. It is told the
+ * house as the card hears of it, and its config again when what the card asks of it changes (the page turning dark).
  */
 
 type MapElement = HTMLElement & {

@@ -36,19 +36,36 @@ export const pictureAt = (config: LovelaceCardConfig): 'hero' | 'head' | null =>
 /**
  * The plate the car's picture over the battery is drawn on in a column `width` wide: 2:1 across the column; at a share
  * of it (`image_size: 50%`, 10–100: #254), 2:1 that wide, centred; or at a height (`120px`, or a figure, 32–640) across
- * the column, the whole car inside it. Its height on the 4 grid, as the card's is.
+ * the column, the whole car inside it. Its height on the 4 grid, as the card's is. The mini map's plate is the same, by
+ * its own size (`map_size`, #266).
  */
 export const picturePlate = (
   config: LovelaceCardConfig,
   width: number,
+  size: unknown = config['image_size'],
 ): { readonly width: number; readonly height: number } => {
-  const [, figure, unit] =
-    /^\s*(\d+(?:\.\d+)?)\s*(%|px)?\s*$/.exec(String(config['image_size'] ?? '')) ?? [];
+  const [, figure, unit] = /^\s*(\d+(?:\.\d+)?)\s*(%|px)?\s*$/.exec(String(size ?? '')) ?? [];
   const n = Math.min(unit === '%' ? 100 : 640, Math.max(unit === '%' ? 10 : 32, Number(figure)));
   if (figure !== undefined && unit !== '%') return { width, height: Math.round(n / 4) * 4 };
   const across = figure === undefined ? width : Math.round((width * n) / 800) * 8;
   return { width: across, height: Math.round(across / 8) * 4 };
 };
+
+/**
+ * The card's parts (#266), in the order it draws them where its config names none (`sections`): the status line is the
+ * hero's, under it.
+ */
+export const VEHICLE_SECTIONS = [
+  'head',
+  'image',
+  'hero',
+  'controls',
+  'rows',
+  'tyres',
+  'map',
+  'quick_actions',
+] as const;
+export type VehicleSection = (typeof VEHICLE_SECTIONS)[number];
 
 /**
  * The rows of controls a config draws at a 360 column: the ones it lists, `perRow` a row; the car's own where it lists
@@ -88,48 +105,79 @@ const quickLine = (config: LovelaceCardConfig): number => {
   return statesUnder(config as Parameters<typeof statesUnder>[0]) ? 64 : 44;
 };
 
+/** Whether a config names a map (#266): `auto`, a tracker, or a list of them. */
+const mapped = (config: LovelaceCardConfig): boolean => {
+  const map: unknown = config['map'];
+  return Array.isArray(map) ? map.length > 0 : typeof map === 'string' && map.trim() !== '';
+};
+
 /**
- * The Vehicle card at a 360 column, from its config alone: the strip, 76; else its padding (20 above and below), its
- * head (44) where it shows, and each part it shows 16 under what it follows, the first at the padding where the head
- * is hidden (#254). The compact card: the battery's bar (a hybrid's tank's under it, 8 apart), its line (20, 8 under
- * the battery), rows of rounds (44 each, 12 between). The whole card: the car's picture where it is over the battery
- * (`picturePlate`), the battery (on its ruler, or a ring; a lone tank in its place; a hybrid's tank on its own ruler under
- * it, 16 apart), its line, the controls (64 a row, 12 between), the rows (48 each) and the tyres where asked. At the
- * foot of either, its quick actions' line where it lists any. What the car has never changes it: a part it cannot fill
- * keeps its place, a dash in it (1.9: a card keeps its size); `auto` draws a battery or a tank, each the same height.
+ * The parts a config draws, in its order (the strip has none): the ones `sections` names (#266), each once, else —
+ * none named, or an empty list — all of them as they stand; each where it has something to draw: the head, the
+ * battery (or its line alone) and the controls unless hidden, the picture where it is over the battery, the rows it
+ * lists, the tyres where asked (naming them in `sections` asks), the map where the config names one, the quick actions
+ * it lists. The compact card has no picture, rows, tyres or map.
+ */
+export const vehicleSections = (config: LovelaceCardConfig): VehicleSection[] => {
+  const full = vehicleVariant(config) === 'full';
+  const listed: unknown = config['sections'];
+  const named = Array.isArray(listed) && listed.length > 0;
+  const shows: Readonly<Record<VehicleSection, unknown>> = {
+    head: config['show_head'] !== false,
+    image: full && pictureAt(config) === 'hero',
+    hero: config['show_hero'] !== false || config['show_status'] !== false,
+    controls: config['show_controls'] !== false,
+    rows: full && rowCount(config),
+    tyres: full && (named ? config['show_tyres'] !== false : config['show_tyres'] === true),
+    map: full && mapped(config),
+    quick_actions: quickLine(config),
+  };
+  return (named ? [...new Set<unknown>(listed)] : VEHICLE_SECTIONS).filter(
+    (key): key is VehicleSection =>
+      (VEHICLE_SECTIONS as readonly unknown[]).includes(key) &&
+      Boolean(shows[key as VehicleSection]),
+  );
+};
+
+/**
+ * The Vehicle card at a 360 column, from its config alone: the strip, 76; else its padding (20 above and below) and
+ * each part it draws (`vehicleSections`) 16 under the one before, in any order (#266). Its head, 44. The battery: on
+ * its ruler or as a liquid, a ring, a lone tank in its place, a hybrid's tank under it, 16 apart; the compact card's
+ * bar, a hybrid's tank's 8 under it; its line (20) 8 under it, or alone. The controls (64 a row, 12 between; the
+ * compact card's rounds 44), the rows (48 each), the tyres, the picture and the map on their plates (`picturePlate`),
+ * the quick actions' line. What the car has never changes it: a part it cannot fill keeps its place, a dash in it (1.9:
+ * a card keeps its size); `auto` draws a battery or a tank, each the same height.
  */
 export const vehicleHeight = (config: LovelaceCardConfig): number => {
   const variant = vehicleVariant(config);
   if (variant === 'mini') return 76;
   const compact = variant === 'compact';
   const hybrid = config['energy'] === 'hybrid';
-  const hero = config['show_hero'] !== false;
   const controls = controlRows(config, compact ? ROUNDS_A_ROW : CONTROLS_A_ROW);
-  const rows = compact ? 0 : rowCount(config);
-  const quick = quickLine(config);
-  const gauge = compact
-    ? BAR + (hybrid ? 8 + BAR : 0)
-    : hybrid
-      ? RULER + 16 + RULER
-      : config['hero'] === 'ring'
-        ? RING
-        : RULER;
-  // each part it shows, with the room over it
-  const parts = [
-    !compact && pictureAt(config) === 'hero' ? 16 + picturePlate(config, 320).height : 0,
-    hero ? 16 + gauge : 0,
-    config['show_status'] === false ? 0 : (hero ? 8 : 16) + 20,
-    controls ? 16 + (compact ? 44 : CONTROLS) * controls + 12 * (controls - 1) : 0,
-    rows ? 16 + ROW_COMPACT * rows : 0,
-    !compact && config['show_tyres'] === true ? 16 + TYRES : 0,
-    quick && 16 + quick,
-  ].filter(Boolean);
-  const headed = config['show_head'] !== false;
-  return (
-    40 +
-    (headed ? 44 : 0) +
-    parts.reduce((sum, part) => sum + part, 0) -
-    (headed || !parts.length ? 0 : 16)
+  const gauge =
+    config['show_hero'] === false
+      ? 0
+      : compact
+        ? BAR + (hybrid ? 8 + BAR : 0)
+        : hybrid
+          ? RULER + 16 + RULER
+          : config['hero'] === 'ring'
+            ? RING
+            : RULER;
+  const line = config['show_status'] === false ? 0 : 20;
+  const heights: Readonly<Record<VehicleSection, number>> = {
+    head: 44,
+    image: picturePlate(config, 320).height,
+    hero: gauge + (gauge && line ? 8 : 0) + line,
+    controls: (compact ? 44 : CONTROLS) * controls + 12 * (controls - 1),
+    rows: ROW_COMPACT * rowCount(config),
+    tyres: TYRES,
+    map: picturePlate(config, 320, config['map_size']).height,
+    quick_actions: quickLine(config),
+  };
+  return Math.max(
+    40,
+    vehicleSections(config).reduce((sum, key) => sum + 16 + heights[key], 24),
   );
 };
 

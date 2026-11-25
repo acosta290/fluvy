@@ -3811,7 +3811,16 @@
     "editor.show_head": "顯示標題列",
     "editor.show_hero": "顯示電池",
     "editor.image_size": "圖片大小",
-    "editor.image_size_helper": "卡片寬度的比例，例如 50%，或高度，例如 120px"
+    "editor.image_size_helper": "卡片寬度的比例，例如 50%，或高度，例如 120px",
+    "editor.sections": "組成部分與順序",
+    "editor.section_head": "標題列",
+    "editor.map_helper": "Home Assistant 內建的地圖，顯示所選追蹤器，車輛排在最前",
+    "editor.map_auto": "車輛本身的追蹤器",
+    "editor.map_size": "地圖大小",
+    "editor.map_theme": "地圖配色",
+    "editor.map_light": "淺色",
+    "editor.show_address": "在地圖上顯示位置",
+    "editor.map_interactive": "平移與縮放地圖"
   },
   "web": {
     "card": "網頁",

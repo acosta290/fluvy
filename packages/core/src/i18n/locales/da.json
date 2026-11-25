@@ -3671,7 +3671,16 @@
     "editor.show_head": "Vis hovedet",
     "editor.show_hero": "Vis batteriet",
     "editor.image_size": "Billedstørrelse",
-    "editor.image_size_helper": "En andel af kortets bredde, fx 50%, eller en højde, fx 120px"
+    "editor.image_size_helper": "En andel af kortets bredde, fx 50%, eller en højde, fx 120px",
+    "editor.sections": "Dele i rækkefølge",
+    "editor.section_head": "Hoved",
+    "editor.map_helper": "Home Assistants eget kort med de valgte trackere, bilens først",
+    "editor.map_auto": "Bilens egen tracker",
+    "editor.map_size": "Kortets størrelse",
+    "editor.map_theme": "Kortets farver",
+    "editor.map_light": "Lys",
+    "editor.show_address": "Vis hvor den er på kortet",
+    "editor.map_interactive": "Flyt og zoom kortet"
   },
   "web": {
     "card": "Webside",

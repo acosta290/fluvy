@@ -28,6 +28,7 @@ import {
   onlyWhen,
   optionalActions,
   optionChoices,
+  orderedField,
   ownTextField,
   selectField,
   textField,
@@ -35,7 +36,12 @@ import {
 } from '../shared/form.js';
 import type { EditorChoices, EditorDefaults, RowsListSpec } from '../shared/rows-editor.js';
 import { roundsList } from '../room/room-editor.js';
-import { VEHICLE_VARIANTS } from '../vehicle-family.js';
+import {
+  VEHICLE_SECTIONS,
+  VEHICLE_VARIANTS,
+  vehicleSections,
+  type VehicleSection,
+} from '../vehicle-family.js';
 import { VEHICLE_PLATFORMS, VEHICLE_ROLES, type VehicleRole } from './roles.js';
 import {
   controlWord,
@@ -183,6 +189,14 @@ export const keys = configKeys<VehicleCardConfig>()([
   'image',
   'image_position',
   'image_size',
+  'map',
+  'map_size',
+  'map_zoom',
+  'map_theme',
+  'hours_to_show',
+  'show_address',
+  'map_interactive',
+  'sections',
   'show_head',
   'show_hero',
   'show_range',
@@ -211,6 +225,50 @@ export const keys = configKeys<VehicleCardConfig>()([
 
 /** What the card draws but for its strip: its line, its controls and its quick actions (the form's data). */
 const notMini = (data: Readonly<Record<string, unknown>>): boolean => data['variant'] !== 'mini';
+/**
+ * Whether the form's card names its parts itself: its list is not empty, nor the one it draws where it names none
+ * (what the form shows then, `defaults`).
+ */
+const ordered = (data: Readonly<Record<string, unknown>>): boolean => {
+  const named = String(data['sections'] ?? '');
+  return (
+    named !== '' && named !== String(vehicleSections({ type: '', ...data, sections: undefined }))
+  );
+};
+/**
+ * Whether the form's card draws a part: named in its `sections`, or shown where it names none (#266). The tyres'
+ * switch is off where the config says nothing (`defaults`): a list that names them asks for them all the same.
+ */
+const draws =
+  (part: VehicleSection) =>
+  (data: Readonly<Record<string, unknown>>): boolean =>
+    notMini(data) &&
+    vehicleSections({
+      type: '',
+      ...data,
+      ...(ordered(data) ? { show_tyres: undefined } : {}),
+    }).includes(part);
+/**
+ * A part's switch (`show_head` …): shown while the card names no parts of its own, where it is what shows the part —
+ * and while it is off, so a part it hides can always be shown again (the tyres', off until asked, goes with the
+ * list: naming them asks).
+ */
+const partSwitch = (name: string): HaFormSchemaItem =>
+  onlyWhen(
+    (data) => !ordered(data) || (name !== 'show_tyres' && data[name] === false),
+    boolField(name),
+  );
+/** A part's word in the list of parts. */
+const SECTION_WORDS: Readonly<Record<VehicleSection, MessageKey>> = {
+  head: 'vehicle.editor.section_head',
+  image: 'editor.picture',
+  hero: 'vehicle.battery',
+  controls: 'editor.controls',
+  rows: 'option.rows',
+  tyres: 'vehicle.tyres',
+  map: 'option.map',
+  quick_actions: 'room-editor.quick_actions',
+};
 /** …its quick actions' states (#251): every one's, or one's of its own. */
 const saysStates = (data: Readonly<Record<string, unknown>>): boolean =>
   notMini(data) &&
@@ -303,17 +361,41 @@ export const lists: readonly RowsListSpec[] = [
   },
 ];
 
-/** What the card's selects offer for its config (#256): a hybrid's two gauges are rulers or liquids, never rings. */
-export const choices: EditorChoices = (config) =>
-  config['energy'] === 'hybrid' ? { hero: optionChoices(['ruler', 'liquid']) } : {};
+/** The list of parts' choices: each by its word. */
+const sectionChoices = (parts: readonly VehicleSection[]) =>
+  parts.map((value) => ({ value, label: editorWord(SECTION_WORDS[value]) }));
+
+/**
+ * What the card's selects offer in its house and for its config (#256, #266): a hybrid's two gauges are rulers or
+ * liquids, never rings; the map's trackers are the car's own first, then the house's trackers and people; and the
+ * list of parts holds the ones the card can draw.
+ */
+export const choices: EditorChoices = (config, hass) => ({
+  ...(config['energy'] === 'hybrid' ? { hero: optionChoices(['ruler', 'liquid']) } : {}),
+  map: [
+    { value: 'auto', label: editorWord('vehicle.editor.map_auto') },
+    ...Object.values(hass?.states ?? {})
+      .filter((state) => /^(device_tracker|person)\./.test(state.entity_id))
+      .map((state) => ({
+        value: state.entity_id,
+        label: String(state.attributes['friendly_name'] ?? state.entity_id),
+      })),
+  ],
+  sections: sectionChoices(vehicleSections({ ...config, sections: VEHICLE_SECTIONS })),
+});
 
 /** What the editor shows where the config says nothing: what the card does then. */
-export const defaults: EditorDefaults = () => ({
+export const defaults: EditorDefaults = (config) => ({
   variant: 'full',
   scan: true,
   energy: 'auto',
   hero: 'ruler',
   animate: chartDefaults().settings.animate,
+  sections: vehicleSections({ ...config, sections: undefined }),
+  map_theme: 'auto',
+  hours_to_show: 0,
+  show_address: true,
+  map_interactive: true,
   image_position: 'hero',
   show_head: true,
   show_hero: true,
@@ -342,13 +424,12 @@ export function getConfigForm(): LovelaceConfigForm {
   const tanked = (data: Readonly<Record<string, unknown>>): boolean =>
     data['energy'] !== 'electric';
   const charged = (data: Readonly<Record<string, unknown>>): boolean => data['energy'] !== 'fuel';
-  const tyred = (data: Readonly<Record<string, unknown>>): boolean =>
-    full(data) && data['show_tyres'] === true;
-  // the picture over the battery; the battery (or the tank) shown
-  const pictured = (data: Readonly<Record<string, unknown>>): boolean =>
-    full(data) && hasImage(data) && data['image_position'] !== 'head';
+  const tyred = draws('tyres');
+  // the picture over the battery; the battery (or the tank) shown; the map drawn
+  const pictured = draws('image');
   const heroed = (data: Readonly<Record<string, unknown>>): boolean =>
-    notMini(data) && data['show_hero'] !== false;
+    draws('hero')(data) && data['show_hero'] !== false;
+  const mapped = draws('map');
   const decimals = ['auto', '0', '1', '2'] as const;
   return {
     schema: [
@@ -364,6 +445,8 @@ export function getConfigForm(): LovelaceConfigForm {
       headFields({ badge: true }),
       ownTextField('badge'),
       selectField('variant', VEHICLE_VARIANTS),
+      // the card's parts in an order of its own (#266): the ones it can draw, dragged into order, the rest left out
+      onlyWhen(notMini, orderedField('sections', sectionChoices(VEHICLE_SECTIONS))),
       fieldRow(
         choiceField('energy', [
           ['auto', 'option.auto'],
@@ -394,7 +477,27 @@ export function getConfigForm(): LovelaceConfigForm {
       ),
       // the picture over the battery at a size of its own (#254)
       onlyWhen(pictured, textField('image_size')),
-      onlyWhen(notMini, fieldRow(boolField('show_head'), boolField('show_hero'))),
+      // a mini map (#266): of the car's own tracker or the ones chosen (a list that holds an entry of Home Assistant's
+      // own map is YAML's: the picker holds ids alone); then its size and zoom, its colours and its trail, its pill and
+      // whether a finger moves it
+      onlyWhen(
+        (data) => full(data) && listed(data, 'map').every((entry) => typeof entry === 'string'),
+        { ...orderedField('map', [], { custom: true }), helper: 'vehicle.editor.map_helper' },
+      ),
+      onlyWhen(mapped, fieldRow(textField('map_size'), numberField('map_zoom', 1, 20))),
+      onlyWhen(
+        mapped,
+        fieldRow(
+          choiceField('map_theme', [
+            ['auto', 'option.auto'],
+            ['light', 'vehicle.editor.map_light'],
+            ['dark', 'option.dark'],
+          ]),
+          numberField('hours_to_show', 0, 168),
+        ),
+      ),
+      onlyWhen(mapped, fieldRow(boolField('show_address'), boolField('map_interactive'))),
+      onlyWhen(notMini, fieldRow(partSwitch('show_head'), partSwitch('show_hero'))),
       // the range where the battery or the compact card's head says it; the limit where a battery marks it
       fieldRow(
         onlyWhen(
@@ -403,8 +506,8 @@ export function getConfigForm(): LovelaceConfigForm {
         ),
         onlyWhen((data) => heroed(data) && charged(data), boolField('show_limit')),
       ),
-      onlyWhen(notMini, fieldRow(boolField('show_status'), boolField('show_controls'))),
-      onlyWhen(full, fieldRow(boolField('show_rows'), boolField('show_tyres'))),
+      onlyWhen(notMini, fieldRow(boolField('show_status'), partSwitch('show_controls'))),
+      onlyWhen(full, fieldRow(partSwitch('show_rows'), partSwitch('show_tyres'))),
       // the tyres' decimals where they are drawn; a low tyre where the tyres or the line can say it
       fieldRow(
         onlyWhen(tyred, selectField('tyre_decimals', decimals)),
@@ -431,7 +534,7 @@ export function getConfigForm(): LovelaceConfigForm {
       ...colourFields(),
       // the card's own: its head's, the strip's, or its picture's where the head is hidden
       onlyWhen(
-        (data) => !notMini(data) || data['show_head'] !== false || pictured(data),
+        (data) => !notMini(data) || draws('head')(data) || pictured(data),
         actionFields({ icon: true }),
       ),
       onlyWhen(heroed, fieldRow(actionField('hero_tap_action'), actionField('hero_hold_action'))),
@@ -447,6 +550,11 @@ export function getConfigForm(): LovelaceConfigForm {
         hero: 'editor.hero',
         image_position: 'editor.image_position',
         image_size: 'editor.image_size',
+        sections: 'editor.sections',
+        map_size: 'editor.map_size',
+        map_theme: 'editor.map_theme',
+        show_address: 'editor.show_address',
+        map_interactive: 'editor.map_interactive',
         show_head: 'editor.show_head',
         show_hero: 'editor.show_hero',
         show_range: 'editor.show_range',
@@ -468,6 +576,9 @@ export function getConfigForm(): LovelaceConfigForm {
       {
         badge: 'gauge.badge',
         image: 'editor.picture',
+        map: 'option.map',
+        map_zoom: 'editor.default_zoom',
+        hours_to_show: 'editor.hours',
         show_controls: 'editor.show_actions',
         show_rows: 'editor.show_rows',
         show_quick_states: 'room-editor.show_quick_states',
@@ -483,7 +594,7 @@ export function getConfigForm(): LovelaceConfigForm {
             ? s(undefined, 'editor.tank_size_helper')
             : schema.name === 'tyre_low'
               ? s(undefined, 'editor.tyre_low_helper')
-              : schema.name === 'image_size'
+              : schema.name === 'image_size' || schema.name === 'map_size'
                 ? s(undefined, 'editor.image_size_helper')
                 : undefined,
   };

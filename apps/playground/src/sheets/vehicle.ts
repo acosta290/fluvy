@@ -1,6 +1,7 @@
 import type { HomeAssistant } from '@fluvy/core';
 import { FluvyVehicleCard } from '../../../../packages/cards/src/vehicle/vehicle-card.js';
 import type { StateSeed } from '../hass.js';
+import { drawMaps } from '../hui-card.js';
 import type { SheetSpec } from '../scenes.js';
 
 // its chunk lands after the page has drawn: the sheet defines the card from its module, as the web sheet does
@@ -31,9 +32,13 @@ if (!customElements.get('fluvy-vehicle-card'))
  * under its threshold; a badge of its own; small icons at its foot, and saying their states; compact; half a section;
  * and the picture at half the card's width, and alone, at a 360 column and in half a section.
  *
- * Then 1.26's (#256): the tank and the battery as a liquid — a petrol car's, an electric one's charging to its limit
- * (its bubbles, the limit's hairline), a plug-in hybrid's two, a tank running low, the card's own colour, a car out of
- * reach, half a section.
+ * Then 1.26's (#256, #266): the tank and the battery as a liquid — a petrol car's, an electric one's charging to its
+ * limit (its bubbles, the limit's hairline), a plug-in hybrid's two, a tank running low, the card's own colour, a car
+ * out of reach, half a section; a mini map (Home Assistant's own, which the playground draws as a still plan:
+ * `hui-card.ts`) at the foot with its address in its pill, in the picture's place, still, of two cars with a trail,
+ * with no location, half a section; and the card's parts in an order of the person's own — the controls above the fuel
+ * and the tyres below, the map first with no head, a head with its battery and its small icons alone, the compact
+ * card's, half a section — and the card the issue pointed at, redrawn.
  */
 
 /** The mock's moment: the times to full are counted from it. */
@@ -41,6 +46,8 @@ const NOW = '2026-09-17T21:47:12';
 const at = (minutes: number): string => new Date(Date.parse(NOW) + minutes * 60_000).toISOString();
 
 type Attributes = Record<string, unknown>;
+/** Where the house is: a tracker at home says so in its coordinates, which Home Assistant's map draws it by. */
+const HOME: Attributes = { latitude: 52.2053, longitude: 0.1218 };
 const percent = (name: string, battery = true): Attributes => ({
   friendly_name: name,
   unit_of_measurement: '%',
@@ -175,7 +182,7 @@ const MODEL_Y: readonly StateSeed[] = [
   [
     'device_tracker.model_y_location',
     'home',
-    { friendly_name: 'Model Y Location', source_type: 'gps' },
+    { friendly_name: 'Model Y Location', source_type: 'gps', ...HOME },
   ],
   [
     'device_tracker.model_y_route',
@@ -408,7 +415,11 @@ const IONIQ5: readonly StateSeed[] = [
   ['binary_sensor.ioniq_5_trunk', 'off', flag('IONIQ 5 Trunk', 'door')],
   ['binary_sensor.ioniq_5_front_left_window', 'off', flag('IONIQ 5 Front left window', 'window')],
   ['sensor.ioniq_5_odometer', '42110', km('IONIQ 5 Odometer')],
-  ['device_tracker.ioniq_5_location', 'not_home', { friendly_name: 'IONIQ 5 Location' }],
+  [
+    'device_tracker.ioniq_5_location',
+    'not_home',
+    { friendly_name: 'IONIQ 5 Location', latitude: 52.3312, longitude: -0.1826 },
+  ],
   [
     'sensor.ioniq_5_geocoded_location',
     'Ionity Montseny, AP-7 km 113',
@@ -586,7 +597,7 @@ const NIRO: readonly StateSeed[] = [
   ['binary_sensor.niro_hood', 'off', flag('Niro Hood', 'door')],
   ['sensor.niro_odometer', '27104', km('Niro Odometer')],
   ['sensor.niro_next_service', '7850', km('Niro Next service')],
-  ['device_tracker.niro_location', 'home', { friendly_name: 'Niro Location' }],
+  ['device_tracker.niro_location', 'home', { friendly_name: 'Niro Location', ...HOME }],
 ];
 
 /**
@@ -647,7 +658,13 @@ const HAVAL: readonly StateSeed[] = [
   ['binary_sensor.haval_h6_gps', 'on', flag('Haval H6 GPS', 'connectivity')],
   ['sensor.haval_h6_gsm_signal', '4', { friendly_name: 'Haval H6 GSM signal' }],
   ['sensor.haval_h6_next_service', '3200', km('Haval H6 Next service')],
-  ['device_tracker.haval_h6_location', 'home', { friendly_name: 'Haval H6 Location' }],
+  ['device_tracker.haval_h6_location', 'home', { friendly_name: 'Haval H6 Location', ...HOME }],
+  // where it is in words, as an integration that says one gives it: named by hand (`roles`)
+  [
+    'sensor.haval_h6_address',
+    '14 Station Road, Cambridge CB1 2JB',
+    { friendly_name: 'Haval H6 Address' },
+  ],
 ];
 /** A script of the person's own, on no device: it flashes the lights where the car is parked. */
 const FIND_MY_CAR: StateSeed = ['script.find_my_car', 'off', { friendly_name: 'Find my car' }];
@@ -858,9 +875,15 @@ const card = (device: string, extra: Record<string, unknown> = {}) => ({
   ...extra,
 });
 
-/** The Haval's engine, named by hand: nothing that starts an engine is ever found (#248). */
+/** The Haval's engine, named by hand: nothing that starts an engine is ever found (#248); its address too (#266). */
 const haval = (extra: Record<string, unknown> = {}) =>
-  card('d-haval', { roles: [{ role: 'engine', entity: 'switch.haval_h6_engine' }], ...extra });
+  card('d-haval', {
+    roles: [
+      { role: 'engine', entity: 'switch.haval_h6_engine' },
+      { role: 'address', entity: 'sensor.haval_h6_address' },
+    ],
+    ...extra,
+  });
 /** Its controls: its lock and its engine, then its heated seat and the script that finds it, of the person's own. */
 const HAVAL_CONTROLS = [
   'lock',
@@ -904,6 +927,14 @@ const PICTURE_ALONE = {
   show_controls: false,
   show_rows: false,
 };
+
+// Home Assistant's map of these cars is drawn here (#266): any other map is not made, as without its card helpers
+drawMaps(
+  'device_tracker.model_y_location',
+  'device_tracker.ioniq_5_location',
+  'device_tracker.niro_location',
+  'device_tracker.haval_h6_location',
+);
 
 /** The house with some of its states said otherwise: a frame's own moment (a boot left open, a door). */
 const said =
@@ -1343,6 +1374,112 @@ export const sheet: SheetSpec = {
       cards: [
         card('d-model-y', { hero: 'liquid', show_rows: false, cols: 6 }),
         card('d-208', { hero: 'liquid', show_rows: false, cols: 6 }),
+      ],
+    },
+    // #266: a mini map, Home Assistant's own (the playground's still plan stands in for it)
+    {
+      title: 'A mini map at its foot · its address',
+      hass: said({ 'device_tracker.haval_h6_location': 'not_home' }),
+      cards: [haval({ map: 'auto', show_rows: false, quick_actions: HAVAL_QUICK })],
+    },
+    {
+      title: 'The map in the picture’s place',
+      cards: [
+        card('d-model-y', {
+          map: 'auto',
+          sections: ['head', 'map', 'hero', 'controls'],
+        }),
+      ],
+    },
+    {
+      title: 'A still map · the plate one button',
+      cards: [card('d-ioniq-5', { map: 'auto', map_interactive: false, rows: ['odometer'] })],
+    },
+    {
+      title: 'Two cars on one map · their trail, nearer, always dark',
+      cards: [
+        card('d-model-y', {
+          map: ['auto', 'device_tracker.haval_h6_location'],
+          map_size: '200px',
+          map_zoom: 16,
+          map_theme: 'dark',
+          hours_to_show: 6,
+          show_rows: false,
+          show_controls: false,
+        }),
+      ],
+    },
+    {
+      title: 'A map with no location · its plate kept',
+      cards: [
+        card('d-leaf', { map: 'auto', show_rows: false, show_controls: false }),
+        card('d-yaris', { map: 'auto', show_rows: false, show_controls: false }),
+      ],
+    },
+    {
+      title: 'The map · half a section',
+      width: 360,
+      hass: said({ 'device_tracker.haval_h6_location': 'not_home' }),
+      cards: [
+        haval({ map: 'auto', show_rows: false, show_controls: false, cols: 6 }),
+        card('d-model-y', { map: 'auto', show_rows: false, show_controls: false, cols: 6 }),
+      ],
+    },
+    // #266: the card's parts in an order of its own
+    {
+      title: 'Its parts in its own order · controls above the fuel, tyres below',
+      cards: [
+        haval({
+          sections: ['head', 'controls', 'hero', 'tyres', 'rows'],
+          tyre_low: HAVAL_LOW,
+        }),
+      ],
+    },
+    {
+      title: 'The map first · no head',
+      hass: said({ 'device_tracker.haval_h6_location': 'not_home' }),
+      cards: [haval({ map: 'auto', hero: 'liquid', sections: ['map', 'hero', 'controls'] })],
+    },
+    {
+      title: 'A head, its battery and its small icons alone',
+      cards: [
+        haval({
+          hero: 'liquid',
+          quick_actions: HAVAL_QUICK,
+          sections: ['head', 'hero', 'quick_actions'],
+        }),
+      ],
+    },
+    {
+      title: 'Compact · its rounds above its bar',
+      cards: [card('d-model-y', { variant: 'compact', sections: ['head', 'controls', 'hero'] })],
+    },
+    {
+      title: 'Its parts in its own order · half a section',
+      width: 360,
+      hass: said({ 'device_tracker.haval_h6_location': 'not_home' }),
+      cards: [
+        haval({ sections: ['head', 'controls', 'hero', 'tyres'], tyre_low: HAVAL_LOW, cols: 6 }),
+        haval({ map: 'auto', hero: 'liquid', sections: ['map', 'hero', 'controls'], cols: 6 }),
+      ],
+    },
+    {
+      title: 'The card the issue pointed at, redrawn',
+      hass: said({
+        'sensor.haval_h6_fuel_level': '100',
+        'sensor.haval_h6_fuel_range': '503',
+        'sensor.haval_h6_mileage': '26202',
+        'device_tracker.haval_h6_location': 'not_home',
+      }),
+      cards: [
+        haval({
+          image: PICTURE,
+          badge: 'Online',
+          map: 'auto',
+          map_theme: 'dark',
+          rows: ['odometer'],
+          sections: ['head', 'rows', 'image', 'hero', 'map'],
+        }),
       ],
     },
     // three columns of 360 and their gaps: a phone's probe would squeeze them a third each (each card is measured in
