@@ -84,7 +84,8 @@ export function fitHead(
 /**
  * A head with a badge, fitted in the header's order: the badge's shorter forms (`pills`, longest first), then the badge
  * itself give way to a title, or a line's shortest form, that would not fit beside them — what a badge says, the body
- * says too — and last the icon circle (`fitHead`). The sub has the title's room.
+ * says too — and last the icon circle (`fitHead`). The sub has the title's room; with no circle asked for
+ * (`show_icon: never`), the circle's too.
  */
 export function fitBadgeHead(
   ctx: ViewContext,
@@ -101,9 +102,10 @@ export function fitBadgeHead(
     textWidth(title, FACE.title),
     textWidth(lineOf(ctx, line).at(-1) ?? '', FACE.sub),
   );
+  const never = ctx.config.show_icon === 'never';
   for (const pill of pills) {
-    const room = headRoom(ctx, badgeWidth(pill));
-    if (width <= room) return { icon, pill, room };
+    const room = headRoom(ctx, badgeWidth(pill)) + (never ? 56 : 0);
+    if (width <= room) return { icon: never ? null : icon, pill, room };
   }
   return { ...fitHead(ctx, icon, title, 0, line), pill: '' };
 }

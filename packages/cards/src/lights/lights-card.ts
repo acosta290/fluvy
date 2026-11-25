@@ -464,7 +464,7 @@ export class FluvyLightsCard extends FluvyTileCard {
     // the card's own words for an empty room say what it means here: the hint on how to fill it goes with ours
     if (!lamps.length)
       return html`<article class="fv-card lt-card" data-card>
-        ${head({ icon: glyph, tone: 'neutral', title: name, name: true })}
+        ${head({ icon: this.showIcon === 'never' ? null : glyph, tone: 'neutral', title: name, name: true })}
         ${this.head.empty('bulb', own ?? s(this.hass, 'no_lights'), own ? '' : s(this.hass, 'no_lights_hint'), w)}
       </article>`;
     const any = lamps.some((lamp) => lamp.on);

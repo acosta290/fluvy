@@ -8,6 +8,7 @@ import type { DayEvent } from '../model.js';
 import type { ViewContext } from './context.js';
 import {
   eventAria,
+  fitHead,
   headSub,
   headTone,
   moreRow,
@@ -76,15 +77,19 @@ export function upcomingView(ctx: ViewContext): TemplateResult {
   const rows = ready ? agenda.span(first, days) : [];
   const hidden = Math.max(0, rows.length - MAX_ROWS);
   const more = hidden ? plural(ctx.hass, 'calendar.more', hidden, { count: hidden }) : '';
+  // the head fitted as every view's: its circle where the card asks for it and the words hold beside it
+  const title = ctx.config.title ?? words.t('calendar.upcoming');
+  const line = [words.count('calendar.next_days', days)];
+  const fit = fitHead(ctx, 'list', title, 0, line);
 
   return surface(
     ctx,
     html`
       ${head({
-        icon: 'list',
+        icon: fit.icon,
         tone: headTone(ctx),
-        title: ctx.config.title ?? words.t('calendar.upcoming'),
-        sub: headSub(ctx, [words.count('calendar.next_days', days)], ctx.width - 57),
+        title,
+        sub: headSub(ctx, line, fit.room),
       })}
       ${
         broken ??

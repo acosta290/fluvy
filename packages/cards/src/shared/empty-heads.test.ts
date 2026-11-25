@@ -233,3 +233,44 @@ describe('a head with nothing in it (#259)', () => {
     },
   );
 });
+
+/*
+ * The same sweep (#259): a head drawn by hand asks the card whether its circle shows (`show_icon`), as a fitted head
+ * does — the calendar's views, the upcoming days' too, with a badge beside the title or none, and a room with no lights.
+ */
+describe('a head’s circle asked away', () => {
+  /** Whether the card's head draws a circle. */
+  const circled = async (config: LovelaceCardConfig): Promise<boolean> => {
+    const element = document.createElement(config.type.slice('custom:'.length)) as CardElement;
+    element.setConfig(config);
+    element.hass = hass;
+    (element as unknown as { width: number }).width = 360;
+    document.body.append(element);
+    await element.updateComplete;
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    await element.updateComplete;
+    const head = element.shadowRoot!.querySelector('.fv-card__head');
+    element.remove();
+    expect(head).not.toBeNull();
+    return head!.querySelector('.fv-ico') !== null;
+  };
+
+  it.each(['agenda', 'week', 'timeline', 'upcoming'])(
+    'calendar %s: none where it asks for none, beside a badge too',
+    async (variant) => {
+      const calendar = {
+        type: 'custom:fluvy-calendar-card',
+        calendars: ['calendar.home'],
+        variant,
+      };
+      expect(await circled(calendar)).toBe(true);
+      expect(await circled({ ...calendar, show_icon: 'never' })).toBe(false);
+    },
+  );
+
+  it('a room with no lights: none where it asks for none', async () => {
+    const room = { type: 'custom:fluvy-lights-card', name: 'Hallway', lights: [] };
+    expect(await circled(room)).toBe(true);
+    expect(await circled({ ...room, show_icon: 'never' })).toBe(false);
+  });
+});

@@ -35,6 +35,12 @@ const pair = (
   ...more,
 });
 
+/** A card beside its twin with no circle asked for (`show_icon: never`), its name kept. */
+const circleless = (title: string, card: object | undefined): FrameSpec => {
+  const config = card as LovelaceCardConfig;
+  return { title, cards: [config, { ...config, show_icon: 'never' }] };
+};
+
 /** The same, each half a section, drawn again at 172 and 266 (`heights.mjs`). */
 const half = (
   title: string,
@@ -173,6 +179,14 @@ const frames: FrameSpec[] = [
       },
     ],
   },
+  // a head drawn by hand asks whether its circle shows (`show_icon: never`): the calendar's, beside its badge too
+  circleless('Calendar · timeline, no circle', example('calendar · timeline').cards[0]),
+  circleless('Calendar · upcoming, no circle', example('calendar · upcoming').cards[0]),
+  circleless('Room lights · an empty room, no circle', {
+    ...example('lights').cards[0],
+    name: 'Hallway',
+    lights: [],
+  }),
   // every head a config can empty, the documentation's example beside it emptied
   ...QUIET.map(([title, quiet]) => emptied(title, quiet)),
   // the period's chips under the head, or with none the body's first part: at the card's 20 either way
