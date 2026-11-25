@@ -1615,7 +1615,12 @@
     "editor.show_legend": "Visa förklaring",
     "editor.show_head": "Visa värdet nu",
     "editor.kind_states": "Tillstånd",
-    "editor.stat_last": "Senaste mätvärdet"
+    "editor.stat_last": "Senaste mätvärdet",
+    "high": "Högsta {value}",
+    "low": "Lägsta {value}",
+    "editor.extremes": "Lägsta och högsta punkt",
+    "editor.readouts": "Ett mätvärde per serie",
+    "editor.series_thresholds_helper": "I seriens enhet, i stället för kortets"
   },
   "chart": {
     "gauge.cold": "Kallt",

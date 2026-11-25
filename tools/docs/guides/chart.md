@@ -44,6 +44,26 @@ series:
 span: 24h
 ```
 
+```yaml
+# the supply's voltage before and after a voltage optimiser: a readout each, each in thresholds of its own
+type: custom:fluvy-chart-card
+title: Supply
+series:
+  - entity: sensor.grid_voltage
+    name: Input
+    highlight: both # its lowest and highest points
+    thresholds:
+      - { value: 245, tone: warning }
+      - { value: 253, tone: danger }
+  - entity: sensor.house_voltage
+    name: House
+    highlight: both
+    thresholds:
+      - { value: 216, tone: warning, below: true }
+span: 3h
+readouts: true # a readout each over the chart, in place of the legend
+```
+
 ### Series
 
 - `source`: `history`, `statistics`, `attribute` or `forecast`. Left out: a weather's forecast, else a known list in
@@ -60,6 +80,9 @@ span: 24h
 - `unit`: one the sensor's converts to, or the unit its list is written in (Solcast's kW under a kWh sensor).
 - `color` takes a colour or a palette name that follows the palette: `graph-1` to `graph-12`, `accent`, `ok`,
   `warning`, `danger`, `solar`, `grid`, `battery`, `water`, `gas`, `home`.
+- `highlight`: `min`, `max` or `both` marks the series' lowest and highest points with a dot, what is to come too, and
+  says them in the value row ("High 5.4 kW · 13:00"); columns light up with their figures over them.
+- `thresholds` on a series are written in its own unit and take the card's place for it.
 
 ### Window
 
@@ -67,5 +90,9 @@ span: 24h
 tomorrow's prices are out). With `collection_key` it follows a
 [date picker](../energy.md#following-home-assistants-date-picker).
 
-`thresholds` are written in the first series' unit ([thresholds](../customising.md#thresholds)); the chart style and
-its fine keys are the sensor card's ([charts](../customising.md#charts)).
+`readouts: true` gives two series or more a readout each over the chart, in place of the legend, as the sensor card
+does for several sensors; where a column would cut a name, the legend's lines come back.
+
+`thresholds` are written in the first series' unit and colour the series written in it
+([thresholds](../customising.md#thresholds)); the chart style and its fine keys are the sensor card's
+([charts](../customising.md#charts)).

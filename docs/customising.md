@@ -469,5 +469,7 @@ rows:
       - { value: 20, below: true, tone: danger, label: Low }
 ```
 
+- On the Chart card, a series takes its own `thresholds` too, in its own unit, in place of the card's.
+
 The colour changes the moment a reading crosses. For an alert that must not flap, give the card a threshold helper's
 state.

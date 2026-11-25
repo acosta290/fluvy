@@ -324,6 +324,10 @@ export const chartStyles = css`
     font-variant-numeric: tabular-nums;
     white-space: nowrap;
   }
+  /* a series' reading past one of its own thresholds (#264): its band's ink as a figure's words */
+  .fc-legend__value[data-ink] {
+    color: var(--fv-ink);
+  }
 
   /* ---------- a thing's states through time (states.ts): its stretches on the track's own fill ---------- */
   /* a stretch spent switched on: the accent itself, so a glance reads the day without looking twice */

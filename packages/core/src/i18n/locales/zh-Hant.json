@@ -1615,7 +1615,12 @@
     "editor.show_legend": "顯示圖例",
     "editor.show_head": "顯示目前數值",
     "editor.kind_states": "狀態",
-    "editor.stat_last": "最後一筆讀數"
+    "editor.stat_last": "最後一筆讀數",
+    "high": "最高 {value}",
+    "low": "最低 {value}",
+    "editor.extremes": "最低點與最高點",
+    "editor.readouts": "每個數列一個讀數",
+    "editor.series_thresholds_helper": "使用此數列的單位，取代卡片的臨界值"
   },
   "chart": {
     "gauge.cold": "寒冷",

@@ -3301,7 +3301,12 @@
     "editor.show_legend": "Mostra la legenda",
     "editor.show_head": "Mostra il valore attuale",
     "editor.kind_states": "Stati",
-    "editor.stat_last": "L’ultima lettura"
+    "editor.stat_last": "L’ultima lettura",
+    "high": "Massimo {value}",
+    "low": "Minimo {value}",
+    "editor.extremes": "Punto più basso e più alto",
+    "editor.readouts": "Una lettura per serie",
+    "editor.series_thresholds_helper": "Nell’unità di questa serie, al posto di quelle della scheda"
   },
   "slider": {
     "mute": "Silenzia",

@@ -427,6 +427,7 @@ export const MEANINGS: Readonly<Record<string, string>> = {
   'cameras.columns': 'How many pictures stand in a row.',
   'cameras.show_status': 'Shows the line under each camera.',
   'chart.highlight': 'Marks the windows to come: the cheapest, the dearest, or both.',
+  'chart.readouts': 'Gives each series a readout over the chart, in place of the legend.',
   'chart.show_head': 'Shows the value now, large, over the chart.',
   'chart.show_legend': 'Shows the legend under the chart.',
   'chips.tint': 'When each chip shows its colour.',
@@ -912,6 +913,8 @@ export const MEANINGS: Readonly<Record<string, string>> = {
   'automations.targets[].entity': 'An entity a new schedule may switch.',
   'automations.targets[].level': 'The brightness a new schedule turns a light on to.',
   'chart.series[].attribute': 'The attribute that holds the list of readings.',
+  'chart.series[].highlight':
+    'Marks the series’ lowest and highest points with a dot, and says them in the value row.',
   'chart.series[].kind':
     'How the series is drawn: a line, an area, columns, a band, or its states as a strip under the chart.',
   'chart.series[].period': 'How long each statistic’s reading lasts.',
@@ -919,6 +922,8 @@ export const MEANINGS: Readonly<Record<string, string>> = {
     'What each reading of the statistics is, or what each point and step of a history reads.',
   'chart.series[].state_colors':
     'A series of states’ colour for each of its states: a tone, none for the strip’s own fill, or a colour of your own.',
+  'chart.series[].thresholds':
+    'Thresholds of the series’ own, in its unit, in place of the card’s.',
   'chart.series[].unit': 'The unit this series is written in.',
   'chips.chips[].show_name': 'Shows this chip’s name, or its icon alone, whatever the card says.',
   'chips.chips[].style': 'Draws this chip as a pill, or plain, whatever the card says.',

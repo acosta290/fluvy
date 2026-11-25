@@ -758,7 +758,12 @@
     "editor.show_legend": "显示图例",
     "editor.show_head": "显示当前值",
     "editor.kind_states": "状态",
-    "editor.stat_last": "最后读数"
+    "editor.stat_last": "最后读数",
+    "high": "最高 {value}",
+    "low": "最低 {value}",
+    "editor.extremes": "最低点和最高点",
+    "editor.readouts": "每个系列一个读数",
+    "editor.series_thresholds_helper": "使用该系列的单位，替代卡片的阈值"
   },
   "chart": {
     "gauge.cold": "寒冷",

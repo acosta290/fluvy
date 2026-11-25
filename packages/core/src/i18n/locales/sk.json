@@ -776,7 +776,12 @@
     "editor.show_legend": "Zobraziť legendu",
     "editor.show_head": "Zobraziť aktuálnu hodnotu",
     "editor.kind_states": "Stavy",
-    "editor.stat_last": "Posledné meranie"
+    "editor.stat_last": "Posledné meranie",
+    "high": "Maximum {value}",
+    "low": "Minimum {value}",
+    "editor.extremes": "Najnižší a najvyšší bod",
+    "editor.readouts": "Hodnota pre každý rad",
+    "editor.series_thresholds_helper": "V jednotke tohto radu, namiesto prahových hodnôt karty"
   },
   "chart": {
     "gauge.cold": "Zima",

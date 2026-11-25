@@ -58,6 +58,7 @@ import type {
 
 import { toneOf } from '../shared/colour.js';
 import { TextRuler } from '../shared/fit.js';
+import { pairFit, pairStyles } from '../shared/readout-pair.js';
 import { statsRow } from '../shared/readouts.js';
 import { FontsSettled } from '../shared/fonts.js';
 import { iconOf, stateWord } from '../shared/domain.js';
@@ -203,6 +204,7 @@ export class FluvySensorCard extends Card<SensorCardConfig> {
   static override styles: CSSResultGroup = [
     ...(Card.styles as CSSResultGroup[]),
     sheetStyles.ambient,
+    pairStyles,
     css`
       /* the lab fixes the sheet at 360; a dashboard column decides here */
       .am-card {
@@ -278,86 +280,6 @@ export class FluvySensorCard extends Card<SensorCardConfig> {
       }
       .am-empty .fv-empty {
         color: var(--fluvy-text-secondary);
-      }
-      /* several sensors: a readout each in equal columns, 32 apart with a 36 hairline in the middle of the gap */
-      .am-pair {
-        display: grid;
-        grid-template-columns: repeat(var(--am-pair, 2), minmax(0, 1fr));
-        column-gap: var(--am-gap, 32px);
-        margin-top: 16px;
-      }
-      /* each readout centred in its column, its circle and its words as one (the language's readout rows) */
-      .am-pair__item {
-        position: relative;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 12px;
-        min-width: 0;
-        min-height: 44px;
-      }
-      .am-pair__item + .am-pair__item::before {
-        content: '';
-        position: absolute;
-        top: 50%;
-        height: 36px;
-        translate: 0 -50%;
-        inset-inline-start: calc(var(--am-gap, 32px) / -2);
-        width: 1px;
-        background: var(--fluvy-border);
-      }
-      /* without its circle a readout keeps the key of its curve beside its name: a 12 × 2 line in the curve's ink, its
-         own part, so a name that ends in an ellipsis never takes its key with it */
-      .am-key {
-        flex: none;
-        width: 12px;
-        height: 2px;
-        margin-inline-start: 8px;
-        border-radius: 1px;
-        background: var(--tone-ink, var(--fluvy-accent));
-      }
-      /* where columns would cut a name, a line a readout: its name and key at the start, its value at the end on the
-         name's baseline, the hairline across between them */
-      .am-pair--column {
-        row-gap: 12px;
-      }
-      .am-pair--column .am-pair__item {
-        min-height: 32px;
-      }
-      .am-pair--column .fv-readout {
-        display: flex;
-        flex: 1;
-        align-items: baseline;
-        justify-content: space-between;
-        gap: 16px;
-      }
-      .am-pair--column .fv-readout__value {
-        flex: none;
-        margin-top: 0;
-      }
-      .am-pair--column .am-pair__item + .am-pair__item::before {
-        top: -6px;
-        translate: none;
-        inset-inline: 0;
-        width: auto;
-        height: 1px;
-      }
-      .am-pair .fv-readout {
-        min-width: 0;
-      }
-      .am-pair .fv-readout__label {
-        display: flex;
-        align-items: center;
-        min-width: 0;
-      }
-      .am-name {
-        min-width: 0;
-        overflow: hidden;
-        white-space: nowrap;
-        text-overflow: ellipsis;
-      } /* a sensor's name may ellipsize; its key and its value never */
-      .am-pair .fv-readout__value {
-        white-space: nowrap;
       }
       /* two or three curves share the plot: lighter fills, so neither hides the other (over the engine's sheet, which
          a core card adopts after its own) */
@@ -1048,50 +970,6 @@ export class FluvySensorCard extends Card<SensorCardConfig> {
   /* ---------- several sensors ---------- */
 
   /**
-   * How the row of readouts fits, in the order things give way: the circles while every name reads whole and every
-   * value keeps the small size beside one; then the circles go (a key beside each name says which curve is whose); then
-   * the gap closes to 16; then one readout a line. A name never ends in an ellipsis before the row has stacked, and a
-   * value never shrinks past the extra-small size.
-   */
-  private pairFit(texts: ReadonlyArray<{ label: string; value: string; unit: string }>): {
-    size: 'm' | 's' | 'xs';
-    circles: boolean;
-    gap: 32 | 16 | 0;
-  } {
-    const count = texts.length;
-    const across = (gap: number): number => (this.contentWidth - gap * (count - 1)) / count;
-    const fits = (size: 'm' | 's' | 'xs', room: number): boolean =>
-      texts.every(
-        ({ value, unit }) =>
-          this.ruler.width(
-            `fv-readout fv-readout--${size} > fv-readout__value`,
-            value,
-            'fv-unit',
-            unit,
-          ) <= room,
-      );
-    // a name with its key (12 + 8) when the circles have gone
-    const named = (room: number, key: boolean): boolean =>
-      texts.every(
-        ({ label }) =>
-          this.ruler.width('fv-readout > fv-readout__label', label) + (key ? 20 : 0) <= room,
-      );
-    const wide = across(32);
-    if (named(wide - 56, false))
-      for (const size of ['m', 's'] as const)
-        if (fits(size, wide - 56)) return { size, circles: true, gap: 32 };
-    if (named(wide, true))
-      for (const size of ['m', 's', 'xs'] as const)
-        if (fits(size, wide)) return { size, circles: false, gap: 32 };
-    const tight = across(16);
-    if (named(tight, true))
-      for (const size of ['s', 'xs'] as const)
-        if (fits(size, tight)) return { size, circles: false, gap: 16 };
-    // a line each: the value at the end, beside its name
-    return { size: fits('s', this.contentWidth / 2) ? 's' : 'xs', circles: false, gap: 0 };
-  }
-
-  /**
    * Several sensors on one card (a room's temperature and humidity): the head, then a readout each — its circle in
    * the measure's tone, its name, its value — in equal columns with a hairline between them, then one chart where each
    * curve keeps its own scale (units differ: a line is read against its own readout, never against another's), and
@@ -1178,7 +1056,7 @@ export class FluvySensorCard extends Card<SensorCardConfig> {
       }
       return { label, ...this.parts(sensor, sensor.number) };
     });
-    const fit = this.pairFit(texts);
+    const fit = pairFit(this.ruler, this.contentWidth, texts);
     // one chart, each curve on its own scale (units differ), the cursor across them; it reads where the finger is
     const spec: ChartSpec | null = base
       ? {

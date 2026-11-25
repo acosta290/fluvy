@@ -376,6 +376,7 @@ describe('the editors (#204)', () => {
         for (const field of Object.values(own)) expect(field.helper).toBeUndefined();
       }
     expect(taken.sort()).toEqual([
+      'fluvy-chart-card series',
       'fluvy-readouts-card rows',
       'fluvy-room-card tiles',
       'fluvy-stat-tiles-card rows',

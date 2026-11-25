@@ -1621,7 +1621,12 @@
     "editor.show_legend": "Показване на легендата",
     "editor.show_head": "Показване на текущата стойност",
     "editor.kind_states": "Състояния",
-    "editor.stat_last": "Последна стойност"
+    "editor.stat_last": "Последна стойност",
+    "high": "Максимум {value}",
+    "low": "Минимум {value}",
+    "editor.extremes": "Най-ниска и най-висока точка",
+    "editor.readouts": "Показание за всяка серия",
+    "editor.series_thresholds_helper": "В единицата на тази серия, вместо праговете на картата"
   },
   "chart": {
     "gauge.cold": "Студено",

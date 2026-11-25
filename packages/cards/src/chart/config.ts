@@ -21,11 +21,13 @@ import {
   stateColoursField,
   stateLabel,
   textField,
+  thresholdsField,
   toneField,
   unitChoices,
   type FormLabeler,
 } from '../shared/form.js';
 import type { EditorChoices, FormHelper, RowsListSpec } from '../shared/rows-editor.js';
+import type { ThresholdsConfig } from '../shared/thresholds.js';
 import { ladderOf, type NumberKeys } from '../shared/units.js';
 import { timedAttributes, type Day } from './data/attribute.js';
 import {
@@ -60,8 +62,11 @@ export type SeriesKind = 'line' | 'area' | 'columns' | 'band' | 'states';
 /** The windows a card marks (`highlight`): the lowest, the highest, both, or none. */
 export type Windows = 'none' | 'min' | 'max' | 'both';
 
-/** A series of the chart: its entity and where it is read from, its name, its colour, how it is drawn and written. */
-export interface ChartSeriesConfig extends NumberKeys {
+/**
+ * A series of the chart: its entity and where it is read from, its name, its colour, how it is drawn and written, its
+ * own thresholds (#264: in its unit, in the card's place).
+ */
+export interface ChartSeriesConfig extends NumberKeys, ThresholdsConfig {
   entity: string;
   name?: EntityName;
   /** Where its readings come from; none: a weather's forecast, a list where `attribute` is named, else its history. */
@@ -87,10 +92,24 @@ export interface ChartSeriesConfig extends NumberKeys {
    * tone's name, a colour (a name, a hex), or `none` for the strip's own fill. A state left out keeps the house's.
    */
   state_colors?: Readonly<Record<string, string>>;
+  /**
+   * Its lowest and highest points marked (#264): a dot on each, its figures in the value row (the card's `highlight`
+   * marks windows of a lone series).
+   */
+  highlight?: Windows;
 }
 
 /** A series drawn as its states (#228): a strip under the plot, out of the scales. */
 export const isStates = (item: Pick<ChartSeriesConfig, 'kind'>): boolean => item.kind === 'states';
+
+/** The points a series of numbers marks (#264): its lowest, its highest or both; none where it asks for none. */
+export const extremesAsked = (
+  item: Pick<ChartSeriesConfig, 'highlight' | 'kind'>,
+): 'min' | 'max' | 'both' | undefined =>
+  !isStates(item) &&
+  (item.highlight === 'min' || item.highlight === 'max' || item.highlight === 'both')
+    ? item.highlight
+    : undefined;
 
 /** The most series a card draws: the palette's six series colours. */
 export const MOST_SERIES = 6;
@@ -282,14 +301,46 @@ const FILL = selectField('fill', ['gradient', 'flat', 'none']);
 // a colour of its own: one of the palette's (it follows the palette), or a colour name or a hex
 const COLOUR = fieldRow(toneField(), seriesColourField('chart-card.editor.color_helper'));
 const NUMBERS = numberFields();
+// its lowest and highest points (#264), named by what they are: the card's `highlight` marks windows
+const EXTREMES = choiceField('highlight', [
+  ['none', 'option.none'],
+  ['min', 'option.min'],
+  ['max', 'option.max'],
+  ['both', 'option.min_max'],
+]);
+const THRESHOLDS = thresholdsField();
 
-/** The fields of a series by where it is read from: the same array for the same answer, so its form is kept. */
-const SCHEMAS: Readonly<Record<Source, readonly HaFormSchemaItem[]>> = {
-  history: [ENTITY, NAME, HISTORY_STAT, DRAWN, FILL, COLOUR, NUMBERS],
-  statistics: [ENTITY, NAME, STATISTICS, DRAWN, FILL, COLOUR, NUMBERS],
-  attribute: [ENTITY, NAME, ATTRIBUTE, KEYS, DRAWN, FILL, COLOUR, NUMBERS],
-  forecast: [ENTITY, NAME, VALUE_KEY, DRAWN, FILL, COLOUR, NUMBERS],
+/** A series' fields, what it reads by where it is read from, its lowest and highest points where they can be marked. */
+const fieldsOf = (extremes: boolean): Readonly<Record<Source, readonly HaFormSchemaItem[]>> => {
+  const fields = (...read: HaFormSchemaItem[]): readonly HaFormSchemaItem[] => [
+    ENTITY,
+    NAME,
+    ...read,
+    DRAWN,
+    FILL,
+    COLOUR,
+    NUMBERS,
+    ...(extremes ? [EXTREMES] : []),
+    THRESHOLDS,
+  ];
+  return {
+    history: fields(HISTORY_STAT),
+    statistics: fields(STATISTICS),
+    attribute: fields(ATTRIBUTE, KEYS),
+    forecast: fields(VALUE_KEY),
+  };
 };
+/**
+ * The fields of a series by where it is read from: the same array for the same answer, so its form is kept; a series
+ * of stacked columns marks no lowest or highest (its column is the stack's).
+ */
+const SCHEMAS = fieldsOf(true);
+const STACKED = fieldsOf(false);
+
+/** Whether a card stacks its series' columns: the columns style over two series of numbers or more. */
+const stacks = (card: Readonly<Record<string, unknown>> | undefined): boolean =>
+  seriesOf(card).filter((item) => !isStates(item)).length > 1 &&
+  resolveStyle(card?.['chart'] as ChartPreset | undefined, {}, CHART_CAPS).preset === 'columns';
 
 /** The most states a series of states is coloured for in its editor: a select of a hundred options asks no hundred. */
 const MOST_STATES = 24;
@@ -362,6 +413,8 @@ const SERIES_KEYS = [
   'unit',
   'decimals',
   'state_colors',
+  'highlight',
+  'thresholds',
 ];
 
 const seriesLabels = editorLabels(s, {
@@ -372,6 +425,7 @@ const seriesLabels = editorLabels(s, {
   stat: 'editor.stat',
   period: 'editor.period',
   kind: 'editor.kind',
+  highlight: 'editor.extremes',
 }).computeLabel;
 
 /**
@@ -389,6 +443,7 @@ const seriesHelper: FormHelper = (schema) => {
   if (schema.name === 'attribute') return s(lang, 'editor.attribute_helper');
   if (schema.name === 'time_key' || schema.name === 'value_key')
     return s(lang, 'editor.keys_helper');
+  if (schema.name === 'thresholds') return s(lang, 'editor.series_thresholds_helper');
   return undefined;
 };
 
@@ -414,12 +469,14 @@ export const SERIES_LIST: RowsListSpec = {
     FILL,
     COLOUR,
     NUMBERS,
+    EXTREMES,
+    THRESHOLDS,
     stateColoursField(['on', 'off']),
   ],
-  schemaOf: (item, _card, hass) =>
+  schemaOf: (item, card, hass) =>
     isStates(item)
       ? statesSchema(statesFor(item['entity'], hass))
-      : SCHEMAS[
+      : (stacks(card) ? STACKED : SCHEMAS)[
           sourceOf({
             ...(item as Partial<ChartSeriesConfig>),
             entity: String(item['entity'] ?? ''),

@@ -3301,7 +3301,12 @@
     "editor.show_legend": "凡例を表示",
     "editor.show_head": "現在の値を表示",
     "editor.kind_states": "状態",
-    "editor.stat_last": "最後の値"
+    "editor.stat_last": "最後の値",
+    "high": "最高 {value}",
+    "low": "最低 {value}",
+    "editor.extremes": "最低点と最高点",
+    "editor.readouts": "系列ごとの表示値",
+    "editor.series_thresholds_helper": "この系列の単位で指定し、カードのしきい値の代わりに使われます"
   },
   "slider": {
     "mute": "ミュート",

@@ -3301,7 +3301,12 @@
     "editor.show_legend": "Legende anzeigen",
     "editor.show_head": "Aktuellen Wert anzeigen",
     "editor.kind_states": "Zustände",
-    "editor.stat_last": "Letzter Messwert"
+    "editor.stat_last": "Letzter Messwert",
+    "high": "Höchstwert {value}",
+    "low": "Tiefstwert {value}",
+    "editor.extremes": "Tiefster und höchster Punkt",
+    "editor.readouts": "Ein Messwert je Reihe",
+    "editor.series_thresholds_helper": "In der Einheit dieser Reihe, anstelle der Schwellenwerte der Karte"
   },
   "slider": {
     "mute": "Stumm",

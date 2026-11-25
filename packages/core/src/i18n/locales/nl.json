@@ -3301,7 +3301,12 @@
     "editor.show_legend": "Legenda tonen",
     "editor.show_head": "Huidige waarde tonen",
     "editor.kind_states": "Toestanden",
-    "editor.stat_last": "De laatste meting"
+    "editor.stat_last": "De laatste meting",
+    "high": "Hoogst {value}",
+    "low": "Laagst {value}",
+    "editor.extremes": "Laagste en hoogste punt",
+    "editor.readouts": "Een meetwaarde per reeks",
+    "editor.series_thresholds_helper": "In de eenheid van deze reeks, in plaats van die van de kaart"
   },
   "slider": {
     "mute": "Dempen",

@@ -106,6 +106,7 @@ show_axis: true
 | `variant` | `full` | The card’s layout. `full` · `compact` · `tile`. |
 | `show_head` | `true` | Shows the value now, large, over the chart. |
 | `show_legend` | `true` | Shows the legend under the chart. |
+| `readouts` | `false` | Gives each series a readout over the chart, in place of the legend. |
 | `highlight` | `none` | Marks the windows to come: the cheapest, the dearest, or both. `none` · `min` (The lowest reading) · `max` (The highest reading) · `both` (Lowest and highest). |
 | `highlight_hours` | `1` | How many hours each marked window lasts. 1 to 12. |
 | [`series`](#series) |  | The series the chart draws, an entity each. A list: [its items](#series). |
@@ -173,6 +174,8 @@ An item is an entity id, or a map with `entity` and any of these fields.
 | `color` | The item’s colour, in place of the one the card gives it. `graph-1` (Series 1) · `graph-2` (Series 2) · `graph-3` (Series 3) · `graph-4` (Series 4) · `graph-5` (Series 5) · `graph-6` (Series 6) · `graph-7` (Series 7) · `graph-8` (Series 8) · `graph-9` (Series 9) · `graph-10` (Series 10) · `graph-11` (Series 11) · `graph-12` (Series 12) · `accent` · `ok` (Good) · `warning` · `danger` · `notice` · `light` · `solar` · `grid` · `battery` · `water` · `gas` · `home` (House), or your own. |
 | `unit` | The unit this series is written in. `auto` · `W` · `kW` · `MW` · `Wh` · `kWh` · `MWh` · `L` · `m³` · `gal` · `ft³`, or your own. |
 | `decimals` | How many decimals the figure has. `auto` · `0` · `1` · `2` · `3`. |
+| `highlight` | Marks the series’ lowest and highest points with a dot, and says them in the value row. `none` · `min` (The lowest reading) · `max` (The highest reading) · `both` (Lowest and highest). |
+| `thresholds` | Thresholds of the series’ own, in its unit, in place of the card’s. |
 | `state_colors` | A series of states’ colour for each of its states: a tone, none for the strip’s own fill, or a colour of your own. Its keys: `on` · `off`. |
 
 ### `thresholds`
@@ -236,6 +239,26 @@ series:
 span: 24h
 ```
 
+```yaml
+# the supply's voltage before and after a voltage optimiser: a readout each, each in thresholds of its own
+type: custom:fluvy-chart-card
+title: Supply
+series:
+  - entity: sensor.grid_voltage
+    name: Input
+    highlight: both # its lowest and highest points
+    thresholds:
+      - { value: 245, tone: warning }
+      - { value: 253, tone: danger }
+  - entity: sensor.house_voltage
+    name: House
+    highlight: both
+    thresholds:
+      - { value: 216, tone: warning, below: true }
+span: 3h
+readouts: true # a readout each over the chart, in place of the legend
+```
+
 ### Series
 
 - `source`: `history`, `statistics`, `attribute` or `forecast`. Left out: a weather's forecast, else a known list in
@@ -252,6 +275,9 @@ span: 24h
 - `unit`: one the sensor's converts to, or the unit its list is written in (Solcast's kW under a kWh sensor).
 - `color` takes a colour or a palette name that follows the palette: `graph-1` to `graph-12`, `accent`, `ok`,
   `warning`, `danger`, `solar`, `grid`, `battery`, `water`, `gas`, `home`.
+- `highlight`: `min`, `max` or `both` marks the series' lowest and highest points with a dot, what is to come too, and
+  says them in the value row ("High 5.4 kW · 13:00"); columns light up with their figures over them.
+- `thresholds` on a series are written in its own unit and take the card's place for it.
 
 ### Window
 
@@ -259,8 +285,12 @@ span: 24h
 tomorrow's prices are out). With `collection_key` it follows a
 [date picker](../energy.md#following-home-assistants-date-picker).
 
-`thresholds` are written in the first series' unit ([thresholds](../customising.md#thresholds)); the chart style and
-its fine keys are the sensor card's ([charts](../customising.md#charts)).
+`readouts: true` gives two series or more a readout each over the chart, in place of the legend, as the sensor card
+does for several sensors; where a column would cut a name, the legend's lines come back.
+
+`thresholds` are written in the first series' unit and colour the series written in it
+([thresholds](../customising.md#thresholds)); the chart style and its fine keys are the sensor card's
+([charts](../customising.md#charts)).
 
 <details>
 <summary>Older names the card still reads</summary>

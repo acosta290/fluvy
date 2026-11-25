@@ -191,9 +191,11 @@ export {
 export {
   drawChart,
   drawRead,
+  extremesOf,
   plotOf,
   readAt,
   type ChartFrame,
   type ChartSpec,
+  type Extreme,
   type Reading,
 } from './draw.js';

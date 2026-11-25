@@ -56,6 +56,13 @@ export interface ChartSeries {
   readonly unit?: string;
   /** Its quantity starts at zero, so its scale holds it (`ChartSpec.zero`, for this series' unit alone). */
   readonly zero?: boolean;
+  /** Its own thresholds (#264): they colour it in the chart's place, written in its unit. */
+  readonly thresholds?: readonly ThresholdBand[];
+  /**
+   * Its lowest and highest points marked (#264), across all it draws (`extremesOf`): a dot on each (a lone series' in
+   * the ok and the danger tones, each of several in its own ink), or its columns lit with their figures over them.
+   */
+  readonly highlight?: 'min' | 'max' | 'both';
 }
 
 /**

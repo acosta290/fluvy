@@ -1979,7 +1979,12 @@
     "editor.show_legend": "Jelmagyarázat megjelenítése",
     "editor.show_head": "A mostani érték megjelenítése",
     "editor.kind_states": "Állapotok",
-    "editor.stat_last": "Az utolsó érték"
+    "editor.stat_last": "Az utolsó érték",
+    "high": "Legmagasabb {value}",
+    "low": "Legalacsonyabb {value}",
+    "editor.extremes": "Legalacsonyabb és legmagasabb pont",
+    "editor.readouts": "Kijelző minden adatsorhoz",
+    "editor.series_thresholds_helper": "Az adatsor mértékegységében, a kártya küszöbértékei helyett"
   },
   "chart": {
     "gauge.cold": "Hideg",

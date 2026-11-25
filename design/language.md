@@ -2224,8 +2224,9 @@ forecast. It is the engine's (§ Charts) in its house's style or its own.
 - **The axis of a calendar window** says the day of a midnight between its ends ("Thu 00:00 · Fri 00:00 · Sat
   00:00", never a bare 00:00 that could be either day), and where the times do not stand 12 apart, the days alone
   (Thu · Fri · Sat).
-- **Heights** by variant and series count only: 320 (364 with a legend of four or more), 240, 168; loading (the
-  skeleton), empty (the ring and "Nothing to chart in this window" on the page's fill) or out of reach, it keeps them.
+- **Heights** by variant and series count only: 320 (364 with a legend or readouts of four or more), 240, 168;
+  loading (the skeleton), empty (the ring and "Nothing to chart in this window" on the page's fill) or out of reach,
+  it keeps them.
 - **Following a date picker** (1.20, #181, `collection_key`). The window is the picked range, its subtitle the range
   in the energy cards' words ("September"), its statistics in Home Assistant's grain (a meter's change by the hour,
   the day or the month; a measurement by five minutes, the hour or the day), a range of days marked by its dates. While
@@ -2272,6 +2273,37 @@ and `curve: step` reads 0 or 100, never a mean between.
 **A gap.** A sensor that said `unavailable`, `unknown` or no number at all is a gap from then until its next number:
 its line breaks, its area under it, its columns stand empty where none of their slot was known, and the value row
 reads "—" there; a slot that knew part of its time reads that part.
+
+### A series' own thresholds, its lowest and highest points, a readout each (1.26, #264)
+
+- **Thresholds of its own.** A series may name its `thresholds`, read in the unit it is written in (its `unit`, else
+  its sensor's): they colour its line or its columns in the card's place, the card's still colouring the other series
+  of the lead's unit. Its figure takes its band's ink where the row says it (the readout, the legend's line, the lone
+  series' reading); the card's colour a figure in the readouts alone, so a card that names none of its series' looks
+  as it did.
+- **Its lowest and highest points** (`highlight: min | max | both` on the series; the card's `highlight` marks
+  windows), across all it draws, what is to come too: its band's lowest low and highest high where its band is drawn.
+  On the plot, dots alone, never words (they would meet the lines and the bubble): a lone series' in the ok and the
+  danger tones, each of several in its own ink (its band's where a threshold claims the point, as its line there),
+  ringed in the card's colour so it reads on its line. Columns light the two (the rest go quiet) with their figures
+  over them, as a lone bar chart does; a stack of columns marks none. When a point was is said in the house's time
+  format, with its weekday on a window longer than a day, its date past a week, its date alone for a slot of a day.
+- **Said in the row.** A lone series says its points as pills at the row's end, a row each way: the marked window and
+  the point of its kind side by side ("Cheapest …" beside "Low …"), each led by its glyph (the chevron up or down, in
+  its tone's ink) where a window's pill has its dot, in one of four forms every pill shares, longest first: "High 5.4
+  kW · 13:00", "5.4 kW · 13:00", "5.4 kW", "5.4". Under a readout they are a 16 line, 12/500 in the secondary ink,
+  each figure 12/600 in the text's (its band's past a threshold) after its glyph, the highest first, the times giving
+  way first, then the lowest; one form for every readout. The words whole go to a reader, and into the chart's spoken
+  label.
+- **A readout each** (`readouts: true`, the full card with its head over two series of numbers or more): the several
+  sensors' row (§ Several sensors) in the value row, in place of the legend: equal columns, three to a line at most
+  (four series two lines of two, five and six two of three), a 36 hairline between two of a line, none before a
+  line's first; each its name and its key (12 × 2 in the series' colour) over its reading, every reading at the size
+  they all hold (m, s, xs), 48 tall, 64 where its points are said under it, 12 between two lines. They are fitted on
+  all each may say (its reading now, its lowest and its highest, a state's every word), so a read never moves them;
+  where a name would be cut in its column (half a section), the legend's lines come back, one a row. Read, each says
+  that moment and the time is a pill on the axis; its points stay. Four series or more take the card's 364 whatever
+  the legend says; what two lines of points take past it is the plot's.
 
 ## People (1.6)
 

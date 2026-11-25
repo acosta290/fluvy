@@ -17,7 +17,10 @@ if (!customElements.get('fluvy-chart-card'))
  * legend under the axis), and four and six at half a section and in a narrow column; compact, tiles, empty, out of
  * reach and half a section; and at noon (#158), three rooms' day so far, a room beside the price of both days, the
  * panels' power over the solar forecast as columns, and two units on one chart (a price's columns under a temperature,
- * a power beside a humidity), full, compact and as tiles.
+ * a power beside a humidity), full, compact and as tiles. And #264: the supply's voltage in and out of a voltage
+ * optimiser beside the house's power, a readout each (the reporter's picture), each voltage with thresholds of its own;
+ * the house's power over a day with its lowest and highest points; four rooms' readouts with theirs; at half a section,
+ * where the readouts give way to the legend's lines; out of reach.
  */
 
 const QUARTER = 15 * 60_000;
@@ -154,6 +157,62 @@ const FORECAST = Array.from({ length: 30 }, (_unused, h) => {
   };
 });
 
+/**
+ * The supply's last six hours, five minutes a reading (#264): the grid's voltage at the meter, the house's after its
+ * voltage optimiser, and the house's power (kW) — the oven at seven, the kettle at nine.
+ */
+const FIVE = Array.from({ length: 73 }, (_unused, i) => (i - 72) / 12 + 21.75);
+const SUPPLY_IN = FIVE.map(
+  (h) =>
+    Math.round(
+      (245.6 +
+        2.2 * Math.sin(h * 2.3) +
+        1.2 * Math.sin(h * 7.9) -
+        0.8 * Math.cos(h * 13) +
+        6.2 * Math.exp(-((h - 20.2) ** 2) / 0.03)) *
+        10,
+    ) / 10,
+);
+const SUPPLY_HOUSE = FIVE.map(
+  (h) =>
+    Math.round(
+      (219.8 +
+        0.8 * Math.sin(h * 3.1) +
+        0.4 * Math.sin(h * 11.3) -
+        6.4 * Math.exp(-((h - 19.1) ** 2) / 0.02)) *
+        10,
+    ) / 10,
+);
+const SUPPLY_POWER = FIVE.slice(36).map(
+  (h) =>
+    Math.round(
+      (0.32 +
+        2.9 * Math.exp(-((h - 19.1) ** 2) / 0.12) +
+        2.2 * Math.exp(-((h - 21.05) ** 2) / 0.004) +
+        0.08 * Math.sin(h * 17)) *
+        100,
+    ) / 100,
+);
+/**
+ * The house's power over two days to the sheets' evening (kW), half an hour a reading: night, lunch, the oven;
+ * yesterday a tenth more.
+ */
+const DAY_POWER = Array.from({ length: 97 }, (_unused, i) => {
+  const hour = (i / 2 + 21.75) % 24;
+  return (
+    Math.round(
+      (i < 48 ? 1.1 : 1) *
+        (0.24 +
+          0.5 * Math.exp(-((hour - 7.5) ** 2) / 0.8) +
+          5.1 * Math.exp(-((hour - 13) ** 2) / 0.5) +
+          2.6 * Math.exp(-((hour - 19) ** 2) / 1.2) +
+          0.06 * Math.sin(i * 1.9) -
+          0.05 * Math.exp(-((hour - 4) ** 2) / 1.5)) *
+        100,
+    ) / 100
+  );
+});
+
 const PRICE = { unit_of_measurement: 'EUR/kWh', state_class: 'measurement' };
 const TEMPERATURE = {
   unit_of_measurement: '°C',
@@ -219,6 +278,49 @@ const POWER_AND_HUMIDITY = card({
   span: 'today',
   chart: 'soft',
   _now: NOON_ISO,
+});
+
+const VOLTAGE = { unit_of_measurement: 'V', device_class: 'voltage', state_class: 'measurement' };
+const POWER_KW = { unit_of_measurement: 'kW', device_class: 'power', state_class: 'measurement' };
+
+/**
+ * #264, the reporter's picture: the supply's voltage in and out of the optimiser and the house's power between them,
+ * a readout each; each voltage in its own thresholds (the grid's high at the meter, the house's low under it).
+ */
+const SUPPLY_SERIES = [
+  {
+    entity: 'sensor.ch_supply_voltage',
+    name: 'Input',
+    thresholds: [
+      { value: 245, tone: 'warning' },
+      { value: 253, tone: 'danger' },
+    ],
+  },
+  { entity: 'sensor.ch_house_power', name: 'Power' },
+  {
+    entity: 'sensor.ch_house_voltage',
+    name: 'House',
+    thresholds: [{ value: 216, tone: 'warning', below: true }],
+  },
+];
+const SUPPLY = card({
+  title: 'Home',
+  icon: 'bolt',
+  series: SUPPLY_SERIES,
+  span: '3h',
+  chart: 'soft',
+  readouts: true,
+});
+/** The same, each series' lowest and highest points under its readout. */
+const SUPPLY_MARKED = SUPPLY_SERIES.map((item) => ({ ...item, highlight: 'both' }));
+const SUPPLY_POINTS = card({ ...SUPPLY, series: SUPPLY_MARKED });
+/** Four rooms' day, a readout each, its lowest and highest points under it. */
+const ROOMS_READ = card({
+  title: 'Rooms',
+  series: FOUR_ROOMS.map((entity) => ({ entity, highlight: 'both' })),
+  span: '24h',
+  chart: 'soft',
+  readouts: true,
 });
 
 export const sheet: SheetSpec = {
@@ -287,6 +389,11 @@ export const sheet: SheetSpec = {
       state_class: 'measurement',
     }),
     ['sensor.ch_gone', 'unavailable', { friendly_name: 'Nordpool', ...PRICE }],
+    sensor('sensor.ch_supply_voltage', String(SUPPLY_IN.at(-1)), 'Supply voltage', VOLTAGE),
+    sensor('sensor.ch_house_voltage', String(SUPPLY_HOUSE.at(-1)), 'House voltage', VOLTAGE),
+    sensor('sensor.ch_house_power', String(SUPPLY_POWER.at(-1)), 'House power', POWER_KW),
+    sensor('sensor.ch_day_power', String(DAY_POWER.at(-1)), 'House power', POWER_KW),
+    ['sensor.ch_supply_gone', 'unavailable', { friendly_name: 'Supply voltage', ...VOLTAGE }],
   ],
   history: {
     'sensor.ch_living_temperature': LIVING,
@@ -302,6 +409,10 @@ export const sheet: SheetSpec = {
     'sensor.ch_noon_solar_power': SOLAR_TO_NOON,
     'sensor.ch_noon_house_power': POWER_TO_NOON,
     'sensor.ch_noon_bathroom_humidity': HUMIDITY_TO_NOON,
+    'sensor.ch_supply_voltage': SUPPLY_IN,
+    'sensor.ch_house_voltage': SUPPLY_HOUSE.slice(36),
+    'sensor.ch_house_power': SUPPLY_POWER,
+    'sensor.ch_day_power': DAY_POWER,
   },
   statistics: {
     'sensor.ch_living_temperature': {
@@ -484,6 +595,93 @@ export const sheet: SheetSpec = {
         { ...PRICE_UNDER_ROOM, variant: 'compact' },
         { ...PRICE_UNDER_ROOM, variant: 'tile', cols: 6 },
         { ...POWER_AND_HUMIDITY, variant: 'tile', cols: 6 },
+      ],
+    },
+    // #264: a readout each, as the several sensors' card lays them: the reporter's picture, then with each series'
+    // lowest and highest points under its readout
+    { title: 'Chart · readouts', cards: [SUPPLY] },
+    { title: 'Chart · readouts, lowest and highest', cards: [SUPPLY_POINTS] },
+    // a lone series' lowest and highest points: dots on its line and pills in the row ("High 5.4 kW · 13:00"); as
+    // columns, the two lit with their figures over them
+    {
+      title: 'Chart · lowest and highest',
+      cards: [
+        card({
+          title: 'House power',
+          series: [{ entity: 'sensor.ch_day_power', highlight: 'both' }],
+          span: '24h',
+          chart: 'soft',
+        }),
+        card({
+          title: 'House power',
+          series: [{ entity: 'sensor.ch_day_power', kind: 'columns', highlight: 'both' }],
+          span: '24h',
+          chart: 'soft',
+        }),
+      ],
+    },
+    // two series of one unit, each in thresholds of its own, and a power in its own unit's: the legend's figures in
+    // their bands' inks
+    {
+      title: 'Chart · thresholds of its own',
+      cards: [
+        card({
+          title: 'Supply',
+          series: [
+            SUPPLY_SERIES[0],
+            SUPPLY_SERIES[2],
+            {
+              entity: 'sensor.ch_house_power',
+              name: 'Power',
+              thresholds: [{ value: 3, tone: 'danger' }],
+            },
+          ],
+          span: '3h',
+          chart: 'soft',
+        }),
+      ],
+    },
+    // four series a readout each, two lines of them (the card's 364), and six without their points
+    {
+      title: 'Chart · four readouts',
+      cards: [
+        ROOMS_READ,
+        card({
+          title: 'Rooms',
+          series: [...FOUR_ROOMS, 'sensor.ch_bathroom_temperature', 'sensor.ch_hall_temperature'],
+          span: '24h',
+          chart: 'soft',
+          readouts: true,
+        }),
+      ],
+    },
+    // at half a section a name would be cut in a column: the readouts give way to the legend's lines, one a row
+    {
+      title: 'Chart · readouts at half a section',
+      heights: [152, 172, 211, 266],
+      cards: [
+        { ...SUPPLY_POINTS, cols: 6 },
+        { ...ROOMS_READ, cols: 6 },
+      ],
+    },
+    // out of reach: the readout keeps its place and says "—", its key in the off ink; a lone series' points are
+    // its window's
+    {
+      title: 'Chart · readouts out of reach',
+      cards: [
+        card({
+          ...SUPPLY_POINTS,
+          series: [
+            { ...SUPPLY_MARKED[0], entity: 'sensor.ch_supply_gone' },
+            ...SUPPLY_MARKED.slice(1),
+          ],
+        }),
+        card({
+          title: 'Supply voltage',
+          series: [{ entity: 'sensor.ch_supply_gone', highlight: 'both' }],
+          span: '3h',
+          chart: 'soft',
+        }),
       ],
     },
   ],

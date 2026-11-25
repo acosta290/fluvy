@@ -145,6 +145,8 @@ export interface LegendItem {
   /** A series colour's paint (`seriesPaint`) where neither names it: the palette's, or the house's set's in each mode. */
   readonly paint?: SeriesPaint;
   readonly value?: string;
+  /** The value's ink past a threshold (#264): its band's, as a figure's words (`AccentSheet.ink`). */
+  readonly ink?: string | undefined;
 }
 
 /** A legend under a chart of several series: a 12 px swatch (radius 3) and the name, 12/500, the value beside it. */
@@ -160,7 +162,12 @@ export const legend = (items: readonly LegendItem[]): TemplateResult =>
           <i class="fc-legend__swatch"></i
           ><span class="fc-legend__name" data-name>${item.name}</span>${
             item.value
-              ? html`<span class="fc-legend__value" data-measure="value">${item.value}</span>`
+              ? html`<span
+                  class="fc-legend__value"
+                  data-measure="value"
+                  data-ink=${item.ink ?? nothing}
+                  >${item.value}</span
+                >`
               : nothing
           }
         </li>`,

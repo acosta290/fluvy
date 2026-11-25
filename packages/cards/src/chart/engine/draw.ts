@@ -91,8 +91,8 @@ export interface ChartSpec {
   readonly tick?: (value: number, decimals: number) => string;
   /** A text's width as the card's ruler measures it at the ticks' face (11/500): the scale's column is sized by it. */
   readonly measure?: (text: string) => number;
-  /** A bar's value over it, where the style writes one. */
-  readonly value?: (value: number) => string;
+  /** A bar's value over it, where the style writes one: in its series' unit. */
+  readonly value?: (value: number, series: number) => string;
   /** The word on the highest bar's line ("MAX"), where the style draws one. */
   readonly maxWord?: string;
   /** The ids' prefix, unique in the card's shadow root: `fv` draws the classic lone curve's `fv-fill`. */
@@ -388,6 +388,35 @@ const extreme = (values: ReadonlyArray<number | null>, pick: 'min' | 'max'): num
   return at;
 };
 
+/** A series' lowest or highest point (#264): its reading's place among its values, and what it reads. */
+export interface Extreme {
+  readonly index: number;
+  readonly value: number;
+}
+
+/**
+ * A series' lowest and highest points where it asks for them (`ChartSeries.highlight`), across all it draws — what is
+ * to come too: its band's lowest low and highest high where its band is drawn, else its readings'; the earliest of a
+ * tie.
+ */
+export function extremesOf(
+  spec: ChartSpec,
+  index: number,
+): { readonly min?: Extreme; readonly max?: Extreme } {
+  const series = spec.series[index];
+  const asked = series?.highlight;
+  if (!series || !asked) return {};
+  const bars = spec.kind ? spec.kind === 'bars' : isBars(spec.style.preset);
+  const band = !bars && fillOf(spec, index) === 'band' ? series.band : undefined;
+  const at = (values: ReadonlyArray<number | null>, pick: 'min' | 'max'): Extreme | undefined => {
+    const found = extreme(values, pick);
+    return found < 0 ? undefined : { index: found, value: values[found] as number };
+  };
+  const min = asked === 'max' ? undefined : at(band?.low ?? series.values, 'min');
+  const max = asked === 'min' ? undefined : at(band?.high ?? series.values, 'max');
+  return { ...(min ? { min } : {}), ...(max ? { max } : {}) };
+}
+
 /** A series' group: its tone's class, its ink, or the person's own colour as the card's accent sheet keys it. */
 const paintOf = (spec: ChartSpec, index: number): SeriesPaint =>
   seriesPaint(spec.series[index]?.colour);
@@ -401,11 +430,15 @@ const painted = (
 const group = (spec: ChartSpec, index: number, content: unknown): SVGTemplateResult =>
   painted(paintOf(spec, index), content, spec.series[index]?.accent);
 
-/** The stretches of the scale that colour a series: those written in its unit. */
+/** The stretches of the scale that colour a series: its own (#264), else the chart's written in its unit. */
 const thresholdsOf = (spec: ChartSpec, index: number): readonly ThresholdBand[] => {
-  const unit = spec.series[index]?.unit;
-  return (spec.thresholds ?? []).filter(
-    (t) => t.unit === undefined || unit === undefined || t.unit === unit,
+  const series = spec.series[index];
+  const unit = series?.unit;
+  return (
+    series?.thresholds ??
+    (spec.thresholds ?? []).filter(
+      (t) => t.unit === undefined || unit === undefined || t.unit === unit,
+    )
   );
 };
 
@@ -524,19 +557,31 @@ function tickColumn(spec: ChartSpec, laid: Laid): SVGTemplateResult | typeof not
   )}`;
 }
 
-/** Which bars stand out in a style that highlights (the rest go quiet): the highest, the lowest, both, or now's. */
-function litBars(spec: ChartSpec, laid: Laid): (slot: number) => boolean {
+/**
+ * Which bars stand out (the rest go quiet): a series' own lowest and highest where it asks for them (#264), else those
+ * of a style that highlights — the first series' highest, lowest, both, or now's; none (undefined) where nothing does.
+ */
+function litBars(
+  spec: ChartSpec,
+  laid: Laid,
+): (slot: number, series: number) => boolean | undefined {
   const { style } = spec;
   const first = spec.series[0]?.values ?? [];
   const maxAt = extreme(first, 'max');
   const minAt = extreme(first, 'min');
   const current = laid.nowIndex ?? laid.count - 1;
   const pick = style.bars === 'max' && style.highlight === 'none' ? 'max' : style.highlight;
-  if (pick === 'none') return () => true;
-  return (slot) =>
-    ((pick === 'max' || pick === 'both') && slot === maxAt) ||
-    ((pick === 'min' || pick === 'both') && slot === minAt) ||
-    (pick === 'current' && slot === current);
+  const own = spec.series.map((_series, index) => extremesOf(spec, index));
+  return (slot, series) => {
+    if (spec.series[series]?.highlight)
+      return own[series]?.min?.index === slot || own[series]?.max?.index === slot;
+    if (pick === 'none') return undefined;
+    return (
+      ((pick === 'max' || pick === 'both') && slot === maxAt) ||
+      ((pick === 'min' || pick === 'both') && slot === minAt) ||
+      (pick === 'current' && slot === current)
+    );
+  };
 }
 
 /**
@@ -547,7 +592,6 @@ function litBars(spec: ChartSpec, laid: Laid): (slot: number) => boolean {
 function barsBody(spec: ChartSpec, laid: Laid, drawn: readonly Column[]): SVGTemplateResult {
   const { style } = spec;
   const lit = litBars(spec, laid);
-  const highlights = style.bars === 'max' || style.highlight !== 'none';
   const gradient = `${spec.id}-bar`;
   return svg`${
     style.bars === 'gradient'
@@ -555,7 +599,7 @@ function barsBody(spec: ChartSpec, laid: Laid, drawn: readonly Column[]): SVGTem
       : nothing
   }${drawn.map((c) => {
     const hollow = laid.nowIndex !== null && c.slot > laid.nowIndex;
-    const quiet = !hollow && highlights && !lit(c.slot);
+    const quiet = !hollow && lit(c.slot, c.series) === false;
     // the slot still running reads so far: paler than a whole one, never hollow (it has readings)
     const soFar = spec.series[c.series]?.soFar === true && c.slot === laid.count - 1;
     const bar = svg`<path class="fc-bar ${hollow ? 'fc-bar--hollow' : quiet ? 'fc-bar--quiet' : ''} ${soFar ? 'fc-bar--sofar' : ''} ${c.sign < 0 ? 'fc-bar--hanging' : ''}" d=${c.d} fill=${style.bars === 'gradient' && !hollow ? `url(#${gradient})` : nothing} style=${`animation-delay:${c.slot * 18}ms`} />`;
@@ -567,7 +611,8 @@ function barsBody(spec: ChartSpec, laid: Laid, drawn: readonly Column[]): SVGTem
 
 /**
  * What is written over bars, outside the clip: the highest bar's dashed line and its word (the soft style), and a
- * bar's value centred over it (under a hanging one) — every bar's where a slot holds it, else only the lit ones.
+ * bar's value centred over it (under a hanging one) — a lone series' every bar where a slot holds it, else its lit
+ * ones; of several, those of a series that asks for its lowest and highest (#264).
  */
 function barsWords(spec: ChartSpec, laid: Laid, drawn: readonly Column[]): SVGTemplateResult {
   const { style, frame } = spec;
@@ -577,8 +622,12 @@ function barsWords(spec: ChartSpec, laid: Laid, drawn: readonly Column[]): SVGTe
   const scale = laid.scales[0] as Scale;
   const maxY =
     style.bars === 'max' && maxAt >= 0 ? yOf(first[maxAt] as number, scale, laid.box) : null;
-  const highlights = style.bars === 'max' || style.highlight !== 'none';
-  const shown = (c: Column): boolean => (highlights ? lit(c.slot) : laid.slot >= 30);
+  const lone = spec.series.length === 1;
+  const shown = (c: Column): boolean => {
+    const on = lit(c.slot, c.series);
+    if (spec.series[c.series]?.highlight) return on === true;
+    return lone && (on ?? laid.slot >= 30);
+  };
   const value = spec.value;
   return svg`${
     maxY === null
@@ -589,12 +638,12 @@ function barsWords(spec: ChartSpec, laid: Laid, drawn: readonly Column[]): SVGTe
             : nothing
         }`
   }${
-    value && spec.series.length === 1
+    value
       ? drawn
           .filter(shown)
           .map(
             (c) =>
-              svg`<text class="fc-value ${highlights && lit(c.slot) ? 'is-lit' : ''}" x=${px(c.x + c.width / 2)} y=${px(c.sign > 0 ? c.y - 6 : c.y + c.height + 14)} text-anchor="middle">${value(c.value)}</text>`,
+              svg`<text class="fc-value ${lit(c.slot, c.series) ? 'is-lit' : ''}" x=${px(c.x + c.width / 2)} y=${px(c.sign > 0 ? c.y - 6 : c.y + c.height + 14)} text-anchor="middle">${value(c.value, c.series)}</text>`,
           )
       : nothing
   }`;
@@ -736,7 +785,28 @@ export function drawChart(spec: ChartSpec): TemplateResult {
   const knobs: TemplateResult[] = [];
   const marksOf = (index: number, y: number | null): SVGTemplateResult[] => {
     const dots: SVGTemplateResult[] = [];
-    if (
+    const series = spec.series[index];
+    if (series?.highlight) {
+      // a series' own lowest and highest (#264): a lone one's in the ok and the danger tones, each of several in its
+      // ink — a threshold's where one claims it, as its line there — ringed in the card's to read on its line
+      const own = extremesOf(spec, index);
+      const band = !laid.bars && fillOf(spec, index) === 'band' ? series.band : undefined;
+      for (const pick of ['min', 'max'] as const) {
+        const found = own[pick];
+        const p = found && laid.points[index]?.[found.index];
+        if (!found || !p) continue;
+        const x = slotted(spec, index) ? p[0] + laid.heldOf(index) / 2 : p[0];
+        const level = band ? yOf(found.value, laid.scales[index] as Scale, laid.box) : p[1];
+        const over = several ? thresholdAtY(spec, laid, index, level) : undefined;
+        dots.push(
+          several
+            ? over
+              ? bandPaint(over, dot(x, level))
+              : dot(x, level)
+            : dot(x, level, pick === 'min' ? 'ok' : 'danger'),
+        );
+      }
+    } else if (
       !several &&
       (style.highlight === 'min' || style.highlight === 'max' || style.highlight === 'both')
     )

@@ -4,7 +4,7 @@ import type { FluvyDial, FluvyRuler } from '@fluvy/ui';
 import { render, type TemplateResult } from 'lit';
 import { describe, expect, it } from 'vitest';
 
-import { drawChart, plotOf, readAt, type ChartSpec } from './draw.js';
+import { drawChart, extremesOf, plotOf, readAt, type ChartSpec } from './draw.js';
 import { drawGauge } from './gauge.js';
 import { resolveGauge, resolveStyle } from './presets.js';
 
@@ -497,6 +497,131 @@ describe('series in several units', () => {
     expect(room).toBeGreaterThan(0.7);
     // on one scale, the price's columns are stubs on the floor under the temperature's
     expect(reached(series.map(({ values }) => ({ values })))[0]).toBeLessThan(0.1);
+  });
+});
+
+describe('a series’ own thresholds and points (#264)', () => {
+  const VOLTS_IN = [244, 246, 251, 255, 249, 243];
+  const VOLTS_HOUSE = [220, 219, 214, 218, 221, 220];
+  const POWER = [0.4, 3.1, 0.6, 0.3, 2.2, 0.5];
+
+  it('colours a series by its own thresholds in the chart’s place, whatever its unit', () => {
+    const drawing = host(
+      drawChart(
+        spec('soft', {
+          series: [
+            {
+              values: VOLTS_IN,
+              unit: 'V',
+              thresholds: [{ from: 250, to: null, colour: 'danger', unit: 'V' }],
+            },
+            // the same unit, the chart's thresholds
+            { values: VOLTS_HOUSE, unit: 'V' },
+            // another unit: the chart's never reach it, its own do
+            {
+              values: POWER,
+              unit: 'kW',
+              thresholds: [{ from: 3, to: null, colour: 'warning', unit: 'kW' }],
+            },
+          ],
+          thresholds: [{ from: null, to: 216, colour: 'notice', unit: 'V' }],
+        }),
+      ),
+    );
+    const runs = (index: number) =>
+      [...drawing.querySelectorAll(`[id^="c-run-${index}-"]`)].map(
+        (clip) =>
+          drawing.querySelector(`[clip-path="url(#${clip.id})"]`)?.getAttribute('class') ?? '',
+      );
+    expect(runs(0)).toEqual(['fv-tone--danger']);
+    expect(runs(1)).toEqual(['fv-tone--notice']);
+    expect(runs(2)).toEqual(['fv-tone--warning']);
+  });
+
+  it('finds a series’ lowest and highest across all it draws, its band’s where the band is drawn', () => {
+    const values = [20, 22, 25, 23, 21, 19, 17];
+    const at = (more: Partial<ChartSpec>) => extremesOf(spec('soft', more), 0);
+    expect(at({ series: [{ values }] })).toEqual({});
+    // what is to come too: the last reading is the lowest
+    expect(at({ series: [{ values, highlight: 'both' }], now: 0.5 })).toEqual({
+      min: { index: 6, value: 17 },
+      max: { index: 2, value: 25 },
+    });
+    expect(at({ series: [{ values, highlight: 'max' }] })).toEqual({
+      max: { index: 2, value: 25 },
+    });
+    const band = {
+      low: values.map((v, i) => v - (i === 4 ? 9 : 1)),
+      high: values.map((v) => v + 1),
+    };
+    expect(at({ series: [{ values, band, fill: 'band', highlight: 'min' }] })).toEqual({
+      min: { index: 4, value: 12 },
+    });
+    // a band not drawn (its fill another) is read by its readings
+    expect(at({ series: [{ values, band, fill: 'gradient', highlight: 'min' }] })).toEqual({
+      min: { index: 6, value: 17 },
+    });
+  });
+
+  it('dots them on a lone line in the ok and the danger tones, on each of several in its own ink', () => {
+    const dots = (series: ChartSpec['series']) =>
+      [...host(drawChart(spec('soft', { series }))).querySelectorAll('.curve-dot')].map((dot) => ({
+        cls: dot.getAttribute('class')?.trim(),
+        group: dot.closest('g[class]')?.getAttribute('class') ?? '',
+      }));
+    expect(dots([{ values: POWER, highlight: 'both' }])).toEqual([
+      { cls: 'curve-dot fv-tone--ok', group: '' },
+      { cls: 'curve-dot fv-tone--danger', group: '' },
+    ]);
+    // several: each series' own, its ink its group's; a series that asks for none draws none
+    const several = dots([
+      { values: VOLTS_IN, highlight: 'both', colour: 'ok' },
+      { values: VOLTS_HOUSE, colour: 'warning' },
+      { values: POWER, highlight: 'max', colour: 'accent' },
+    ]);
+    expect(several).toEqual([
+      { cls: 'curve-dot', group: 'fv-tone--ok' },
+      { cls: 'curve-dot', group: 'fv-tone--ok' },
+      { cls: 'curve-dot', group: 'fv-tone--accent' },
+    ]);
+    // on a band, at its lowest low
+    const values = [20, 22, 25, 23, 21];
+    const band = { low: [19, 21, 24, 12, 20], high: values.map((v) => v + 1) };
+    const drawing = host(
+      drawChart(
+        spec('band', {
+          series: [{ values, band, fill: 'band', highlight: 'min' }, { values }],
+          scale: { min: 10, max: 30 },
+        }),
+      ),
+    );
+    const y = (v: number): number => 44 + (1 - (v - 10) / 20) * (120 - 44 - 8);
+    expect(Number(drawing.querySelector('.curve-dot')?.getAttribute('cy'))).toBeCloseTo(y(12), 2);
+  });
+
+  it('lights a series’ lowest and highest columns with their figures over them, beside another’s', () => {
+    const drawing = host(
+      drawChart(
+        spec('soft', {
+          kind: 'bars',
+          series: [
+            { values: POWER, highlight: 'both', unit: 'kW' },
+            { values: [1, 2, 3, 4, 5, 6], unit: 'kWh' },
+          ],
+          value: (value, series) => `${value}${series ? ' kWh' : ' kW'}`,
+        }),
+      ),
+    );
+    const bars = [...drawing.querySelectorAll('.fc-bar')];
+    const quiet = (series: number) =>
+      bars
+        .filter((_bar, i) => i % 2 === series)
+        .map((bar) => bar.classList.contains('fc-bar--quiet'));
+    expect(quiet(0)).toEqual([true, false, true, false, true, true]);
+    expect([...drawing.querySelectorAll('.fc-value')].map((v) => v.textContent)).toEqual([
+      '3.1 kW',
+      '0.3 kW',
+    ]);
   });
 });
 

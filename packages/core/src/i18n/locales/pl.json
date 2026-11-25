@@ -964,7 +964,12 @@
     "editor.show_legend": "Pokaż legendę",
     "editor.show_head": "Pokaż bieżącą wartość",
     "editor.kind_states": "Stany",
-    "editor.stat_last": "Ostatni odczyt"
+    "editor.stat_last": "Ostatni odczyt",
+    "high": "Maksimum {value}",
+    "low": "Minimum {value}",
+    "editor.extremes": "Najniższy i najwyższy punkt",
+    "editor.readouts": "Odczyt dla każdej serii",
+    "editor.series_thresholds_helper": "W jednostce tej serii, zamiast progów karty"
   },
   "chips": {
     "rooms": "Pomieszczenia",

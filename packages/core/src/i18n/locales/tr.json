@@ -3301,7 +3301,12 @@
     "editor.show_legend": "Göstergeyi göster",
     "editor.show_head": "Şimdiki değeri göster",
     "editor.kind_states": "Durumlar",
-    "editor.stat_last": "Son okuma"
+    "editor.stat_last": "Son okuma",
+    "high": "En yüksek {value}",
+    "low": "En düşük {value}",
+    "editor.extremes": "En düşük ve en yüksek nokta",
+    "editor.readouts": "Her seri için bir okuma",
+    "editor.series_thresholds_helper": "Bu serinin biriminde, kartın eşikleri yerine"
   },
   "slider": {
     "mute": "Sessize al",

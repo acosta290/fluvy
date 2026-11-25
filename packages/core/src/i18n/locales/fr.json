@@ -3301,7 +3301,12 @@
     "editor.show_legend": "Afficher la légende",
     "editor.show_head": "Afficher la valeur actuelle",
     "editor.kind_states": "États",
-    "editor.stat_last": "La dernière mesure"
+    "editor.stat_last": "La dernière mesure",
+    "high": "Maximum {value}",
+    "low": "Minimum {value}",
+    "editor.extremes": "Point le plus bas et le plus haut",
+    "editor.readouts": "Une mesure par série",
+    "editor.series_thresholds_helper": "Dans l’unité de cette série, à la place de ceux de la carte"
   },
   "slider": {
     "mute": "Muet",

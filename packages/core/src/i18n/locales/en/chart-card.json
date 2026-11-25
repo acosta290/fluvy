@@ -37,6 +37,11 @@
     "editor.show_legend": "Show legend",
     "editor.show_head": "Show the value now",
     "editor.kind_states": "States",
-    "editor.stat_last": "The last reading"
+    "editor.stat_last": "The last reading",
+    "high": "High {value}",
+    "low": "Low {value}",
+    "editor.extremes": "Lowest and highest point",
+    "editor.readouts": "A readout for each series",
+    "editor.series_thresholds_helper": "In this series’ unit, in place of the card’s"
   }
 }

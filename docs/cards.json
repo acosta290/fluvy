@@ -29647,6 +29647,13 @@
           "default": true
         },
         {
+          "key": "readouts",
+          "label": "A readout for each series",
+          "does": "Gives each series a readout over the chart, in place of the legend.",
+          "type": "boolean",
+          "default": false
+        },
+        {
           "key": "highlight",
           "label": "Highlight",
           "does": "Marks the windows to come: the cheapest, the dearest, or both.",
@@ -30045,6 +30052,25 @@
                 "3": "3",
                 "auto": "Automatic"
               }
+            },
+            {
+              "key": "highlight",
+              "label": "Lowest and highest point",
+              "does": "Marks the series’ lowest and highest points with a dot, and says them in the value row.",
+              "type": "choice",
+              "values": {
+                "none": "None",
+                "min": "The lowest reading",
+                "max": "The highest reading",
+                "both": "Lowest and highest"
+              }
+            },
+            {
+              "key": "thresholds",
+              "label": "Thresholds",
+              "does": "Thresholds of the series’ own, in its unit, in place of the card’s.",
+              "helper": "In this series’ unit, in place of the card’s",
+              "type": "object"
             },
             {
               "key": "state_colors",

@@ -1667,3 +1667,293 @@ describe('a series of states in the editor (#228)', () => {
     expect(capsIn({ series: ['sensor.temperature', charger] }).time).toBe(true);
   });
 });
+
+describe('a series’ own thresholds (#264, requested by SentinelXS)', () => {
+  /** Each series' threshold runs, by the tones they are drawn in. */
+  const runs = (card: Inner, index: number): string[] =>
+    [...root(card).querySelectorAll(`[id^="ch-run-${index}-"]`)].map(
+      (clip) =>
+        root(card).querySelector(`[clip-path="url(#${clip.id})"]`)?.getAttribute('class') ?? '',
+    );
+  const TWO = [
+    { entity: 'sensor.temperature', thresholds: [{ value: 21, tone: 'danger' as const }] },
+    { entity: 'sensor.flaky' },
+  ];
+
+  it('colour it in the card’s place, the card’s still colouring the others of its unit', async () => {
+    const card = await draw({
+      series: TWO,
+      thresholds: [{ value: 10, tone: 'warning' }],
+    });
+    expect(runs(card, 0)).toEqual(['fv-tone--danger']);
+    expect(runs(card, 1)).toEqual(['fv-tone--warning']);
+  });
+
+  it('are read in its own unit: a price beside a temperature, each in its thresholds', async () => {
+    const card = await draw({
+      series: [
+        { entity: 'sensor.temperature', thresholds: [{ value: 21, tone: 'danger' }] },
+        { entity: 'sensor.nordpool', thresholds: [{ value: 0.3, tone: 'warning' }] },
+      ],
+      span: 'today+tomorrow',
+    });
+    expect(runs(card, 0)).toEqual(['fv-tone--danger']);
+    expect(runs(card, 1)).toEqual(['fv-tone--warning']);
+  });
+
+  it('colour its figure in the legend; the card’s colour figures only in the readouts, as before', async () => {
+    const inks = (card: Inner, selector: string) =>
+      [...root(card).querySelectorAll(selector)].map((el) => el.hasAttribute('data-ink'));
+    const legend = await draw({ series: TWO, thresholds: [{ value: 10, tone: 'warning' }] });
+    expect(inks(legend, '.ch-lines .fc-legend__value')).toEqual([true, false]);
+    const read = await draw({
+      series: TWO,
+      thresholds: [{ value: 10, tone: 'warning' }],
+      readouts: true,
+    });
+    expect(inks(read, '.ch-reads .fv-readout')).toEqual([true, true]);
+  });
+
+  it('are edited on a series of numbers, in its unit; never on a series of states', () => {
+    const names = (item: Record<string, unknown>) => fieldsOf(item).map((field) => field.name);
+    expect(names({ entity: 'sensor.temperature' })).toEqual(
+      expect.arrayContaining(['highlight', 'thresholds']),
+    );
+    expect(names({ entity: 'switch.charger', kind: 'states' })).not.toContain('thresholds');
+    expect(SERIES_LIST.keys).toEqual(expect.arrayContaining(['highlight', 'thresholds']));
+    expect(SERIES_LIST.computeHelper?.({ name: 'thresholds' }, (key) => key, {})).toBe(
+      'In this series’ unit, in place of the card’s',
+    );
+  });
+});
+
+describe('a series’ lowest and highest points (#264)', () => {
+  const POINTS = {
+    ...NORDPOOL,
+    series: [{ entity: 'sensor.nordpool', tone: 'ok' as const, highlight: 'both' as const }],
+  };
+
+  it('are dots on a lone line in the ok and the danger tones, and pills in the row beside the windows of their kind', async () => {
+    const card = await draw(POINTS);
+    expect(root(card).querySelectorAll('svg .curve-dot.fv-tone--ok')).toHaveLength(1);
+    expect(root(card).querySelectorAll('svg .curve-dot.fv-tone--danger')).toHaveLength(1);
+    const rows = [...root(card).querySelectorAll('.ch-side .ch-pills')].map((row) =>
+      [...row.querySelectorAll('.fc-pill')].map((pill) => ({
+        text: pill.textContent?.trim(),
+        peak: pill.classList.contains('ch-peak'),
+      })),
+    );
+    // over two days, the moment says its day; across what is to come too
+    expect(rows).toEqual([
+      [
+        { text: 'Cheapest Fri 13:00–15:00 · 0.020 EUR/kWh', peak: false },
+        { text: 'Low 0.020 EUR/kWh · Thu 13:00', peak: true },
+      ],
+      [
+        { text: 'Priciest Fri 19:00–21:00 · 0.340 EUR/kWh', peak: false },
+        { text: 'High 0.340 EUR/kWh · Thu 19:00', peak: true },
+      ],
+    ]);
+    expect(root(card).querySelector('.ch-chart')?.getAttribute('aria-label')).toContain(
+      'nordpool: 0.123 EUR/kWh · High 0.340 EUR/kWh · Thu 19:00 · Low 0.020 EUR/kWh · Thu 13:00',
+    );
+  });
+
+  it('say their time alone in a window of a day, and fill the row of a lone series without a head', async () => {
+    const card = await draw({
+      series: [{ entity: 'sensor.temperature', highlight: 'max' }],
+      show_head: false,
+    });
+    expect(texts(card, '.ch-side .fc-pill')).toEqual([
+      expect.stringMatching(/^High 21\.0 °C · \d\d:\d\d$/),
+    ]);
+    expect(root(card).querySelector('.ch-top')).not.toBeNull();
+  });
+
+  it('light their columns with their figures over them; a stack of columns marks none', async () => {
+    const columns = await draw({
+      ...POINTS,
+      chart: 'soft',
+      series: [{ entity: 'sensor.nordpool', kind: 'columns', highlight: 'both' }],
+      highlight: 'none',
+    });
+    expect(texts(columns, '.fc-value')).toEqual(['0.020', '0.340']);
+    const stacked = await draw({
+      chart: 'columns',
+      series: [
+        { entity: 'sensor.nordpool', highlight: 'both' },
+        { entity: 'sensor.nordpool_morning', highlight: 'both' },
+      ],
+      span: 'today+tomorrow',
+    });
+    expect(root(stacked).querySelectorAll('.fc-value, .fc-bar--quiet')).toHaveLength(0);
+    // and its editor asks for none there
+    const names = (card: Record<string, unknown>) =>
+      (SERIES_LIST.schemaOf?.({ entity: 'sensor.nordpool' }, card) ?? []).map((f) => f.name);
+    expect(names({ chart: 'columns', series: ['sensor.a', 'sensor.b'] })).not.toContain(
+      'highlight',
+    );
+    expect(names({ chart: 'columns', series: ['sensor.a'] })).toContain('highlight');
+    expect(names({ series: ['sensor.a', 'sensor.b'] })).toContain('highlight');
+  });
+
+  it('are named in the editor by what they are, beside the card’s windows', () => {
+    expect(SERIES_LIST.computeLabel?.({ name: 'highlight' }, (key) => key)).toBe(
+      'Lowest and highest point',
+    );
+    const field = fieldsOf({ entity: 'sensor.temperature' }).find((f) => f.name === 'highlight');
+    expect(
+      (field?.selector as { select: { options: { value: string }[] } }).select.options.map(
+        (o) => o.value,
+      ),
+    ).toEqual(['none', 'min', 'max', 'both']);
+  });
+});
+
+describe('a readout a series (#264)', () => {
+  const THREE = ['sensor.temperature', 'sensor.cellar', 'sensor.nordpool'];
+
+  it('lays the series in equal columns over the chart, each its name and key over its reading', async () => {
+    const card = await draw({ series: THREE, span: 'today+tomorrow', readouts: true });
+    const row = root(card).querySelector<HTMLElement>('.ch-reads');
+    expect(row?.style.getPropertyValue('--am-pair')).toBe('3');
+    expect(root(card).querySelector('.ch-lines')).toBeNull();
+    expect(texts(card, '.ch-reads .am-name')).toEqual(['temperature', 'cellar', 'nordpool']);
+    expect(root(card).querySelectorAll('.ch-reads .am-key')).toHaveLength(3);
+    expect(texts(card, '.ch-reads .fv-readout__value')).toEqual([
+      expect.stringMatching(/^21\.4\s*°C$/),
+      expect.stringMatching(/^14\.2\s*°C$/),
+      expect.stringMatching(/^0\.123\s*EUR\/kWh$/),
+    ]);
+    // the card's height is the legend's: 320, the plot's 120
+    expect(card.getCardSize()).toBe(6);
+    expect(root(card).querySelector<HTMLElement>('.ch-chart')?.style.height).toBe('120px');
+  });
+
+  it('says each series’ points under its readout, the highest first, keeping their line where it has none', async () => {
+    const card = await draw({
+      series: [{ entity: 'sensor.nordpool', highlight: 'both' }, 'sensor.cellar'],
+      span: 'today+tomorrow',
+      readouts: true,
+    });
+    expect(root(card).querySelector('.ch-reads')?.classList.contains('is-tall')).toBe(true);
+    const lines = [...root(card).querySelectorAll('.ch-reads .ch-ext')];
+    expect(lines).toHaveLength(2);
+    // a smooth line's points stand between its quarters: the first that reads the dear hours whole is 19:15
+    expect(texts(card, '.ch-ext__figure')).toEqual(['0.340 EUR/kWh', '0.020 EUR/kWh']);
+    expect(texts(card, '.ch-ext__time')).toEqual(['Thu 19:15', 'Thu 13:15']);
+    expect(lines[0]?.getAttribute('aria-label')).toBe(
+      'High 0.340 EUR/kWh · Thu 19:15 · Low 0.020 EUR/kWh · Thu 13:15',
+    );
+    expect(lines[1]?.textContent?.trim()).toBe('');
+  });
+
+  it('takes two lines of readouts for four series or more, in the card’s 364, the plot giving what their points take', async () => {
+    const four = ['sensor.temperature', 'sensor.cellar', 'sensor.nordpool', 'sensor.flaky'];
+    const laid = async (series: NonNullable<ChartCardConfig['series']>) => {
+      const card = await draw({ series, readouts: true, show_legend: false });
+      return {
+        size: card.getCardSize(),
+        columns: root(card)
+          .querySelector<HTMLElement>('.ch-reads')
+          ?.style.getPropertyValue('--am-pair'),
+        row: root(card).querySelector<HTMLElement>('.ch-top')?.style.height,
+        plot: root(card).querySelector<HTMLElement>('.ch-chart')?.style.height,
+        legend: root(card).querySelector('.ch-legend') !== null,
+      };
+    };
+    expect(await laid(four)).toEqual({
+      size: 7,
+      columns: '2',
+      row: '108px',
+      plot: '120px',
+      legend: false,
+    });
+    expect(await laid([{ entity: four[0]!, highlight: 'both' }, ...four.slice(1)])).toMatchObject({
+      row: '140px',
+      plot: '88px',
+    });
+    expect(await laid([...four, 'sensor.boiler'])).toMatchObject({ columns: '3', row: '108px' });
+  });
+
+  it('gives way to the legend’s lines where a name would be cut in its column', async () => {
+    // a word measured at 6 a letter: "temperature" and its key hold a third of a phone's card 16 apart, not half a section's
+    const measured = vi
+      .spyOn(HTMLElement.prototype, 'offsetWidth', 'get')
+      .mockImplementation(function (this: HTMLElement) {
+        return (this.textContent?.length ?? 0) * 6;
+      });
+    const shown = async (width: number) => {
+      const card = await draw(
+        { series: THREE, span: 'today+tomorrow', readouts: true },
+        house(),
+        width,
+      );
+      return {
+        reads: root(card).querySelector('.ch-reads') !== null,
+        lines: root(card).querySelectorAll('.ch-lines .fc-legend__item').length,
+        gap: root(card).querySelector<HTMLElement>('.ch-reads')?.style.getPropertyValue('--am-gap'),
+      };
+    };
+    expect(await shown(360)).toEqual({ reads: true, lines: 0, gap: '16px' });
+    expect(await shown(172)).toEqual({ reads: false, lines: 3, gap: undefined });
+    measured.mockRestore();
+  });
+
+  it('reads the chart where it is read: each readout its reading then, the time on the axis', async () => {
+    const card = await draw({ series: THREE.slice(0, 2), readouts: true });
+    expect(texts(card, '.ch-reads .fv-readout__value')[0]?.replace(/\s+/g, '')).toBe('21.4°C');
+    (card as unknown as { scrubber: { set(value: number): void } }).scrubber.set(0.5);
+    await card.updateComplete;
+    expect(texts(card, '.ch-reads .fv-readout__value')[0]?.replace(/\s+/g, '')).toBe('21.0°C');
+    expect(root(card).querySelector('.ch-axis.is-reading .ch-when')).not.toBeNull();
+    expect(root(card).querySelector('.fv-bubble')).toBeNull();
+  });
+
+  it('out of reach, keeps its place and says "—", the card its height', async () => {
+    const card = await draw({ series: ['sensor.gone', 'sensor.temperature'], readouts: true });
+    expect(texts(card, '.ch-reads .fv-readout__value')[0]).toBe('—');
+    expect(card.getCardSize()).toBe(6);
+  });
+
+  it('is offered on the full card with its head over two series of numbers or more, and stands for the legend there', () => {
+    const offered = (config: Record<string, unknown>, name: string) =>
+      JSON.stringify(visibleFields(FluvyChartCard.getConfigForm().schema, config)).includes(
+        `"name":"${name}"`,
+      );
+    const two = { series: ['sensor.temperature', 'sensor.cellar'] };
+    expect(offered(two, 'readouts')).toBe(true);
+    expect(offered({ series: ['sensor.temperature'] }, 'readouts')).toBe(false);
+    expect(
+      offered(
+        { series: ['sensor.temperature', { entity: 'switch.charger', kind: 'states' }] },
+        'readouts',
+      ),
+    ).toBe(false);
+    expect(offered({ ...two, variant: 'compact' }, 'readouts')).toBe(false);
+    expect(offered({ ...two, show_head: false }, 'readouts')).toBe(false);
+    // on, the readouts are the legend
+    expect(offered({ ...two, readouts: true }, 'show_legend')).toBe(false);
+    expect(offered({ ...two, readouts: true, show_head: false }, 'show_legend')).toBe(true);
+    expect(FluvyChartCard.defaults?.({ type: 'x' }, undefined)?.['readouts']).toBe(false);
+  });
+
+  it('counts in the card’s height from its config alone: 364 with four series or more, the legend off', () => {
+    const height = (config: Record<string, unknown>) =>
+      chartHeight({ type: 'custom:fluvy-chart-card', ...config });
+    const four = { series: ['a', 'b', 'c', 'd'], show_legend: false };
+    expect(height(four)).toBe(320);
+    expect(height({ ...four, readouts: true })).toBe(364);
+    expect(height({ ...four, readouts: true, show_head: false })).toBe(320);
+    expect(height({ series: ['a', 'b', 'c'], readouts: true })).toBe(320);
+    expect(height({ ...four, readouts: true, variant: 'compact' })).toBe(240);
+    // a series of states is no readout's reason: one of numbers is too few
+    expect(
+      height({
+        series: ['a', ...['b', 'c', 'd'].map((entity) => ({ entity, kind: 'states' }))],
+        readouts: true,
+        show_legend: false,
+      }),
+    ).toBe(320 + 48);
+  });
+});

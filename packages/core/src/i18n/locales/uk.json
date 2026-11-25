@@ -1714,7 +1714,12 @@
     "editor.show_legend": "Показувати легенду",
     "editor.show_head": "Показувати поточне значення",
     "editor.kind_states": "Стани",
-    "editor.stat_last": "Останнє значення"
+    "editor.stat_last": "Останнє значення",
+    "high": "Максимум {value}",
+    "low": "Мінімум {value}",
+    "editor.extremes": "Найнижча і найвища точка",
+    "editor.readouts": "Показання для кожного ряду",
+    "editor.series_thresholds_helper": "В одиницях цього ряду, замість порогів картки"
   },
   "chart": {
     "gauge.cold": "Холодно",

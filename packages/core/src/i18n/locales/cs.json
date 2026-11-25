@@ -776,7 +776,12 @@
     "editor.show_legend": "Zobrazit legendu",
     "editor.show_head": "Zobrazit aktuální hodnotu",
     "editor.kind_states": "Stavy",
-    "editor.stat_last": "Poslední hodnota"
+    "editor.stat_last": "Poslední hodnota",
+    "high": "Maximum {value}",
+    "low": "Minimum {value}",
+    "editor.extremes": "Nejnižší a nejvyšší bod",
+    "editor.readouts": "Hodnota pro každou řadu",
+    "editor.series_thresholds_helper": "V jednotce této řady, místo prahů karty"
   },
   "chart": {
     "gauge.cold": "Zima",

@@ -1615,7 +1615,12 @@
     "editor.show_legend": "Vis forklaring",
     "editor.show_head": "Vis værdien nu",
     "editor.kind_states": "Tilstande",
-    "editor.stat_last": "Den seneste måling"
+    "editor.stat_last": "Den seneste måling",
+    "high": "Højeste {value}",
+    "low": "Laveste {value}",
+    "editor.extremes": "Laveste og højeste punkt",
+    "editor.readouts": "En aflæsning for hver serie",
+    "editor.series_thresholds_helper": "I seriens enhed, i stedet for kortets"
   },
   "chart": {
     "gauge.cold": "Koldt",

@@ -3301,7 +3301,12 @@
     "editor.show_legend": "Mostrar la leyenda",
     "editor.show_head": "Mostrar el valor actual",
     "editor.kind_states": "Estados",
-    "editor.stat_last": "La última lectura"
+    "editor.stat_last": "La última lectura",
+    "high": "Máximo {value}",
+    "low": "Mínimo {value}",
+    "editor.extremes": "Punto más bajo y más alto",
+    "editor.readouts": "Una lectura por serie",
+    "editor.series_thresholds_helper": "En la unidad de esta serie, en lugar de los de la tarjeta"
   },
   "slider": {
     "mute": "Silenciar",
