@@ -9,6 +9,19 @@ import {
   type EffectiveSettings,
 } from '../settings/index.js';
 
+/** Whether the looks say no dialogs' colour: a look that stops saying it takes its mark off <html>. */
+let unsaid = false;
+vi.mock('../look/css.js', async (actual) => {
+  const css = await actual<typeof import('../look/css.js')>();
+  return {
+    ...css,
+    declarationsOf: (...args: Parameters<typeof css.declarationsOf>) =>
+      css
+        .declarationsOf(...args)
+        .filter(([name]) => !unsaid || name !== '--ha-dialog-surface-background'),
+  };
+});
+
 const settings = (patch: Partial<EffectiveSettings>): EffectiveSettings => ({
   ...resolveSettings(HOUSE_DEFAULTS, PERSONAL_DEFAULTS),
   ...patch,
@@ -120,6 +133,11 @@ describe('the look engine', () => {
     const frame = document.implementation.createHTMLDocument('frame');
     look.addDocument(frame, new CSSStyleSheet());
     expect(frame.documentElement.getAttribute('fluvy-dialog-base')).toBe(base());
+    // a look that says none takes the mark off, the shell then painting nothing under the dialogs
+    unsaid = true;
+    look.apply(settings({ look: linen, scope: 'dashboards' }), true);
+    unsaid = false;
+    expect(base()).toBeNull();
   });
 
   it('follows the mode, and does nothing again for the same look', () => {

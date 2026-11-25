@@ -114,6 +114,7 @@ export class LookEngine {
     if (this.kept) root.setAttribute(ORIGINAL_ICONS, this.kept);
     else root.removeAttribute(ORIGINAL_ICONS);
     if (this.base) root.setAttribute(DIALOG_BASE_ATTRIBUTE, this.base);
+    else root.removeAttribute(DIALOG_BASE_ATTRIBUTE);
   }
 
   /**
