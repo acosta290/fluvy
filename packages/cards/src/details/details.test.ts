@@ -15,7 +15,7 @@ import type { DetailsSheet } from './sheet.js';
  * Fluvy's own details sheets (#162): who opens them (the kinds with a sheet, the house's choice, an action's own),
  * each kind's sheet and what its dial, its keys and its rows call, what an entity's features leave out, a sheet out
  * of reach, and the dialog itself: its focus, its ways out, the round to Home Assistant's own details and the day's
- * way to History.
+ * way to History. And a cover's sheet reading its cover as the Cover card that opened it does (#258).
  */
 
 const STAMP = '2026-11-13T19:00:00+00:00';
@@ -825,6 +825,124 @@ describe('a fan’s sheet', () => {
     expect(rowTitles(sheet)).toEqual([]);
     press(sheet, 'power');
     expect(calls(hass)).toEqual([['fan.turn_on', {}, 'fan.extractor']]);
+  });
+});
+
+describe('a cover’s sheet reads its cover as the Cover card that opened it does (#258)', () => {
+  /** A shutter that reports 100 % where it is closed: at 20 it is nearly open. */
+  const SHUTTER = entity('cover.shutter', 'open', {
+    friendly_name: 'Roller shutter',
+    current_position: 20,
+    current_tilt_position: 40,
+    supported_features: 1 | 2 | 4 | 8 | 16 | 32 | 128,
+  });
+  /** The sheet as a card of `config` opens it for the shutter. */
+  async function openedBy(
+    config: Record<string, unknown>,
+    hass: House = house(SHUTTER),
+  ): Promise<Sheet> {
+    const from = Object.assign(document.createElement('div'), {
+      rawHass: hass,
+      config: { type: 'custom:fluvy-cover-card', entity: SHUTTER.entity_id, ...config },
+    });
+    document.body.append(from);
+    openDetails(from, hass, SHUTTER.entity_id, false);
+    const sheet = [...document.body.children].find(
+      (child) => child.localName === 'fluvy-details-cover',
+    ) as Sheet;
+    await sheet.updateComplete;
+    return sheet;
+  }
+  const status = (sheet: Sheet): string => text(sheet, '.fv-sheet__head .fv-card__sub');
+  const tilt = (sheet: Sheet): HTMLElement & Record<string, unknown> =>
+    one(sheet, 'fluvy-ruler') as HTMLElement & Record<string, unknown>;
+  it('asked nothing, reads Home Assistant’s own figures, as it did', async () => {
+    const hass = house(SHUTTER);
+    const sheet = await openedBy({}, hass);
+    expect([status(sheet), dial(sheet)['value'], tilt(sheet)['value']]).toEqual([
+      'Open · 20 %',
+      20,
+      40,
+    ]);
+    turn(sheet, { value: 30 });
+    expect(calls(hass)).toEqual([['cover.set_cover_position', { position: 30 }, 'cover.shutter']]);
+  });
+
+  it('turns a position reported round the other way round, and sends it back as the cover takes it', async () => {
+    const hass = house(SHUTTER);
+    const sheet = await openedBy({ invert_position: true }, hass);
+    // the card says 80 %: so does its sheet, on its head and on its dial
+    expect([status(sheet), dial(sheet)['value']]).toEqual(['Open · 80 %', 80]);
+    turn(sheet, { value: 30 });
+    expect(calls(hass)).toEqual([['cover.set_cover_position', { position: 70 }, 'cover.shutter']]);
+    // both commands stay live at an end the sheet cannot know, and hold no end while the cover travels
+    const shut = house({ ...SHUTTER, attributes: { ...SHUTTER.attributes, current_position: 0 } });
+    const end = await openedBy({ invert_position: true }, shut);
+    for (const key of ['open', 'close'])
+      expect([key, one<HTMLButtonElement>(end, `[data-key="${key}"]`).disabled]).toEqual([
+        key,
+        false,
+      ]);
+    press(end, 'close');
+    await end.updateComplete;
+    expect(dial(end)['value']).toBe(100);
+  });
+
+  it('counts as the blind comes down where the card does, on its head and on its dial', async () => {
+    const hass = house(SHUTTER);
+    const sheet = await openedBy({ direction: 'down' }, hass);
+    expect([status(sheet), dial(sheet)['value']]).toEqual(['Open · 80 %', 80]);
+    turn(sheet, { value: 10 });
+    expect(calls(hass)).toEqual([['cover.set_cover_position', { position: 90 }, 'cover.shutter']]);
+    // turned round and counted down at once: the cover's own number again, said as the card says it
+    const both = await openedBy({ direction: 'down', invert_position: true });
+    expect([status(both), dial(both)['value']]).toEqual(['Open · 20 %', 20]);
+  });
+
+  it('turns the tilt round and reads it in degrees where the card does', async () => {
+    const hass = house(SHUTTER);
+    const sheet = await openedBy({ invert_tilt: true, tilt_angle: 90 }, hass);
+    expect([tilt(sheet)['value'], tilt(sheet)['unit']]).toEqual([60, '°']);
+    expect((tilt(sheet)['format'] as (value: number) => string)(60)).toBe('54');
+    expect(
+      [...tilt(sheet).nextElementSibling!.querySelectorAll('span')].map((word) =>
+        word.textContent?.trim(),
+      ),
+    ).toEqual(['0°', '45°', '90°']);
+    tilt(sheet).dispatchEvent(new CustomEvent('fluvy-change', { detail: { value: 20 } }));
+    expect(calls(hass)).toEqual([
+      ['cover.set_cover_tilt_position', { tilt_position: 80 }, 'cover.shutter'],
+    ]);
+  });
+
+  it('reads nothing from a tile, nor from a Cover card of another cover', async () => {
+    const hass = house(SHUTTER);
+    for (const config of [
+      { type: 'custom:fluvy-tile-card', entity: SHUTTER.entity_id, invert_position: true },
+      { type: 'custom:fluvy-cover-card', entity: 'cover.other', invert_position: true },
+    ]) {
+      document.body.replaceChildren();
+      const from = Object.assign(document.createElement('div'), { rawHass: hass, config });
+      document.body.append(from);
+      openDetails(from, hass, SHUTTER.entity_id);
+      const sheet = document.body.querySelector<Sheet>('fluvy-details-cover')!;
+      await sheet.updateComplete;
+      expect([config.type, dial(sheet)['value']]).toEqual([config.type, 20]);
+    }
+  });
+
+  it('opened by no card, reads what its own config says', async () => {
+    const sheet = document.createElement('fluvy-details-cover') as Sheet;
+    sheet.setConfig({
+      type: 'custom:fluvy-details-cover',
+      entity: SHUTTER.entity_id,
+      _docked: true,
+      invert_position: true,
+    });
+    sheet.hass = house(SHUTTER);
+    document.body.append(sheet);
+    await sheet.updateComplete;
+    expect([status(sheet), dial(sheet)['value']]).toEqual(['Open · 80 %', 80]);
   });
 });
 

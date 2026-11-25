@@ -58,6 +58,10 @@ const RING = 96;
 const RING_MIN = 56;
 const RING_LARGE = 80;
 
+/** The config of the card that opened a sheet, as that card holds it; none where no card did. */
+export const configOf = (card: unknown): Readonly<Record<string, unknown>> | undefined =>
+  (card as { readonly config?: Readonly<Record<string, unknown>> } | undefined)?.config;
+
 /** What an entity says of itself on the head's line. */
 export interface Status {
   /** Its state first ("On", "Heating"), then what it adds ("72 %", "46 % RH"): what gives way where the line is short. */

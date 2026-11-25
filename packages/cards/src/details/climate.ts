@@ -22,7 +22,7 @@ import {
 } from '../thermostat/thermostat-card.js';
 import type { DaySpec } from './history.js';
 import { keys, listAttr, sheetRows, type SheetRow } from './parts.js';
-import { DetailsSheet, type DetailsConfig, type LiveHass, type Status } from './sheet.js';
+import { configOf, DetailsSheet, type DetailsConfig, type LiveHass, type Status } from './sheet.js';
 
 /** A row of options a climate may have beside its modes: where it lists them, where it says the one chosen, its service. */
 interface Row {
@@ -73,8 +73,7 @@ const sameTarget = (a: DialChangeDetail | null, b: DialChangeDetail | null): boo
  * where the card asks nothing.
  */
 function askOf(card: unknown, entityId: string | undefined): ReadingsAsk {
-  const config = (card as { readonly config?: Readonly<Record<string, unknown>> } | undefined)
-    ?.config;
+  const config = configOf(card);
   if (!config) return {};
   if (String(config['type']).endsWith('fluvy-thermostat-card')) return config;
   const tiles: readonly unknown[] = Array.isArray(config['tiles']) ? config['tiles'] : [];
