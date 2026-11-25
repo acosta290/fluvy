@@ -772,7 +772,7 @@ export const MEANINGS: Readonly<Record<string, string>> = {
   'energy-sankey.devices[]': 'The devices drawn by name; left out, the Energy dashboard’s.',
   'energy-usage.meters[]': 'The water or gas meters charted; left out, the Energy dashboard’s.',
   'hello.quick_actions[]':
-    'Small rounds under the greeting, each an entity with its own icon, colour and actions: a lamp, a door, a scene.',
+    'Small rounds under the greeting, across its width, each an entity with its own icon, colour and actions: a lamp, a door, a scene.',
   'helpers.number_entry': 'Makes a number’s value a button that opens the keypad to type one.',
   'helpers.rows[]': 'The helpers the card sets, a row each.',
   'history-bars.entities[]': 'Sensors added up bar by bar, such as several arrays.',

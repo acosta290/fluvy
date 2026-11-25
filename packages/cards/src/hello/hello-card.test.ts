@@ -203,11 +203,13 @@ describe('quick actions under the greeting (`quick_actions`)', () => {
     expect(height({ show_date: false, show_weather: false, show_avatar: false })).toBe(60);
   });
 
-  it('draws a round an entity from the reading edge, in the room its height keeps, each its own switch', async () => {
+  it('draws a round an entity across the column, in the room its height keeps, each its own switch', async () => {
     const { root, calls } = await mount({ quick_actions: QUICK });
     const line = root.querySelector<HTMLElement>('.hm-quick')!;
     expect(line.style.height).toBe('44px');
     expect(line.style.marginTop).toBe('16px');
+    // each in the middle of its share of the line, never a group at one end (the owner's review of 1.26)
+    expect(line.firstElementChild?.className).toBe('lt-bulbs lt-bulbs--across');
     expect(rounds(root).map((round) => round.getAttribute('aria-label'))).toEqual([
       'Hall',
       'Front door',
@@ -256,6 +258,10 @@ describe('quick actions under the greeting (`quick_actions`)', () => {
       expect(rounds(under.root).every((round) => round.classList.contains('lt-bulb--under'))).toBe(
         true,
       );
+      // keys as wide as their shares of the column, the first and the last flush with its edges
+      const keys = under.root.querySelector<HTMLElement>('.hm-quick')!.firstElementChild!;
+      expect(keys.className).toBe('lt-bulbs lt-bulbs--keys');
+      expect(new Set(rounds(under.root).map((round) => round.style.width)).size).toBe(1);
       const beside = await mount({
         quick_actions: QUICK,
         show_quick_states: true,
@@ -264,6 +270,9 @@ describe('quick actions under the greeting (`quick_actions`)', () => {
       expect(beside.root.querySelector<HTMLElement>('.hm-quick')!.style.height).toBe('44px');
       expect(beside.root.querySelector('.lt-bulb--under')).toBeNull();
       expect(words(rounds(beside.root)[0]?.querySelector('.lt-said'))).toBe('60 %');
+      expect(beside.root.querySelector('.hm-quick')!.firstElementChild!.className).toBe(
+        'lt-bulbs lt-bulbs--keys',
+      );
     } finally {
       restore();
     }

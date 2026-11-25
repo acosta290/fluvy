@@ -170,6 +170,29 @@ describe('rounds across a line', () => {
     document.body.append(own);
     render(roundsAcross(host, [{ ...QUICK[0], show_state: true }, ...QUICK.slice(1)], 320), own);
     expect(said(own)).toEqual(['On', '', '', '']);
+    // …and a key with no word is marked, so its glyph stands in its middle, never over an empty foot
+    expect(
+      [...own.querySelectorAll('.lt-bulb')].map((key) => key.classList.contains('lt-bulb--bare')),
+    ).toEqual([false, true, true, true]);
+  });
+
+  it('keys only where a round the line draws says its state: past the keys it holds, the rest stay rounds', () => {
+    const last = (width: number): HTMLElement => {
+      const box = document.createElement('div');
+      document.body.append(box);
+      render(
+        roundsAcross(host, [...QUICK.slice(0, 3), { ...QUICK[3], show_state: true }], width),
+        box,
+      );
+      return box.firstElementChild as HTMLElement;
+    };
+    // 352 holds four keys: the fourth says its state, the line is keys
+    expect(last(352).className).toBe('lt-bulbs lt-bulbs--keys');
+    expect(widths(last(352))).toEqual(Array(4).fill('82px'));
+    // 226 holds three keys, none of which says anything: three rounds in their shares, no key with no word
+    expect(last(226).className).toBe('lt-bulbs lt-bulbs--across');
+    expect(widths(last(226))).toEqual(['', '', '']);
+    expect(last(226).querySelector('.lt-bulb--said')).toBeNull();
   });
 
   it('pills beside their glyphs: 96 at the least, their words in their middle', () => {

@@ -7,8 +7,9 @@ import { sheet as extras } from './home-extras.js';
  * The greeting beyond its words (1.26, #260), on the home sheet's house (Marta, her picture, the evening's weather):
  * without its avatar and without its name; its weather and its date as buttons of their own; and a line of quick
  * actions under it, as a room's and a car's — a lamp, the blinds, the front door's lock, a scene, the speaker and a
- * reading — at rest, saying their states under their glyphs and beside them, more than a phone's column holds, and
- * on the page's backgrounds, where a round at rest is a disc of the card's fill. And the top of an automatic
+ * reading — across the column: at rest each in the middle of its share of it, saying their states each a key or a
+ * pill as wide as its share, more than a phone's column holds, and on the page's backgrounds, where a round at rest
+ * is a disc of the card's fill. And the top of an automatic
  * dashboard's view whose greeting is hidden (discussion #208): the views' chips first, or the cards themselves.
  */
 
@@ -127,20 +128,34 @@ export const sheet: SheetSpec = {
         hello({ quick_actions: SAID, show_quick_states: true, quick_state_position: 'beside' }),
       ],
     },
-    // more than the column holds give way from the end; one out of reach stays a dashed ring; one says its own state
+    // more than the column holds give way from the end, the one that would say its state among them: the rest stay
+    // rounds, in the middle of the line a key's height keeps; one out of reach stays a dashed ring
     {
       title: 'Quick actions · many, one out of reach',
       cards: [
         hello({
           quick_actions: [
+            'switch.gr_pump',
             ...QUICK,
             'light.gr_desk',
-            'switch.gr_pump',
             'fan.gr_fan',
             { entity: 'sensor.gr_temperature', show_state: true },
           ],
         }),
         hello({ show_avatar: false, quick_actions: ['switch.gr_pump', 'light.gr_desk'] }),
+      ],
+    },
+    // one alone says its state: every cell a key, its glyph on the keys' line, the reading's words under its own
+    {
+      title: 'Quick actions · one says its state',
+      cards: [
+        hello({
+          quick_actions: [
+            'light.gr_hall',
+            'lock.gr_front_door',
+            { entity: 'sensor.gr_temperature', show_state: true },
+          ],
+        }),
       ],
     },
     // on a picture and on a deep colour, see-through cards under it: a round at rest is a disc of the card's fill

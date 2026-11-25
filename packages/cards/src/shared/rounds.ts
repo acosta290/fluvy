@@ -710,11 +710,13 @@ const PILLS = css`
   .rm-hero > .rm-quick--under {
     bottom: 16px;
   }
-  /* rounds across a line (\`roundsAcross\`): each in the middle of its share of it, as a row of controls; where one
-     says its state, every cell a key 8 from the next, the first and the last flush with the line's ends — a pill's
-     glyph and words in its middle, 8 from its sides at the least */
+  /* rounds across a line (\`roundsAcross\`): each in the middle of its share of it, as a row of controls (and of
+     its line's height, where the line keeps a key's for a state past what it holds); where one says its state, every
+     cell a key 8 from the next, the first and the last flush with the line's ends — a pill's glyph and words in its
+     middle, 8 from its sides at the least */
   .lt-bulbs--across {
     flex: 1 1 auto;
+    align-items: center;
     justify-content: space-around;
     gap: 0;
   }
@@ -724,6 +726,15 @@ const PILLS = css`
   .lt-bulbs--keys > .lt-bulb--said:not(.lt-bulb--under) {
     justify-content: center;
     padding: 0 8px;
+  }
+  /* a key of the line with no word (it says none, or its figure does not fit) holds its glyph in its middle, never
+     over an empty foot */
+  .lt-bulbs--keys > .lt-bulb--bare.lt-bulb--under {
+    justify-content: center;
+    padding-top: 0;
+  }
+  .lt-bulbs--keys > .lt-bulb--bare > .lt-said {
+    display: none;
   }
 `;
 
@@ -899,11 +910,13 @@ export function roundsIn(
 }
 
 /**
- * Rounds across a line `width` wide (the Vehicle card's foot; the owner's review of 1.25): equal cells, as many as
- * hold — by the list and the width alone, never by what the rounds read — those that do not giving way from the end.
- * None asked to say its state, each round stands in the middle of its share of the line, as a row of controls does;
- * one asked, every cell is a key 8 from the next (a pill, its words beside its glyph: `beside`), the first and the
- * last flush with the line's ends, 64 wide at the least (a pill 96), its words down the keys' ladder (`keyStates`).
+ * Rounds across a line `width` wide (the Vehicle card's foot, the greeting's quick actions; the owner's reviews of
+ * 1.25 and 1.26): equal cells, as many as hold — by the list and the width alone, never by what the rounds read —
+ * those that do not giving way from the end. None asked to say its state, each round stands in the middle of its
+ * share of the line, as a row of controls does; one asked, every cell is a key 8 from the next (a pill, its words
+ * beside its glyph: `beside`), the first and the last flush with the line's ends, 64 wide at the least (a pill 96),
+ * its words down the keys' ladder (`keyStates`). The keys are for a line that draws one that says its state: where
+ * the first to ask stands past the keys the line holds, the rounds before it are rounds, never keys with no word.
  */
 export function roundsAcross(
   host: RoundsHost,
@@ -911,12 +924,12 @@ export function roundsAcross(
   width: number,
   under = host.look?.beside !== true,
 ): TemplateResult | typeof nothing {
-  const keys = items.some((item) => item.show_state ?? host.look?.states ?? false);
-  const least = keys ? (under ? KEY : KEY_BESIDE) : ROUND;
-  const count = Math.min(
-    items.length,
-    Math.max(1, Math.floor((width + ROUND_GAP) / (least + ROUND_GAP))),
-  );
+  const held = (least: number): number =>
+    Math.min(items.length, Math.max(1, Math.floor((width + ROUND_GAP) / (least + ROUND_GAP))));
+  const first = items.findIndex((item) => item.show_state ?? host.look?.states ?? false);
+  const cells = held(under ? KEY : KEY_BESIDE);
+  const keys = first >= 0 && first < cells;
+  const count = keys ? cells : Math.min(held(ROUND), first < 0 ? items.length : first);
   const rounds = items.slice(0, count).map((item) => roundOf(host, item));
   if (!count) return nothing;
   wear(host.root);

@@ -78,7 +78,7 @@ show_quick_states: false
 | `show_name` | `true` | Shows the name after the greeting; hidden, the greeting alone. |
 | `show_quick_states` | `false` | Shows every quick action’s state in its round, unless the action says otherwise. |
 | `quick_state_position` | `under` | Where the quick actions’ states stand: under their icons, their line taller, or beside them, the rounds wider. `under` · `beside`. |
-| [`quick_actions`](#quick_actions) |  | Small rounds under the greeting, each an entity with its own icon, colour and actions: a lamp, a door, a scene. A list: [its items](#quick_actions). |
+| [`quick_actions`](#quick_actions) |  | Small rounds under the greeting, across its width, each an entity with its own icon, colour and actions: a lamp, a door, a scene. A list: [its items](#quick_actions). |
 | **Interactions** |  |  |
 | `weather_tap_action` | `none` | What a tap on the weather does, for the weather entity; nothing until one is set. |
 | `weather_hold_action` | `none` | What a long press on the weather does. |

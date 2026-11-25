@@ -50,7 +50,7 @@ export function levelRound(round: LevelRound): TemplateResult {
   const tone: Tone = !round.usable ? 'off' : round.on ? round.tone : 'neutral';
   const said = round.state;
   return html`<button
-    class="lt-bulb fv-ico fv-ico--${tone} ${round.on ? 'is-on' : ''} ${said ? 'lt-bulb--said' : ''} ${said?.under ? 'lt-bulb--under' : ''}"
+    class="lt-bulb fv-ico fv-ico--${tone} ${round.on ? 'is-on' : ''} ${said ? 'lt-bulb--said' : ''} ${said?.under ? 'lt-bulb--under' : ''} ${said && !said.text ? 'lt-bulb--bare' : ''}"
     style=${said ? `width:${said.width}px` : (round.place ?? nothing)}
     data-target
     data-accent=${round.on ? (round.accent ?? nothing) : nothing}

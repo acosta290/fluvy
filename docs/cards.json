@@ -19676,7 +19676,7 @@
         {
           "key": "quick_actions",
           "label": "Quick actions",
-          "does": "Small rounds under the greeting, each an entity with its own icon, colour and actions: a lamp, a door, a scene.",
+          "does": "Small rounds under the greeting, across its width, each an entity with its own icon, colour and actions: a lamp, a door, a scene.",
           "id": "entity",
           "item": [
             {

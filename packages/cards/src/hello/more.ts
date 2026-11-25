@@ -3,7 +3,13 @@ import { activateKey, clickPress, preventMenu, sheetStyles, startPress } from '@
 import { css, html, nothing, type LitElement, type TemplateResult } from 'lit';
 import { HeadFit } from '../energy/head.js';
 import type { ControlHost, Press } from '../shared/base.js';
-import { answered, roundsIn, roundsOf, type GaugeCard, type RoundsHost } from '../shared/rounds.js';
+import {
+  answered,
+  roundsAcross,
+  roundsOf,
+  type GaugeCard,
+  type RoundsHost,
+} from '../shared/rounds.js';
 import type { HelloCardConfig } from './hello-card.js';
 
 /*
@@ -46,11 +52,11 @@ const SHEET = css`
     right: 0;
     left: auto;
   }
-  /* the quick actions: one line of rounds from the reading edge, in the room the card keeps for it */
+  /* the quick actions: one line of rounds across the column (\`roundsAcross\`), in the room the card keeps for it */
   .hm-quick {
     display: flex;
   }
-  .hm-quick > .rm-quick {
+  .hm-quick > .lt-bulbs {
     animation: fv-enter 420ms var(--fv-ease-out) both;
   }
   /* a round is a small surface on the page: in the look's own inks, whatever ink the page's background asks of the
@@ -115,10 +121,12 @@ export interface QuickReach extends ControlHost, Pick<RoundsHost, 'run' | 'tappe
 const rulers = new WeakMap<LitElement, HeadFit>();
 
 /**
- * The quick actions under the greeting (`quick_actions`, as a room's and a car's: `roundsIn`): 44 rounds 8 apart from
- * the reading edge, as many as the column holds, each lit in its tone while on, its tap and its hold its own, its state
- * in the pill it grows into where asked (`show_quick_states`: under its glyph, or beside it). A tap turns on and off
- * what a person lists on purpose, a lock asking first, as a room's quick actions do.
+ * The quick actions under the greeting (`quick_actions`, a line of their own as a car's: `roundsAcross`): across the
+ * column, as many as it holds, each round in the middle of its share of the line; where their states are asked for
+ * (`show_quick_states`: under their glyphs, or beside them) each a key as wide as its share, the first and the last
+ * flush with the column's edges, never a group at one end (the owner's review of 1.26). Each is lit in its tone while
+ * on, its tap and its hold its own; a tap turns on and off what a person lists on purpose, a lock asking first, as a
+ * room's quick actions do.
  */
 export function quickRow(
   card: LitElement & GaugeCard & { hass?: HomeAssistant | undefined },
@@ -135,9 +143,8 @@ export function quickRow(
     // a round that asks first hears Home Assistant's yes on its card
     card.addEventListener('ll-custom', answered);
   }
-  // the line starts at the column's edge: none of the 12 a room's rounds keep from what is before them
   const { hass } = card;
-  return roundsIn(
+  return roundsAcross(
     {
       ...reach,
       hass,
@@ -155,6 +162,6 @@ export function quickRow(
       card,
     },
     roundsOf({ hass }, config?.quick_actions ?? []),
-    width + 12,
-  ).template;
+    width,
+  );
 }

@@ -1259,9 +1259,12 @@ Each is off until asked: a greeting that asks for none draws as it always did, a
   it, and a finger has a 44 target laid over the line (12 over and under it, at least 44 wide from the edge the part
   stands on); it dims under the finger as a row does. The avatar keeps the card's own actions; an action that cannot
   run makes no button.
-- **Quick actions** (`quick_actions`, as a room's and a car's): one line of 44 rounds 8 apart, 16 under the greeting,
-  from the reading edge, as many as the column holds, the rest giving way from the end. The card is then 120 tall;
-  140 where their states stand under their glyphs (`show_quick_states`), 120 beside them.
+- **Quick actions** (`quick_actions`, a line of their own as a car's small icons: `roundsAcross`): 16 under the
+  greeting, **across the column**, as many as it holds, the rest giving way from the end: each 44 round in the middle
+  of its share of the line, and where they say their states (`show_quick_states`) every cell a key, or a pill beside
+  its glyph, as wide as its share, the first and the last flush with the column's edges — never a group at one end
+  (the owner's review of 1.26). The card is then 120 tall; 140 where their states stand under their glyphs, 120
+  beside them.
 - **A round on the page.** The greeting has no surface, so a round stands on the page's own ground, where the neutral
   circle's fill (the page's) would be lost. It is drawn as a small surface, as the tabs under the greeting are: at rest
   a disc of the card's fill inside the surfaces' edge (the hairline, or the edge a palette read by its edges gives);
@@ -3949,7 +3952,9 @@ glyph; every addition is off until a config asks for it.
   is a key** — the rounds' key, 64 tall, its words under its glyph — 8 from the next, the first and the last flush
   with the column's edges, 64 wide at the least (352 holds four of 82, a phone's 320 four of 74, 226 three of 70),
   its words down the keys' ladder (§ Rounds); `quick_state_position: beside` draws pills as tall as a round, 96 at
-  the least, glyph and words in their middle. A round that says none among them is a key with its glyph alone. 16
+  the least, glyph and words in their middle. A round that says none among them is a key with its glyph alone, **in
+  the key's middle** (never over an empty foot); and the keys are for a line that draws one that says its state: where
+  the first to ask stands past the keys the line holds, the rounds before it stay rounds in their shares. 16
   under what they follow, in the whole card and the compact one; the line is declared by the config (44, 64 with
   states under), kept while none of them can be drawn.
 - **The picture at its own size** (`image_size`): a share of the card's width (`50%`, its plate 2:1 that wide,
