@@ -143,7 +143,7 @@ presets:
 | `remaining_entity` |  | The robot’s sensor of the time left, shown as a readout. A `sensor`. |
 | `suction_style` | `full` | Draws the suction speeds as chips that fill the row, or as content-sized chips. `full` · `chips`. |
 | `show_suction` | `true` | Shows the suction’s chips. |
-| `map` |  | The robot’s map under the head, as a block: its picture (`image`: a camera, an image entity or an address), its `calibration`, its shape (`aspect_ratio`), its `rooms`, what stands on it (`controls`) and how many times a pick is cleaned (`repeats`). Its keys: `image` · `calibration` · `aspect_ratio` · `controls` · `` · `rooms` · `room_action` · `zone_action` · `point_action`. |
+| `map` |  | The robot’s map under the head, as a block: its picture (`image`: a camera, an image entity or an address), its `calibration`, its shape (`aspect_ratio`), its `rooms`, what stands on it (`controls`) and how many times a pick is cleaned (`repeats`). Its keys: `image` · `calibration` · `aspect_ratio` · `controls` · `repeats` · `topic` · `rooms` · `room_action` · `zone_action` · `point_action`. |
 | `show_map` | `true` | Shows the map; off, it is hidden and stays written. |
 | `show_presets` | `true` | Shows the presets. |
 | `presets_style` | `full` | Draws the presets as chips that fill their row, or as content-sized ones. `full` · `chips`. |

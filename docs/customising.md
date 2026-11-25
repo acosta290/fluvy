@@ -421,9 +421,9 @@ rows:
 
 ## Extra rows on a card
 
-The Light, Fan, Cover, Thermostat, Media player and Humidity cards take `rows`, as the Lock, Alarm and Camera cards
-do: any entity as a row under the card's own controls. A select opens its dropdown, a switch has its switch, a sensor
-says its value.
+The Light, Fan, Cover, Thermostat, Media player, Humidity and Vacuum cards take `rows`, as the Lock, Alarm and Camera
+cards do: any entity as a row under the card's own controls (a robot's under its map, where it draws one). A select
+opens its dropdown, a switch has its switch, a sensor says its value.
 
 ```yaml
 type: custom:fluvy-light-card
