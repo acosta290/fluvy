@@ -7,8 +7,8 @@ and the versions follow [Semantic Versioning](https://semver.org/).
 
 ### Visible on upgrade
 
-One change is a choice: a house in the United States reads Fluvy in American English. Everything else that changes
-without being asked is a fix:
+Two changes are choices: a house in the United States reads Fluvy in American English, and a ruler that is only read
+marks its reading with a needle. Everything else that changes without being asked is a fix:
 
 - A house whose Home Assistant speaks its English and whose country is the United States, one of its territories or the
   Philippines reads Fluvy in American English on Automatic (Trunk, Hood, Tires, Color, Customize, Favorites, Cooktop,
@@ -16,6 +16,9 @@ without being asked is a fix:
   (#267, requested by @Carl-Primitive).
 - Preferences › Language calls Fluvy's English "English (United Kingdom)", beside the new English (United States); a
   person who chose English keeps it (#267).
+- A ruler that is only read (a battery's level on the Batteries, EV charger, Vehicle and Vacuum cards, a timer's
+  elapsed time) marks its reading with a needle, the reading's own tick drawn tall and bold, where it drew a ring like
+  a slider's knob: a ring asks to be moved, and there is nothing to move there.
 - A card whose config leaves its head with nothing in it (no circle with `show_icon: never`, the name hidden with
   `name_lines: 0`, and its line, its badge and what trails its head switched off) no longer keeps a blank band: the
   head is not drawn, the card starts at its 20 and its height drops the head and the gap under it, on the Appliances
@@ -100,7 +103,9 @@ without being asked is a fix:
 - The Vehicle card can show where the car is on a mini map with `map: auto`, a tracker or a list of them: Home
   Assistant's own map, with no key and nothing sent anywhere to look an address up, sized by `map_size`, with
   `map_zoom`, `map_theme` and a trail by `hours_to_show`, and the car's address or its place's name in a pill over
-  the map that opens the tracker; `map_interactive: false` makes it a still picture (#266, requested by @SentinelXS).
+  the map that opens the tracker; `map_interactive: false` makes it a still picture. A map you can move keeps Home
+  Assistant's zoom keys, a still one shows none of its keys, and the map's attribution keeps its corner, the pill
+  stopping short of it (#266, requested by @SentinelXS).
 - The Vehicle card can draw its parts in an order of your own with `sections`: name the head, the picture, the map,
   the battery, the controls, the rows, the tyres and the quick actions in the order you want, and a part you leave
   out is not drawn; the visual editor has it as a list to drag (#266, requested by @SentinelXS).
@@ -122,7 +127,8 @@ without being asked is a fix:
   ruler, and a range is two rulers (#258).
 - The Chart card's series can have thresholds of their own, read in their own unit and used for that series in place
   of the card's; a series can mark its lowest and highest points (`highlight: min | max | both`): dots on its line, its
-  columns lit with their figures, and the figures with their times in the value row; and the card can lay a readout
+  columns lit with their figures, and the figures with their times in the value row, the readings' own: a peak of a
+  few seconds the line smooths over, and the reading now; and the card can lay a readout
   for each series over the chart in place of the legend (`readouts: true`), as the Sensor card does for several sensors
   (#264, requested by @SentinelXS).
 - The Remote card has the keys A, B, X, Y, View and the Xbox button (`a`, `b`, `x`, `y`, `view`, `nexus`) for its pad,
@@ -170,6 +176,9 @@ without being asked is a fix:
 - Every page's budget is 240 KB (measured at 239.5), and the panel's, the Chart card's, the rounds', the editors', the
   shared chunk's and a language's each rose once, measured and dated in `tools/release/check.mjs`.
 - The docs list a block's keys whole where its fields stand side by side in a row of the form.
+- The playground's stand-in for Home Assistant's map draws its keys and its attribution in Home Assistant's own shape,
+  and the measurer holds our words and pills clear of what a frame marks `data-keep-clear`; a frame that is a picture
+  of its sheet alone (`dashboard: false`) is left out of the dashboard a page draws of the sheet.
 - A config's own icon is checked by one shared rule (`shared/icon-name.ts`) that the dashboard sidebar and the Remote
   card both read.
 - New Matter appliance fixtures (an oven, the reporter's light, a thermostat with an offset); the playground's
