@@ -9,7 +9,6 @@ import {
   stateText,
   strings,
   type EntityView,
-  type FluvyCardConfig,
   type HomeAssistant,
   type LovelaceGridOptions,
 } from '@fluvy/core';
@@ -40,18 +39,27 @@ import { chipRow, inForce } from '../shared/chips.js';
 import { modeWord, pretty } from '../shared/mode-words.js';
 import { HeadFit, SWITCH_SLOT } from '../energy/head.js';
 import { heldLabels, type Labels } from '../shared/axis.js';
-import { chipBlock, chipRows, COMPACT, drawnAs, ROW } from '../shared/heights.js';
+import {
+  chipBlock,
+  chipRows,
+  COMPACT,
+  drawnAs,
+  listedRows,
+  ROW,
+  rowsUnder,
+} from '../shared/heights.js';
 import { fanPercentage } from '../shared/scale.js';
 import { toneOf } from '../shared/colour.js';
 import { stateLook, tintOf, type StateTintConfig } from '../shared/state-tint.js';
 import { fitValueRow, STEPPER, STEPPER_HALVES, valueRowClass } from '../shared/value-row.js';
+import type { RowsCardConfig } from '../lock/rows.js';
 
 const fanStrings = strings('fan');
 
 /** `full` (default): the speed with its stepper and ruler, the rows and the presets. `compact`: the head and the ruler. */
 export type FanVariant = 'full' | 'compact';
 
-export interface FanCardConfig extends FluvyCardConfig, StateTintConfig {
+export interface FanCardConfig extends RowsCardConfig, StateTintConfig {
   subtitle?: string;
   variant?: FanVariant;
   /** The − and + beside the full card's speed (default). Off: the speed is set on its ruler, and the readout is the card's tap. */
@@ -79,8 +87,8 @@ type Direction = 'forward' | 'reverse';
  * The card's height at a 360 column, for the automatic dashboard's columns: the head, the speed with its stepper and
  * its ruler (228), then the oscillation and direction rows (16 + 60 each) the fan has, and its presets as a row of
  * chips under their label — what it does (`features`) and its presets as the house describes them
- * (`house-heights.ts`), its speed and both rows where it is not there to say. A card that keeps to the essentials
- * while off is reserved its height when on.
+ * (`house-heights.ts`), its speed and both rows where it is not there to say; under them, the rows it lists (#262). A
+ * card that keeps to the essentials while off is reserved its height when on.
  */
 export function fanHeight(
   config: FanCardConfig,
@@ -96,7 +104,8 @@ export function fanHeight(
   return (
     228 +
     (rows ? 16 + ROW * rows : 0) +
-    chipBlock(chipRows(shown.map(pretty), style === 'chips' ? 'chips' : 'full'), style)
+    chipBlock(chipRows(shown.map(pretty), style === 'chips' ? 'chips' : 'full'), style) +
+    rowsUnder(config)
   );
 }
 
@@ -163,6 +172,7 @@ export class FluvyFanCard extends Card<FanCardConfig> {
   static override layoutHeight(config: FanCardConfig): number {
     return fanHeight(config);
   }
+  static override takesRows = true;
 
   static override styles: CSSResultGroup = [
     ...(Card.styles as CSSResultGroup[]),
@@ -271,7 +281,8 @@ export class FluvyFanCard extends Card<FanCardConfig> {
       (view.supports(SET_SPEED) ? 3 : 0) +
       (view.supports(OSCILLATE) ? 1 : 0) +
       (view.supports(DIRECTION) ? 1 : 0) +
-      (view.supports(PRESET_MODE) ? 2 : 0)
+      (view.supports(PRESET_MODE) ? 2 : 0) +
+      listedRows(this.config)
     );
   }
 
@@ -606,6 +617,7 @@ export class FluvyFanCard extends Card<FanCardConfig> {
             )}`
           : nothing
       }
+      ${bare ? nothing : this.extraRows(this.head)}
     </article>`;
   }
 }

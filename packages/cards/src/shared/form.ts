@@ -1031,6 +1031,29 @@ export function rowItems(
   };
 }
 
+/** Where a card draws the rows it lists, as a field's `when` (a compact lock draws none). */
+type DrawsRows = NonNullable<HaFormSchemaItem['when']>;
+
+/** Every card but a compact one: where a light or a fan draws its rows. */
+export const notCompact: DrawsRows = ({ variant }) => variant !== 'compact';
+
+/**
+ * The rows a card lists under its own control (`rows`: a lock's, and a light's or a fan's, #262), as its form shows
+ * them: whether they show, and the list in one picker (`rowsList` gives each its own) — where the card draws them.
+ */
+export const rowsFields = (draws?: DrawsRows): HaFormSchemaItem[] => [
+  draws ? onlyWhen(draws, boolField('show_rows')) : boolField('show_rows'),
+  entitiesField('rows'),
+];
+
+/** …and that list item by item, each a lock's row (`rowItems`), where the card draws them. */
+export const rowsList = (draws?: DrawsRows): RowsListSpec => ({
+  key: 'rows',
+  title: 'editor.rows',
+  ...rowItems(),
+  ...(draws ? { when: draws } : {}),
+});
+
 /* ---------- a list in parts, and rows on a condition (#157) ---------- */
 
 /**

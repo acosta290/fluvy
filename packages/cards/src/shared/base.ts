@@ -3,7 +3,9 @@ import {
   failedToLoad,
   FluvyCard,
   isEntityId,
+  wornFrom,
   type ActionConfig,
+  type EntityName,
   type EntityView,
   type FluvyCardConfig,
   type HomeAssistant,
@@ -12,12 +14,12 @@ import {
 } from '@fluvy/core';
 import { baseStyles, fitPills, pressCover } from '@fluvy/ui';
 import { css, nothing, type CSSResultGroup, type PropertyValues, type TemplateResult } from 'lit';
-import type { ShowIcon } from '../energy/head.js';
+import type { HeadFit, ShowIcon } from '../energy/head.js';
 import { loadChartEngine } from './chart-load.js';
 import { COMMON_ALIASES, normaliseConfig, type AliasSpec, type KnownKeys } from './config.js';
 import { FontsSettled } from './fonts.js';
 import { headLines, hidesName } from './head-lines.js';
-import type { HeadNameLines } from './heights.js';
+import { listedRows, type HeadNameLines } from './heights.js';
 import type { EditorChoices, EditorDefaults, RowsListSpec } from './rows-editor.js';
 import { readFigure, type Own, type OwnHost } from './own-values.js';
 import { ownLine, type OwnLine } from './secondary.js';
@@ -157,6 +159,33 @@ export interface ControlHost {
   call(domain: string, service: string, data: Record<string, unknown>, entityId: string): void;
 }
 
+/**
+ * What the rows under a card need of it besides (`RowList`, `lock/rows.ts`: a lock's, and a light's or a fan's, #262):
+ * its colours, its content column, an entity as the card reads it and the name it shows it by, what a surface of its
+ * answers (`pressOf`), and an entity it reads beside those it watches, followed (`follows`).
+ */
+export interface RowsHost extends ControlHost {
+  readonly accents: { item(choice: unknown): string | undefined };
+  width(): number;
+  entity(id: string): EntityView;
+  name(view: EntityView, name: EntityName | undefined): string;
+  press(own: object, entityId: string): Press;
+  follow(entityId: string): void;
+}
+
+/**
+ * What draws the rows a card of one device lists under its body (`lock/rows.ts`, #262), once the first card that lists
+ * one has fetched it: it travels with the devices' chunk, fetched as the bundle starts. One that cannot be fetched
+ * leaves the card without them.
+ */
+let rowsEngine: typeof import('../lock/rows.js') | undefined;
+const rowsChunk = wornFrom(
+  () => import('../lock/rows.js'),
+  (module) => {
+    rowsEngine = module;
+  },
+);
+
 /** What a card's editor shows: the contract's parts (see `Card`), all but the older names, which the card reads itself. */
 export interface CardEditor {
   readonly base: readonly BaseKey[];
@@ -191,6 +220,11 @@ export abstract class Card<C extends FluvyCardConfig = FluvyCardConfig> extends 
   static defaults: EditorDefaults | undefined = undefined;
   static choices: EditorChoices | undefined = undefined;
   static aliases: AliasSpec | undefined = undefined;
+  /**
+   * Whether the card draws the rows its config lists under its body (#262: `rows`, `show_rows`, as a lock's): a card
+   * of one device (`extraRows`), whose first frame waits for their engine where it lists any.
+   */
+  declare static takesRows?: boolean;
 
   /** The fields of the card's visual editor; every card has one. */
   static getConfigForm(): LovelaceConfigForm {
@@ -236,11 +270,17 @@ export abstract class Card<C extends FluvyCardConfig = FluvyCardConfig> extends 
     );
   }
 
-  /** The card as a control of a module of its own sees it (a select's dropdown, a helper's control). */
-  protected readonly controlHost: ControlHost = {
+  /** The card as a control of a module of its own sees it (a select's dropdown, a helper's control, its rows). */
+  protected readonly controlHost: RowsHost = {
     state: (view) => this.stateOf(view),
     expect: (id, state) => this.expect(id, state),
     call: (domain, service, data, id) => this.call(domain, service, data, id),
+    accents: this.accents,
+    width: () => this.contentWidth,
+    entity: (id) => this.entity(id),
+    name: (view, name) => this.nameFor(view, name),
+    press: (own, id) => this.pressOf(own, id),
+    follow: (id) => this.follows(id),
   };
 
   constructor() {
@@ -269,14 +309,33 @@ export abstract class Card<C extends FluvyCardConfig = FluvyCardConfig> extends 
 
   /**
    * A card whose config names thresholds, or an item of a list it holds, draws its first frame once their reader is
-   * here (`thresholds`), never in its own colours a moment before.
+   * here (`thresholds`), never in its own colours a moment before; a card that takes rows and lists some, once their
+   * engine is (`extraRows`), never without them a moment before.
    */
   protected override wearing(): Promise<void> | undefined {
     const config = this.config as Readonly<Record<string, unknown>> | undefined;
     const asks =
       namesThresholds(config) ||
       Object.values(config ?? {}).some((list) => Array.isArray(list) && list.some(namesThresholds));
-    return super.wearing() ?? (asks && !readerSettled ? fetchReader() : undefined);
+    return (
+      super.wearing() ??
+      (asks && !readerSettled ? fetchReader() : undefined) ??
+      ((this.constructor as typeof Card).takesRows && listedRows(this.config) && !rowsChunk.settled
+        ? rowsChunk.fetch()
+        : undefined)
+    );
+  }
+
+  /**
+   * The rows a card of one device lists under its body (#262: `rows`, a lock's, `takesRows`), fitted on its head's
+   * ruler: none where it lists none or hides them (`show_rows: false`), nor until their engine has landed (the card
+   * draws again as it does).
+   */
+  protected extraRows(fit: HeadFit): TemplateResult | typeof nothing {
+    if (!listedRows(this.config)) return nothing;
+    if (rowsEngine) return rowsEngine.extraRows(this, this.controlHost, fit, this.templates);
+    if (!rowsChunk.settled) void rowsChunk.fetch().then(() => this.requestUpdate());
+    return nothing;
   }
 
   /**

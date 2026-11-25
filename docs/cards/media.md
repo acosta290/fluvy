@@ -45,6 +45,8 @@ show_power: true
 controls:
   - play
   - next
+show_rows: true
+# rows:
 slider_style: house
 # tone:
 # color:
@@ -77,8 +79,10 @@ slider_style: house
 | `show_volume` | `true` | Shows the volume control. |
 | `show_power` | `true` | Shows the power button. |
 | `controls` | `play`, `next` | The rounds of the mini layout’s row, in this order. Any of `power` · `previous` · `play` · `next` · `volume`. |
+| `show_rows` | `true` | Shows the rows under the main control. |
 | `slider_style` | `house` | The slider’s style; left out, the style set for every slider. `house` · `ruler` · `bar` · `liquid`. |
 | `slider_words` | `ends` | Writes the words at the slider’s ends, or none. `ends` · `none`. |
+| [`rows`](#rows) |  | The rows the card lists, in this order. A list: [its items](#rows). |
 
 <details>
 <summary>Its look and its actions, as on every card</summary>
@@ -101,6 +105,28 @@ slider_style: house
 More about them in [Options every card takes](../customising.md#options-every-card-takes).
 
 </details>
+
+## Lists
+
+### `rows`
+
+An item is an entity id, or a map with `entity` and any of these fields.
+
+| Field | What it does |
+| --- | --- |
+| `entity` | The entity the item shows. |
+| `name` | The item’s own name, in place of the one the card would give it. |
+| `icon` | The item’s own icon, in place of the one the card would give it. |
+| `secondary` | The line under the item’s name. `area` · `last-changed` · `state` · `none`, or your own. |
+| `since` | Where the time of the last change is read from. |
+| `options` | The select’s options offered, in this order. A list. |
+| `labels` | Names of your own for the options. |
+| `tone` | The item’s colour from the palette’s tones. `accent` · `light` · `heat` · `cool` · `dry` · `fan` · `water` · `solar` · `grid` · `media` · `presence` · `armed` · `battery` · `house` · `gas` · `vehicle` (Car) · `neutral` · `ok` (Good) · `warning` · `danger`. |
+| `color` | The item’s colour, in place of the one the card gives it. |
+| **Interactions** |  |
+| `tap_action` | What a tap on the item does. |
+| `hold_action` | What a long press on the item does. |
+| `double_tap_action` | What two taps on the item do. |
 
 ## Guide
 

@@ -344,6 +344,29 @@ rows:
     since: attribute:last_opened # a row's own wins
 ```
 
+## Extra rows on a card
+
+The Light, Fan, Cover, Thermostat, Media player and Humidity cards take `rows`, as the Lock, Alarm and Camera cards
+do: any entity as a row under the card's own controls. A select opens its dropdown, a switch has its switch, a sensor
+says its value.
+
+```yaml
+type: custom:fluvy-light-card
+entity: light.sofa_gradient_strip
+rows:
+  - select.sofa_gradient_strip_scene # Hue's gradient scene, chosen from its dropdown
+  - entity: button.sofa_strip_next_scene
+    icon: mdi:skip-next
+    tap_action: { action: toggle } # a press: the button is pressed
+  - sensor.living_room_light_level
+```
+
+- A row takes what a Lock card's row takes: `name`, `icon`, `secondary`, `since`, `tone`, `color`, its own actions, and
+  a select's `options` and `labels`. `show_rows: false` hides them all.
+- A button, a script or a scene opens its details until its row's `tap_action` says `toggle`, so a slip never runs it.
+- The compact Light, Fan and Cover cards and the mini player draw no rows. With `when_off: essentials`, a fan's and a
+  thermostat's rows wait for it to run, as its presets do.
+
 ## Sections and rows on a condition
 
 The Bars and Entities cards' rows can stand in sections, and each row can show only on a condition.

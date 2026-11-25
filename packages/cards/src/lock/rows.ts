@@ -14,10 +14,10 @@ import {
   type FluvyCardConfig,
   type HomeAssistant,
 } from '@fluvy/core';
-import { listRow, wordsClass, type Tone } from '@fluvy/ui';
+import { listRow, sheetStyles, wordsClass, type Tone } from '@fluvy/ui';
 import { html, nothing, type TemplateResult } from 'lit';
 import { HeadFit } from '../energy/head.js';
-import { Card } from '../shared/base.js';
+import { Card, type RowsHost } from '../shared/base.js';
 import { currentTone, iconOf, toneFor } from '../shared/domain.js';
 import { statusToneOf, toneOf } from '../shared/colour.js';
 import { type Secondary } from '../shared/config.js';
@@ -32,6 +32,7 @@ import { ageShort } from '../shared/duration.js';
 import {
   buttonWidth,
   fitValue,
+  rowEndStyles,
   rowsKeepIcon,
   rowStacks,
   type ValueFit,
@@ -66,8 +67,8 @@ export interface RowsCardConfig extends FluvyCardConfig {
 const s = strings('lock');
 
 /**
- * A row switch is only for what is harmless to flip by accident (`SAFE_TOGGLE`), and under a lock, an alarm or a
- * camera never a way in: a garage door, a gate, a valve.
+ * A row switch is only for what is harmless to flip by accident (`SAFE_TOGGLE`), and never a way in, under a lock, an
+ * alarm, a camera or a lamp: a garage door, a gate, a valve.
  */
 const WAYS_IN: ReadonlySet<string> = new Set(['cover', 'valve']);
 /** Domains whose state is worth reading at the end of the row. */
@@ -149,44 +150,124 @@ interface RowPlan {
 }
 
 /**
- * Cards that end in a list of entity rows (lock, alarm, camera). One trailing element per row, chosen
- * by the entity: a switch for what is safe to toggle, the value for what is measured, a select's value that opens
- * its dropdown (#96), a chevron for the rest.
+ * Cards that end in a list of entity rows (lock, alarm, camera): their rows (`RowList`), counted, watched and drawn
+ * under the card's own control.
  */
 export abstract class RowsCard<C extends RowsCardConfig = RowsCardConfig> extends Card<C> {
-  private rowList: readonly RowConfig[] = [];
   /** The head's fitting and the rows' (what gives way, in its order), for the card and its rows alike. */
   protected readonly headFit = new HeadFit(this);
   /** A row's second line when it is a template: rendered by Home Assistant, live. */
   protected readonly texts = new TemplateTexts(this);
+  private readonly rows = new RowList(this, this.controlHost, this.headFit, this.texts);
 
   protected override prepare(config: C): C {
-    const rows: unknown = config.rows;
-    this.rowList = (Array.isArray(rows) ? (rows as ReadonlyArray<string | RowConfig | null>) : [])
-      .map((row) => (typeof row === 'string' ? { entity: row } : row))
-      .filter((row): row is RowConfig => typeof row?.entity === 'string' && row.entity !== '');
+    this.rows.set(config.rows);
     return config;
   }
 
   protected get rowCount(): number {
-    return this.config?.show_rows === false ? 0 : this.rowList.length;
+    return this.config?.show_rows === false ? 0 : this.rows.length;
   }
 
   /** The card's entity, its rows', and what the rows' last change is read from (`since`). */
   protected override watched(): readonly string[] {
-    return [
-      this.config?.entity ?? '',
-      ...this.rowList.map((row) => row.entity),
-      ...sinceIds(this.rowList),
-    ];
+    return [this.config?.entity ?? '', ...this.rows.ids];
+  }
+
+  /** The rows, as history where `events` asks (`RowList.render`); none while they are hidden. */
+  protected renderRows(events = false): TemplateResult | typeof nothing {
+    return this.config?.show_rows === false ? nothing : this.rows.render(events);
+  }
+}
+
+/**
+ * The card a list of rows stands under, as its rows read it besides its helpers (`RowsHost`): its `hass`, its root, and
+ * the rows its config lists.
+ */
+interface RowsElement {
+  readonly hass?: HomeAssistant | undefined;
+  readonly renderRoot: Node;
+  readonly config?: Readonly<Record<string, unknown>> | undefined;
+}
+
+/** What the rows wear beside a card's own sheets: the devices' rows, and a row's end (a dropdown's value). */
+const ROW_SHEETS = [sheetStyles.devices, rowEndStyles];
+
+/**
+ * The rows' sheets into a card's shadow root, once, beside its own (a lock's are its own already): a card of one
+ * device wears them only where it draws rows.
+ */
+function adopt(root: Node): void {
+  if (!(root instanceof ShadowRoot)) return;
+  ROW_SHEETS.forEach(({ styleSheet, cssText }, index) => {
+    if (styleSheet) {
+      if (!root.adoptedStyleSheets.includes(styleSheet))
+        root.adoptedStyleSheets = [...root.adoptedStyleSheets, styleSheet];
+    } else if (!root.querySelector(`style[data-fluvy-rows="${index}"]`)) {
+      // no constructible sheets: a style element ahead of what Lit renders, where its own fallback puts them
+      const element = document.createElement('style');
+      element.dataset['fluvyRows'] = String(index);
+      element.textContent = cssText;
+      root.prepend(element);
+    }
+  });
+}
+
+/**
+ * A list of entity rows under a card's own control: a lock's, an alarm's and a camera's (`RowsCard`), and those a card
+ * of one device lists under its body (#262: a light's, a fan's, `Card.extraRows`). One trailing element per row, chosen
+ * by the entity: a switch for what is safe to toggle, the value for what is measured, a select's value that opens its
+ * dropdown (#96), a chevron for the rest. It reads the card through `host`: the card's own helpers are protected.
+ */
+export class RowList {
+  private rowList: readonly RowConfig[] = [];
+  /** The list the rows were last read from: a config's own is read once. */
+  private listed: unknown;
+
+  constructor(
+    private readonly card: RowsElement,
+    private readonly host: RowsHost,
+    /** The card's head's fitting: the rows' (what gives way, in its order) is the same, on the same ruler. */
+    private readonly headFit: HeadFit,
+    /** A row's second line when it is a template: rendered by Home Assistant, live. */
+    private readonly texts: TemplateTexts,
+  ) {}
+
+  /** The rows a config lists: each an entity's id or a row naming one; what names none is left out. */
+  set(listed: unknown): void {
+    if (listed === this.listed) return;
+    this.listed = listed;
+    this.rowList = (
+      Array.isArray(listed) ? (listed as ReadonlyArray<string | RowConfig | null>) : []
+    )
+      .map((row) => (typeof row === 'string' ? { entity: row } : row))
+      .filter((row): row is RowConfig => typeof row?.entity === 'string' && row.entity !== '');
+  }
+
+  get length(): number {
+    return this.rowList.length;
+  }
+
+  /** The rows' entities, and what their last change is read from (`since`). */
+  get ids(): readonly string[] {
+    return [...this.rowList.map((row) => row.entity), ...sinceIds(this.rowList)];
+  }
+
+  private get hass(): HomeAssistant | undefined {
+    return this.card.hass;
+  }
+
+  private get contentWidth(): number {
+    return this.host.width();
   }
 
   /**
    * `events` draws the rows as history (camera detections): a chevron, and a neutral circle unless the row names a tone
    * or a colour; the line says when it changed as the time of day, unless the row asks for another one.
    */
-  protected renderRows(events = false): TemplateResult | typeof nothing {
-    if (!this.rowList.length || this.config?.show_rows === false) return nothing;
+  render(events = false): TemplateResult | typeof nothing {
+    if (!this.rowList.length) return nothing;
+    adopt(this.card.renderRoot);
     const plans = this.rowList.map((row) => this.plan(row, events));
     // a column too narrow for a name beside what ends its row gives every row's circle to its words, as every list does
     const keep =
@@ -248,7 +329,7 @@ export abstract class RowsCard<C extends RowsCardConfig = RowsCardConfig> extend
 
   /** What a row shows and how wide its end is, before the list decides its circles and its ages. */
   private plan(row: RowConfig, events: boolean): RowPlan {
-    const view = this.entity(row.entity);
+    const view = this.host.entity(row.entity);
     const usable = isUsable(view);
     const canToggle = usable && SAFE_TOGGLE.has(view.domain) && !WAYS_IN.has(view.domain);
     // a select's value opens its dropdown (#96), unless the row names a tap of its own
@@ -266,7 +347,7 @@ export abstract class RowsCard<C extends RowsCardConfig = RowsCardConfig> extend
       trailing === 'switch' || trailing === 'chevron'
         ? ''
         : SELECTS.has(view.domain)
-          ? chosenLabel(this.hass, view, row, this.stateOf(view))
+          ? chosenLabel(this.hass, view, row, this.host.state(view))
           : parts
             ? `${parts.value}${parts.unit ? ` ${parts.unit}` : ''}`
             : stateText(this.hass, view);
@@ -300,7 +381,7 @@ export abstract class RowsCard<C extends RowsCardConfig = RowsCardConfig> extend
             : trailing === 'switch'
               ? 56
               : 44,
-      title: this.nameFor(view, row.name),
+      title: this.host.name(view, row.name),
       words: time ? changedTime(this.hass, view, row.since) : line(false),
       short: time ? '' : line(true),
       // an age only where the line is one: a state's word (a row that cannot be read) is never shortened into one
@@ -331,7 +412,7 @@ export abstract class RowsCard<C extends RowsCardConfig = RowsCardConfig> extend
     fit: ValueFit | null,
   ): TemplateResult {
     const { row, view, usable, trailing } = p;
-    const state = this.stateOf(view);
+    const state = this.host.state(view);
     const on = state === view.state ? isActive(view) : state === 'on';
     const tone = statusToneOf(row, toneFor(view));
     const menu = trailing === 'menu';
@@ -378,7 +459,7 @@ export abstract class RowsCard<C extends RowsCardConfig = RowsCardConfig> extend
       stack,
       trailing: menu
         ? dropdown({
-            host: this.controlHost,
+            host: this.host,
             hass: this.hass,
             view,
             row,
@@ -395,14 +476,34 @@ export abstract class RowsCard<C extends RowsCardConfig = RowsCardConfig> extend
       valueSize: fit?.size,
       valueTone: view.domain === 'binary_sensor' && on && tone === 'warning' ? 'warning' : '',
       unavailable: !usable,
-      accent: this.accents.item(row.color),
+      accent: this.host.accents.item(row.color),
       // a dropdown's row is no button of its own: its value is; out of reach, the row opens its details
-      ...(menu && usable ? {} : this.pressOf(row, view.id)),
+      ...(menu && usable ? {} : this.host.press(row, view.id)),
       onToggle: (next) => {
         if (!this.hass) return;
-        this.expect(view.id, next ? 'on' : 'off');
+        this.host.expect(view.id, next ? 'on' : 'off');
         void toggleEntity(this.hass, view.id);
       },
     });
   }
+}
+
+/** The rows each card of one device lists under its body (`extraRows`), made the first time it draws them. */
+const extra = new WeakMap<RowsElement, RowList>();
+
+/**
+ * The rows a card of one device lists under its body (#262, `Card.extraRows`): its list, read from its config, fitted
+ * on its head's ruler, each entity followed while it is drawn (the card watches none of them of its own).
+ */
+export function extraRows(
+  card: RowsElement,
+  host: RowsHost,
+  fit: HeadFit,
+  texts: TemplateTexts,
+): TemplateResult | typeof nothing {
+  let list = extra.get(card);
+  if (!list) extra.set(card, (list = new RowList(card, host, fit, texts)));
+  list.set(card.config?.rows);
+  for (const id of list.ids) host.follow(id);
+  return list.render();
 }

@@ -14,6 +14,7 @@ import { sheet as devicesMotion } from './devices-motion.js';
 import { sheet as devicesSecurity } from './devices-security.js';
 import { sheet as energy } from './energy.js';
 import { sheet as expander } from './expander.js';
+import { sheet as extraRows } from './extra-rows.js';
 import { sheet as historyBars } from './history-bars.js';
 import { sheet as home } from './home.js';
 import { sheet as homeExtras } from './home-extras.js';
@@ -79,6 +80,7 @@ export const sheet: SheetSpec = {
     slider,
     sliderCard,
     lights,
+    extraRows,
     climate,
     // before the automations': its config API answers the heating plans' ids, which that one refuses as unknown
     schedule,

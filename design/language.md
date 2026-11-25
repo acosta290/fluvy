@@ -1133,6 +1133,10 @@ control the house already has, read.
   cannot hold it whole, read in full). A row's own `tone` or `color` shows on its circle; with neither, the circle
   stays neutral. A row with no `tap_action` of its own opens its entity's details, never the card's tap — the lock's,
   the alarm's and the entities card's rows alike.
+- **The same rows under a card of one device (1.26, #262):** the Light, Fan, Cover, Thermostat, Media player and
+  Humidity cards take them too, at their foot, 16 under their own controls: the same anatomy and rules, each row 60 in
+  the declared height. Not on the compact light, fan or cover nor the mini player; a fan's and a thermostat's wait
+  with their presets while they keep to the essentials.
 - **Out of reach (1.9)**: unavailable, unknown or gone from the house, the camera keeps its head (the `ban` glyph where
   it is gone), its plate in its shape with the camera's glyph and why, and its rows.
 - **Back on screen, and a stream that failed (1.9):** a card put back off screen stays out until the viewport says it

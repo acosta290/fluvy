@@ -1,6 +1,6 @@
 import type { LovelaceCardConfig } from '@fluvy/core';
 import type { FamilyEntry } from './energy-family.js';
-import { chipBlock, chipRows, COMPACT } from './shared/heights.js';
+import { chipBlock, chipRows, COMPACT, rowsUnder } from './shared/heights.js';
 
 /**
  * The Cover card, announced at start and defined when its chunk lands (`cover-cards.ts`), as the Vacuum card is: what
@@ -97,7 +97,8 @@ function favoritesBlock(config: LovelaceCardConfig, positioned: boolean, tilts: 
  *
  * The horizontal card (#244) takes a position on one row, 228 in all: the head, 24, the row (the label's 16 line over
  * the ruler's 44), 16 and the commands; then the tilt under them (16 and its 64 row, or 16 and its slats' 120), each
- * control's presets under it and the favourites. A cover with no position draws as the full card does.
+ * control's presets under it and the favourites. A cover with no position draws as the full card does. Under it all,
+ * the rows it lists (#262), but on the compact card.
  */
 export function coverHeight(config: LovelaceCardConfig, features = usualFor(config)): number {
   if (config['variant'] === 'compact') return COMPACT;
@@ -106,20 +107,22 @@ export function coverHeight(config: LovelaceCardConfig, features = usualFor(conf
   const sets = shown && (features & SET_TILT_POSITION) !== 0;
   const slats = sets && config['tilt_style'] === 'slats';
   const positioned = (features & SET_POSITION) !== 0;
+  const rows = rowsUnder(config);
   if (config['variant'] === 'horizontal' && positioned)
     return (
       228 +
       (slats ? 136 : tilt ? 80 : 0) +
       presetsBlock(config['position_presets']) +
       (sets ? presetsBlock(config['tilt_presets']) : 0) +
-      favoritesBlock(config, positioned, (features & SET_TILT_POSITION) !== 0)
+      favoritesBlock(config, positioned, (features & SET_TILT_POSITION) !== 0) +
+      rows
     );
   const presets =
     (positioned ? presetsBlock(config['position_presets']) : 0) +
     (sets ? presetsBlock(config['tilt_presets'], positioned) : 0);
   const favorites = favoritesBlock(config, positioned, (features & SET_TILT_POSITION) !== 0);
-  if (positioned) return 328 + (slats ? 16 : 0) + presets + favorites;
-  return (slats ? 280 + presets : tilt ? 224 + presets : COMPACT) + favorites;
+  if (positioned) return 328 + (slats ? 16 : 0) + presets + favorites + rows;
+  return (slats ? 280 + presets : tilt ? 224 + presets : COMPACT) + favorites + rows;
 }
 
 export const COVER_FAMILY: readonly FamilyEntry[] = [['fluvy-cover-card', coverHeight]];

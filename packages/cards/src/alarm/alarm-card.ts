@@ -39,17 +39,16 @@ import { iconOf } from '../shared/domain.js';
 
 import {
   actionFields,
-  boolField,
   colourFields,
   editorWord,
-  entitiesField,
   entityField,
   fieldRow,
   formLabels,
   nameIconFields,
   orderedField,
   ownTextField,
-  rowItems,
+  rowsFields,
+  rowsList,
   selectField,
   headFields,
   stateLabels,
@@ -261,9 +260,7 @@ export class FluvyAlarmCard extends RowsCard<AlarmCardConfig> {
     'variant',
     ...STATE_TINT_KEYS,
   ]);
-  static override lists: readonly RowsListSpec[] = [
-    { key: 'rows', title: 'editor.rows', ...rowItems() },
-  ];
+  static override lists: readonly RowsListSpec[] = [rowsList()];
   static override aliases: AliasSpec = { items: { rows: ITEM_ALIASES } };
   /** What the editor shows where the config says nothing: what the card does then (every mode the panel has). */
   static override defaults: EditorDefaults = (config, hass) => {
@@ -303,8 +300,7 @@ export class FluvyAlarmCard extends RowsCard<AlarmCardConfig> {
             label: editorWord(`alarm.${mode.tile}` as MessageKey),
           })),
         ),
-        boolField('show_rows'),
-        entitiesField('rows'),
+        ...rowsFields(),
         ...colourFields(),
         ...stateTintFields(STATES),
         actionFields({ icon: true }),

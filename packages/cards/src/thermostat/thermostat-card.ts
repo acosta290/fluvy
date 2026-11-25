@@ -9,7 +9,6 @@ import {
   writeText,
   type ActionConfig,
   type EntityView,
-  type FluvyCardConfig,
   type HomeAssistant,
   type LovelaceGridOptions,
   type MessageKey,
@@ -55,7 +54,7 @@ import type { AliasSpec, WhenOff } from '../shared/config.js';
 import { chipRow, inForce, type Choice } from '../shared/chips.js';
 import { haWord, modeWord, pretty } from '../shared/mode-words.js';
 import { stateLook, tintOf, type StateTintConfig } from '../shared/state-tint.js';
-import { ICON_GAP, iconColumns } from '../shared/heights.js';
+import { ICON_GAP, iconColumns, listedRows } from '../shared/heights.js';
 import { readoutName, readoutsRow } from '../shared/readouts.js';
 import { askedParts } from '../shared/units.js';
 import {
@@ -68,11 +67,12 @@ import {
 import { degrees, doing, setpoint, type Doing } from './doing.js';
 import { batteryLevel, humidityOf, valveOf, windowBy, type ReadingsAsk } from './readings.js';
 import { MODE_TONE } from './tones.js';
+import type { RowsCardConfig } from '../lock/rows.js';
 
 export type ThermostatVariant = 'dial' | 'compact' | 'ruler';
 export type RowStyle = 'chips' | 'full';
 
-export interface ThermostatCardConfig extends FluvyCardConfig, ReadingsAsk, StateTintConfig {
+export interface ThermostatCardConfig extends RowsCardConfig, ReadingsAsk, StateTintConfig {
   /** The line under the name; empty hides it. Default: the area (left out where it is the name) and the humidity. */
   subtitle?: string;
   /**
@@ -586,6 +586,7 @@ export class FluvyThermostatCard extends Card<ThermostatCardConfig> {
   static override layoutHeight(config: ThermostatCardConfig): number {
     return thermostatHeight(config);
   }
+  static override takesRows = true;
 
   static override styles: CSSResultGroup = [
     ...(Card.styles as CSSResultGroup[]),
@@ -697,7 +698,7 @@ export class FluvyThermostatCard extends Card<ThermostatCardConfig> {
   }
 
   override getCardSize(): number {
-    return { dial: 7, ruler: 6, compact: 4 }[this.variant()];
+    return { dial: 7, ruler: 6, compact: 4 }[this.variant()] + listedRows(this.config);
   }
   /**
    * The dial needs its width; the ruler card and the compact one half a section, never less (as Home Assistant's own
@@ -1258,6 +1259,7 @@ export class FluvyThermostatCard extends Card<ThermostatCardConfig> {
             )}`
           : nothing
       }
+      ${essentials ? nothing : this.extraRows(this.head)}
     </article>`;
   }
 }

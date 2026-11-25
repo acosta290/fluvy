@@ -39,16 +39,14 @@ import { BADGE_BASE, Card } from '../shared/base.js';
 
 import {
   actionFields,
-  boolField,
   colourFields,
-  entitiesField,
   entityField,
   fieldRow,
   formLabels,
   nameIconFields,
-  onlyWhen,
   ownTextField,
-  rowItems,
+  rowsFields,
+  rowsList,
   selectField,
   headFields,
   stateLabels,
@@ -217,9 +215,7 @@ export class FluvyLockCard extends RowsCard<LockCardConfig> {
     'variant',
     ...STATE_TINT_KEYS,
   ]);
-  static override lists: readonly RowsListSpec[] = [
-    { key: 'rows', title: 'editor.rows', ...rowItems(), when: drawsRows },
-  ];
+  static override lists: readonly RowsListSpec[] = [rowsList(drawsRows)];
   static override aliases: AliasSpec = { items: { rows: ITEM_ALIASES } };
   /** What the editor shows where the config says nothing: what the card does then. */
   static override defaults: EditorDefaults = () => ({ variant: 'full', show_rows: true });
@@ -230,8 +226,7 @@ export class FluvyLockCard extends RowsCard<LockCardConfig> {
         nameIconFields(),
         headFields({ badge: true }),
         fieldRow(ownTextField('subtitle'), selectField('variant', ['full', 'compact'])),
-        onlyWhen(drawsRows, boolField('show_rows')),
-        entitiesField('rows'),
+        ...rowsFields(drawsRows),
         ...colourFields(),
         ...stateTintFields(STATES),
         actionFields({ icon: true }),

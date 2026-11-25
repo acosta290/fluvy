@@ -7,7 +7,6 @@ import {
   sliderStyleOf,
   sliderWordsOf,
   stateText,
-  type FluvyCardConfig,
   type LightTint,
   type LovelaceGridOptions,
 } from '@fluvy/core';
@@ -30,7 +29,7 @@ import { Card, type CardEditor } from '../shared/base.js';
 import { HeadFit, SWITCH_SLOT } from '../energy/head.js';
 
 import { iconOf, stateWord } from '../shared/domain.js';
-import { rowsOf } from '../shared/heights.js';
+import { listedRows, rowsOf, rowsUnder } from '../shared/heights.js';
 import {
   COLOURED,
   dims,
@@ -41,6 +40,7 @@ import {
 } from '../shared/light.js';
 import { Level } from '../shared/level.js';
 import { levelRow } from '../shared/value-row.js';
+import type { RowsCardConfig } from '../lock/rows.js';
 import type { HeldColour } from './colour.js';
 import type { SwatchEntry } from './swatches.js';
 
@@ -56,7 +56,7 @@ export type TintStrength = 'soft' | 'brightness' | 'full' | 'full_brightness';
 /** When the card shows its light's brightness: always (`true`), never (`false`), or while the light is on (#124). */
 export type ShowBrightness = boolean | 'when_on';
 
-export interface LightCardConfig extends FluvyCardConfig {
+export interface LightCardConfig extends RowsCardConfig {
   variant?: LightVariant;
   /**
    * The brightness and, with it, the stepper and the temperature and colour rows (#124): always (`true`, the default);
@@ -116,11 +116,12 @@ const COLOUR_BULB: BulbDoes = { colour: true, temperature: true, dimmable: true 
  * describes it (`house-heights.ts`), a colour bulb's where it is not there to say; a list of none draws no row. A
  * bulb that only switches is its head alone, 84, whatever the config asks, as a card that never shows the brightness
  * is; one that shows it while the light is on declares its head, which it is while off, and grows from it as the light
- * turns on, its grid row following (`getGridOptions`).
+ * turns on, its grid row following (`getGridOptions`). Under it all, the rows it lists (#262), but on the compact card.
  */
 export function lightHeight(config: LightCardConfig, bulb: BulbDoes = COLOUR_BULB): number {
+  const under = config.variant === 'compact' ? 0 : rowsUnder(config);
   if (!bulb.dimmable || config.show_brightness === false || config.show_brightness === 'when_on')
-    return 84;
+    return 84 + under;
   if (config.variant === 'compact') return 188;
   const slot =
     (config.show_temperature !== false && bulb.temperature) ||
@@ -130,7 +131,7 @@ export function lightHeight(config: LightCardConfig, bulb: BulbDoes = COLOUR_BUL
   const rows =
     config.show_color !== false && bulb.colour ? rowsOf(config.colors?.length ?? 6, 6) : 0;
   const swatches = rows ? 8 + rows * 52 : 0;
-  return 268 + slot + swatches;
+  return 268 + slot + swatches + under;
 }
 
 /** Under this content width the full layout has no room for its value and stepper: the compact one takes over. */
@@ -154,6 +155,7 @@ export class FluvyLightCard extends Card<LightCardConfig> {
   static override layoutHeight(config: LightCardConfig): number {
     return lightHeight(config);
   }
+  static override takesRows = true;
 
   static override styles: CSSResultGroup = [
     ...(Card.styles as CSSResultGroup[]),
@@ -258,13 +260,14 @@ export class FluvyLightCard extends Card<LightCardConfig> {
     // once, by this: its column then grows and shrinks with it)
     const view = this.entity();
     const shows = this.config?.show_brightness;
+    const rows = this.config?.variant === 'compact' ? 0 : listedRows(this.config);
     if (
       !dims(view.attr<string[]>('supported_color_modes') ?? []) ||
       shows === false ||
       (shows === 'when_on' && view.state !== 'on')
     )
-      return 2;
-    return this.config?.variant === 'compact' ? 2 : 4;
+      return 2 + rows;
+    return (this.config?.variant === 'compact' ? 2 : 4) + rows;
   }
   /**
    * Half a section is enough (two lamps on a line); a card asked to be compact starts there, and never goes under it:
@@ -619,6 +622,7 @@ export class FluvyLightCard extends Card<LightCardConfig> {
             </div>`
           : body
       }
+      ${variant === 'compact' ? nothing : this.extraRows(this.head)}
     </article>`;
   }
 }

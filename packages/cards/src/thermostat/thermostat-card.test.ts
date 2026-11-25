@@ -1056,6 +1056,8 @@ describe('the readings under the value (#215)', () => {
           'double_tap_action',
         ],
       ],
+      // and the rows under it (#262), a lock's
+      ['rows', expect.arrayContaining(['entity', 'name', 'icon', 'tap_action'])],
     ]);
   });
 });

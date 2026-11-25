@@ -57,6 +57,16 @@ const firstList = (config: LovelaceCardConfig, keys: readonly string[]): unknown
 export const listLength = (config: LovelaceCardConfig, keys: readonly string[]): number =>
   firstList(config, keys)?.length ?? 0;
 
+/** The rows a card of one device lists under its body (`rows`, a lock's, #262): none while they are hidden. */
+export const listedRows = (config: LovelaceCardConfig | undefined): number =>
+  !config || config['show_rows'] === false ? 0 : listLength(config, ['rows']);
+
+/** What those rows add to its height: 16 above them, a row of 60 each. */
+export const rowsUnder = (config: LovelaceCardConfig): number => {
+  const rows = listedRows(config);
+  return rows ? 16 + ROW * rows : 0;
+};
+
 /** How many entities it lists there: a section's title or a divider among them is no row. */
 export const entryCount = (config: LovelaceCardConfig, keys: readonly string[]): number =>
   entriesOf(firstList(config, keys)).length;

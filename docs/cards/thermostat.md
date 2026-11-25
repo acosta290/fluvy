@@ -61,6 +61,8 @@ show_window: false
 show_battery: false
 # battery_entity:
 # humidity_entity:
+show_rows: true
+# rows:
 # tone:
 # color:
 # card_color:
@@ -105,10 +107,12 @@ show_battery: false
 | `show_fan` | `true` | Shows the fan speeds. |
 | `fan_style` | `full` | Draws the fan speeds as chips that fill the row, or as content-sized chips. `full` · `chips`. |
 | `when_off` | `all` | What the card shows while the device is off: everything, or only what turns it on. `all` · `essentials` (The essentials). |
+| `show_rows` | `true` | Shows the rows under the main control. |
 | `tint` | `off` | When the card shows its colour beyond its circle: never, while it is on or active, or at rest too. `off` (Never) · `on` (When active) · `always`. |
 | `tint_style` | `wash` | How the colour is shown: a wash over the card, the card’s edge, or the control alone. `wash` · `edge` · `control`. |
 | `state_colors` |  | A colour for each of the device’s states, held under this key: a tone, none, or a colour of your own. Its keys: `heating` · `cooling` · `drying` · `fan` · `humidifying` · `idle` · `off`. |
 | [`readouts`](#readouts) |  | Sensors read under the value, up to four on one row, in this order: the room’s humidity, the power, how long it ran. A list: [its items](#readouts). |
+| [`rows`](#rows) |  | The rows the card lists, in this order. A list: [its items](#rows). |
 | **What it is doing** |  |  |
 | `state_entity` |  | Another entity whose state says what the thermostat is doing. A `sensor`, `binary_sensor`, `switch` or `input_boolean`. |
 | `show_valve` | `false` | Shows how far the valve is open beside what it is doing. |
@@ -162,6 +166,26 @@ An item is an entity id, or a map with `entity` and any of these fields.
 | `tone` | The item’s colour from the palette’s tones. `accent` · `light` · `heat` · `cool` · `dry` · `fan` · `water` · `solar` · `grid` · `media` · `presence` · `armed` · `battery` · `house` · `gas` · `vehicle` (Car) · `neutral` · `ok` (Good) · `warning` · `danger`. |
 | `unit` | The unit the figure is written in. `auto` · `W` · `kW` · `MW` · `Wh` · `kWh` · `MWh` · `L` · `m³` · `gal` · `ft³`, or your own. |
 | `decimals` | How many decimals the figure has. `auto` · `0` · `1` · `2` · `3`. |
+| **Interactions** |  |
+| `tap_action` | What a tap on the item does. |
+| `hold_action` | What a long press on the item does. |
+| `double_tap_action` | What two taps on the item do. |
+
+### `rows`
+
+An item is an entity id, or a map with `entity` and any of these fields.
+
+| Field | What it does |
+| --- | --- |
+| `entity` | The entity the item shows. |
+| `name` | The item’s own name, in place of the one the card would give it. |
+| `icon` | The item’s own icon, in place of the one the card would give it. |
+| `secondary` | The line under the item’s name. `area` · `last-changed` · `state` · `none`, or your own. |
+| `since` | Where the time of the last change is read from. |
+| `options` | The select’s options offered, in this order. A list. |
+| `labels` | Names of your own for the options. |
+| `tone` | The item’s colour from the palette’s tones. `accent` · `light` · `heat` · `cool` · `dry` · `fan` · `water` · `solar` · `grid` · `media` · `presence` · `armed` · `battery` · `house` · `gas` · `vehicle` (Car) · `neutral` · `ok` (Good) · `warning` · `danger`. |
+| `color` | The item’s colour, in place of the one the card gives it. |
 | **Interactions** |  |
 | `tap_action` | What a tap on the item does. |
 | `hold_action` | What a long press on the item does. |

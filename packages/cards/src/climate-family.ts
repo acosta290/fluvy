@@ -11,6 +11,7 @@ import {
   optionBlock,
   optionRows,
   rowsOf,
+  rowsUnder,
   statsBlock,
 } from './shared/heights.js';
 import { pretty } from './shared/mode-words.js';
@@ -68,8 +69,8 @@ const UNDESCRIBED: ThermostatOffers = { modes: DEFAULT_MODES, presets: [], fans:
  * label — tiles in rows of 84 (three a row, two where a word is long: `optionRows`), icons in rows of 44 by their
  * count alone (`iconColumns`), chips in rows of 44 — and the presets and the fan speeds as rows of chips, each under
  * its label. The modes are the config's, else what the entity offers as the house describes it (`house-heights.ts`);
- * the presets and the fan speeds are the entity's. A card that keeps to the essentials while off is reserved its
- * height when on.
+ * the presets and the fan speeds are the entity's; under them, the rows it lists (#262). A card that keeps to the
+ * essentials while off is reserved its height when on.
  */
 export function thermostatHeight(
   config: LovelaceCardConfig,
@@ -120,7 +121,7 @@ export function thermostatHeight(
   const fans =
     config['show_fan'] === false ? 0 : chips(offers.fans.map(pretty), config['fan_style']);
   const readings = statsBlock(Math.min(1, entryCount(config, ['readouts'])));
-  return height + readings + modes + presets + fans;
+  return height + readings + modes + presets + fans + rowsUnder(config);
 }
 
 export const CLIMATE_FAMILY: readonly FamilyEntry[] = [['fluvy-thermostat-card', thermostatHeight]];

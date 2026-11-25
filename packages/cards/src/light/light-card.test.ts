@@ -243,7 +243,8 @@ describe('the card of a bulb that only switches (#65)', () => {
       for (const name of [...DIMMER, ...WHITE, 'show_color', 'light_whites', 'show_brightness'])
         expect(fields, name).not.toContain(name);
       expect(fields).toContain('tint');
-      expect(lists).toEqual([]);
+      // the rows under it (#262), on every card but the compact one
+      expect(lists).toEqual(['Rows']);
     });
 
     it('a dimmer: its layout, stepper and live update, nothing of a white or a colour', async () => {
@@ -251,7 +252,7 @@ describe('the card of a bulb that only switches (#65)', () => {
       for (const name of DIMMER) expect(fields, name).toContain(name);
       for (const name of [...WHITE, 'show_color', 'light_whites'])
         expect(fields, name).not.toContain(name);
-      expect(lists).toEqual([]);
+      expect(lists).toEqual(['Rows']);
     });
 
     it('a white: the temperature ruler’s options and how whites show, no colours', async () => {
@@ -259,7 +260,7 @@ describe('the card of a bulb that only switches (#65)', () => {
       for (const name of [...DIMMER, ...WHITE, 'light_whites'])
         expect(fields, name).toContain(name);
       expect(fields).not.toContain('show_color');
-      expect(lists).toEqual([]);
+      expect(lists).toEqual(['Rows']);
     });
 
     it('a colour bulb, and a bulb the house has not described: everything', async () => {
@@ -267,7 +268,7 @@ describe('the card of a bulb that only switches (#65)', () => {
         const { fields, lists } = await shown(hass);
         for (const name of [...DIMMER, ...WHITE, 'show_color', 'light_whites'])
           expect(fields, name).toContain(name);
-        expect(lists.length).toBe(1);
+        expect(lists).toEqual(['Quick colours', 'Rows']);
       }
     });
   });
@@ -394,11 +395,11 @@ describe('the brightness always, never, or while the light is on (#124)', () => 
       // its surface still wears the light's colour
       for (const name of ['show_brightness', 'tint', 'light_whites'])
         expect(fields, name).toContain(name);
-      expect(lists).toEqual([]);
+      expect(lists).toEqual(['Rows']);
       const open = await shown(lamp('off', COLOUR), { show_brightness: 'when_on' });
       for (const name of [...DIMMER, ...WHITE, 'show_color'])
         expect(open.fields, name).toContain(name);
-      expect(open.lists.length).toBe(1);
+      expect(open.lists).toEqual(['Quick colours', 'Rows']);
     });
 
     it('writes what is picked as the config says it: false, when_on, true', async () => {

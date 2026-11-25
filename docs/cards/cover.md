@@ -67,6 +67,8 @@ invert_position: false
 tilt_style: slats
 invert_tilt: false
 # tilt_presets:
+show_rows: true
+# rows:
 slider_style: house
 # tone:
 # color:
@@ -104,12 +106,14 @@ slider_style: house
 | `favorites_style` | `full` | Draws the favourites as chips that fill the row, or as content-sized chips. `full` · `chips`. |
 | `show_tilt` | `true` | Shows the tilt control. |
 | `show_favorites` | `true` | Shows the favourite positions. |
+| `show_rows` | `true` | Shows the rows under the main control. |
 | `slider_style` | `house` | The slider’s style; left out, the style set for every slider. `house` · `ruler` · `bar` · `liquid`. |
 | `slider_words` | `ends` | Writes the words at the slider’s ends, or none. `ends` · `none`. |
 | `tint` | `off` | When the card shows its colour beyond its circle: never, while it is on or active, or at rest too. `off` (Never) · `on` (When active) · `always`. |
 | `tint_style` | `wash` | How the colour is shown: a wash over the card, the card’s edge, or the control alone. `wash` · `edge` · `control`. |
 | `state_colors` |  | A colour for each of the device’s states, held under this key: a tone, none, or a colour of your own. Its keys: `open` · `closed` · `opening` · `closing`. |
 | [`favorites`](#favorites) |  | Favourite positions, each a chip that moves the cover there. A list: [its items](#favorites). |
+| [`rows`](#rows) |  | The rows the card lists, in this order. A list: [its items](#rows). |
 | **Position and tilt** |  |  |
 | `direction` | `up` | What the position counts: how far the cover is open, or how far it has come down. `up` (How far it is open) · `down` (How far it is down). |
 | `invert_position` | `false` | Reads the position the other way round, for a cover that reports 100 % when it is closed. |
@@ -159,6 +163,26 @@ An item is a map with `name` and any of these fields.
 | `name` | The item’s own name, in place of the one the card would give it. |
 | `position` | The cover’s position the favourite moves it to, in percent. 0 to 100. |
 | `tilt` | The tilt the favourite moves the slats to. 0 to 100. |
+
+### `rows`
+
+An item is an entity id, or a map with `entity` and any of these fields.
+
+| Field | What it does |
+| --- | --- |
+| `entity` | The entity the item shows. |
+| `name` | The item’s own name, in place of the one the card would give it. |
+| `icon` | The item’s own icon, in place of the one the card would give it. |
+| `secondary` | The line under the item’s name. `area` · `last-changed` · `state` · `none`, or your own. |
+| `since` | Where the time of the last change is read from. |
+| `options` | The select’s options offered, in this order. A list. |
+| `labels` | Names of your own for the options. |
+| `tone` | The item’s colour from the palette’s tones. `accent` · `light` · `heat` · `cool` · `dry` · `fan` · `water` · `solar` · `grid` · `media` · `presence` · `armed` · `battery` · `house` · `gas` · `vehicle` (Car) · `neutral` · `ok` (Good) · `warning` · `danger`. |
+| `color` | The item’s colour, in place of the one the card gives it. |
+| **Interactions** |  |
+| `tap_action` | What a tap on the item does. |
+| `hold_action` | What a long press on the item does. |
+| `double_tap_action` | What two taps on the item do. |
 
 ## Guide
 

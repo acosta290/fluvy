@@ -19,6 +19,8 @@ import {
   onlyWhen,
   orderedField,
   ownTextField,
+  rowsFields,
+  rowsList,
   sectionField,
   selectField,
   headFields,
@@ -84,6 +86,7 @@ export const defaults: EditorDefaults = (config, hass) => {
     show_valve: false,
     show_window: false,
     show_battery: false,
+    show_rows: true,
     ...(modes.length ? { modes } : {}),
     ...Object.fromEntries(Object.entries(found).filter(([, id]) => id)),
   };
@@ -125,6 +128,8 @@ export const keys = configKeys<ThermostatCardConfig>()([
   'battery_entity',
   'humidity_entity',
   ...STATE_TINT_KEYS,
+  'rows',
+  'show_rows',
 ]);
 
 type Data = Readonly<Record<string, unknown>>;
@@ -167,6 +172,8 @@ export const lists: readonly RowsListSpec[] = [
     ],
     choices: unitChoicesOf,
   },
+  // the rows it lists under its own (#262)
+  rowsList(),
 ];
 
 /** The card says what the thermostat is doing (its badge, `show_badge`): what the word's own options act on. */
@@ -248,6 +255,7 @@ export function getConfigForm(): LovelaceConfigForm {
       fieldRow(boolField('show_fan'), selectField('fan_style', ['full', 'chips'])),
       whenOffField(),
       doingFields(),
+      ...rowsFields(),
       ...colourFields(),
       ...stateTintFields(STATES),
       actionFields({ icon: true }),

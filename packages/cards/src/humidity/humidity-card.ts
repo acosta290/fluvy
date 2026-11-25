@@ -9,7 +9,6 @@ import {
   toggleEntity,
   valueParts,
   withMinus,
-  type FluvyCardConfig,
   type GaugePreset,
   type LovelaceGridOptions,
   type Series,
@@ -35,12 +34,13 @@ import { iconOf } from '../shared/domain.js';
 import { Refresher } from '../shared/refresh.js';
 import type { AliasSpec } from '../shared/config.js';
 import { toneOf } from '../shared/colour.js';
-import { ROW } from '../shared/heights.js';
+import { listedRows, ROW, rowsUnder } from '../shared/heights.js';
 import { sideStacked } from '../shared/value-row.js';
+import type { RowsCardConfig } from '../lock/rows.js';
 
 const strings = words('humidity');
 
-export interface HumidityCardConfig extends FluvyCardConfig {
+export interface HumidityCardConfig extends RowsCardConfig {
   subtitle?: string;
   /** Bottom of the comfort band (30 %). */
   low?: number;
@@ -100,8 +100,9 @@ export class FluvyHumidityCard extends Card<HumidityCardConfig> {
   static override layoutHeight(config: HumidityCardConfig): number {
     const trend = config.show_trend === false || config.hours === 0 ? 0 : 1;
     const rows = trend + (config.humidifier_entity ? 1 : 0);
-    return 236 + (rows ? 16 + ROW * rows : 0);
+    return 236 + (rows ? 16 + ROW * rows : 0) + rowsUnder(config);
   }
+  static override takesRows = true;
 
   static override styles: CSSResultGroup = [
     ...(Card.styles as CSSResultGroup[]),
@@ -158,7 +159,12 @@ export class FluvyHumidityCard extends Card<HumidityCardConfig> {
   }
 
   override getCardSize(): number {
-    return 5 + (this.trendHours > 0 ? 1 : 0) + (this.config?.humidifier_entity ? 1 : 0);
+    return (
+      5 +
+      (this.trendHours > 0 ? 1 : 0) +
+      (this.config?.humidifier_entity ? 1 : 0) +
+      listedRows(this.config)
+    );
   }
   override getGridOptions(): LovelaceGridOptions {
     return { columns: 12, rows: 'auto', min_columns: 6 };
@@ -452,6 +458,7 @@ export class FluvyHumidityCard extends Card<HumidityCardConfig> {
             </div>`
           : nothing
       }
+      ${this.extraRows(this.head)}
     </article>`;
   }
 }

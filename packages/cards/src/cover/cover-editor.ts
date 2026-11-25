@@ -13,6 +13,8 @@ import {
   onlyWhen,
   orderedField,
   ownTextField,
+  rowsFields,
+  rowsList,
   sectionField,
   selectField,
   headFields,
@@ -53,6 +55,8 @@ export const keys = configKeys<CoverCardConfig>()([
   'direction',
   'open_label',
   'closed_label',
+  'rows',
+  'show_rows',
 ]);
 
 export const lists: readonly RowsListSpec[] = [
@@ -66,6 +70,8 @@ export const lists: readonly RowsListSpec[] = [
       fieldRow(numberField('position', 0, 100), numberField('tilt', 0, 100)),
     ],
   },
+  // the rows it lists under its favourites (#262), on the full and the horizontal card (`full`, read as it is asked)
+  rowsList((data) => full(data)),
 ];
 
 /** What the editor shows where the config says nothing: what the card does then. */
@@ -78,6 +84,7 @@ export const defaults: EditorDefaults = () => ({
   direction: 'up',
   invert_position: false,
   invert_tilt: false,
+  show_rows: true,
 });
 
 type Data = Readonly<Record<string, unknown>>;
@@ -167,6 +174,7 @@ export function getConfigForm(): LovelaceConfigForm {
       fieldRow(boolField('show_tilt'), boolField('show_favorites')),
       { name: 'favorites', selector: { object: {} } },
       positionTiltFields(),
+      ...rowsFields(full),
       // its position ruler's style, where the full card draws one
       ...sliderFields().map((row) => onlyWhen(full, row)),
       ...colourFields(),

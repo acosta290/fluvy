@@ -238,7 +238,7 @@ export class FluvyHelpersCard extends Card<HelpersCardConfig> {
       ruler: this.ruler,
       texts: this.texts,
       bare: false,
-      name: (view, name) => this.nameFor(view, name),
+      // its state, its calls and the name an entity is shown by (`nameFor`)
       ...this.controlHost,
       moreInfo: (id) => this.tap(id, { action: 'more-info' }),
       preview: (id) => this.preview_[id],

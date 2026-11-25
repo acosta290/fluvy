@@ -120,7 +120,12 @@ export const GALLERY: Readonly<Record<string, Example>> = {
     variants: { mini: {}, large: {}, card: { cols: 12 } },
   },
   'fluvy-light-card': {
-    config: { type: 'custom:fluvy-light-card', entity: 'light.ceiling' },
+    config: {
+      type: 'custom:fluvy-light-card',
+      entity: 'light.ceiling',
+      // its rows (#262): the room's scenes to choose from, and its light level
+      rows: ['input_select.living_room_scene', 'sensor.living_room_light_level'],
+    },
     variants: { full: {}, compact: {} },
   },
   'fluvy-slider-card': {

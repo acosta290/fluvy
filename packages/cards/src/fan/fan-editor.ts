@@ -8,7 +8,10 @@ import {
   fieldRow,
   formLabels,
   nameIconFields,
+  notCompact,
   ownTextField,
+  rowsFields,
+  rowsList,
   selectField,
   headFields,
   sliderFields,
@@ -18,7 +21,7 @@ import {
 } from '../shared/form.js';
 import { configKeys } from '../shared/config.js';
 import { STATE_TINT_KEYS } from '../shared/state-tint.js';
-import type { EditorDefaults } from '../shared/rows-editor.js';
+import type { EditorDefaults, RowsListSpec } from '../shared/rows-editor.js';
 import type { FanCardConfig } from './fan-card.js';
 
 /** The fan card's editor: fetched by its `editor()` the first time the card is edited, never by a dashboard. */
@@ -38,7 +41,12 @@ export const keys = configKeys<FanCardConfig>()([
   'show_direction',
   'when_off',
   ...STATE_TINT_KEYS,
+  'rows',
+  'show_rows',
 ]);
+
+/** The rows it lists under its presets (#262), on every card but the compact one. */
+export const lists: readonly RowsListSpec[] = [rowsList(notCompact)];
 
 /** What the editor shows where the config says nothing: what the card does then. */
 export const defaults: EditorDefaults = () => ({
@@ -49,6 +57,7 @@ export const defaults: EditorDefaults = () => ({
   show_oscillation: true,
   show_direction: true,
   when_off: 'all',
+  show_rows: true,
 });
 
 export function getConfigForm(): LovelaceConfigForm {
@@ -62,6 +71,7 @@ export function getConfigForm(): LovelaceConfigForm {
       fieldRow(boolField('show_presets'), selectField('preset_style', ['full', 'chips'])),
       fieldRow(boolField('show_oscillation'), boolField('show_direction')),
       whenOffField(),
+      ...rowsFields(notCompact),
       ...sliderFields(),
       ...colourFields(),
       ...stateTintFields(STATES),

@@ -7,7 +7,6 @@ import {
   sliderStyleOf,
   strings,
   type EntityView,
-  type FluvyCardConfig,
   type LovelaceGridOptions,
 } from '@fluvy/core';
 
@@ -62,7 +61,7 @@ import {
   STOP,
   usualFor,
 } from '../cover-family.js';
-import { drawnAs } from '../shared/heights.js';
+import { drawnAs, listedRows } from '../shared/heights.js';
 import { stateLook, tintOf, type StateTintConfig } from '../shared/state-tint.js';
 import {
   fitValueRow,
@@ -73,6 +72,7 @@ import {
   type RowLayout,
 } from '../shared/value-row.js';
 import { openness, slats } from './slats.js';
+import type { RowsCardConfig } from '../lock/rows.js';
 
 const coverStrings = strings('cover');
 const cardStrings = strings('cover-card');
@@ -93,7 +93,7 @@ export type CoverVariant = 'full' | 'compact' | 'horizontal';
 /** How the tilt is set: its readout and a stepper (`steps`, the default), or its slats and a ruler (`slats`, #203). */
 export type TiltStyle = 'steps' | 'slats';
 
-export interface CoverCardConfig extends FluvyCardConfig, StateTintConfig {
+export interface CoverCardConfig extends RowsCardConfig, StateTintConfig {
   subtitle?: string;
   variant?: CoverVariant;
   favorites?: readonly CoverFavorite[];
@@ -216,6 +216,7 @@ export class FluvyCoverCard extends Card<CoverCardConfig> {
   static override layoutHeight(config: CoverCardConfig): number {
     return coverHeight(config);
   }
+  static override takesRows = true;
 
   static override styles: CSSResultGroup = [
     ...(Card.styles as CSSResultGroup[]),
@@ -334,7 +335,8 @@ export class FluvyCoverCard extends Card<CoverCardConfig> {
       3 +
       (view.supports(SET_POSITION) ? position + rows('position_presets') : 0) +
       (view.supports(SET_TILT_POSITION) ? rows('tilt_presets') : 0) +
-      (this.favoritesFor(view).length ? 2 : 0)
+      (this.favoritesFor(view).length ? 2 : 0) +
+      listedRows(this.config)
     );
   }
 
@@ -1185,6 +1187,7 @@ export class FluvyCoverCard extends Card<CoverCardConfig> {
             )}`
           : nothing
       }
+      ${compact ? nothing : this.extraRows(this.head)}
     </article>`;
   }
 }

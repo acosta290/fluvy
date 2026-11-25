@@ -13,6 +13,9 @@ The precision dimmer: relative drag, slide away to slow down, hold for the 1 % s
 ```yaml
 type: custom:fluvy-light-card
 entity: light.ceiling
+rows:
+  - input_select.living_room_scene
+  - sensor.living_room_light_level
 ```
 
 The picture above, on the demo house: put your own entities in place of its.
@@ -52,6 +55,10 @@ colors:
   - purple
   - pink
 temperature_tint: true
+show_rows: true
+rows:
+  - input_select.living_room_scene
+  - sensor.living_room_light_level
 # tone:
 # color:
 # card_color:
@@ -91,10 +98,12 @@ light_whites: temperature
 | `show_temperature` | `true` | Shows the colour temperature ruler. |
 | `show_color` | `true` | Shows the colour controls. |
 | `temperature_tint` | `true` | Tints the colour temperature ruler from warm to cool. |
+| `show_rows` | `true` | Shows the rows under the main control. |
 | `tint` | `off` | When the card shows its colour beyond its circle: never, while it is on or active, or at rest too. `off` (Never) · `on` (When on) · `always`. |
 | `tint_strength` | `full` | How much colour the card shows: a soft wash, the whole fill, or as much as the light is bright. `soft` · `brightness` (Soft, with the brightness) · `full` · `full_brightness` (Full colour, with the brightness). |
 | `light_whites` | `temperature` | Draws a lit white by its colour temperature, or as the palette’s light. `palette` (The theme’s light) · `temperature` (The bulb’s white). |
 | [`colors`](#colors) |  | Quick colours offered as rounds, in this order. A list: [its items](#colors). |
+| [`rows`](#rows) |  | The rows the card lists, in this order. A list: [its items](#rows). |
 
 <details>
 <summary>Its look and its actions, as on every card</summary>
@@ -134,6 +143,26 @@ An item is a map with `color` and any of these fields.
 | `color` | The quick colour: a named one, or any colour of your own. `warm` · `cool` · `red` · `orange` · `yellow` · `green` · `blue` · `purple` · `pink` · `picker` (Colour picker) · `custom`. |
 | `name` | What the round says. |
 | `rgb` | Any colour, picked in the colour well. |
+
+### `rows`
+
+An item is an entity id, or a map with `entity` and any of these fields.
+
+| Field | What it does |
+| --- | --- |
+| `entity` | The entity the item shows. |
+| `name` | The item’s own name, in place of the one the card would give it. |
+| `icon` | The item’s own icon, in place of the one the card would give it. |
+| `secondary` | The line under the item’s name. `area` · `last-changed` · `state` · `none`, or your own. |
+| `since` | Where the time of the last change is read from. |
+| `options` | The select’s options offered, in this order. A list. |
+| `labels` | Names of your own for the options. |
+| `tone` | The item’s colour from the palette’s tones. `accent` · `light` · `heat` · `cool` · `dry` · `fan` · `water` · `solar` · `grid` · `media` · `presence` · `armed` · `battery` · `house` · `gas` · `vehicle` (Car) · `neutral` · `ok` (Good) · `warning` · `danger`. |
+| `color` | The item’s colour, in place of the one the card gives it. |
+| **Interactions** |  |
+| `tap_action` | What a tap on the item does. |
+| `hold_action` | What a long press on the item does. |
+| `double_tap_action` | What two taps on the item do. |
 
 <details>
 <summary>Older names the card still reads</summary>

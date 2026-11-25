@@ -17,7 +17,10 @@ import {
   fieldRow,
   formLabels,
   nameIconFields,
+  notCompact,
   onlyWhen,
+  rowsFields,
+  rowsList,
   selectField,
   headFields,
   sliderFields,
@@ -150,6 +153,8 @@ export const keys = configKeys<LightCardConfig>()([
   'tint',
   'tint_strength',
   'light_whites',
+  'rows',
+  'show_rows',
 ]);
 
 /**
@@ -185,8 +190,14 @@ export const swatchList = (when: BulbWhen): RowsListSpec => ({
           : undefined,
 });
 
-/** The quick colours are a colour bulb's: the list is edited while the bulb has a colour to take, on a card that shows them. */
-export const lists: readonly RowsListSpec[] = [swatchList(shown(bulbColours))];
+/**
+ * The quick colours are a colour bulb's: the list is edited while the bulb has a colour to take, on a card that shows
+ * them; the rows (#262) on every card but the compact one.
+ */
+export const lists: readonly RowsListSpec[] = [
+  swatchList(shown(bulbColours)),
+  rowsList(notCompact),
+];
 
 /** What the editor shows where the config says nothing: what the card does then (the quick colours by the bulb). */
 export const defaults: EditorDefaults = (config, hass) => ({
@@ -201,6 +212,7 @@ export const defaults: EditorDefaults = (config, hass) => ({
   tint: lightDefaults().tint,
   tint_strength: 'full',
   light_whites: 'temperature',
+  show_rows: true,
 });
 
 export function getConfigForm(): LovelaceConfigForm {
@@ -229,6 +241,7 @@ export function getConfigForm(): LovelaceConfigForm {
       // the list is edited row by row (the rows editor takes the field out of the form)
       { name: 'colors', selector: { object: {} } },
       onlyWhen(shown(bulbWarms), boolField('temperature_tint')),
+      ...rowsFields(notCompact),
       // its colour follows the light's unless one is given (Home Assistant's State, as its own tile's)
       ...colourFields({ state: true }),
       fieldRow(

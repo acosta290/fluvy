@@ -319,7 +319,7 @@ const wearSurfaces = (): void => {
  * handed to `landed`; `settled` once the fetch is over, landed or failed, so a first frame never waits on one that
  * cannot land.
  */
-function wornFrom<T>(load: () => Promise<T>, landed: (module: T) => void) {
+export function wornFrom<T>(load: () => Promise<T>, landed: (module: T) => void) {
   let fetching: Promise<void> | undefined;
   const worn = {
     settled: false,

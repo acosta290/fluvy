@@ -12,11 +12,13 @@ import {
   numberField,
   onlyWhen,
   ownTextField,
+  rowsFields,
+  rowsList,
   selectField,
   headFields,
 } from '../shared/form.js';
 import { configKeys } from '../shared/config.js';
-import type { EditorDefaults } from '../shared/rows-editor.js';
+import type { EditorDefaults, RowsListSpec } from '../shared/rows-editor.js';
 import { bandOf, type HumidityCardConfig } from './humidity-card.js';
 
 /** The humidity card's editor: fetched by its `editor()` the first time the card is edited, never by a dashboard. */
@@ -35,13 +37,19 @@ export const keys = configKeys<HumidityCardConfig>()([
   'humidifier_entity',
   'gauge',
   'animate',
+  'rows',
+  'show_rows',
 ]);
+
+/** The rows it lists under its own (#262). */
+export const lists: readonly RowsListSpec[] = [rowsList()];
 
 /** What the editor shows where the config says nothing: what the card does then. */
 export const defaults: EditorDefaults = (config) => ({
   show_trend: true,
   gauge: bandOf(config),
   animate: chartDefaults().settings.animate,
+  show_rows: true,
 });
 
 export function getConfigForm(): LovelaceConfigForm {
@@ -68,6 +76,7 @@ export function getConfigForm(): LovelaceConfigForm {
         selector: { entity: { domain: ['humidifier', 'switch', 'fan', 'input_boolean'] } },
       },
       fieldRow(numberField('hours', 1, 48), boolField('show_trend')),
+      ...rowsFields(),
       actionFields({ icon: true }),
     ],
     ...editorLabels(

@@ -13,7 +13,6 @@ import {
   strings,
   textAttr,
   type EntityView,
-  type FluvyCardConfig,
   type LovelaceConfigForm,
   type LovelaceGridOptions,
 } from '@fluvy/core';
@@ -60,6 +59,8 @@ import {
   nameIconFields,
   onlyWhen,
   ownTextField,
+  rowsFields,
+  rowsList,
   selectField,
   sliderFields,
   textField,
@@ -87,13 +88,15 @@ import { iconOf } from '../shared/domain.js';
 import { chipRow, inForce } from '../shared/chips.js';
 import { fitLine } from '../shared/fit.js';
 import { imageEntity, imageOf, isControl } from '../shared/picture.js';
-import type { EditorDefaults } from '../shared/rows-editor.js';
+import type { EditorDefaults, RowsListSpec } from '../shared/rows-editor.js';
+import { listedRows } from '../shared/heights.js';
+import type { RowsCardConfig } from '../lock/rows.js';
 
 const s = strings('media');
 
 export type MediaVariant = 'full' | 'mini' | 'hero';
 
-export interface MediaCardConfig extends FluvyCardConfig {
+export interface MediaCardConfig extends RowsCardConfig {
   /** `full` = the player card, `mini` = the 44 row, `hero` = the 200 artwork layout. */
   variant?: MediaVariant;
   /** Sources as chips filling the row (default) or content-sized. */
@@ -132,6 +135,8 @@ export type ImageMode = 'fallback' | 'always';
 const clickHeld = { handleEvent: clickPress, capture: true };
 
 const VARIANTS: readonly MediaVariant[] = ['full', 'mini', 'hero'];
+/** The player and the hero, which draw the rows a card lists (#262): the mini row draws none. */
+const notMini = ({ variant }: Readonly<Record<string, unknown>>): boolean => variant !== 'mini';
 const SEEK_STEP = 10; // seconds per arrow key
 const MAX_SOURCES = 6;
 /** The mini row's rounds when none are asked for: what it always drew. */
@@ -173,6 +178,7 @@ export class FluvyMediaCard extends Card<MediaCardConfig> {
   static override layoutHeight(config: MediaCardConfig): number {
     return mediaHeight(config);
   }
+  static override takesRows = true;
 
   static override styles: CSSResultGroup = [
     ...(Card.styles as CSSResultGroup[]),
@@ -343,7 +349,11 @@ export class FluvyMediaCard extends Card<MediaCardConfig> {
     'image',
     'image_mode',
     'secondary',
+    'rows',
+    'show_rows',
   ]);
+  /** The rows it lists under the player and the hero (#262): the mini row has none. */
+  static override lists: readonly RowsListSpec[] = [rowsList(notMini)];
   static override getConfigForm(): LovelaceConfigForm {
     return {
       schema: [
@@ -365,6 +375,7 @@ export class FluvyMediaCard extends Card<MediaCardConfig> {
         fieldRow(boolField('show_source'), boolField('show_volume')),
         boolField('show_power'),
         controlsField(),
+        ...rowsFields(notMini),
         // the volume's style, where the row shows (the mini has none)
         ...sliderFields().map((row) =>
           onlyWhen(({ show_volume, variant }) => show_volume !== false && variant !== 'mini', row),
@@ -386,6 +397,7 @@ export class FluvyMediaCard extends Card<MediaCardConfig> {
       show_power: view.stateObj ? hasPower(view) : true,
       controls: [...MINI_CONTROLS],
       image_mode: 'fallback',
+      show_rows: true,
     };
   };
 
@@ -407,7 +419,9 @@ export class FluvyMediaCard extends Card<MediaCardConfig> {
   }
 
   override getCardSize(): number {
-    return this.variant === 'mini' ? 2 : this.variant === 'hero' ? 12 : 7;
+    return this.variant === 'mini'
+      ? 2
+      : (this.variant === 'hero' ? 12 : 7) + listedRows(this.config);
   }
 
   override getGridOptions(): LovelaceGridOptions {
@@ -988,7 +1002,7 @@ export class FluvyMediaCard extends Card<MediaCardConfig> {
     const power = this.power(view);
     const body = html` ${this.renderSeek(view, hero)}
     ${this.renderTransport(view, hero && wide, power !== null)} ${this.renderVolume(view)}
-    ${this.renderSources(view)}`;
+    ${this.renderSources(view)} ${this.extraRows(this.head)}`;
 
     // the artwork and the words under or beside it are the player's head, and its button: a tap is the tap action, a
     // still press the hold action; the rounds keep their own

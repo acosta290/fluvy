@@ -50,17 +50,17 @@
     "height": 232
   },
   "light": {
-    "example": "571b080950eb",
+    "example": "588d871fca9a",
     "width": 784,
-    "height": 920
+    "height": 1192
   },
   "light.full": {
-    "example": "5c51778192b9",
+    "example": "b382a192fcee",
     "width": 784,
-    "height": 920
+    "height": 1192
   },
   "light.compact": {
-    "example": "c37db5a8528e",
+    "example": "66b3e9d40726",
     "width": 784,
     "height": 440
   },

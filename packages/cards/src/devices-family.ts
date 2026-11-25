@@ -6,10 +6,10 @@ import {
   COMPACT,
   EMPTY,
   HEAD,
-  listLength,
   optionBlock,
   ROW,
   rowsOf,
+  rowsUnder,
 } from './shared/heights.js';
 
 /**
@@ -17,12 +17,6 @@ import {
  * when its chunk lands (`devices-cards.ts`), as the energy and media families are: what the card picker lists and how
  * tall each card is at a 360 column, without the cards themselves.
  */
-
-/** The rows under a device card (16 above them), none when they are hidden. */
-const rowsUnder = (config: LovelaceCardConfig): number => {
-  const rows = config['show_rows'] === false ? 0 : listLength(config, ['rows']);
-  return rows ? 16 + ROW * rows : 0;
-};
 
 /**
  * The lock: the compact head and its slide, the latch's row (16 + 44) where the lock has one (`latch`: `lock.open`,

@@ -20,16 +20,15 @@ import { iconOf } from '../shared/domain.js';
 
 import {
   actionFields,
-  boolField,
   colourFields,
   editorLabels,
-  entitiesField,
   entityField,
   fieldRow,
   nameIconFields,
   numberField,
   ownTextField,
-  rowItems,
+  rowsFields,
+  rowsList,
   selectField,
   headFields,
 } from '../shared/form.js';
@@ -115,9 +114,7 @@ export class FluvyCameraCard extends RowsCard<CameraCardConfig> {
     'aspect_ratio',
     'fit_mode',
   ]);
-  static override lists: readonly RowsListSpec[] = [
-    { key: 'rows', title: 'editor.rows', ...rowItems() },
-  ];
+  static override lists: readonly RowsListSpec[] = [rowsList()];
   static override aliases: AliasSpec = {
     keys: [{ from: 'sub', to: 'subtitle' }],
     items: { rows: ITEM_ALIASES },
@@ -144,8 +141,7 @@ export class FluvyCameraCard extends RowsCard<CameraCardConfig> {
           selectField('aspect_ratio', CAMERA_RATIOS, { custom: true }),
           selectField('fit_mode', ['cover', 'contain']),
         ),
-        boolField('show_rows'),
-        entitiesField('rows'),
+        ...rowsFields(),
         ...colourFields(),
         actionFields({ icon: true }),
       ],
