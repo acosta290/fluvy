@@ -105,6 +105,15 @@ export function whoTag(page: FluvyActivity, who: ActivityWho): TemplateResult {
   >`;
 }
 
+/**
+ * What set a run off ("Trigger: state of Marta"), short: it holds the house's own names, so on a short line it is the
+ * part that ends in an ellipsis, said whole in its title.
+ */
+export function triggerTag(page: FluvyActivity, trigger: string): TemplateResult {
+  const said = page.t('trigger', { what: trigger });
+  return html`<span class="av-sub__part" data-name title=${said}>${said}</span>`;
+}
+
 /** Who did it, as the page names them: "You" for the one reading. */
 export function whoName(page: FluvyActivity, who: ActivityWho): string {
   return who.you ? page.t('you') : who.name;

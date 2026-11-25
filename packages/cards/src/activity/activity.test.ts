@@ -458,6 +458,13 @@ describe('the Activity page', () => {
       row.textContent?.includes('19:02'),
     )!;
     expect(light.querySelector('.av-cause')?.getAttribute('aria-label')).toBe('marta · Person');
+    // what set a run off holds the house's own names: the part that ends in an ellipsis, said whole in its title
+    const run = [...root.querySelectorAll<HTMLElement>('.av-row')].find((row) =>
+      row.textContent?.includes('21:30'),
+    )!;
+    const trigger = run.querySelector('.av-sub__part[data-name]');
+    expect(trigger?.textContent).toBe('Trigger: time');
+    expect(trigger?.getAttribute('title')).toBe('Trigger: time');
   });
 
   it('filters, searches, and says so when nothing matches', async () => {

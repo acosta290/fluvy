@@ -35,6 +35,7 @@ import {
   nameOf,
   pastView,
   stateWord,
+  triggerTag,
   triggerWords,
   whoTag,
   withNames,
@@ -348,7 +349,7 @@ export function renderEvent(page: FluvyActivity, item: ActivityItem, place: Plac
       : cause
         ? causeTag(page, cause, who)
         : trigger
-          ? page.t('trigger', { what: trigger })
+          ? triggerTag(page, trigger)
           : '',
   ]);
   const row = html`<div
