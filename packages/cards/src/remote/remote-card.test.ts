@@ -161,6 +161,26 @@ const SET_TOPS = {
   'remote.box': 'apple_tv',
 };
 
+/* media_player supported_features of the Xbox's player (python-xbox): no source and no level, an app by `play_media` */
+const XBOX = 1 | 8 | 128 | 256 | 512 | 1024 | 16384 | 131072;
+/** An Xbox as Home Assistant's integration draws it: its player says the app by its store id and title. */
+const CONSOLE: readonly Seed[] = [
+  [
+    'media_player.xbox',
+    'on',
+    {
+      friendly_name: 'Living room Xbox',
+      media_content_type: 'app',
+      media_content_id: '9WZDNCRFJ3TJ',
+      media_title: 'Netflix',
+      is_volume_muted: false,
+      supported_features: XBOX,
+    },
+  ],
+  ['remote.xbox', 'on', { friendly_name: 'Living room Xbox' }],
+];
+const CONSOLES = { 'media_player.xbox': 'xbox', 'remote.xbox': 'xbox' };
+
 /** The card drawn in the page: its shadow root. */
 async function draw(config: Record<string, unknown>, hass: HomeAssistant): Promise<ShadowRoot> {
   const card = document.createElement('fluvy-remote-card') as FluvyRemoteCard;
@@ -309,6 +329,43 @@ describe('the TV remote card (#143)', () => {
       'webostv.button:EXIT',
     ]);
     expect(calls[0]!.target).toEqual({ entity_id: 'media_player.lg' });
+  });
+
+  it('an Xbox with no commands of the config’s is sent its own; a key it has none for is drawn disabled, never typed (#255)', async () => {
+    const { hass, calls } = house(CONSOLE, CONSOLES);
+    const root = await draw({ entity: 'media_player.xbox', remote: 'remote.xbox' }, hass);
+    for (const label of ['OK', 'Back', 'Home', 'Menu', 'Up', 'Left']) await press(root, label);
+    expect(calls.map((c) => `${c.service}:${String(c.data['command'])}`)).toEqual([
+      'remote.send_command:A',
+      'remote.send_command:B',
+      'remote.send_command:GoHome',
+      'remote.send_command:Menu',
+      'remote.send_command:Up',
+      'remote.send_command:Left',
+    ]);
+    // the default pad's subtitles, the transport's rewind and forward: nothing the console takes
+    for (const label of ['Subtitles', 'Rewind', 'Fast forward'])
+      expect(root.querySelector<HTMLButtonElement>(`[aria-label="${label}"]`)?.disabled, label).toBe(
+        true,
+      );
+    calls.length = 0;
+    // the power, the volume and the playback are the player's
+    await press(root, 'Turn off');
+    await press(root, 'Play or pause');
+    expect(calls.map((c) => `${c.service} → ${c.target?.entity_id}`)).toEqual([
+      'media_player.turn_off → media_player.xbox',
+      'media_player.media_play_pause → media_player.xbox',
+    ]);
+  });
+
+  it('an Xbox’s remote alone: its power is the remote’s on and off', async () => {
+    const { hass, calls } = house(CONSOLE, CONSOLES);
+    const root = await draw({ remote: 'remote.xbox', variant: 'compact', keys: ['back'] }, hass);
+    await press(root, 'Turn off');
+    expect(calls.at(-1)).toMatchObject({
+      service: 'remote.turn_off',
+      target: { entity_id: 'remote.xbox' },
+    });
   });
 
   it('a television that is off: the power round on the primary fill, every key alive, or power alone', async () => {

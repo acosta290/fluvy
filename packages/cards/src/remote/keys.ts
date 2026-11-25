@@ -3,8 +3,9 @@ import type { GlyphName } from '@fluvy/ui';
 /**
  * The remote's keys (1.18, #143) and what each integration takes for them, read from Home Assistant core's sources
  * (`homeassistant/components/<integration>/remote.py`, dev, 2026-11) and the libraries they call (androidtvremote2,
- * pyatv, rokuecp, aiowebostv, samsungtvws, python-androidtv); Android TV Remote's arrows and OK since tried on a
- * television, the rest on none: the table is the reader's to correct (`commands` in the config overrides a key).
+ * pyatv, rokuecp, aiowebostv, samsungtvws, python-androidtv, python-xbox); Android TV Remote's arrows and OK since
+ * tried on a television, the rest on none: the table is the reader's to correct (`commands` in the config overrides a
+ * key).
  */
 export const KEYS = [
   'power',
@@ -85,6 +86,7 @@ export const PLATFORMS = [
   'webostv',
   'samsungtv',
   'androidtv',
+  'xbox',
 ] as const;
 export type Integration = (typeof PLATFORMS)[number];
 
@@ -266,6 +268,28 @@ const ANDROID_TV: Commands = {
   mute: 'MUTE',
 };
 
+/**
+ * Xbox: `remote.send_command` with a controller button of python-xbox's (`InputKeyType`) or a command of Home
+ * Assistant's own (`MAP_COMMAND`, 1.26, #255): the integration types any other word on the console as text, so a key
+ * it has no command for stays unmapped, drawn disabled. Its power, volume and mute are the player's; its power with a
+ * remote alone the remote's on and off.
+ */
+const XBOX: Commands = {
+  up: 'Up',
+  down: 'Down',
+  left: 'Left',
+  right: 'Right',
+  ok: 'A',
+  back: 'B',
+  home: 'GoHome',
+  menu: 'Menu',
+  guide: 'ShowGuide',
+  play: 'Play',
+  pause: 'Pause',
+  previous: 'Previous',
+  next: 'Next',
+};
+
 const TABLE: Readonly<Record<Integration, Commands>> = {
   androidtv_remote: ANDROID_TV_REMOTE,
   apple_tv: APPLE_TV,
@@ -273,6 +297,7 @@ const TABLE: Readonly<Record<Integration, Commands>> = {
   webostv: WEBOS,
   samsungtv: SAMSUNG,
   androidtv: ANDROID_TV,
+  xbox: XBOX,
 };
 
 export const isIntegration = (value: unknown): value is Integration =>

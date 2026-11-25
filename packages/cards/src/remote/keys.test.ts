@@ -45,6 +45,17 @@ describe('the remote’s keys and the integrations’ commands (#143)', () => {
     expect(commandFor('androidtv', 'forward')).toBe('FAST_FORWARD');
   });
 
+  it('the Xbox takes its controller’s buttons and Home Assistant’s own commands, none of another’s (#255)', () => {
+    expect(commandFor('xbox', 'up')).toBe('Up');
+    expect(commandFor('xbox', 'ok')).toBe('A');
+    expect(commandFor('xbox', 'back')).toBe('B');
+    expect(commandFor('xbox', 'home')).toBe('GoHome');
+    expect(commandFor('xbox', 'guide')).toBe('ShowGuide');
+    // any other word the console types as text: a key it has no command for is none
+    for (const key of ['captions', 'power', 'mute', 'rewind', 'channel_up', 'assistant'] as const)
+      expect(commandFor('xbox', key), key).toBeUndefined();
+  });
+
   it('an integration the table does not know is sent Android TV Remote’s names', () => {
     expect(commandFor('philips_js', 'home')).toBe('HOME');
     expect(commandFor(undefined, 'up')).toBe('DPAD_UP');

@@ -649,11 +649,15 @@ export class FluvyRemoteCard extends Card<RemoteCardConfig> {
     }
     const integration = this.integration();
     const command = typeof over === 'string' ? over : commandFor(integration, key);
-    if (!command) return null;
+    const r = this.remoteView();
+    // a power its integration has no command for (the Xbox's) is the remote's on and off
+    if (!command)
+      return key === 'power' && over === undefined && r
+        ? service('remote', this.stateOf(r) === 'off' ? 'turn_on' : 'turn_off', {}, r.id)
+        : null;
     // webOS takes its buttons on the player itself; every other integration on its remote
     if (buttonService(integration) && player)
       return service('webostv', 'button', { button: command });
-    const r = this.remoteView();
     if (r) {
       if (key === 'power' && !isUsable(p))
         return service('remote', this.stateOf(r) === 'off' ? 'turn_on' : 'turn_off', {}, r.id);
