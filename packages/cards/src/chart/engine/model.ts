@@ -63,6 +63,14 @@ export interface ChartSeries {
    * the ok and the danger tones, each of several in its own ink), or its columns lit with their figures over them.
    */
   readonly highlight?: 'min' | 'max' | 'both';
+  /**
+   * The lowest and the highest its readings reached across each of its values' slots or points, which a value's mean
+   * averages away: its lowest and highest points' figures are theirs, each marked where its value is drawn.
+   */
+  readonly extremes?: {
+    readonly low: ReadonlyArray<number | null>;
+    readonly high: ReadonlyArray<number | null>;
+  };
 }
 
 /**

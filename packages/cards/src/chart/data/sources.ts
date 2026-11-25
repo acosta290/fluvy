@@ -169,7 +169,8 @@ export function stateReadings(
 
 /**
  * A statistic's buckets as readings: each at its start, held to its end, by `stat` — with its bucket's min and max
- * where a band is drawn (a measurement's; a meter keeps none).
+ * where it is read by its mean and they are asked (`ranged`: a band drawn, its lowest and highest points marked, #264);
+ * a meter keeps none.
  */
 export async function statisticsReadings(
   hass: HomeAssistant,
@@ -177,9 +178,9 @@ export async function statisticsReadings(
   window: { readonly start: number; readonly end: number },
   period: StatPeriod,
   stat: Statistic,
-  band: boolean,
+  ranged: boolean,
 ): Promise<Reading[]> {
-  const types: StatType[] = band && stat === 'mean' ? ['mean', 'min', 'max'] : [stat];
+  const types: StatType[] = ranged && stat === 'mean' ? ['mean', 'min', 'max'] : [stat];
   const rows = (await statisticsDuring(hass, { ids: [id], ...window, period, types }))[id] ?? [];
   return rows.flatMap((row): Reading[] => {
     const t = momentOf(row.start);

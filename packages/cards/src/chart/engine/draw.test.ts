@@ -563,6 +563,60 @@ describe('a series’ own thresholds and points (#264)', () => {
     });
   });
 
+  it('takes their figures from what its readings reached where it says, and dots them on its line there', () => {
+    // a voltage's slot means, a peak of 254 inside the fourth and a dip of 236 inside the second
+    const values = [244, 245, 246, 245.2, 244, 245];
+    const extremes = {
+      low: [243, 236, 244, 244.8, 243.5, 244],
+      high: [245, 246, 247, 254, 245, 246],
+    };
+    const at = (more: Partial<ChartSpec>) => extremesOf(spec('soft', more), 0);
+    expect(at({ series: [{ values, extremes, highlight: 'both' }] })).toEqual({
+      min: { index: 1, value: 236 },
+      max: { index: 3, value: 254 },
+    });
+    // a reading held across two slots: marked where it is drawn highest, its figure the same
+    const held = { low: extremes.low, high: [245, 246, 254, 254, 245, 246] };
+    expect(at({ series: [{ values, extremes: held, highlight: 'max' }] })).toEqual({
+      max: { index: 2, value: 254 },
+    });
+    expect(
+      at({
+        series: [
+          { values: [...values.slice(0, 3), 247, 244, 245], extremes: held, highlight: 'max' },
+        ],
+      }),
+    ).toEqual({ max: { index: 3, value: 254 } });
+    // a band drawn keeps its own
+    const band = { low: values.map((v) => v - 1), high: values.map((v) => v + 1) };
+    expect(at({ series: [{ values, extremes, band, fill: 'band', highlight: 'max' }] })).toEqual({
+      max: { index: 2, value: 247 },
+    });
+    // the dots stand on the line where it is drawn, under the figures it never reaches
+    const scale = { min: 230, max: 260 };
+    const drawing = host(
+      drawChart(spec('soft', { series: [{ values, extremes, highlight: 'both' }], scale })),
+    );
+    const y = (v: number): number => 44 + (1 - (v - 230) / 30) * (120 - 44 - 8);
+    expect(
+      [...drawing.querySelectorAll('.curve-dot')].map((dot) => [
+        Number(dot.getAttribute('cx')),
+        Number(dot.getAttribute('cy')),
+      ]),
+    ).toEqual([
+      [64, expect.closeTo(y(245), 2)],
+      [192, expect.closeTo(y(245.2), 2)],
+    ]);
+    // nothing else of the drawing changes: the scale its values'
+    const plain = host(drawChart(spec('soft', { series: [{ values, highlight: 'both' }] })));
+    const reached = host(
+      drawChart(spec('soft', { series: [{ values, extremes, highlight: 'both' }] })),
+    );
+    expect(reached.querySelector('.fc-line')?.getAttribute('d')).toBe(
+      plain.querySelector('.fc-line')?.getAttribute('d'),
+    );
+  });
+
   it('dots them on a lone line in the ok and the danger tones, on each of several in its own ink', () => {
     const dots = (series: ChartSpec['series']) =>
       [...host(drawChart(spec('soft', { series }))).querySelectorAll('.curve-dot')].map((dot) => ({
@@ -621,6 +675,35 @@ describe('a series’ own thresholds and points (#264)', () => {
     expect([...drawing.querySelectorAll('.fc-value')].map((v) => v.textContent)).toEqual([
       '3.1 kW',
       '0.3 kW',
+    ]);
+    // what its readings reached: the columns that hold them lit, each its figure over it
+    const reached = host(
+      drawChart(
+        spec('soft', {
+          kind: 'bars',
+          series: [
+            {
+              values: POWER,
+              extremes: {
+                low: POWER.map((v, i) => (i === 2 ? 0.1 : v - 0.1)),
+                high: POWER.map((v, i) => (i === 4 ? 4.6 : v + 0.1)),
+              },
+              highlight: 'both',
+              unit: 'kW',
+            },
+          ],
+          value: (value) => `${Math.round(value * 10) / 10} kW`,
+        }),
+      ),
+    );
+    expect(
+      [...reached.querySelectorAll('.fc-bar')].map((bar) =>
+        bar.classList.contains('fc-bar--quiet'),
+      ),
+    ).toEqual([true, true, false, true, false, true]);
+    expect([...reached.querySelectorAll('.fc-value')].map((v) => v.textContent)).toEqual([
+      '0.1 kW',
+      '4.6 kW',
     ]);
   });
 });

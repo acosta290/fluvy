@@ -377,12 +377,22 @@ export function readAt(
   };
 }
 
-const extreme = (values: ReadonlyArray<number | null>, pick: 'min' | 'max'): number => {
+/**
+ * Where the lowest or the highest of `values` is: of a tie, where `drawn` stands furthest that way (a reading held
+ * across two points marked where its line is highest), then the earliest.
+ */
+const extreme = (
+  values: ReadonlyArray<number | null>,
+  pick: 'min' | 'max',
+  drawn = values,
+): number => {
+  const beyond = (a: number | null | undefined, b: number | null | undefined): boolean =>
+    pick === 'max' ? (a ?? NaN) > (b ?? NaN) : (a ?? NaN) < (b ?? NaN);
   let at = -1;
   values.forEach((v, i) => {
     if (v === null || !Number.isFinite(v)) return;
     const best = values[at];
-    if (at < 0 || best === null || best === undefined || (pick === 'max' ? v > best : v < best))
+    if (at < 0 || best === null || beyond(v, best) || (v === best && beyond(drawn[i], drawn[at])))
       at = i;
   });
   return at;
@@ -396,8 +406,8 @@ export interface Extreme {
 
 /**
  * A series' lowest and highest points where it asks for them (`ChartSeries.highlight`), across all it draws — what is
- * to come too: its band's lowest low and highest high where its band is drawn, else its readings'; the earliest of a
- * tie.
+ * to come too: its band's lowest low and highest high where its band is drawn, else what its readings reached
+ * (`ChartSeries.extremes`), else its values'; of a tie, the one drawn furthest that way, then the earliest.
  */
 export function extremesOf(
   spec: ChartSpec,
@@ -409,11 +419,13 @@ export function extremesOf(
   const bars = spec.kind ? spec.kind === 'bars' : isBars(spec.style.preset);
   const band = !bars && fillOf(spec, index) === 'band' ? series.band : undefined;
   const at = (values: ReadonlyArray<number | null>, pick: 'min' | 'max'): Extreme | undefined => {
-    const found = extreme(values, pick);
+    const found = extreme(values, pick, series.values);
     return found < 0 ? undefined : { index: found, value: values[found] as number };
   };
-  const min = asked === 'max' ? undefined : at(band?.low ?? series.values, 'min');
-  const max = asked === 'min' ? undefined : at(band?.high ?? series.values, 'max');
+  const min =
+    asked === 'max' ? undefined : at(band?.low ?? series.extremes?.low ?? series.values, 'min');
+  const max =
+    asked === 'min' ? undefined : at(band?.high ?? series.extremes?.high ?? series.values, 'max');
   return { ...(min ? { min } : {}), ...(max ? { max } : {}) };
 }
 
@@ -612,11 +624,16 @@ function barsBody(spec: ChartSpec, laid: Laid, drawn: readonly Column[]): SVGTem
 /**
  * What is written over bars, outside the clip: the highest bar's dashed line and its word (the soft style), and a
  * bar's value centred over it (under a hanging one) — a lone series' every bar where a slot holds it, else its lit
- * ones; of several, those of a series that asks for its lowest and highest (#264).
+ * ones; of several, those of a series that asks for its lowest and highest (#264), each lit one its point's figure.
  */
 function barsWords(spec: ChartSpec, laid: Laid, drawn: readonly Column[]): SVGTemplateResult {
   const { style, frame } = spec;
   const lit = litBars(spec, laid);
+  const own = spec.series.map((_series, index) => extremesOf(spec, index));
+  const figure = (c: Column): number => {
+    const { min, max } = own[c.series] ?? {};
+    return max?.index === c.slot ? max.value : min?.index === c.slot ? min.value : c.value;
+  };
   const first = spec.series[0]?.values ?? [];
   const maxAt = extreme(first, 'max');
   const scale = laid.scales[0] as Scale;
@@ -643,7 +660,7 @@ function barsWords(spec: ChartSpec, laid: Laid, drawn: readonly Column[]): SVGTe
           .filter(shown)
           .map(
             (c) =>
-              svg`<text class="fc-value ${lit(c.slot, c.series) ? 'is-lit' : ''}" x=${px(c.x + c.width / 2)} y=${px(c.sign > 0 ? c.y - 6 : c.y + c.height + 14)} text-anchor="middle">${value(c.value, c.series)}</text>`,
+              svg`<text class="fc-value ${lit(c.slot, c.series) ? 'is-lit' : ''}" x=${px(c.x + c.width / 2)} y=${px(c.sign > 0 ? c.y - 6 : c.y + c.height + 14)} text-anchor="middle">${value(figure(c), c.series)}</text>`,
           )
       : nothing
   }`;

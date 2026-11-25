@@ -349,6 +349,8 @@ interface Drawn {
   /** Where its points stand, where not evenly across the window: a line through time's, a band's on its slots' middles. */
   readonly at: readonly number[] | undefined;
   readonly band: ChartSeries['band'];
+  /** What its readings reached across each slot or point the engine draws, where it marks its lowest and highest. */
+  readonly extremes: ChartSeries['extremes'];
   /** Its reading now, in its unit; null where it has none. */
   readonly now: number | null;
   /** A price: its windows are the cheapest and the dearest. */
@@ -1216,7 +1218,7 @@ export class FluvyChartCard extends Card<ChartCardConfig> {
             { start, end },
             this.periodFor(item),
             this.statFor(item),
-            item.kind === 'band',
+            item.kind === 'band' || extremesAsked(item) !== undefined,
           )
         : historyReadings(hass, item.entity, start, end)
     ).catch((): Reading[] => []);
@@ -1459,7 +1461,7 @@ export class FluvyChartCard extends Card<ChartCardConfig> {
     const count = grid.edges.length - 1;
     const half = (window.end - window.start) / count / 2;
     // a line's points sit between the slots: the first on the window's start, the last on its end
-    const edges = { start: window.start - half, end: window.end + half };
+    const between = evenEdges({ start: window.start - half, end: window.end + half }, count + 1);
     // a band's points sit in the middle of its slots, the values of those periods
     const middles = Array.from({ length: count }, (_unused, k) => (k + 0.5) / count);
     return items.flatMap((item, index): Drawn[] => {
@@ -1491,16 +1493,12 @@ export class FluvyChartCard extends Card<ChartCardConfig> {
           : { hold: readings?.length ? stepOf(readings) : HOUR };
       const shown = (values: Array<number | null>): Array<number | null> =>
         scale.divisor === 1 ? values : values.map((v) => (v === null ? null : v / scale.divisor));
-      const lay = (
-        span: Pick<Window, 'start' | 'end'>,
-        n: number,
-        pick?: (reading: Reading) => number | undefined,
-      ): Array<number | null> => (readings ? shown(slotted(readings, span, n, holding, pick)) : []);
       const perSlot = (
         rule: SlotRule,
         pick?: (reading: Reading) => number | undefined,
+        on: readonly number[] = grid.edges,
       ): Array<number | null> =>
-        readings ? shown(readSlots(readings, grid.edges, holding, rule, pick)) : [];
+        readings ? shown(readSlots(readings, on, holding, rule, pick)) : [];
       const kind = item.kind ?? 'line';
       // a statistic reads by its own: its changes added up, a running total's last, its lowest or highest, else its
       // mean; a history by the one it names (#228: its lowest, its highest, the last), else its mean
@@ -1522,8 +1520,10 @@ export class FluvyChartCard extends Card<ChartCardConfig> {
       // a meter's history drawn as bars reads what it gained in each slot, not what it showed, unless its stat names
       // another reading; readings of a range that is over (`whole`, the one a picker compares with) are read to its end
       const meter = readingsOf(view.deviceClass, view.attr('state_class'), view.unit).rule;
+      const gaining =
+        source === 'history' && meter !== 'mean' && !stat && (bars || kind === 'columns');
       const layOn = (laid: readonly Reading[], whole = false): Array<number | null> =>
-        source === 'history' && meter !== 'mean' && !stat && (bars || kind === 'columns')
+        gaining
           ? shown(
               gains(
                 laid,
@@ -1534,6 +1534,9 @@ export class FluvyChartCard extends Card<ChartCardConfig> {
               ),
             )
           : shown(readSlots(laid, grid.edges, whole ? { hold: holding.hold } : holding, slotRule));
+      // its lowest and highest points (#264) are what its readings reached, where a slot reads its readings and not
+      // what a meter gained across it
+      const marked = extremesAsked(item) !== undefined && !gaining && slotRule !== 'sum';
       // a line of the recorder's runs through time: on the house's round times, as calmly as the card draws it (or
       // every `points`), read where Home Assistant reads it
       const timed =
@@ -1550,6 +1553,7 @@ export class FluvyChartCard extends Card<ChartCardConfig> {
               style,
               source === 'statistics' ? PERIOD_MS[this.periodFor(item)] : undefined,
               source === 'history' ? this.historyStat(item) : undefined,
+              marked,
             )
           : null;
       // a slot's band: the lowest and the highest of what it holds, around its mean; a slot still running with nothing
@@ -1569,6 +1573,31 @@ export class FluvyChartCard extends Card<ChartCardConfig> {
       const curve = item.curve ?? style.curve;
       const slots = readings ? layOn(readings) : [];
       const cover = (Math.min(window.end, window.now) - window.start) / (window.end - window.start);
+      // what its readings reached across each slot or point the engine draws: a line through time's around its points,
+      // else across its slots or between them — a statistic's buckets' own lowest and highest — and the reading now in
+      // the one that holds it, where it is one of its readings (the recorder's answer may lag it) and is drawn there
+      const even =
+        !bars && kind !== 'columns' && !(grid.round && (kind === 'band' || curve === 'step'));
+      const now = live === null || live === undefined ? null : live / scale.divisor;
+      const reached = (end: 'low' | 'high'): Array<number | null> => {
+        const rule = end === 'low' ? 'min' : 'max';
+        const values = line
+          ? shown(line[end] ?? [])
+          : perSlot(
+              rule,
+              (r) => (source === 'statistics' ? r[end] : undefined) ?? r.v,
+              even ? between : grid.edges,
+            );
+        const at = line
+          ? window.now <= window.end
+            ? values.length - 1
+            : -1
+          : grid.edges.findIndex((edge) => edge > window.now) - 1;
+        const was = values[at];
+        if (now !== null && recorded && stat !== 'change' && stat !== 'sum' && was != null)
+          values[at] = Math[rule](was, now);
+        return values;
+      };
       return [
         {
           item,
@@ -1592,9 +1621,9 @@ export class FluvyChartCard extends Card<ChartCardConfig> {
               ? []
               : line
                 ? shown(line.values)
-                : grid.round && (kind === 'band' || curve === 'step')
-                  ? slots
-                  : lay(edges, count + 1),
+                : even
+                  ? perSlot('mean', undefined, between)
+                  : slots,
           line,
           cover,
           at: line
@@ -1603,7 +1632,8 @@ export class FluvyChartCard extends Card<ChartCardConfig> {
               ? middles
               : undefined,
           band: banded ? { low: lows as number[], high: highs as number[] } : undefined,
-          now: live === null || live === undefined ? null : live / scale.divisor,
+          extremes: marked ? { low: reached('low'), high: reached('high') } : undefined,
+          now,
           price: isPrice(scale.unit, view.deviceClass),
           thresholds: this.thresholds(item, scale.unit, view.id),
         },
@@ -1656,6 +1686,7 @@ export class FluvyChartCard extends Card<ChartCardConfig> {
     style: ResolvedStyle,
     finest: number | undefined,
     rule: 'min' | 'max' | 'last' | undefined,
+    extremes: boolean,
   ): TimeLine | null {
     const end = Math.min(window.end, window.now);
     if (!(end > window.start) || !readings.length) return null;
@@ -1668,6 +1699,7 @@ export class FluvyChartCard extends Card<ChartCardConfig> {
       hass: this.hass,
       ...(finest ? { finest } : {}),
       ...(rule ? { rule } : {}),
+      extremes,
     });
   }
 
@@ -1839,7 +1871,9 @@ export class FluvyChartCard extends Card<ChartCardConfig> {
 
   /**
    * Each series' lowest and highest points where it asks for them, as its drawing marks them (`extremesOf`): its
-   * figure in its unit, when it was — a slot's start, a point's moment — and the ink of the band it is in (`wear`).
+   * figure in its unit — what its readings reached, the reading now among them — when it was (the start of the slot
+   * that holds it; on a line through time the reading's own moment, else the point's) and the ink of the band it is in
+   * (`wear`).
    */
   private points(
     specs: Specs,
@@ -1861,20 +1895,29 @@ export class FluvyChartCard extends Card<ChartCardConfig> {
         const found = extremesOf(spec, k);
         // a slot reads its round period, from its start; a point its moment
         const slotwise = spec.kind === 'bars' || d.curve === 'step' || d.kind === 'band';
-        const point = (extreme: Extreme | undefined): Point | undefined => {
+        const point = (extreme: Extreme | undefined, end: 'low' | 'high'): Point | undefined => {
           if (!extreme) return undefined;
           const i = extreme.index;
+          // a line through time's moment is the reading's own: the first held in the window that reached it, else now
+          const own = (): number =>
+            d.readings?.find(
+              (r, n, all) =>
+                (r[end] ?? r.v) / d.scale.divisor === extreme.value &&
+                (r.end ?? all[n + 1]?.t ?? Infinity) > window.start,
+            )?.t ?? window.now;
           const t = slotwise
             ? (edges[i] as number)
-            : window.start + (d.at ? (d.at[i] ?? 1) : i / count) * length;
+            : d.line && d.extremes
+              ? Math.max(window.start, own())
+              : window.start + (d.at ? (d.at[i] ?? 1) : i / count) * length;
           return {
             ...this.figureOf(d, extreme.value),
             time: this.pointTime(t, length, slotwise ? (edges[i + 1] ?? window.end) - t : 0),
             ink: wear(d)?.band(extreme.value)?.ink,
           };
         };
-        const min = point(found.min);
-        const max = point(found.max);
+        const min = point(found.min, 'low');
+        const max = point(found.max, 'high');
         if (min || max) points.set(d.index, { ...(min ? { min } : {}), ...(max ? { max } : {}) });
       });
     }
@@ -1919,9 +1962,11 @@ export class FluvyChartCard extends Card<ChartCardConfig> {
   private widest(drawn: readonly Drawn[], strips: readonly Strip[]): PairText[] {
     return [
       ...drawn.flatMap((d) => {
-        const shown = [...d.slots, ...d.points].filter(
-          (v): v is number => v !== null && Number.isFinite(v),
-        );
+        const shown = [
+          ...d.slots,
+          ...d.points,
+          ...(d.extremes ? [...d.extremes.low, ...d.extremes.high] : []),
+        ].filter((v): v is number => v !== null && Number.isFinite(v));
         const reach = shown.length ? [Math.min(...shown), Math.max(...shown)] : [];
         return [d.now, ...reach].map((v) => ({ label: d.name, ...this.figureOf(d, v) }));
       }),
@@ -2447,7 +2492,7 @@ export class FluvyChartCard extends Card<ChartCardConfig> {
    * scale that reaches every line's readings, the lines over them on the same scale (each on its own where the units
    * differ), with no grid or scale of their own. Thresholds colour every line and bar — a series' own (#264), else the
    * card's (`bands`) where it is written in their unit; a lone series' marked windows stand behind them; a series marks
-   * its lowest and highest points where it asks for them, but in a stack of columns.
+   * its lowest and highest points where it asks for them (what its readings reached), but in a stack of columns.
    */
   private specs(
     drawn: readonly Drawn[],
@@ -2475,7 +2520,7 @@ export class FluvyChartCard extends Card<ChartCardConfig> {
     // each series in the unit its figures are written in, its scale from zero where its quantity starts there: series of
     // one unit share a scale, another unit's stand on one of their own (the engine's)
     const asSeries = (d: Drawn, slots: boolean): ChartSeries => {
-      const extremes = slots && stacked ? undefined : extremesAsked(d.item);
+      const highlight = slots && stacked ? undefined : extremesAsked(d.item);
       return {
         unit: d.scale.unit,
         zero:
@@ -2492,7 +2537,8 @@ export class FluvyChartCard extends Card<ChartCardConfig> {
         ...fillFor(d, style),
         ...(d.band ? { band: d.band } : {}),
         ...(d.thresholds ? { thresholds: d.thresholds.bands() } : {}),
-        ...(extremes ? { highlight: extremes } : {}),
+        ...(highlight ? { highlight } : {}),
+        ...(highlight && d.extremes ? { extremes: d.extremes } : {}),
       };
     };
     const common = {

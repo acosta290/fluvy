@@ -23,6 +23,9 @@ export interface Timed {
   readonly t: number;
   readonly v: number;
   readonly end?: number;
+  /** A statistic's bucket's own lowest and highest, where the recorder sent them: what its lowest and highest read. */
+  readonly low?: number;
+  readonly high?: number;
 }
 
 /**
@@ -191,7 +194,10 @@ function meanOf(
   };
 }
 
-/** The lowest or the highest of the readings that held across a stretch (a gap holds none); none where none did. */
+/**
+ * The lowest or the highest of the readings that held across a stretch (a gap holds none), a bucket's own where it has
+ * them; none where none did.
+ */
 function extremeOf(
   readings: readonly Timed[],
   finest: number,
@@ -204,7 +210,8 @@ function extremeOf(
       if (r.t >= to) break;
       // held nowhere across it: a gap's
       if (Math.min(heldUntil(readings, i, finest), to) <= Math.max(r.t, from)) continue;
-      out = out === null ? r.v : Math[pick](out, r.v);
+      const v = (pick === 'min' ? r.low : r.high) ?? r.v;
+      out = out === null ? v : Math[pick](out, v);
     }
     return out;
   };
@@ -281,6 +288,9 @@ export type LineStyle = Pick<ResolvedStyle, 'line' | 'glow' | 'every'>;
 export interface TimeLine<S extends LineStyle = LineStyle> extends Laid {
   /** The style it is drawn in: the card's, its stroke thinner where a step asked stands closer (`strokeFor`). */
   readonly style: S;
+  /** The lowest and the highest of the readings around each point, where asked (`extremes`). */
+  readonly low?: (number | null)[];
+  readonly high?: (number | null)[];
   /** The reading at a fraction of the window: when (snapped to the readings' grain), what, and where that is. */
   read(
     fraction: number,
@@ -304,6 +314,11 @@ export interface TimeLineOptions<S extends LineStyle> {
    * force at its time; none: the style's — their mean where its points are automatic, else the reading at its time.
    */
   readonly rule?: Exclude<LineRule, 'mean'>;
+  /**
+   * The lowest and the highest of the readings around each point too (#264: a series' lowest and highest points),
+   * which its mean averages away.
+   */
+  readonly extremes?: boolean;
 }
 
 /**
@@ -317,15 +332,10 @@ export function timeLine<S extends LineStyle>(o: TimeLineOptions<S>): TimeLine<S
   const step = stepOf(o.style.every, length, o.width, leastGap(o.style.line, blurred), o.finest);
   const origin = midnightOf(o.hass, o.end);
   const grain = grainOf(length, o.width, o.finest);
+  const lay = (rule: LineRule): Laid => layLine(o.readings, window, step, origin, rule, o.finest);
   return {
-    ...layLine(
-      o.readings,
-      window,
-      step,
-      origin,
-      o.rule ?? (o.style.every === 'auto' ? 'mean' : 'last'),
-      o.finest,
-    ),
+    ...lay(o.rule ?? (o.style.every === 'auto' ? 'mean' : 'last')),
+    ...(o.extremes ? { low: lay('min').values, high: lay('max').values } : {}),
     style: {
       ...o.style,
       line: strokeFor(o.style.line, (o.width * step) / Math.max(1, length), blurred),

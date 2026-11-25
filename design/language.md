@@ -2335,13 +2335,17 @@ reads "—" there; a slot that knew part of its time reads that part.
   of the lead's unit. Its figure takes its band's ink where the row says it (the readout, the legend's line, the lone
   series' reading); the card's colour a figure in the readouts alone, so a card that names none of its series' looks
   as it did.
-- **Its lowest and highest points** (`highlight: min | max | both` on the series; the card's `highlight` marks
-  windows), across all it draws, what is to come too: its band's lowest low and highest high where its band is drawn.
+- **Its lowest and highest points** (`highlight: min | max | both` on the series; the card's `highlight` marks windows),
+  across all it draws, what is to come too: its band's lowest low and highest high where its band is drawn, else its
+  readings' own, which a point's or a slot's mean averages away (ten seconds at 254 V read 254 V, a statistic's from
+  each bucket's own lowest and highest), the reading now among them where the window holds it, so the highest is never
+  under the reading beside it. The figure is the reading's; its mark stays on what is drawn, at the point or the slot
+  that holds it, and its time is the reading's own moment on a line through time, the slot's start on columns and steps.
   On the plot, dots alone, never words (they would meet the lines and the bubble): a lone series' in the ok and the
   danger tones, each of several in its own ink (its band's where a threshold claims the point, as its line there),
-  ringed in the card's colour so it reads on its line. Columns light the two (the rest go quiet) with their figures
-  over them, as a lone bar chart does; a stack of columns marks none. When a point was is said in the house's time
-  format, with its weekday on a window longer than a day, its date past a week, its date alone for a slot of a day.
+  ringed in the card's colour so it reads on its line. Columns light the two (the rest go quiet) with their figures over
+  them, as a lone bar chart does; a stack of columns marks none. When a point was is said in the house's time format,
+  with its weekday on a window longer than a day, its date past a week, its date alone for a slot of a day.
 - **Said in the row.** A lone series says its points as pills at the row's end, a row each way: the marked window and
   the point of its kind side by side ("Cheapest …" beside "Low …"), each led by its glyph (the chevron up or down, in
   its tone's ink) where a window's pill has its dot, in one of four forms every pill shares, longest first: "High 5.4

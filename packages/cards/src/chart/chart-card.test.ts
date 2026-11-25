@@ -1764,9 +1764,8 @@ describe('a series’ lowest and highest points (#264)', () => {
       series: [{ entity: 'sensor.temperature', highlight: 'max' }],
       show_head: false,
     });
-    expect(texts(card, '.ch-side .fc-pill')).toEqual([
-      expect.stringMatching(/^High 21\.0 °C · \d\d:\d\d$/),
-    ]);
+    // its history reads 21.0 at most; the reading now, 21.4, is its highest
+    expect(texts(card, '.ch-side .fc-pill')).toEqual(['High 21.4 °C · 21:47']);
     expect(root(card).querySelector('.ch-top')).not.toBeNull();
   });
 
@@ -1807,6 +1806,229 @@ describe('a series’ lowest and highest points (#264)', () => {
         (o) => o.value,
       ),
     ).toEqual(['none', 'min', 'max', 'both']);
+  });
+});
+
+describe('a series’ lowest and highest are its readings’ own (#264)', () => {
+  const MINUTE = 60_000;
+  const at = (h: number, m = 0): number => MIDNIGHT + h * HOUR + m * MINUTE;
+  const VOLTS = { unit_of_measurement: 'V', device_class: 'voltage', state_class: 'measurement' };
+  /**
+   * The supply at the meter since the afternoon, five minutes a reading near 245 V, with ten seconds at 254 V at 20:12
+   * and ten at 236 V at 19:31; the recorder's last at 21:40, its answer behind the reading now.
+   */
+  const evening = (
+    base = (i: number): number => 245 + (i % 3) * 0.4,
+    peak = 254,
+    dip = 236,
+  ): Array<readonly [number, number]> =>
+    [
+      ...Array.from({ length: 81 }, (_unused, i) => [at(15, i * 5), base(i)] as const),
+      [at(20, 12), peak] as const,
+      [at(20, 12) + 10_000, base(1)] as const,
+      [at(19, 31), dip] as const,
+      [at(19, 31) + 10_000, base(1)] as const,
+    ].sort((a, b) => a[0] - b[0]);
+
+  /** The test house with sensors of its own, the recorder keeping each one's readings at their moments. */
+  const supplied = (
+    states: readonly HassEntity[],
+    recorded: Readonly<Record<string, ReadonlyArray<readonly [number, number]>>>,
+    asked?: Asked,
+  ): HomeAssistant => {
+    const base = house(asked);
+    return {
+      ...base,
+      states: { ...base.states, ...Object.fromEntries(states.map((s) => [s.entity_id, s])) },
+      callWS: (message: Record<string, unknown>) => {
+        const id = (message['entity_ids'] as string[] | undefined)?.[0] ?? '';
+        const readings = recorded[id];
+        if (message['type'] !== 'history/history_during_period' || !readings)
+          return base.callWS(message as { type: string });
+        const start = Date.parse(String(message['start_time']));
+        const end = Date.parse(String(message['end_time']));
+        const before = readings.filter(([t]) => t <= start).at(-1);
+        return Promise.resolve({
+          [id]: [
+            ...(before ? [{ s: String(before[1]), lu: start / 1000 }] : []),
+            ...readings
+              .filter(([t]) => t > start && t <= end)
+              .map(([t, v]) => ({ s: String(v), lu: t / 1000 })),
+          ],
+        });
+      },
+    } as unknown as HomeAssistant;
+  };
+  const supply = (
+    id: string,
+    now: string,
+    attributes: Record<string, unknown> = VOLTS,
+    readings = evening(),
+  ) => supplied([state(id, now, attributes)], { [id]: readings });
+  const pills = (card: Inner): string[] => texts(card, '.ch-side .fc-pill.ch-peak');
+  const figure = (text: string | undefined): number =>
+    Number(/(-?[\d.]+) (?:V|kW)/.exec(text ?? '')?.[1] ?? NaN);
+
+  it('says the spike and the dip a slot’s mean averages away, each dotted on the line at the point that holds it', async () => {
+    const card = await draw(
+      { series: [{ entity: 'sensor.supply', highlight: 'both' }], span: '3h', chart: 'soft' },
+      supply('sensor.supply', '245.4'),
+    );
+    // at the readings' own moments, each dot on the point whose half steps hold it, the window 18:47 to 21:47
+    expect(pills(card)).toEqual(['Low 236.0 V · 19:31', 'High 254.0 V · 20:12']);
+    const svg = root(card).querySelector('svg.fc-chart') as SVGSVGElement;
+    const width = Number(svg.getAttribute('width'));
+    const xOf = (h: number, m: number): number => ((at(h, m) - at(18, 47)) / (3 * HOUR)) * width;
+    const dots = [...svg.querySelectorAll('.curve-dot')].map((dot) =>
+      Number(dot.getAttribute('cx')),
+    );
+    expect(dots).toEqual([expect.closeTo(xOf(19, 30), 1), expect.closeTo(xOf(20, 10), 1)]);
+  });
+
+  it('lights the columns that hold them, each its figure over it, from the slot’s start', async () => {
+    const card = await draw(
+      {
+        series: [{ entity: 'sensor.supply_hours', kind: 'columns', highlight: 'both' }],
+        span: '3h',
+        chart: 'soft',
+        highlight: 'none',
+      },
+      supply('sensor.supply_hours', '245.4'),
+    );
+    expect(texts(card, '.fc-value')).toEqual(['236.0', '254.0']);
+    expect(pills(card)).toEqual(['Low 236.0 V · 19:00', 'High 254.0 V · 20:00']);
+  });
+
+  it('counts the reading now: the highest is never under it, the lowest never over it', async () => {
+    for (const [chart, kind] of [
+      ['soft', 'line'],
+      ['step', 'line'],
+      ['soft', 'columns'],
+    ] as const)
+      for (const now of ['258.3', '231.6', '245.4']) {
+        const card = await draw(
+          { series: [{ entity: 'sensor.supply', kind, highlight: 'both' }], span: '3h', chart },
+          supply('sensor.supply', now),
+        );
+        const [low, high] = pills(card).map(figure);
+        expect(high, `${chart} ${kind} ${now}`).toBeGreaterThanOrEqual(Number(now));
+        expect(low, `${chart} ${kind} ${now}`).toBeLessThanOrEqual(Number(now));
+      }
+    // the reading now the highest: said at now, the line's end
+    const card = await draw(
+      { series: [{ entity: 'sensor.supply', highlight: 'max' }], span: '3h', chart: 'soft' },
+      supply('sensor.supply', '258.3'),
+    );
+    expect(pills(card)).toEqual(['High 258.3 V · 21:47']);
+  });
+
+  it('writes them in the unit the series shows: a power in W as kW', async () => {
+    // the house's power near 400 W, the kettle's ten seconds at 4,600 W, a dip to 120 W
+    const card = await draw(
+      {
+        series: [{ entity: 'sensor.supply_power', unit: 'kW', highlight: 'both' }],
+        span: '3h',
+        chart: 'soft',
+      },
+      supply(
+        'sensor.supply_power',
+        '412',
+        { unit_of_measurement: 'W', device_class: 'power', state_class: 'measurement' },
+        evening((i) => 400 + (i % 3) * 12, 4600, 120),
+      ),
+    );
+    expect(pills(card)).toEqual(['Low 0.12 kW · 19:31', 'High 4.6 kW · 20:12']);
+  });
+
+  it('reads a list whose readings are all to come by its own: the sensor’s state now is none of them', async () => {
+    const card = await draw(
+      {
+        series: [{ entity: 'sensor.tomorrow', attribute: 'raw_today', highlight: 'both' }],
+        span: 'today+tomorrow',
+        chart: 'step',
+        highlight: 'none',
+      },
+      supplied(
+        [
+          state('sensor.tomorrow', '0.9', {
+            unit_of_measurement: 'EUR/kWh',
+            raw_today: [],
+            raw_tomorrow: quarters(MIDNIGHT + 24 * HOUR, day),
+          }),
+        ],
+        {},
+      ),
+    );
+    expect(pills(card)).toEqual([
+      'Low 0.020 EUR/kWh · Fri 13:00',
+      'High 0.340 EUR/kWh · Fri 19:00',
+    ]);
+  });
+
+  it('hands the engine what it did where a series marks none, and asks the recorder as it did', async () => {
+    // the drawings as the engine gets them, the main one and the lines over columns
+    type Laid = Array<{ series: Array<Record<string, unknown>> } | null>;
+    const specs = vi.spyOn(
+      FluvyChartCard.prototype as unknown as { specs: (...args: never[]) => unknown },
+      'specs',
+    );
+    const drawn = async (config: Record<string, unknown>, hass: HomeAssistant) => {
+      await draw(config, hass);
+      const last = specs.mock.results.at(-1)?.value as { main: unknown; over: unknown };
+      return JSON.parse(JSON.stringify([last.main, last.over])) as Laid;
+    };
+    const series = (laid: Laid) => laid.flatMap((spec) => spec?.series ?? []);
+    const unmarked = (laid: Laid): Laid =>
+      laid.map(
+        (spec) =>
+          spec && {
+            ...spec,
+            series: spec.series.map((one) =>
+              Object.fromEntries(
+                Object.entries(one).filter(([key]) => key !== 'highlight' && key !== 'extremes'),
+              ),
+            ),
+          },
+      );
+    const configs = [
+      { series: ['sensor.supply'], span: '3h', chart: 'soft' },
+      { series: [{ entity: 'sensor.supply', kind: 'columns' }], span: '3h', chart: 'soft' },
+      { series: ['sensor.supply', 'sensor.temperature'], span: '3h', chart: 'step' },
+      { series: ['sensor.nordpool'], span: 'today+tomorrow', chart: 'soft' },
+      { ...NORDPOOL, series: ['sensor.nordpool'] },
+    ];
+    for (const config of configs) {
+      const hass = supply('sensor.supply', '245.4');
+      const plain = await drawn(config, hass);
+      expect(series(plain).some((one) => 'highlight' in one || 'extremes' in one)).toBe(false);
+      const marked = await drawn(
+        {
+          ...config,
+          series: config.series.map((item) => ({
+            ...(typeof item === 'string' ? { entity: item } : item),
+            highlight: 'both',
+          })),
+        },
+        hass,
+      );
+      expect(series(marked).some((one) => 'extremes' in one)).toBe(true);
+      expect(unmarked(marked)).toEqual(plain);
+    }
+    specs.mockRestore();
+    // a statistic's buckets are asked with their lowest and highest only for a series that marks its points
+    const types = async (item: Record<string, unknown>): Promise<unknown> => {
+      const asked: Asked = { messages: [], subscriptions: [] };
+      await draw(
+        { series: [{ entity: 'sensor.temperature', source: 'statistics', ...item }] },
+        supplied([], {}, asked),
+      );
+      return asked.messages.find((m) => m['type'] === 'recorder/statistics_during_period')?.[
+        'types'
+      ];
+    };
+    expect(await types({})).toEqual(['mean']);
+    expect(await types({ highlight: 'max' })).toEqual(['max', 'mean', 'min']);
+    expect(await types({ stat: 'max', highlight: 'both' })).toEqual(['max']);
   });
 });
 

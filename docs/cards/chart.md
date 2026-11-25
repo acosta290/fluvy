@@ -276,7 +276,9 @@ readouts: true # a readout each over the chart, in place of the legend
 - `color` takes a colour or a palette name that follows the palette: `graph-1` to `graph-12`, `accent`, `ok`,
   `warning`, `danger`, `solar`, `grid`, `battery`, `water`, `gas`, `home`.
 - `highlight`: `min`, `max` or `both` marks the series' lowest and highest points with a dot, what is to come too, and
-  says them in the value row ("High 5.4 kW · 13:00"); columns light up with their figures over them.
+  says them in the value row ("High 5.4 kW · 13:00"); columns light up with their figures over them. The figures are
+  the readings' own: a peak of a few seconds the line smooths over still reads, the reading now counts, and statistics
+  read each period's own lowest and highest.
 - `thresholds` on a series are written in its own unit and take the card's place for it.
 
 ### Window

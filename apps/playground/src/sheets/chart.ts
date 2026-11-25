@@ -20,7 +20,8 @@ if (!customElements.get('fluvy-chart-card'))
  * a power beside a humidity), full, compact and as tiles. And #264: the supply's voltage in and out of a voltage
  * optimiser beside the house's power, a readout each (the reporter's picture), each voltage with thresholds of its own;
  * the house's power over a day with its lowest and highest points; four rooms' readouts with theirs; at half a section,
- * where the readouts give way to the legend's lines; out of reach.
+ * where the readouts give way to the legend's lines; out of reach; and the supply read every half minute, a surge and
+ * a sag of half a minute each that the line's points average away, said by the figures of its lowest and highest.
  */
 
 const QUARTER = 15 * 60_000;
@@ -213,6 +214,35 @@ const DAY_POWER = Array.from({ length: 97 }, (_unused, i) => {
   );
 });
 
+/**
+ * The supply's last six hours read every half minute (#264): the voltage at the meter near 246 V with a surge of half a
+ * minute to 254.1 V at 20:12, the house's after its optimiser near 220 V with a sag to 212.4 V at 19:31 — a tenth of
+ * each point the line is drawn in, which its mean averages away — the hours of the day each reading stands at.
+ */
+const HALF_MINUTES = Array.from(
+  { length: 721 },
+  (_unused, i) =>
+    NOW.getHours() + NOW.getMinutes() / 60 + NOW.getSeconds() / 3600 + (i - 720) / 120,
+);
+/** Whether the half minute at an hour of the day is the one read at that minute. */
+const onMinute = (h: number, hour: number, minute: number): boolean =>
+  Math.round((h - hour - minute / 60) * 120) === 0;
+const METER_VOLTAGE = HALF_MINUTES.map(
+  (h) =>
+    Math.round(
+      (onMinute(h, 20, 12)
+        ? 254.1
+        : 245.9 + 1.1 * Math.sin(h * 2.3) + 0.5 * Math.sin(h * 7.9) - 0.3 * Math.cos(h * 13)) * 10,
+    ) / 10,
+);
+const OPTIMISED_VOLTAGE = HALF_MINUTES.slice(360).map(
+  (h) =>
+    Math.round(
+      (onMinute(h, 19, 31) ? 212.4 : 220.1 + 0.7 * Math.sin(h * 3.1) + 0.3 * Math.sin(h * 11.3)) *
+        10,
+    ) / 10,
+);
+
 const PRICE = { unit_of_measurement: 'EUR/kWh', state_class: 'measurement' };
 const TEMPERATURE = {
   unit_of_measurement: '°C',
@@ -314,6 +344,22 @@ const SUPPLY = card({
 /** The same, each series' lowest and highest points under its readout. */
 const SUPPLY_MARKED = SUPPLY_SERIES.map((item) => ({ ...item, highlight: 'both' }));
 const SUPPLY_POINTS = card({ ...SUPPLY, series: SUPPLY_MARKED });
+/**
+ * The supply read every half minute, each voltage its lowest and highest under its readout, the meter's in its own
+ * thresholds: the surge reads 254.1 V in the danger's ink, high over the line's top; the house's highest is its reading
+ * now, which the recorder has not sent yet.
+ */
+const SURGE = card({
+  title: 'Home',
+  icon: 'bolt',
+  series: [
+    { ...SUPPLY_SERIES[0], entity: 'sensor.ch_meter_voltage', highlight: 'both' },
+    { ...SUPPLY_SERIES[2], entity: 'sensor.ch_optimised_voltage', highlight: 'both' },
+  ],
+  span: '3h',
+  chart: 'soft',
+  readouts: true,
+});
 /** Four rooms' day, a readout each, its lowest and highest points under it. */
 const ROOMS_READ = card({
   title: 'Rooms',
@@ -394,6 +440,9 @@ export const sheet: SheetSpec = {
     sensor('sensor.ch_house_power', String(SUPPLY_POWER.at(-1)), 'House power', POWER_KW),
     sensor('sensor.ch_day_power', String(DAY_POWER.at(-1)), 'House power', POWER_KW),
     ['sensor.ch_supply_gone', 'unavailable', { friendly_name: 'Supply voltage', ...VOLTAGE }],
+    sensor('sensor.ch_meter_voltage', String(METER_VOLTAGE.at(-1)), 'Meter voltage', VOLTAGE),
+    // its reading now over every one the recorder has sent
+    sensor('sensor.ch_optimised_voltage', '221.6', 'House voltage', VOLTAGE),
   ],
   history: {
     'sensor.ch_living_temperature': LIVING,
@@ -413,6 +462,8 @@ export const sheet: SheetSpec = {
     'sensor.ch_house_voltage': SUPPLY_HOUSE.slice(36),
     'sensor.ch_house_power': SUPPLY_POWER,
     'sensor.ch_day_power': DAY_POWER,
+    'sensor.ch_meter_voltage': METER_VOLTAGE,
+    'sensor.ch_optimised_voltage': OPTIMISED_VOLTAGE,
   },
   statistics: {
     'sensor.ch_living_temperature': {
@@ -679,6 +730,26 @@ export const sheet: SheetSpec = {
         card({
           title: 'Supply voltage',
           series: [{ entity: 'sensor.ch_supply_gone', highlight: 'both' }],
+          span: '3h',
+          chart: 'soft',
+        }),
+      ],
+    },
+    // a surge and a sag of half a minute, which the line's points average away: the figures are the readings' own,
+    // each at its moment, its dot on the line at the point that holds it; the reading now counts
+    {
+      title: 'Chart · a surge, lowest and highest',
+      cards: [
+        SURGE,
+        card({
+          title: 'Supply voltage',
+          series: [
+            {
+              entity: 'sensor.ch_meter_voltage',
+              highlight: 'both',
+              thresholds: SUPPLY_SERIES[0]?.thresholds,
+            },
+          ],
           span: '3h',
           chart: 'soft',
         }),

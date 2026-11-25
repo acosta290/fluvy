@@ -278,6 +278,56 @@ describe('a line’s points by the series’ stat (#228)', () => {
   });
 });
 
+describe('what a line’s readings reached around each point (#264)', () => {
+  // a supply's voltage, five minutes a reading at 245, and ten seconds at 254 and at 236 inside two of them
+  const supply: Timed[] = Array.from({ length: 36 }, (_unused, i) => ({
+    t: at(18, i * 5),
+    v: 245,
+  }));
+  supply.splice(13, 0, { t: at(19, 7), v: 254 }, { t: at(19, 7) + 10_000, v: 245 });
+  supply.splice(30, 0, { t: at(20, 22), v: 236 }, { t: at(20, 22) + 10_000, v: 245 });
+  const line = (extremes: boolean, finest?: number, readings = supply) =>
+    timeLine({
+      readings,
+      start: at(18),
+      end: at(21),
+      width: 320,
+      style: style(2.5),
+      hass,
+      extremes,
+      ...(finest ? { finest } : {}),
+    });
+
+  it('reads the lowest and the highest around each point where asked, which its mean averages away', () => {
+    const marked = line(true);
+    const plain = line(false);
+    expect(plain).not.toHaveProperty('low');
+    expect(marked.values).toEqual(plain.values);
+    expect(marked.at).toEqual(plain.at);
+    const peak = marked.high?.indexOf(254) ?? -1;
+    const dip = marked.low?.indexOf(236) ?? -1;
+    // each in the one point whose half steps hold it, the line itself near 245 there
+    expect(marked.high?.filter((v) => v === 254)).toHaveLength(1);
+    expect(marked.low?.filter((v) => v === 236)).toHaveLength(1);
+    expect(Math.abs(at(19, 7) - (at(18) + (marked.at[peak] ?? 0) * 3 * HOUR))).toBeLessThan(
+      5 * MINUTE,
+    );
+    expect(Math.abs(at(20, 22) - (at(18) + (marked.at[dip] ?? 0) * 3 * HOUR))).toBeLessThan(
+      5 * MINUTE,
+    );
+    expect(Math.max(...(marked.values as number[]))).toBeLessThan(250);
+    expect(Math.min(...(marked.values as number[]))).toBeGreaterThan(240);
+  });
+
+  it('reads a statistic’s buckets by their own lowest and highest', () => {
+    const hours: Timed[] = [18, 19, 20].map((h) => ({ t: at(h), v: 245, low: 238, high: 251 }));
+    const marked = line(true, HOUR, hours);
+    expect(marked.values.every((v) => v === 245)).toBe(true);
+    expect(new Set(marked.low)).toEqual(new Set([238]));
+    expect(new Set(marked.high)).toEqual(new Set([251]));
+  });
+});
+
 describe('a line read where it is pointed at', () => {
   it('reads Home Assistant’s reading at the round time nearest the pointer: the five-minute bucket, never a mean', () => {
     const day = { start: at(0), end: at(24) };
