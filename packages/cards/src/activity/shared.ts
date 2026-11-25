@@ -78,9 +78,15 @@ export const MINOR = new Set([
 export const PICKED = 'logbookPickedValue';
 export const FILTERS = 'logbookSourceFilters';
 
-/** A date whose day number never leaves its neighbours on a line of its own ("September 17", "17 de"). */
+/**
+ * A date whose day number stays on its month's line ("17 september", "17. September", "17 de", "September 17"), never
+ * on its weekday's: a narrow column breaks after the weekday, never inside the month. The day is bound to the word
+ * after it, else, where its month comes first, to the word before it.
+ */
 export const keepDay = (text: string): string =>
-  text.replace(/(\d{1,2}) /g, '$1\u00a0').replace(/ (\d{1,2})\b/g, '\u00a0$1');
+  /\b\d{1,2}\.? /.test(text)
+    ? text.replace(/\b(\d{1,2}\.?) /g, '$1\u00a0')
+    : text.replace(/ (\d{1,2})\b/g, '\u00a0$1');
 
 /** What the activity can show: not a continuous value (a counter, a sensor with a unit). */
 export const logbookEntity = (stateObj: HassEntity): boolean => {

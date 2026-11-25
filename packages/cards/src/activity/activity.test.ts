@@ -6,6 +6,7 @@ import { eventKey, type ActivityEvent } from '@fluvy/core/activity';
 import type { FluvyTimeRail, TimeRailDetail } from '@fluvy/ui/time-rail';
 import { ActivityIndex, buildModel, dayRange, shiftRange } from './model.js';
 import { timeAt } from './rail.js';
+import { keepDay } from './shared.js';
 import { setTarget } from './sources.js';
 import { takeOverPage } from '../shared/takeover.js';
 import { activityIsOurs, takeOverActivity } from './takeover.js';
@@ -134,6 +135,23 @@ describe('the Activity model', () => {
     expect(found.counts.all).toBe(2);
     expect(found.counts.security).toBe(0);
     expect(found.filters).toContain('security');
+  });
+});
+
+describe('a date in a detail', () => {
+  it('keeps its day number on its month’s line, never its weekday’s: a narrow column breaks after the weekday', () => {
+    const nb = '\u00a0';
+    // the day before its month
+    expect(keepDay('donderdag 17 september')).toBe(`donderdag 17${nb}september`);
+    expect(keepDay('четвъртък, 17 септември')).toBe(`четвъртък, 17${nb}септември`);
+    expect(keepDay('Donnerstag, 17. September')).toBe(`Donnerstag, 17.${nb}September`);
+    expect(keepDay('torsdag den 17. september')).toBe(`torsdag den 17.${nb}september`);
+    expect(keepDay('jueves, 17 de septiembre')).toBe(`jueves, 17${nb}de septiembre`);
+    // the month before its day
+    expect(keepDay('Thursday, September 17')).toBe(`Thursday, September${nb}17`);
+    expect(keepDay('szeptember 17., csütörtök')).toBe(`szeptember${nb}17., csütörtök`);
+    // no spaces, nothing to keep
+    expect(keepDay('9月17日木曜日')).toBe('9月17日木曜日');
   });
 });
 
