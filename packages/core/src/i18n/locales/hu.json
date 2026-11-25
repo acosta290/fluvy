@@ -2804,7 +2804,7 @@
     "pref.language": "Nyelv",
     "pref.auto": "Automatikus",
     "pref.reduce": "Mozgás csökkentése",
-    "pref.reduce_sub": "Amit az eszköz kér",
+    "pref.reduce_sub": "Az eszköz beállításától függetlenül",
     "pref.hold": "Tartás a csúsztatáshoz",
     "pref.hold_sub": "Érintőképernyőn a csúszka csak egy rövid tartás után mozdul",
     "pref.haptics": "Haptikus visszajelzés",
