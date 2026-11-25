@@ -44,7 +44,6 @@ describe('a head’s name in two lines (#191)', () => {
       ['weather', {}],
       ['weather', { variant: 'compact', show_name: false }],
       ['chart', { variant: 'tile' }],
-      ['chart', { show_head: false }],
       ['history-bars', { show_head: false }],
       ['sensor', { variant: 'tile' }],
       ['web', { variant: 'bare' }],
@@ -60,6 +59,8 @@ describe('a head’s name in two lines (#191)', () => {
       ['alerts', { variant: 'rows' }],
       ['weather', { variant: 'compact' }],
       ['chart', { variant: 'compact' }],
+      // the chart's `show_head` is its value row's: its head is drawn whatever it says
+      ['chart', { show_head: false }],
       ['web', {}],
       ['appliance', { kind: 'washer' }],
       ['appliance', { kind: 'kettle', variant: 'compact' }],
@@ -178,6 +179,8 @@ describe('the editors (#191)', () => {
     expect(offered('fluvy-weather-card', { variant: 'compact' })).toBe(true);
     expect(offered('fluvy-printer-card', { variant: 'row' })).toBe(false);
     expect(offered('fluvy-compass-card', { variant: 'row' })).toBe(false);
+    // the chart's value row turned off leaves its head, and its name's lines, as they are
+    expect(offered('fluvy-chart-card', { show_head: false })).toBe(true);
     expect(offered('fluvy-lock-card', {})).toBe(true);
   });
 });
@@ -195,7 +198,8 @@ describe('a head’s name hidden (#237)', () => {
     expect(hidesName({ type: 'custom:fluvy-lock-card' })).toBe(false);
     for (const card of ['tile', 'tiles', 'template', 'lights', 'room'])
       expect(hidesName(config(card, { name_lines: 0 })), card).toBe(false);
-    expect(hidesName(config('chart', { name_lines: 0, show_head: false }))).toBe(false);
+    expect(hidesName(config('history-bars', { name_lines: 0, show_head: false }))).toBe(false);
+    expect(hidesName(config('chart', { name_lines: 0, show_head: false }))).toBe(true);
   });
 
   it('keeps the head’s height: one line’s, declared wherever a card’s height is read', () => {

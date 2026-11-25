@@ -34,13 +34,15 @@ export function cardLayout(config: LovelaceCardConfig | undefined): string | und
 }
 
 /**
- * Whether a card's layout draws a head that names it: not one turned off (`show_head: false`), nor a weather without
- * its name, nor a layout whose `name_lines` is no head's (`NO_HEAD_LINES`).
+ * Whether a card's layout draws a head that names it: not one turned off (`show_head: false`; the chart's is its value
+ * row's, under a head it always draws), nor a weather without its name, nor a layout whose `name_lines` is no head's
+ * (`NO_HEAD_LINES`).
  */
 export function namesHead(config: LovelaceCardConfig | undefined): boolean {
   const layout = cardLayout(config);
   if (!config || layout === undefined) return false;
-  if (config['show_head'] === false || config['show_name'] === false) return false;
+  if (config['show_head'] === false && !layout.startsWith('chart:')) return false;
+  if (config['show_name'] === false) return false;
   return !NO_HEAD_LINES.test(layout);
 }
 

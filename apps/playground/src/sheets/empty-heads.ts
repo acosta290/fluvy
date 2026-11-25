@@ -161,6 +161,18 @@ const frames: FrameSpec[] = [
     subtitle: '',
     show_badge: false,
   }),
+  // the chart's value row turned off (`show_head: false`): its head stays, its long name in the two lines asked for
+  {
+    title: 'Chart · no value row, its name in two lines',
+    cards: [
+      {
+        ...(example('chart').cards[0] as LovelaceCardConfig),
+        title: 'Electricity price today and tomorrow',
+        show_head: false,
+        name_lines: 2,
+      },
+    ],
+  },
   // every head a config can empty, the documentation's example beside it emptied
   ...QUIET.map(([title, quiet]) => emptied(title, quiet)),
   // the period's chips under the head, or with none the body's first part: at the card's 20 either way
