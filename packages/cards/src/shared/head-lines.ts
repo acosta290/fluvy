@@ -19,7 +19,7 @@ export const HEAD_LINE = 24;
  * a banner, a picture alone, the alerts' tiles and the weather's hero (the last two their cards' defaults).
  */
 const NO_HEAD_LINES =
-  /^(tiles?|template|lights|room|scenes?|chips|clock|energy-period|heading|hello|media|now-playing|readouts):|^alerts:(|tiles|mini|chips|banner)$|^weather:(|full)$|^web:(frame|bare)$|^(slider|sensor|calendar|chart):tile$|^(printer|remote|appliance):row$|^vehicle:mini$|^appliances:cards$/;
+  /^(tiles?|template|lights|room|scenes?|chips|clock|energy-period|heading|hello|media|now-playing|readouts):|^alerts:(|tiles|mini|chips|banner)$|^weather:(|full)$|^web:(frame|bare)$|^(slider|sensor|calendar|chart):tile$|^(printer|remote|appliance|compass):row$|^vehicle:mini$|^appliances:cards$/;
 
 /**
  * A card of Fluvy's as `<card>:<layout>`: its short name and the layout its config asks for (left out: the card's

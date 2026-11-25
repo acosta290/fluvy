@@ -49,6 +49,7 @@ describe('a head’s name in two lines (#191)', () => {
       ['sensor', { variant: 'tile' }],
       ['web', { variant: 'bare' }],
       ['printer', { variant: 'row' }],
+      ['compass', { variant: 'row' }],
       ['vehicle', { variant: 'mini' }],
       ['appliances', { variant: 'cards' }],
       // a kettle's card is a row where it asks for no layout
@@ -62,6 +63,8 @@ describe('a head’s name in two lines (#191)', () => {
       ['web', {}],
       ['appliance', { kind: 'washer' }],
       ['appliance', { kind: 'kettle', variant: 'compact' }],
+      ['compass', {}],
+      ['compass', { variant: 'compact' }],
     ];
     for (const [card, more] of some) expect(headLines(config(card, more)), card).toBe(24);
   });
@@ -76,6 +79,9 @@ describe('a head’s name in two lines (#191)', () => {
     // the tiles' own lines are their card's to count, once
     const tiles = { type: 'custom:fluvy-tiles-card', entities: ['light.a', 'light.b'] };
     expect(houseHeightOf({ ...tiles, name_lines: 2 }, -1)).toBe(houseHeightOf(tiles, -1) + 12);
+    // a compass's row draws no head: a stale `name_lines: 2` from another layout adds nothing
+    const compass = { type: 'custom:fluvy-compass-card', entity: 'sensor.wind', variant: 'row' };
+    expect(houseHeightOf({ ...compass, name_lines: 2 }, -1)).toBe(houseHeightOf(compass, -1));
     // the cards standing as an Expander's head, each by what it declares
     const held = (name_lines?: number) => ({
       type: 'custom:fluvy-expander-card',
