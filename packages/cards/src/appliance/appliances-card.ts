@@ -31,7 +31,7 @@ import {
   type HeadConfig,
 } from '../shared/base.js';
 import { fitLine, type Segment } from '../shared/fit.js';
-import { configKeys } from '../shared/config.js';
+import { configKeys, type AliasSpec } from '../shared/config.js';
 import {
   accentField,
   actionFields,
@@ -65,7 +65,7 @@ import {
   pictureMinField,
 } from './form.js';
 import { DUE_WORD, KIND_TILES } from './full.js';
-import { applianceDevices, KIND_DEFAULTS, type ApplianceKind } from './kinds.js';
+import { americanAppliance, applianceDevices, KIND_DEFAULTS, type ApplianceKind } from './kinds.js';
 import type { MaintenanceKey } from './maintenance.js';
 import { unloadedAt, UNLOADED_EVENT } from './memory.js';
 import {
@@ -266,6 +266,22 @@ export class FluvyAppliancesCard extends Card<AppliancesCardConfig> {
   static override layoutHeight(config: AppliancesCardConfig): number {
     return appliancesHeight(config);
   }
+
+  /** Each appliance as an American writes it (`kind: cooktop`, `modes: [vacation]`), read as the appliance card's own. */
+  static override aliases: AliasSpec = {
+    upgrade: (config) => {
+      const listed = config['appliances'];
+      if (!Array.isArray(listed)) return config;
+      const read = listed.map((item: unknown) =>
+        typeof item === 'object' && item !== null
+          ? americanAppliance(item as Readonly<Record<string, unknown>>)
+          : item,
+      );
+      return read.some((item, at) => item !== listed[at])
+        ? { ...config, appliances: read }
+        : config;
+    },
+  };
 
   static override styles: CSSResultGroup = [
     ...(Card.styles as CSSResultGroup[]),

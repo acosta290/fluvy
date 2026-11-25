@@ -2,6 +2,7 @@
 import type { HassEntity, HomeAssistant, LovelaceCardConfig } from '@fluvy/core';
 import { afterEach, describe, expect, it } from 'vitest';
 import '../vehicle/english.js';
+import { normaliseConfig } from '../shared/config.js';
 import type { TextRuler } from '../shared/fit.js';
 import { vehicleHeight } from '../vehicle-family.js';
 import {
@@ -877,6 +878,49 @@ describe('the vehicle card', () => {
       { role: 'battery', entity: 'sensor.model_y_battery_level' },
       { role: 'lock', entity: 'lock.model_y_lock' },
     ]);
+  });
+
+  it('reads the tyres as an American writes them, keys and roles, where the card names them no other way (#267)', async () => {
+    const type = 'custom:fluvy-vehicle-card';
+    const read = (config: Record<string, unknown>): Record<string, unknown> =>
+      normaliseConfig({ type, ...config }, FluvyVehicleCard.aliases!);
+    expect(read({ show_tires: true, tire_low: 2.1, tire_decimals: 1 })).toEqual({
+      type,
+      show_tyres: true,
+      tyre_low: 2.1,
+      tyre_decimals: 1,
+    });
+    // written both ways, the card's own word wins
+    expect(read({ show_tyres: false, show_tires: true })).toEqual({ type, show_tyres: false });
+    // a wheel's role in a list and in a map
+    expect(
+      read({
+        roles: [
+          { role: 'tire_fl', entity: 'sensor.fl' },
+          { role: 'lock', entity: 'lock.car' },
+        ],
+      })['roles'],
+    ).toEqual([
+      { role: 'tyre_fl', entity: 'sensor.fl' },
+      { role: 'lock', entity: 'lock.car' },
+    ]);
+    expect(read({ roles: { tire_rr: 'sensor.rr' } })['roles']).toEqual([
+      { role: 'tyre_rr', entity: 'sensor.rr' },
+    ]);
+    expect(
+      read({
+        roles: [
+          { role: 'tyre_fl', entity: 'sensor.a' },
+          { role: 'tire_fl', entity: 'sensor.b' },
+        ],
+      })['roles'],
+    ).toEqual([{ role: 'tyre_fl', entity: 'sensor.a' }]);
+    // a config in the card's own words comes back as it was
+    const own = { type, show_tyres: true, roles: [{ role: 'tyre_fl', entity: 'sensor.fl' }] };
+    expect(normaliseConfig(own, FluvyVehicleCard.aliases!)).toBe(own);
+    // and the card draws what it was asked in American
+    const card = await mount({ device: TESLA.device, show_tires: true });
+    expect(root(card).querySelectorAll('.vh-tyre')).toHaveLength(4);
   });
 });
 

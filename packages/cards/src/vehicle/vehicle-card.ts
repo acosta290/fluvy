@@ -496,13 +496,39 @@ export class FluvyVehicleCard extends Card<VehicleCardConfig> {
     return vehicleHeight(config);
   }
 
-  /** `roles` written as a map (`{ fuel: sensor.x }`) reads as the list it means, in the card and in its editor. */
+  /**
+   * `roles` written as a map (`{ fuel: sensor.x }`) reads as the list it means, in the card and in its editor; the tyres
+   * as an American writes them (`show_tires`, `tire_decimals`, `tire_low`, a role `tire_fl`) read as the card's own
+   * where it names them no other way (#267).
+   */
   static override aliases: AliasSpec = {
+    keys: ['show_tires', 'tire_decimals', 'tire_low'].map((from) => ({
+      from,
+      to: from.replace('tire', 'tyre'),
+    })),
     upgrade: (config) => {
       const roles = config['roles'];
-      return roles && typeof roles === 'object' && !Array.isArray(roles)
-        ? { ...config, roles: rolesOfMap(roles as Readonly<Record<string, unknown>>) }
-        : config;
+      const listed =
+        roles && typeof roles === 'object' && !Array.isArray(roles)
+          ? rolesOfMap(roles as Readonly<Record<string, unknown>>)
+          : roles;
+      if (!Array.isArray(listed)) return config;
+      const roleOf = (item: unknown): unknown => (item as { role?: unknown } | null)?.role;
+      const tyre = (item: unknown): string | undefined => {
+        const role = roleOf(item);
+        return typeof role === 'string' && /^tire_(fl|fr|rl|rr)$/.test(role)
+          ? role.replace('tire', 'tyre')
+          : undefined;
+      };
+      if (listed === roles && !listed.some(tyre)) return config;
+      const named = new Set(listed.map(roleOf));
+      return {
+        ...config,
+        roles: listed.flatMap((item: unknown) => {
+          const own = tyre(item);
+          return !own ? [item] : named.has(own) ? [] : [{ ...(item as NamedRole), role: own }];
+        }),
+      };
     },
   };
 

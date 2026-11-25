@@ -8,6 +8,7 @@ import {
 import { OUT_OF_REACH, outOfReachStates } from '@fluvy/demo-home/out-of-reach';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { applianceHeight, APPLIANCE_VARIANTS } from '../appliances-family.js';
+import { normaliseConfig } from '../shared/config.js';
 import { applianceHouseHeight, FluvyApplianceCard } from './appliance-card.js';
 import { appliancesHouseHeight, FluvyAppliancesCard } from './appliances-card.js';
 import {
@@ -186,6 +187,32 @@ describe('the appliance card', () => {
     };
     await card.updateComplete;
     expect(src()).toBe('https://example.com/dish-2.png');
+  });
+
+  it('reads a kind and a quick mode as an American writes them, on its own and in the Appliances card’s list (#267)', () => {
+    const one = 'custom:fluvy-appliance-card';
+    const read = (config: Record<string, unknown>): Record<string, unknown> =>
+      normaliseConfig({ type: one, ...config }, FluvyApplianceCard.aliases!);
+    expect(read({ kind: 'cooktop' })).toEqual({ type: one, kind: 'hob' });
+    expect(read({ modes: ['vacation', 'eco'] })).toEqual({ type: one, modes: ['holiday', 'eco'] });
+    // named both ways, once
+    expect(read({ modes: ['holiday', 'vacation'] })['modes']).toEqual(['holiday']);
+    // in the card's own words, as it was
+    const own = { type: one, kind: 'hob', modes: ['holiday'] };
+    expect(normaliseConfig(own, FluvyApplianceCard.aliases!)).toBe(own);
+    const list = {
+      type: 'custom:fluvy-appliances-card',
+      appliances: ['abc', { device: 'd', kind: 'cooktop' }],
+    };
+    expect(normaliseConfig(list, FluvyAppliancesCard.aliases!)['appliances']).toEqual([
+      'abc',
+      { device: 'd', kind: 'hob' },
+    ]);
+    const plain = {
+      type: 'custom:fluvy-appliances-card',
+      appliances: [{ device: 'd', kind: 'oven' }],
+    };
+    expect(normaliseConfig(plain, FluvyAppliancesCard.aliases!)).toBe(plain);
   });
 
   it('a new card takes the house’s first appliance', () => {

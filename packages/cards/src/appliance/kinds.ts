@@ -69,6 +69,30 @@ export const APPLIANCE_KINDS: readonly ApplianceKind[] = [
   'appliance',
 ];
 
+/** A kind and a fridge's quick mode as an American writes them: a cooktop is a hob, vacation a holiday. */
+const AMERICAN_KINDS: ReadonlyMap<unknown, ApplianceKind> = new Map([['cooktop', 'hob']]);
+const AMERICAN_MODES: ReadonlyMap<unknown, string> = new Map([['vacation', 'holiday']]);
+
+/**
+ * An appliance as an American writes it (`kind: cooktop`, `modes: [vacation]`) read as the card's own (#267): read,
+ * never written, a mode named both ways once. The same config where it says neither.
+ */
+export function americanAppliance(
+  config: Readonly<Record<string, unknown>>,
+): Readonly<Record<string, unknown>> {
+  const kind = AMERICAN_KINDS.get(config['kind']);
+  const modes = config['modes'];
+  const americanModes = Array.isArray(modes) && modes.some((mode) => AMERICAN_MODES.has(mode));
+  if (!kind && !americanModes) return config;
+  return {
+    ...config,
+    ...(kind ? { kind } : {}),
+    ...(americanModes
+      ? { modes: [...new Set(modes.map((mode: unknown) => AMERICAN_MODES.get(mode) ?? mode))] }
+      : {}),
+  };
+}
+
 /** How a kind was known: the card's word, the model, LG's device type, the keys, the name. */
 export type KindSource = 'config' | 'model' | 'lg' | 'keys' | 'words';
 

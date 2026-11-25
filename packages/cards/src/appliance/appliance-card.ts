@@ -65,7 +65,7 @@ import { sharedGap } from '../cover/common.js';
 import { HeadFit, nameWidth } from '../energy/head.js';
 import { BADGE_BASE, Card, type HeadConfig } from '../shared/base.js';
 import { statusToneOf, toneOf } from '../shared/colour.js';
-import { configKeys } from '../shared/config.js';
+import { configKeys, type AliasSpec } from '../shared/config.js';
 import { unitWord, widestDuration } from '../shared/duration.js';
 import { fitLine, type Segment } from '../shared/fit.js';
 import { COLUMN, textWidth } from '../shared/heights.js';
@@ -161,6 +161,7 @@ import {
   type RowValues,
 } from './full.js';
 import {
+  americanAppliance,
   applianceDevices,
   APPLIANCE_READOUTS,
   KIND_DEFAULTS,
@@ -722,6 +723,9 @@ export class FluvyApplianceCard extends Card<ApplianceCardConfig> {
   static override layoutHeight(config: ApplianceCardConfig): number {
     return applianceHeight(config);
   }
+
+  /** A kind and a quick mode as an American writes them (`kind: cooktop`, `modes: [vacation]`), read as its own. */
+  static override aliases: AliasSpec = { upgrade: americanAppliance };
 
   static override styles: CSSResultGroup = [
     ...(Card.styles as CSSResultGroup[]),

@@ -15,8 +15,9 @@ rows: [program, water, energy]
 
 ### When the card guesses wrong
 
-`kind` says what it is. `roles` names an entity for a role, or `none` to drop one it found. `scan: false` reads only
-what you name. A helper on the device plays a role only where the integration has nothing for it.
+`kind` says what it is (`cooktop` reads as `hob`, and a quick mode `vacation` as `holiday`). `roles` names an entity
+for a role, or `none` to drop one it found. `scan: false` reads only what you name. A helper on the device plays a
+role only where the integration has nothing for it.
 
 ```yaml
 # a dishwasher that starts even with its remote start off

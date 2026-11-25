@@ -13063,6 +13063,18 @@
       ],
       "older_names": [
         {
+          "from": "show_tires",
+          "to": "show_tyres"
+        },
+        {
+          "from": "tire_decimals",
+          "to": "tyre_decimals"
+        },
+        {
+          "from": "tire_low",
+          "to": "tyre_low"
+        },
+        {
           "from": "layout",
           "to": "variant"
         },

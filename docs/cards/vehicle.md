@@ -310,6 +310,8 @@ show_quick_states: true
   script, a scene), else opens it; `confirm: true` asks first.
 - `tyre_low` is in the tyres' unit (an entity in another unit of pressure is converted). A tyre under it, or the car's
   own tyre warning, says Low tyre pressure on the line.
+- The tyres read as an American writes them too: `show_tires`, `tire_low`, `tire_decimals`, and the roles `tire_fl`,
+  `tire_fr`, `tire_rl` and `tire_rr`.
 - `badge` takes the place of what the car is doing, in the head and on the mini strip; Unavailable still shows.
 - `quick_actions` sit at the foot as a room's quick actions do, as many as one line holds.
 
@@ -332,6 +334,9 @@ show_rows: false # every part hidden: the card is the picture, its tap the card'
 
 | Older name | Read as |
 | --- | --- |
+| `show_tires` | `show_tyres` |
+| `tire_decimals` | `tyre_decimals` |
+| `tire_low` | `tyre_low` |
 | `layout` | `variant` |
 | `view` | `variant` |
 | `accent` | `color` |
