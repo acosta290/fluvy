@@ -157,6 +157,7 @@
     "tyre_pressure_low": "Low tire pressure",
     "editor.tyre_decimals": "Tire decimals",
     "editor.tyre_low": "Low tire under",
-    "editor.tyre_low_helper": "A pressure in the tires’ unit, an entity, or a template such as {{ states('sensor.x') }}"
+    "editor.tyre_low_helper": "A pressure in the tires’ unit, an entity, or a template such as {{ states('sensor.x') }}",
+    "editor.map_theme": "Map colors"
   }
 }
