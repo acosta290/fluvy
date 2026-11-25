@@ -47,15 +47,15 @@ export const STEP_MS = 600;
 /** What makes a robot's profile at a pace, once the robot is known to be driven so. */
 type Maker = (pace: number) => DriveProfile;
 
-type Bag = Readonly<Record<string, unknown>>;
-const isBag = (value: unknown): value is Bag =>
+export type Bag = Readonly<Record<string, unknown>>;
+export const isBag = (value: unknown): value is Bag =>
   typeof value === 'object' && value !== null && !Array.isArray(value);
 
 /** A table's entry by a key of its own: a word the house or a config hands over is never read off its makings. */
-const entryOf = <T>(table: Readonly<Record<string, T>>, key: unknown): T | undefined =>
+export const entryOf = <T>(table: Readonly<Record<string, T>>, key: unknown): T | undefined =>
   typeof key === 'string' && Object.hasOwn(table, key) ? table[key] : undefined;
 
-const call = (domain: string, service: string, data: Bag, id?: string): DriveCall => ({
+export const call = (domain: string, service: string, data: Bag, id?: string): DriveCall => ({
   domain,
   service,
   data,
@@ -63,8 +63,11 @@ const call = (domain: string, service: string, data: Bag, id?: string): DriveCal
 });
 
 /** Whether Home Assistant offers every one of a domain's `actions`. */
-const offers = (hass: HomeAssistant, domain: string, ...actions: readonly string[]): boolean =>
-  actions.every((action) => hass.services?.[domain]?.[action] !== undefined);
+export const offers = (
+  hass: HomeAssistant,
+  domain: string,
+  ...actions: readonly string[]
+): boolean => actions.every((action) => hass.services?.[domain]?.[action] !== undefined);
 
 const held = (value: number, limit: number): number => Math.min(limit, Math.max(-limit, value));
 const round = (value: number, digits: number): number => Number(value.toFixed(digits));
@@ -102,7 +105,7 @@ const roborock =
   });
 
 /** The device's model as its integration registers it (`xiaomi.vacuum.c102gl`). */
-const modelOf = (hass: HomeAssistant, id: string): string =>
+export const modelOf = (hass: HomeAssistant, id: string): string =>
   hass.devices?.[hass.entities?.[id]?.device_id ?? '']?.model ?? '';
 
 /**
@@ -199,8 +202,8 @@ const INTEGRATIONS: Readonly<
 
 /* ---------- a profile of the person's own ---------- */
 
-/** An action as YAML writes it: `action` (or the older `service`), its `data`, its `target`. */
-interface Action {
+/** An action as YAML writes it: `action` (or the older `service`; a card's `perform_action`), its `data`, its `target`. */
+export interface Action {
   readonly domain: string;
   readonly service: string;
   readonly data: Bag;
@@ -218,17 +221,22 @@ interface OwnDrive {
 
 const ACTION = /^([a-z0-9_]+)\.([a-z0-9_]+)$/;
 
-/** One of `drive`'s actions, or what is wrong with it; nothing where the config names none. */
-function actionOf(raw: unknown, name: string): Action | string | undefined {
+/**
+ * An action the config writes under `name` (`drive.move`, a map's `zone_action`), or what is wrong with it; nothing
+ * where the config names none. Its name is read where a card's action says it too (`perform_action`, `service`).
+ */
+export function actionOf(raw: unknown, name: string): Action | string | undefined {
   if (raw === undefined || raw === null) return undefined;
-  if (!isBag(raw)) return `"drive.${name}" must be an action`;
-  const named = ACTION.exec(String(raw['action'] ?? raw['service'] ?? ''));
-  if (!named) return `"drive.${name}" needs an action (domain.name)`;
-  const data = raw['data'] ?? {};
-  if (!isBag(data)) return `"drive.${name}.data" must be a map`;
+  if (!isBag(raw)) return `"${name}" must be an action`;
+  const named = [raw['perform_action'], raw['action'], raw['service']]
+    .map((said) => ACTION.exec(String(said ?? '')))
+    .find(Boolean);
+  if (!named) return `"${name}" needs an action (domain.name)`;
+  const data = raw['data'] ?? raw['service_data'] ?? {};
+  if (!isBag(data)) return `"${name}.data" must be a map`;
   const target = isBag(raw['target']) ? raw['target']['entity_id'] : undefined;
   const ids = target === undefined ? [] : [target].flat();
-  if (!ids.every(isEntityId)) return `"drive.${name}.target" must name entities`;
+  if (!ids.every(isEntityId)) return `"${name}.target" must name entities`;
   return { domain: named[1] ?? '', service: named[2] ?? '', data, target: ids };
 }
 
@@ -247,11 +255,11 @@ export function ownDrive(raw: unknown): OwnDrive | string | undefined {
   if (!isBag(raw)) return '"drive" must be a map of start, move and stop';
   // a map left empty (the editor's field, cleared) is none
   if (!Object.keys(raw).length) return undefined;
-  const start = actionOf(raw['start'], 'start');
+  const start = actionOf(raw['start'], 'drive.start');
   if (typeof start === 'string') return start;
-  const move = actionOf(raw['move'], 'move');
+  const move = actionOf(raw['move'], 'drive.move');
   if (typeof move === 'string') return move;
-  const stop = actionOf(raw['stop'], 'stop');
+  const stop = actionOf(raw['stop'], 'drive.stop');
   if (typeof stop === 'string') return stop;
   const velocity = scaleOf(raw['velocity'], 'velocity');
   if (typeof velocity === 'string') return velocity;
@@ -261,25 +269,39 @@ export function ownDrive(raw: unknown): OwnDrive | string | undefined {
   return { move, velocity, rotation, ...(start ? { start } : {}), ...(stop ? { stop } : {}) };
 }
 
-/** `{{ velocity }}`, `{{ rotation }}`, `{{ seq }}` and `{{ random }}`: what a call's data may ask the card for. */
-const ASKED = /\{\{\s*(velocity|rotation|seq|random)\s*\}\}/g;
-const ASKED_ALONE = /^\{\{\s*(velocity|rotation|seq|random)\s*\}\}$/;
+/** What a call's data may ask the card for by name: `{{ velocity }}`, or as the map cards write it, `[[selection]]`. */
+const ASKED = /\{\{\s*([a-z_]+)\s*\}\}|\[\[\s*([a-z_]+)\s*\]\]/g;
+
+/** The names a call's data asks for, whether the card can say them or not. */
+export function askedBy(value: unknown, found = new Set<string>()): ReadonlySet<string> {
+  if (typeof value === 'string')
+    for (const [, curly, square] of value.matchAll(ASKED)) found.add(curly ?? square ?? '');
+  else if (Array.isArray(value)) for (const item of value) askedBy(item, found);
+  else if (isBag(value)) for (const item of Object.values(value)) askedBy(item, found);
+  return found;
+}
 
 /**
- * A call's data with what it asks for said, numbers only: a text that is one placeholder becomes its number, one
- * inside other words its digits (a Dreame's JSON); everything else goes as it is written.
+ * A call's data with what it asks for said, from `values` alone (numbers the card computed, lists of them, the
+ * card's own entity): a text that is one placeholder becomes its value, one inside other words its JSON (a Dreame's
+ * payload); a name the card does not say, and everything else, goes as it is written.
  */
-function said(value: unknown, numbers: Readonly<Record<string, number>>): unknown {
+export function said(value: unknown, values: Readonly<Record<string, unknown>>): unknown {
   if (typeof value === 'string') {
-    const alone = ASKED_ALONE.exec(value)?.[1];
-    return alone
-      ? numbers[alone]
-      : value.replace(ASKED, (_, name: string) => String(numbers[name]));
+    const alone = new RegExp(`^(?:${ASKED.source})$`).exec(value);
+    const name = alone?.[1] ?? alone?.[2];
+    if (name !== undefined && Object.hasOwn(values, name)) return values[name];
+    return value.replace(ASKED, (written, curly?: string, square?: string) => {
+      const asked = curly ?? square ?? '';
+      if (!Object.hasOwn(values, asked)) return written;
+      const say = values[asked];
+      return typeof say === 'string' ? say : JSON.stringify(say);
+    });
   }
-  if (Array.isArray(value)) return value.map((item) => said(item, numbers));
+  if (Array.isArray(value)) return value.map((item) => said(item, values));
   if (isBag(value))
     return Object.fromEntries(
-      Object.entries(value).map(([key, item]) => [key, said(item, numbers)]),
+      Object.entries(value).map(([key, item]) => [key, said(item, values)]),
     );
   return value;
 }

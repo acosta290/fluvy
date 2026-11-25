@@ -1,6 +1,8 @@
 import {
+  fireEvent,
   formatNumber,
   formatTime,
+  isEntityId,
   isUsable,
   numberAttr,
   strings,
@@ -54,7 +56,11 @@ import { drawnAs } from '../shared/heights.js';
 import { statsRow, type StatText } from '../shared/readouts.js';
 import { stateLook, tintOf, type StateTintConfig } from '../shared/state-tint.js';
 import {
+  mapOf,
+  mapPlate,
   MOWER_BITS,
+  presetRows,
+  presetsBlock,
   usual,
   VACUUM_BITS,
   vacuumHeight,
@@ -70,6 +76,7 @@ import {
 } from './drive.js';
 import type { DriveEndDetail } from './drive/drive-pad.js';
 import type { DriveSheetHost } from './drive/drive-sheet.js';
+import type { MapChosenDetail, MapHeld, MapHost, Scene, Selection, Setup } from './map/index.js';
 
 const vacuumStrings = strings('vacuum');
 const driveStrings = strings('drive');
@@ -91,6 +98,17 @@ const loadPad = (): Promise<unknown> =>
     padHere = true;
   }));
 
+/**
+ * The map and the presets (#265: the map's element, what reads their config, each integration's calls): a chunk of
+ * its own, fetched by the first card whose config names a map or presets, never by a card that names neither.
+ */
+let maps: typeof import('./map/index.js') | undefined;
+let mapsAsked: Promise<void> | undefined;
+const loadMap = (): Promise<void> =>
+  (mapsAsked ??= import('./map/index.js').then((landed) => {
+    maps = landed;
+  }));
+
 /** The pad's ring: the remote's 176 where its room holds it, down to the 144 its arrows and its Stop need. */
 const RING = 176;
 const RING_MIN = 144;
@@ -104,6 +122,23 @@ export interface VacuumCardConfig extends FluvyCardConfig, StateTintConfig {
   subtitle?: string;
   variant?: VacuumVariant;
   show_battery?: boolean;
+  /**
+   * The robot's map under the head (1.26, #265): its picture (`image`: a camera, an image entity, an address), its
+   * `calibration`, its shape (`aspect_ratio`), its `rooms`, and what a hand does on it (`map/config.ts`). None by
+   * default; `show_map: false` hides it and keeps it written.
+   */
+  map?: unknown;
+  show_map?: boolean;
+  /**
+   * Cleaning presets as chips (#265), under the map where there is one: each a zone, rooms, areas, a point or an
+   * action of the person's own, or `areas` for one a mapped area of the house. None by default.
+   */
+  presets?: unknown;
+  show_presets?: boolean;
+  /** The presets' chips: equal ones that fill the row (default) or content-sized ones. */
+  presets_style?: RowStyle;
+  /** The suction's chips, where the robot has speeds: shown by default. */
+  show_suction?: boolean;
   /** Sensors the integration exposes beside the robot itself. A column exists only for what is configured. */
   area_entity?: string;
   duration_entity?: string;
@@ -125,6 +160,8 @@ export interface VacuumCardConfig extends FluvyCardConfig, StateTintConfig {
   /** Test hooks: the card held in its drive mode, or its sheet docked in its place (the playground). Undocumented. */
   _drive?: boolean;
   _sheet?: boolean;
+  /** Test hook: the map held as a hand left it (what is picked, its mode, how far it is enlarged). Undocumented. */
+  _map?: MapHeld;
 }
 
 interface Robot {
@@ -216,16 +253,31 @@ export class FluvyVacuumCard extends Card<VacuumCardConfig> {
         position: absolute;
         inset: 16px 0 auto;
       }
+      /* the map: its plate 16 under the head, there at its size before its chunk is */
+      fluvy-vacuum-map {
+        display: block;
+        margin-top: 16px;
+      }
+      /* the presets' chips, 16 under what precedes them; one with a colour of its own wears it on its icon at rest */
+      .vc-presets {
+        padding-top: 8px;
+      }
+      .vc-presets .fv-chip[data-accent]:not(.is-active, .is-unavailable) :is(svg, .fv-haicon) {
+        color: var(--fluvy-accent);
+      }
     `,
   ];
 
   static override properties = {
     ...Card.properties,
+    chosen_: { state: true },
     driving_: { state: true },
     sheet_: { state: true },
     room_: { state: true },
     failed_: { state: true },
   };
+  /** What is picked on the map (`map/selection.ts`): the map draws it and says what a hand changed. */
+  declare chosen_: Selection | undefined;
   /** The robot is driven: the pad is drawn, in the card or in its sheet. */
   declare driving_: boolean;
   /** The pad is in the sheet: asked for, or the card has no room for its ring. */
@@ -237,6 +289,8 @@ export class FluvyVacuumCard extends Card<VacuumCardConfig> {
 
   private readonly suctionHold = new Hold<string | null>(this);
   private readonly head = new HeadFit(this);
+  /** The config's map and presets, read once their chunk is here (`map/config.ts`); none where it names neither. */
+  private setup: Setup | undefined;
   private failedTimer = 0;
   /** The playground's hooks, taken once: the pad's chunk, then the card in its drive mode (or its sheet, docked). */
   private demo = false;
@@ -264,7 +318,30 @@ export class FluvyVacuumCard extends Card<VacuumCardConfig> {
     if (!config.entity) throw new Error('fluvy-vacuum-card: "entity" is required');
     const drive = ownDrive(config.drive);
     if (typeof drive === 'string') throw new Error(`fluvy-vacuum-card: ${drive}`);
+    this.chosen_ = config._map?.chosen;
+    this.setup = undefined;
+    if (config.map === undefined && config.presets === undefined) return config;
+    // read at once where the map's chunk is here; else once it lands, a fault said then as every card's is: built
+    // again in its place (Home Assistant's `ll-rebuild`), it throws
+    if (maps) this.setup = this.read(config);
+    else
+      void loadMap().then(() => {
+        if (this.config !== config) return;
+        try {
+          this.setup = this.read(config);
+          this.requestUpdate();
+        } catch {
+          fireEvent(this, 'll-rebuild');
+        }
+      });
     return config;
+  }
+
+  /** The config's map and presets as their chunk reads them, what is wrong with them thrown in words. */
+  private read(config: VacuumCardConfig): Setup | undefined {
+    const setup = maps?.setupOf(config);
+    if (typeof setup === 'string') throw new Error(`fluvy-vacuum-card: ${setup}`);
+    return setup;
   }
 
   override getCardSize(): number {
@@ -287,6 +364,8 @@ export class FluvyVacuumCard extends Card<VacuumCardConfig> {
 
   protected override watched(): readonly string[] {
     const c = this.config;
+    // the map's picture, and what holds its calibration where that is another entity
+    const map = c ? mapOf(c) : undefined;
     return [
       c?.entity,
       c?.area_entity,
@@ -294,6 +373,9 @@ export class FluvyVacuumCard extends Card<VacuumCardConfig> {
       c?.remaining_entity,
       c?.drive_entity,
       this.batteryId(),
+      ...[map?.['image'], map?.['calibration']]
+        .map((named) => (typeof named === 'string' ? named.trim() : ''))
+        .filter(isEntityId),
     ].filter((id): id is string => Boolean(id));
   }
 
@@ -386,6 +468,87 @@ export class FluvyVacuumCard extends Card<VacuumCardConfig> {
     profile: () => (this.config?._sheet ? undefined : this.driveWay()),
     adopt: (root) => this.accents.adopt(root),
   };
+
+  /** What the map asks of the card: its colours, derived on the palette it wears. */
+  private readonly mapHost: MapHost = {
+    adopt: (root) => this.accents.adopt(root),
+    accent: (colour) => this.accents.pick(colour),
+  };
+
+  /** A hand changed what is picked on the map (or a preset's chip was held): the card keeps it. */
+  private readonly pick = (chosen: Selection | undefined): void => {
+    this.chosen_ = chosen;
+  };
+
+  /**
+   * The map, 16 under the head (#265): its plate in its shape across the column, there at that size before its chunk
+   * is, whatever it shows.
+   */
+  private renderMap(
+    scene: Scene | undefined,
+    name: string,
+    still: boolean,
+    busy: boolean,
+  ): TemplateResult | typeof nothing {
+    const map = this.config ? mapOf(this.config) : undefined;
+    if (!map) return nothing;
+    const height = mapPlate(map, this.contentWidth);
+    return html`<fluvy-vacuum-map
+      style="min-height:${height}px"
+      .hass=${this.hass}
+      .scene=${scene}
+      .chosen=${this.chosen_}
+      .card=${this.mapHost}
+      .held=${this.config?._map}
+      .name=${name}
+      .width=${this.contentWidth}
+      .height=${height}
+      .still=${still}
+      .busy=${busy}
+      @fluvy-map-chosen=${(event: Event) =>
+        this.pick((event as CustomEvent<MapChosenDetail>).detail.chosen)}
+    ></fluvy-vacuum-map>`;
+  }
+
+  /**
+   * The presets' chips (#265), 16 under what precedes them: a tap runs one, a still press shows it on the map. Their
+   * rows' room is kept, by their names, until their chunk is here.
+   */
+  private renderPresets(scene: Scene | undefined, still: boolean): TemplateResult | typeof nothing {
+    const config = this.config;
+    const rows = config ? presetRows(config, this.contentWidth) : 0;
+    if (!config || !rows) return nothing;
+    const { hass, chosen_: chosen } = this;
+    if (!maps || !scene || !hass)
+      return html`<div
+        class="vc-presets"
+        style="height:${presetsBlock(rows, config.presets_style) - 8}px"
+      ></div>`;
+    const chips = maps.chipsOf(hass, scene, chosen, {
+      node: this,
+      accent: (colour) => this.accents.item(colour),
+      still,
+      pick: this.pick,
+    });
+    // a tap runs the preset; where it answers a double tap too, its tap waits to see whether a second follows
+    const tap = (key: string): void =>
+      this.tapper(
+        scene.presets[Number(key)],
+        'preset',
+        () => maps?.runChip(this, hass, scene, chosen, key),
+        maps?.doubles(scene, key)
+          ? () => maps?.runChip(this, hass, scene, chosen, key, 'double')
+          : undefined,
+      )();
+    return chips.length
+      ? html`<div class="vc-presets">
+          ${chipRow(chips, tap, config.presets_style, {
+            ruler: this.head.ruler,
+            width: this.contentWidth,
+          })}
+        </div>`
+      : nothing;
+  }
 
   /** The pad's sheet; docked in the card's place for the playground. */
   private renderSheet(docked: boolean): TemplateResult {
@@ -572,11 +735,12 @@ export class FluvyVacuumCard extends Card<VacuumCardConfig> {
       row.sort((a, b) => rank[a.key as Command | 'drive'] - rank[b.key as Command | 'drive']);
       row.splice(actionsThatFit(this.contentWidth));
     }
-    const speeds = has('suction')
-      ? ((view.attr<unknown>('fan_speed_list') as unknown[] | undefined) ?? []).filter(
-          (item): item is string => typeof item === 'string',
-        )
-      : [];
+    const speeds =
+      has('suction') && this.config?.show_suction !== false
+        ? ((view.attr<unknown>('fan_speed_list') as unknown[] | undefined) ?? []).filter(
+            (item): item is string => typeof item === 'string',
+          )
+        : [];
     const speed = this.suctionHold.read(view.attr<string | null>('fan_speed') ?? null);
     const chip = (item: string): ChipItem => ({
       key: item,
@@ -614,6 +778,12 @@ export class FluvyVacuumCard extends Card<VacuumCardConfig> {
     const gap = short ? sharedGap(w, [laid.columns, short]).gap : laid.gap;
     const rows = short ? [row.slice(0, -short), row.slice(-short)] : [row];
     const run = (key: string): void => this.command(view, robot, key as Command | 'drive');
+    // the map and the presets, as their chunk reads the config and the house; the colours they name, derived here
+    const scene =
+      maps && this.setup && !compact
+        ? maps.sceneOf(this.hass, view.id, this.setup, () => this.requestUpdate())
+        : undefined;
+    if (scene) for (const named of maps?.coloursOf(scene) ?? []) this.accents.item(named);
 
     const card = html`<article
       class="fv-card dv-card ${unusable ? 'is-unavailable is-off' : ''} ${tinted.cls}"
@@ -633,6 +803,8 @@ export class FluvyVacuumCard extends Card<VacuumCardConfig> {
         cut: fitted.cut,
         ...this.headActions(view.id),
       })}
+      ${compact ? nothing : this.renderMap(scene, name, unusable, busy)}
+      ${compact ? nothing : this.renderPresets(scene, unusable)}
       ${columns.length && !compact ? this.renderColumns(columns, w) : nothing}
       <div class="vc-body ${inCard ? 'is-driving' : ''}">
         ${

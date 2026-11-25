@@ -36,6 +36,8 @@ import type template from './locales/en/template.json';
 import type thermostat from './locales/en/thermostat.json';
 import type thermostats from './locales/en/thermostats.json';
 import type vacuum from './locales/en/vacuum.json';
+import type vacuumEditor from './locales/en/vacuum-editor.json';
+import type vacuumMap from './locales/en/vacuum-map.json';
 import type vehicle from './locales/en/vehicle.json';
 import type web from './locales/en/web.json';
 
@@ -85,6 +87,8 @@ export type Catalogue = typeof core &
   typeof thermostat &
   typeof thermostats &
   typeof vacuum &
+  typeof vacuumEditor &
+  typeof vacuumMap &
   typeof vehicle &
   typeof web;
 

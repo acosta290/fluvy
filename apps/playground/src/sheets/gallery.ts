@@ -41,6 +41,7 @@ import { sheet as swipe } from './swipe.js';
 import { sheet as template } from './template.js';
 import { sheet as thermostats } from './thermostats.js';
 import { sheet as usage } from './usage.js';
+import { sheet as vacuumMap } from './vacuum-map.js';
 import { sheet as vehicle } from './vehicle.js';
 import { sheet as web } from './web.js';
 
@@ -68,6 +69,17 @@ const VIEWS: Readonly<Record<string, NonNullable<FrameSpec['hass']>>> = {
   'fluvy-appliance-card': viewOf(appliances, 'Miele · washer rinsing, named'),
   'fluvy-appliances-card': viewOf(appliances, 'Appliances · rows'),
   'fluvy-thermostats-card': viewOf(thermostats, 'The house’s heating'),
+  // the house that offers a robot's actions, and the example's robot a Xiaomi Miio one in it: its map's rooms clean
+  'fluvy-vacuum-card': (hass) => {
+    const house = viewOf(vacuumMap, 'Map')(hass);
+    return {
+      ...house,
+      entities: {
+        ...house.entities,
+        'vacuum.robot': { entity_id: 'vacuum.robot', platform: 'xiaomi_miio' },
+      },
+    };
+  },
 };
 
 export const sheet: SheetSpec = {
@@ -116,6 +128,7 @@ export const sheet: SheetSpec = {
     rounds,
     thermostats,
     roomsCard,
+    vacuumMap,
     // last: its own answers to the Energy dashboard's questions are the balance sheet's, which must not come first
     swipe,
   ],

@@ -61,7 +61,7 @@
     "web": "A web page on a plate — a map, a chart, a site of your own — under a head, in a frame or bare; sandboxed as Home Assistant’s iframe card is.",
     "expander": "Any cards folded away under a head: a tap opens them, on one surface or each on its own.",
     "slider": "Any value on the precision ruler: a player’s volume with its mute, a number or a helper, a fan’s speed, another entity’s switch in its head.",
-    "vacuum": "Robot vacuum or mower: battery, start · stop · dock · locate, suction, a drive pad.",
+    "vacuum": "Robot vacuum or mower: battery, start · stop · dock · locate, suction, a drive pad, its map with presets.",
     "thermostat": "Climate, water heater or humidifier on a dial, with modes, presets and fan speeds.",
     "vehicle": "A car, electric, petrol, diesel or plug-in hybrid: its battery or tank, range and charge limit, when it is full, where it is, and its lock, climate, charging, boot and windows in one row. Tesla, BMW, Renault, Volvo, Kia, Hyundai, Volkswagen, Škoda, Polestar, MG, Toyota, Ford, Mercedes-Benz, Peugeot and more.",
     "items": "The items of a sensor’s list attribute, a row each — flights overhead, departures, deliveries — with a flights preset for FlightRadar24.",

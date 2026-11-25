@@ -653,6 +653,12 @@ export const MEANINGS: Readonly<Record<string, string>> = {
   'timer.entity': 'The timer the card shows and controls.',
   'updates.entities': 'The update entities the card lists; left out, every one of the house.',
   'vacuum.show_battery': 'Shows the robot’s battery.',
+  'vacuum.show_suction': 'Shows the suction’s chips.',
+  'vacuum.map':
+    'The robot’s map under the head, as a block: its picture (`image`: a camera, an image entity or an address), its `calibration`, its shape (`aspect_ratio`), its `rooms`, what stands on it (`controls`) and how many times a pick is cleaned (`repeats`).',
+  'vacuum.show_map': 'Shows the map; off, it is hidden and stays written.',
+  'vacuum.presets_style':
+    'Draws the presets as chips that fill their row, or as content-sized ones.',
   'vehicle.badge':
     'Words, an entity’s state or a template of your own in the head’s badge, in place of what the car is doing.',
   'vehicle.energy':
@@ -784,6 +790,8 @@ export const MEANINGS: Readonly<Record<string, string>> = {
   'stat-tiles.tiles[]': 'The figures as tiles, in this order.',
   'template.readouts[]': 'Sensors shown as readouts on the tile, in this order.',
   'tile.readouts[]': 'Sensors shown as readouts on the tile, in this order.',
+  'vacuum.presets[]':
+    'Cleaning presets as chips, under the map where there is one: each cleans what it names, and one that names nothing is a full clean. `presets: areas` is one for each area the robot has mapped in Home Assistant.',
   'vehicle.controls[]':
     'The car’s controls, each a round that acts on it, and entities of your own among them.',
   'vehicle.quick_actions[]':
@@ -792,6 +800,26 @@ export const MEANINGS: Readonly<Record<string, string>> = {
   'compass.stats[]': 'Up to three sensors read out under the compass, in this order.',
 
   // ---- a field of a list's items, on every card that has it ----
+  'vacuum.presets[].name': 'The preset’s name, on its chip and on the map.',
+  'vacuum.presets[].icon': 'An icon before its name.',
+  'vacuum.presets[].color':
+    'The preset’s colour: its icon’s, its zone’s on the map, and its chip’s while the map shows it.',
+  'vacuum.presets[].zone':
+    'A rectangle the preset cleans, as the robot counts: `[x1, y1, x2, y2]`.',
+  'vacuum.presets[].zones':
+    'Several rectangles the preset cleans in one go: `[[x1, y1, x2, y2], …]`.',
+  'vacuum.presets[].rooms':
+    'The rooms the preset cleans, by the robot’s own numbers for them: `[16, 17]`.',
+  'vacuum.presets[].areas': 'The areas of Home Assistant the preset cleans (`vacuum.clean_area`).',
+  'vacuum.presets[].point': 'A place the preset sends the robot to: `[x, y]`.',
+  'vacuum.presets[].repeats': 'How many times it cleans what it names; once where it says none.',
+  'vacuum.presets[].confirmation': 'Asks before the preset runs, in Home Assistant’s own dialog.',
+  'vacuum.presets[].on_map':
+    'Draws the preset’s zone or point on the map; `false` leaves it to its chip.',
+  'vacuum.presets[].tap_action':
+    'What a tap does in the place of cleaning what it names; a call’s data may ask `[[selection]]`, `[[point_x]]`, `[[point_y]]` and `[[repeats]]`.',
+  'vacuum.presets[].hold_action':
+    'What a long press does in the place of showing the preset on the map.',
   '[].above': 'Counts an entity whose state, or the attribute named, is above this number.',
   '[].acknowledged': 'Counts Home Assistant’s alerts that were acknowledged too.',
   '[].actions':

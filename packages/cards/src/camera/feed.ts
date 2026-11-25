@@ -42,17 +42,31 @@ export interface FeedWant {
   readonly hass: HomeAssistant | undefined;
   /** The picture's entity: a camera, or the image a printer's job shows; null where there is none. */
   readonly view: EntityView | null;
+  /** A picture that is no entity's (a floor plan's address, already whole): fetched as it is written, once. */
+  readonly address?: string;
   /** Home Assistant's stream wanted in the stills' place (a camera on `camera_view: live`). */
   readonly live: boolean;
   /** Seconds between two stills. */
   readonly refresh: number;
-  /** A picture that changes with its job, not with time (a printer's preview): fetched again only when its path does. */
+  /**
+   * A picture that changes with its job, not with time (a printer's preview, a robot's map as an image entity):
+   * fetched again only when its path or its entity's state does (an image entity says a new picture by its state,
+   * its path the same until its token turns).
+   */
   readonly once?: boolean;
   /** The camera's own shape wanted (`aspect_ratio: native`): remembered, and read off its first frame. */
   readonly native?: boolean;
-  /** The width a still is asked at, in CSS pixels: the plate's (the screen's in full screen). */
+  /**
+   * The width a still is asked at, in CSS pixels: the plate's (the screen's in full screen); 0 asks it as it is,
+   * where its own pixels are counted (a map's calibration).
+   */
   readonly width: number;
 }
+
+/** A feed's picture: the address it names, else its entity's own while that can be read. */
+const pictureOf = (want: FeedWant): string | null | undefined =>
+  want.address ??
+  (want.view?.status === 'ok' ? want.view.attr<string | null>('entity_picture') : null);
 
 /**
  * One camera's picture in a card: stills that refresh themselves, or Home Assistant's stream where the card wants it
@@ -85,7 +99,7 @@ export class CameraFeed implements ReactiveController {
   private shownStream = false;
   /** What the last sync was asked for: another camera, or stills instead of the stream, ends the stream's session. */
   private last: FeedWant | undefined;
-  /** The path of the picture fetched once (a preview): fetched again when it changes. */
+  /** The picture fetched once (a preview), by its path and its entity's state: fetched again when either changes. */
   private fetched = '';
   /** The first frame has been checked against the remembered shape. */
   private nativeChecked = false;
@@ -171,7 +185,7 @@ export class CameraFeed implements ReactiveController {
       this.shownStream = streaming;
       this.host.requestUpdate();
     }
-    const picture = ok ? view.attr<string | null>('entity_picture') : null;
+    const picture = pictureOf(want);
     const ready =
       this.host.isConnected &&
       this.holder.onScreen &&
@@ -181,7 +195,8 @@ export class CameraFeed implements ReactiveController {
     if (want.once) {
       if (this.timer) this.stop();
       // remembered once its fetch has started: a hidden page, a picture off screen or a still in flight puts it off
-      if (picture && picture !== this.fetched && ready && this.pull()) this.fetched = picture;
+      const asked = `${picture}|${view?.state ?? ''}`;
+      if (picture && asked !== this.fetched && ready && this.pull()) this.fetched = asked;
       return;
     }
     this.fetched = '';
@@ -212,7 +227,7 @@ export class CameraFeed implements ReactiveController {
    */
   pull(): boolean {
     const want = this.want();
-    const picture = want.view?.attr<string | null>('entity_picture');
+    const picture = pictureOf(want);
     if (!want.hass || !picture) return false;
     const now = Date.now();
     if (this.inFlight && now - this.inFlight < STALL_MS) return false;
@@ -225,7 +240,9 @@ export class CameraFeed implements ReactiveController {
     this.frames.show(
       base.startsWith('data:')
         ? `${base}#${now}`
-        : `${base}${base.includes('?') ? '&' : '?'}width=${width}&_=${now}`,
+        : want.address
+          ? base
+          : `${base}${base.includes('?') ? '&' : '?'}${width ? `width=${width}&` : ''}_=${now}`,
     );
     return true;
   }

@@ -67,7 +67,9 @@ function card(want: Partial<FeedWant> & { entity?: string }, target?: () => Elem
       live: asks.live ?? false,
       refresh: asks.refresh ?? 10,
       native: asks.native ?? false,
-      width: 320,
+      ...(asks.once === undefined ? {} : { once: asks.once }),
+      ...(asks.address === undefined ? {} : { address: asks.address }),
+      width: asks.width ?? 320,
     }),
     target,
   );
@@ -329,5 +331,73 @@ describe('a camera feed', () => {
     next.asks.native = false;
     next.update();
     expect(next.feed.native).toBe(0);
+  });
+});
+
+describe('a picture fetched once', () => {
+  /** The addresses the feed's two images were given, in the order asked. */
+  const sources = (el: HTMLElement): string[] =>
+    [...el.querySelectorAll('img')].map((image) => image.getAttribute('src') ?? '').filter(Boolean);
+
+  it('is fetched again when its entity says a new one by its state, its path the same (a robot’s map)', async () => {
+    const asked: string[] = [];
+    const picture = '/api/image_proxy/image.map?token=a';
+    const c = card({
+      entity: 'image.map',
+      once: true,
+      hass: house(asked, camera('image.map', '2026-11-25T08:00:00+00:00', picture)),
+    });
+    c.connect();
+    c.update();
+    c.feed.holder.report(true);
+    expect(asked).toHaveLength(1);
+    await c.answer(true);
+    // nothing new: no clock asks again
+    c.update();
+    vi.advanceTimersByTime(120_000);
+    expect(asked).toHaveLength(1);
+    // the image entity's state is when its picture last changed
+    c.asks.hass = house(asked, camera('image.map', '2026-11-25T08:05:00+00:00', picture));
+    c.update();
+    expect(asked).toHaveLength(2);
+    await c.answer(true);
+    c.update();
+    expect(asked).toHaveLength(2);
+    // its token turned: another path
+    c.asks.hass = house(
+      asked,
+      camera('image.map', '2026-11-25T08:05:00+00:00', '/api/image_proxy/image.map?token=b'),
+    );
+    c.update();
+    expect(asked).toHaveLength(3);
+  });
+
+  it('that is no entity’s is fetched as it is written, once', async () => {
+    const asked: string[] = [];
+    const c = card({ address: '/local/floor.png', once: true, hass: house(asked) });
+    c.connect();
+    c.update();
+    c.feed.holder.report(true);
+    expect(sources(c.el)).toEqual(['/local/floor.png']);
+    await c.answer(true);
+    c.update();
+    vi.advanceTimersByTime(120_000);
+    expect(asked).toHaveLength(1);
+    expect(c.feed.failed).toBe(false);
+  });
+
+  it('is asked as it is, never scaled, where its own pixels are counted (width 0)', () => {
+    const asked: string[] = [];
+    const c = card({ entity: 'camera.map', width: 0, hass: house(asked, camera('camera.map')) });
+    c.connect();
+    c.update();
+    c.feed.holder.report(true);
+    const [source = ''] = sources(c.el);
+    expect(source).toMatch(/^\/api\/camera\.map\?_=\d+$/);
+    const sized = card({ entity: 'camera.porch', hass: house(asked, camera('camera.porch')) });
+    sized.connect();
+    sized.update();
+    sized.feed.holder.report(true);
+    expect(sources(sized.el)[0]).toMatch(/^\/api\/camera\.porch\?width=\d+&_=\d+$/);
   });
 });

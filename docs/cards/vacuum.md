@@ -2,7 +2,7 @@
 
 # Vacuum
 
-Robot vacuum or mower: battery, start · stop · dock · locate, suction, a drive pad.
+Robot vacuum or mower: battery, start · stop · dock · locate, suction, a drive pad, its map with presets.
 
 `custom:fluvy-vacuum-card` · [Try it live](https://acosta290.github.io/fluvy/?card=vacuum) · [All cards](../cards.md#everyday)
 
@@ -18,6 +18,29 @@ battery_entity: sensor.robot_battery
 area_entity: sensor.robot_area
 duration_entity: sensor.robot_elapsed
 remaining_entity: sensor.robot_remaining
+show_suction: false
+map:
+  image: camera.robot_map
+presets:
+  - name: Cooker
+    icon: mdi:silverware-fork-knife
+    color: teal
+    zone:
+      - 29700
+      - 26980
+      - 32700
+      - 28780
+    repeats: 2
+  - name: Table
+    icon: mdi:table-chair
+    color: amber
+    zone:
+      - 27020
+      - 26700
+      - 28980
+      - 28140
+  - name: Full clean
+    icon: mdi:home
 ```
 
 The picture above, on the demo house: put your own entities in place of its.
@@ -51,6 +74,12 @@ area_entity: sensor.robot_area
 duration_entity: sensor.robot_elapsed
 remaining_entity: sensor.robot_remaining
 suction_style: full
+show_suction: false
+map:
+  image: camera.robot_map
+show_map: true
+show_presets: true
+presets_style: full
 # drive_entity:
 # drive:
 # tone:
@@ -74,6 +103,26 @@ suction_style: full
 #   action: none
 # icon_double_tap_action:
 #   action: none
+presets:
+  - name: Cooker
+    icon: mdi:silverware-fork-knife
+    color: teal
+    zone:
+      - 29700
+      - 26980
+      - 32700
+      - 28780
+    repeats: 2
+  - name: Table
+    icon: mdi:table-chair
+    color: amber
+    zone:
+      - 27020
+      - 26700
+      - 28980
+      - 28140
+  - name: Full clean
+    icon: mdi:home
 ```
 
 ## Options
@@ -91,9 +140,15 @@ suction_style: full
 | `duration_entity` |  | The robot’s sensor of how long it has been cleaning, shown as a readout. A `sensor`. |
 | `remaining_entity` |  | The robot’s sensor of the time left, shown as a readout. A `sensor`. |
 | `suction_style` | `full` | Draws the suction speeds as chips that fill the row, or as content-sized chips. `full` · `chips`. |
+| `show_suction` | `true` | Shows the suction’s chips. |
+| `map` |  | The robot’s map under the head, as a block: its picture (`image`: a camera, an image entity or an address), its `calibration`, its shape (`aspect_ratio`), its `rooms`, what stands on it (`controls`) and how many times a pick is cleaned (`repeats`). Its keys: `image` · `calibration` · `aspect_ratio` · `controls` · `` · `rooms` · `room_action` · `zone_action` · `point_action`. |
+| `show_map` | `true` | Shows the map; off, it is hidden and stays written. |
+| `show_presets` | `true` | Shows the presets. |
+| `presets_style` | `full` | Draws the presets as chips that fill their row, or as content-sized ones. `full` · `chips`. |
 | `tint` | `off` | When the card shows its colour beyond its circle: never, while it is on or active, or at rest too. `off` (Never) · `on` (When active) · `always`. |
 | `tint_style` | `wash` | How the colour is shown: a wash over the card, the card’s edge, or the control alone. `wash` · `edge` · `control`. |
 | `state_colors` |  | A colour for each of the device’s states, held under this key: a tone, none, or a colour of your own. Its keys: `cleaning` · `mowing` · `returning` · `paused` · `idle` · `docked` · `error`. |
+| [`presets`](#presets) |  | Cleaning presets as chips, under the map where there is one: each cleans what it names, and one that names nothing is a full clean. `presets: areas` is one for each area the robot has mapped in Home Assistant. A list: [its items](#presets). |
 | **Drive pad** |  |  |
 | `show_drive` | `false` | Shows the drive pad that moves the robot by hand. |
 | `drive_speed` | `normal` | How far a press on the drive pad moves the robot. `slow` · `normal` · `fast`. |
@@ -129,11 +184,137 @@ More about them in [Options every card takes](../customising.md#options-every-ca
 
 </details>
 
+## Lists
+
+### `presets`
+
+An item is a map with `name` and any of these fields.
+
+| Field | What it does |
+| --- | --- |
+| `name` | The preset’s name, on its chip and on the map. |
+| `icon` | An icon before its name. |
+| `color` | The preset’s colour: its icon’s, its zone’s on the map, and its chip’s while the map shows it. |
+| `zone` | A rectangle the preset cleans, as the robot counts: `[x1, y1, x2, y2]`. |
+| `zones` | Several rectangles the preset cleans in one go: `[[x1, y1, x2, y2], …]`. |
+| `rooms` | The rooms the preset cleans, by the robot’s own numbers for them: `[16, 17]`. |
+| `areas` | The areas of Home Assistant the preset cleans (`vacuum.clean_area`). |
+| `point` | A place the preset sends the robot to: `[x, y]`. |
+| `repeats` | How many times it cleans what it names; once where it says none. 1 to 3. |
+| `confirmation` | Asks before the preset runs, in Home Assistant’s own dialog. `true` or `false`. |
+| `on_map` | Draws the preset’s zone or point on the map; `false` leaves it to its chip. `true` (On) · `false` (Off). |
+| **Interactions** |  |
+| `tap_action` | What a tap does in the place of cleaning what it names; a call’s data may ask `[[selection]]`, `[[point_x]]`, `[[point_y]]` and `[[repeats]]`. |
+| `hold_action` | What a long press does in the place of showing the preset on the map. |
+| `double_tap_action` | What two taps on the item do. |
+
 ## Guide
 
-![A robot vacuum with its battery and suction, then its drive pad in the card's place](../images/1.20/vacuum.webp)
+![The robot's map with its rooms and saved zones while it works, two rooms picked with Clean at the map's foot, and a zone marked by hand](../images/1.26/vacuum-map.webp)
+
+### The map
+
+`map` draws the robot's map under the head. Tap a room or a saved zone to pick it, several at once, then Clean; the
+two rounds mark a zone by hand and pick a point to go to. Two fingers enlarge and move the map (Ctrl and the wheel,
+or a double click, with a mouse); one finger scrolls the page.
+
+```yaml
+# Xiaomi with Xiaomi Cloud Map Extractor, Dreame or a Valetudo camera: the camera says its calibration and its rooms
+type: custom:fluvy-vacuum-card
+entity: vacuum.robot
+map:
+  image: camera.robot_map
+```
+
+```yaml
+# Roborock (Home Assistant's own): its map is an image entity that says no calibration, so three points by hand
+type: custom:fluvy-vacuum-card
+entity: vacuum.roborock_s8
+map:
+  image: image.roborock_s8_ground_floor
+  calibration:
+    - { vacuum: { x: 25500, y: 25500 }, map: { x: 60, y: 214 } } # the dock, and where it is on the picture
+    - { vacuum: { x: 26500, y: 25500 }, map: { x: 110, y: 214 } }
+    - { vacuum: { x: 25500, y: 26500 }, map: { x: 60, y: 164 } }
+  rooms:
+    - id: 16
+      name: Hall
+      area: hall # Home Assistant's area, for vacuum.clean_area
+      outline: [[24620, 22900], [27300, 22900], [27300, 25860], [24620, 25860]]
+```
+
+```yaml
+# a plain floor plan: its own pixels are its measure, and an action of your own takes the numbers
+type: custom:fluvy-vacuum-card
+entity: vacuum.downstairs
+map:
+  image: /local/floor.png
+  calibration: image
+  controls: [names, zone]
+  zone_action:
+    action: perform-action
+    perform_action: script.clean_spot
+    data:
+      zones: '[[selection]]'
+      times: '[[repeats]]'
+```
+
+- `calibration`: left out, the map entity's own `calibration_points`; an entity id reads another's; three points fix
+  a flat map, four one seen at an angle; `image` is a plain picture. A map that is not calibrated still shows, and
+  its presets still run: only drawing and picking on it need it.
+- `rooms`: left out, those the map's entity says. A room's `area` is Home Assistant's, cleaned by `vacuum.clean_area`
+  where the robot takes it.
+- `aspect_ratio` is the plate's shape, 4:3 by default: the card's height never comes from the picture.
+- `controls: [names, zone, point]` chooses what stands on the map, `repeats` how many times a pick is cleaned.
+- A Valetudo robot takes `topic: valetudo/robot`.
+
+| Integration | Rooms | A zone | A point |
+| --- | --- | --- | --- |
+| Home Assistant | `vacuum.clean_area`, by area | | |
+| Xiaomi Miio | `xiaomi_miio.vacuum_clean_segment` | `xiaomi_miio.vacuum_clean_zone` | `xiaomi_miio.vacuum_goto` |
+| Roborock | `vacuum.send_command` with `app_segment_clean` | `app_zoned_clean`; one zone once, `roborock.set_vacuum_zoned_cleaning` | `roborock.set_vacuum_goto_position` |
+| Dreame (HACS) | `dreame_vacuum.vacuum_clean_segment` | `dreame_vacuum.vacuum_clean_zone` | `dreame_vacuum.vacuum_goto` |
+| Xiaomi Miot Auto (HACS), a Roborock | `xiaomi_miot.send_command` with `app_segment_clean` | `app_zoned_clean` | `app_goto_target` |
+| Valetudo, with `topic` | `mqtt.publish` to `MapSegmentationCapability` | `ZoneCleaningCapability` | `GoToLocationCapability` |
+
+- Untested on real robots: reports are welcome. A round the robot has no call for is not drawn.
+- `room_action`, `zone_action` and `point_action` under `map` are calls of your own in the integration's place.
+
+### Presets
+
+`presets` are chips under the map, and work on a card with no map too. A tap runs one; a long press shows it on the
+map, where it is drawn in its colour.
+
+```yaml
+type: custom:fluvy-vacuum-card
+entity: vacuum.robot
+map:
+  image: camera.robot_map
+presets:
+  - name: Kitchen
+    zone: [25500, 25000, 26500, 26500] # or zones, rooms: [16, 17], areas: [kitchen], point: [x, y]
+    color: teal
+    icon: mdi:silverware-fork-knife
+    repeats: 2
+    confirmation: true # asks first
+  - name: Full clean # names nothing: starts the robot
+  - name: Around the table
+    tap_action:
+      action: perform-action
+      perform_action: vacuum.send_command
+      data:
+        command: app_zoned_clean
+        params: '[[selection]]' # what is picked on the map, as numbers
+```
+
+- `[[selection]]`, `[[point_x]]`, `[[point_y]]`, `[[repeats]]` and `[[entity_id]]` are filled in by the card: numbers
+  it computed and the card's own robot, nothing else.
+- `presets: areas` is one chip for each area the robot has mapped in Home Assistant (its entity's settings).
+- `show_presets`, `show_map` and `show_suction` hide a part; `presets_style: chips` sizes the chips by their words.
 
 ### The drive pad
+
+![A robot vacuum with its battery and suction, then its drive pad in the card's place](../images/1.20/vacuum.webp)
 
 `show_drive: true` adds a Drive command where the robot can be driven by hand. A tap is a short step; held, the robot
 moves until you let go. Driving ends with Done, or after ten seconds without a press.

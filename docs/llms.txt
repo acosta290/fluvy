@@ -28,7 +28,7 @@ To write a card’s configuration, read its page: it has the card’s picture, t
 - [Remote](https://raw.githubusercontent.com/acosta290/fluvy/main/docs/cards/remote.md): `custom:fluvy-remote-card`. A TV remote in Fluvy’s hand: power, sources, a D-pad with OK, playback, volume routed where you like, channels, the apps with their logos, keys of your own.
 - [Cover](https://raw.githubusercontent.com/acosta290/fluvy/main/docs/cards/cover.md): `custom:fluvy-cover-card`. Blinds, shutters, garage doors and valves: vertical position ruler, tilt, open · stop · close, favourites.
 - [Fan](https://raw.githubusercontent.com/acosta290/fluvy/main/docs/cards/fan.md): `custom:fluvy-fan-card`. Speed ruler with steps, oscillation, direction and presets.
-- [Vacuum](https://raw.githubusercontent.com/acosta290/fluvy/main/docs/cards/vacuum.md): `custom:fluvy-vacuum-card`. Robot vacuum or mower: battery, start · stop · dock · locate, suction, a drive pad.
+- [Vacuum](https://raw.githubusercontent.com/acosta290/fluvy/main/docs/cards/vacuum.md): `custom:fluvy-vacuum-card`. Robot vacuum or mower: battery, start · stop · dock · locate, suction, a drive pad, its map with presets.
 - [Lock](https://raw.githubusercontent.com/acosta290/fluvy/main/docs/cards/lock.md): `custom:fluvy-lock-card`. Slide to unlock, never one accidental tap; codes, jammed state, related rows.
 - [Alarm](https://raw.githubusercontent.com/acosta290/fluvy/main/docs/cards/alarm.md): `custom:fluvy-alarm-card`. Arm modes as tiles and the keypad sheet for codes.
 - [Camera](https://raw.githubusercontent.com/acosta290/fluvy/main/docs/cards/camera.md): `custom:fluvy-camera-card`. A still that refreshes itself, or Home Assistant’s live stream, in the shape you choose; tap for the stream.

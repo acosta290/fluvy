@@ -173,6 +173,11 @@ const BUDGETS = {
   // the drive pad (1.20, #178): the ring with Stop in its middle, a robot's remote control from its start to its stop,
   // its sheet; fetched by the first Vacuum card that draws a Drive command
   'vacuum-drive': 8192,
+  // the robot's map and the card's presets (1.26, #265): the map's element with its picture moved and enlarged, what
+  // reads a map's calibration and rooms, each integration's calls for a room, a zone and a point, the presets' chips
+  // and their runs, the map's English; fetched by the first Vacuum card whose config names a map or presets. Measured
+  // at 13.0 KB
+  'vacuum-map': 14_336,
   // the ring (1.20): the disc of four arrows round a middle key the TV remote and the drive pad both draw
   ring: 4096,
   // the Thermostat card (1.21, 2026-11-14: it left core, 4.9 KB of what every page loads): the climate's, the water

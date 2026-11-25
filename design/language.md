@@ -4035,6 +4035,81 @@ codes): only where the config lists it, never among the default groups, so no ca
 - **Height**: the diamond's (132, less where it closes up), and the row of cells under it where it has one: by the
   config and the column alone (`remoteHeight`), whatever the device says; out of reach the same, in the dashed skin.
 
+## The robot's map and its presets (1.26, #265)
+
+The Vacuum card draws the robot's map under its head and its cleaning presets as chips under the map (`map`,
+`presets`; asked by @SentinelXS). Fluvy's own design: no card was a model. The map is **a plate with the least on it
+that says what will be cleaned**: the picture, the names of what can be picked, two rounds for what a hand may mark,
+and one bar at its foot once something is picked. A card whose config names neither is 1.25's, pixel for pixel; the
+compact card draws none of it.
+
+- **The plate** is the house's (`fv-plate`, radius 16), 16 under the head, as wide as the content and 4:3 unless
+  `map.aspect_ratio` says another shape: its height comes from the config alone, never from the picture, whose first
+  frame would move the card. The picture is whole inside it (`object-fit: contain`), on the plate's ground; a small
+  one enlarged keeps its pixels' edges. What is laid over the picture is laid in the picture's own box, through the
+  map's calibration.
+- **Rooms and saved zones.** A room is its outline, clear at rest (the picture already paints it): only its name
+  stands on it. A saved zone is nowhere in the picture, so it is drawn at rest too: a dashed line of 1.5 (5 on, 4
+  off) in its preset's colour over a 12 % wash of it. A shape smaller than a finger takes its taps from a band round
+  it, as wide as it is short of 44.
+- **Names** are pills of 24 in targets of 44: the card's colour at 92 %, a hairline, 12/600 in the ink. A room's
+  stands at its middle; where another's lies there it steps 28 or 56 up or down inside its own room, and where no
+  step is free it is not drawn until the map is enlarged (the room still takes its taps). A zone's is a tab at the
+  zone's head corner with the zone's colour at its edge, so a room's name and a zone's inside it never read as one;
+  a saved point's with no room for its name is a dot of 12 in its colour. `controls` without `names` leaves the
+  shapes alone.
+- **A pick.** A tap picks, a second tap lets go; several rooms together, or several zones, never the two kinds at
+  once (the robot takes one call). What is picked keeps the picture's colours inside a line of 2.5 in its colour,
+  cased in the card's colour 5.5 wide so it reads over any picture, light or dark; the rest of the map steps back
+  under a veil of the plate's ground at 64 %. Its name's pill takes the accent's fill. No dots, no rings, no ticks.
+- **The rounds** stand at the plate's foot end, 8 from its edges and 8 apart (`fv-round--on-page`): Mark a zone and
+  Pick a point, each only where the robot has a call for it and `controls` keeps it, and only as many as leave half
+  the plate's width to the map. While the map is enlarged, Whole map stands at the head end.
+- **The foot bar** takes the rounds' place once something is picked: a pill of 44 across the plate, 8 from its
+  edges, the card's colour at 94 % over a blur. Clear (×) at its start, the names of what is picked in 13/600 on one
+  line (cut with an ellipsis: a list, not prose), and the action at its end as a 36 pill in the accent's fill: Clean,
+  or Go here for a point; where the plate is too narrow for its word, its glyph alone in a 44 round. It comes in
+  over 200 ms from 8 below; none with reduced motion. Where a zone or a point marked by hand lies under the foot, the
+  bar stands at the plate's head instead, so what was just marked stays in sight.
+- **The modes.** Mark a zone: the bar reads "Drag across the map" in the secondary ink and lets the finger through;
+  a drag draws the zone (the card's colour at 36 % inside the accent's line), let go it is picked as "Zone", and a
+  new drag draws it again: no handles. Pick a point: "Tap where to go", a tap sets the pin (the accent's dot of 16 in
+  the card's ring of 3) and the bar offers Go here. Clear leaves the mode. In a mode the shapes and the names take
+  no taps and the cursor is a cross. What a mode waits for is said whole or not at all: in a column with no room
+  for it (211), the bar is its cross alone, a round where the rounds stood.
+- **Enlarging.** One finger scrolls the page, always: the plate never takes it (`touch-action: pan-x pan-y`; `none`
+  only while a zone is being marked). Two fingers enlarge up to four times and move the map; with a mouse, Ctrl and
+  the wheel or a double click enlarge and a drag moves; with the keys, + and −, the arrows, and 0 for the whole map.
+  The picture never leaves its plate (its edges stop at the plate's).
+- **Presets** are chips 16 under the map (or under the head on a card with no map), with no label over them, laid
+  as the house's filled rows of chips are: rows of 44 (a 36 chip in its touch, 8 apart to the eye), equal cells, as
+  many across as hold the longest name, a last row with fewer sharing the width (`presets_style: chips` sizes them
+  by their words). Each wears its icon in its colour at rest and the chip's own skin. A tap runs it (asking first
+  where `confirmation` says so, in Home Assistant's own dialog); a long press shows it on the map as a pick, ready
+  for Clean; a double tap is its `double_tap_action`. A preset that names nothing starts the robot. `presets: areas`
+  is one chip for each area the robot has mapped in Home Assistant.
+- **The order**: head, map, presets, readouts, battery, commands, suction (`show_suction: false` hides the last
+  where the presets say enough).
+- **At work** the map's camera is read every 5 seconds, at rest every 60; an image entity when its state changes; a
+  plain picture once.
+- **No picture** (the entity gone, the address refused, the robot unavailable): the plate at its size in the
+  unavailable skin (the page's ground, a dashed hairline), the map's glyph and "No map" in the secondary ink. The
+  presets keep their rows: they still run where only the picture is missing, and stand disabled while the robot is
+  out of reach. A map with no calibration shows its picture and its presets and offers nothing to pick on it.
+- **Heights** from the config alone: 16 and the plate; 16 and 44 a row for the chips (content-sized ones 8
+  apart). The chips' rows are counted from their names as written, so the automatic
+  dashboard's columns know the card before it draws.
+- **Widths.** The full card's floor is a 211 column (its `min_columns`); there the rounds are one (the first
+  `controls` lists: a zone, unless it says otherwise) and the bar keeps its cross and its action: the names give way
+  first, then the action's word to its glyph where a language's word has no room. Half a section draws the compact
+  card, which has no map.
+- **Guards.** `map/calibration.test.ts` (three points, four, a flat picture, what is refused), `map/calls.test.ts`
+  (each integration's calls to their exact data), `map/config.test.ts`, `map/selection.test.ts`,
+  `map/presets.test.ts`, `map/pan-zoom.test.ts`; `map-card.test.ts` the card (off by default, the order, the
+  heights, the chips, the editor); the playground's `vacuum-map` sheet holds every state (`_map`), and
+  `interactions-vacuum-map.mjs` drives it in a browser: a room, a zone through the calibration to its exact numbers,
+  a point, the presets, two fingers that enlarge without scrolling the page and one that scrolls it.
+
 ## Details sheets (1.20)
 
 What a Fluvy card opens for an entity's details (#162), where Home Assistant's dialog opened before: one family of

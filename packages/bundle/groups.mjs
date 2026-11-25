@@ -290,6 +290,15 @@ const RING = /\/packages\/cards\/src\/shared\/ring\.ts/;
 const VACUUM_DRIVE = /\/packages\/cards\/src\/vacuum\/drive\//;
 
 /**
+ * The robot's map and the card's presets (1.26, #265: the map's element with its picture moved and enlarged, what
+ * reads a map's calibration and its rooms, each integration's calls for a room, a zone and a point, the presets'
+ * chips and their runs, and the map's English): fetched by the first Vacuum card whose config names a map or
+ * presets, never by a dashboard without one. Its editor's words go with the forms.
+ */
+const VACUUM_MAP =
+  /\/packages\/(cards\/src\/vacuum\/map\/|core\/src\/i18n\/locales\/en\/vacuum-map\.json)/;
+
+/**
  * The Cover card (the blind's, the garage door's, the gate's and the valve's card, its sheet and its own English; its
  * editor goes with the forms, what the details sheet and a tile say of a cover too is core's, and so is
  * `cover/common.ts`, what the fan, the vacuum, the details sheets and four more cards share with it): fetched as the
@@ -544,11 +553,12 @@ const FIELDS =
 /**
  * The editors the cards every page carries keep in a module of their own (`tile/tile-editor.ts`: a card's form, its
  * lists, what it does by default — `Card.editor()`), and the template card's, which is built on the tile's, with the
- * English an editor registers of its own (the room's): fetched with the visual editor, the first time one of them is
- * edited. Named before the families, so a family's folder never keeps one.
+ * English an editor registers of its own (the room's, and the Vacuum card's for its map and its presets): fetched
+ * with the visual editor, the first time one of them is edited. Named before the families, so a family's folder
+ * never keeps one.
  */
 const FORMS =
-  /\/packages\/(cards\/src\/([\w-]+)\/\2-editor\.ts$|core\/src\/i18n\/locales\/en\/room-editor\.json)/;
+  /\/packages\/(cards\/src\/([\w-]+)\/\2-editor\.ts$|core\/src\/i18n\/locales\/en\/(room|vacuum)-editor\.json)/;
 
 /**
  * @typedef {object} Group
@@ -564,7 +574,7 @@ const FORMS =
  * bars' readings on their own), devices (the cameras' sheet on its own), appliances (their pictures on their own),
  * automations and alerts families (each sheet on its own), the template card, the web page card, the Rounds card, the Thermostats card, the Rooms card, what each card is, the
  * Expander card (its editor on its own, before the forms, with the Swipe card's), the Swipe card, a dashboard's own
- * sidebar, the Slider card, the ring, the Cover card, the drive pad, the Vacuum card, the Thermostat card, the platforms' logos, the
+ * sidebar, the Slider card, the ring, the Cover card, the drive pad, the robot's map, the Vacuum card, the Thermostat card, the platforms' logos, the
  * remote card, the Vehicle card, the Heating schedule card (its sheet on its own), Fluvy's own details, the items card (its sheet on its own), the light card's colours,
  * the Room lights card's rows, what the greeting draws beyond its words, colours worn as they are named, a room's quick actions, the cards' editor, the fields every editor is built of, the view icons, what a see-through
  * card wears, what a quiet one wears, what reads a card's thresholds, what draws a round's gauge, what sets a number in place, the slider styles,
@@ -618,6 +628,7 @@ export const GROUPS = [
   { name: 'ring', test: RING },
   { name: 'cover', test: COVER },
   { name: 'vacuum-drive', test: VACUUM_DRIVE },
+  { name: 'vacuum-map', test: VACUUM_MAP },
   { name: 'vacuum', test: VACUUM },
   { name: 'climate', test: CLIMATE },
   { name: 'app-logos', test: APP_LOGOS },

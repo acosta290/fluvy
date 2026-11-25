@@ -1,0 +1,16 @@
+{
+  "vacuum-map": {
+    "map": "Map",
+    "none": "No map",
+    "clean": "Clean",
+    "go": "Go here",
+    "clear": "Clear the selection",
+    "zone": "Zone",
+    "point": "Point",
+    "draw": "Mark a zone",
+    "pick": "Pick a point",
+    "fit": "Whole map",
+    "draw_hint": "Drag across the map",
+    "pick_hint": "Tap where to go"
+  }
+}

@@ -250,12 +250,12 @@
     "height": 352
   },
   "vacuum": {
-    "example": "457485d10086",
+    "example": "4221f627b11e",
     "width": 784,
-    "height": 960
+    "height": 1416
   },
   "vacuum.compact": {
-    "example": "d9c125f55fe8",
+    "example": "de7c3ba8527d",
     "width": 784,
     "height": 352
   },

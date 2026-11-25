@@ -8690,7 +8690,7 @@
     {
       "type": "custom:fluvy-vacuum-card",
       "name": "Vacuum",
-      "description": "Robot vacuum or mower: battery, start · stop · dock · locate, suction, a drive pad.",
+      "description": "Robot vacuum or mower: battery, start · stop · dock · locate, suction, a drive pad, its map with presets.",
       "section": "Everyday",
       "page": "cards/vacuum.md",
       "demo": "https://acosta290.github.io/fluvy/?card=vacuum",
@@ -8698,7 +8698,7 @@
         "light": "images/cards/vacuum-light.webp",
         "dark": "images/cards/vacuum-dark.webp",
         "width": 784,
-        "height": 960
+        "height": 1416
       },
       "example": {
         "type": "custom:fluvy-vacuum-card",
@@ -8707,7 +8707,40 @@
         "battery_entity": "sensor.robot_battery",
         "area_entity": "sensor.robot_area",
         "duration_entity": "sensor.robot_elapsed",
-        "remaining_entity": "sensor.robot_remaining"
+        "remaining_entity": "sensor.robot_remaining",
+        "show_suction": false,
+        "map": {
+          "image": "camera.robot_map"
+        },
+        "presets": [
+          {
+            "name": "Cooker",
+            "icon": "mdi:silverware-fork-knife",
+            "color": "teal",
+            "zone": [
+              29700,
+              26980,
+              32700,
+              28780
+            ],
+            "repeats": 2
+          },
+          {
+            "name": "Table",
+            "icon": "mdi:table-chair",
+            "color": "amber",
+            "zone": [
+              27020,
+              26700,
+              28980,
+              28140
+            ]
+          },
+          {
+            "name": "Full clean",
+            "icon": "mdi:home"
+          }
+        ]
       },
       "layout": {
         "key": "variant",
@@ -8726,6 +8759,39 @@
           "area_entity": "sensor.robot_area",
           "duration_entity": "sensor.robot_elapsed",
           "remaining_entity": "sensor.robot_remaining",
+          "show_suction": false,
+          "map": {
+            "image": "camera.robot_map"
+          },
+          "presets": [
+            {
+              "name": "Cooker",
+              "icon": "mdi:silverware-fork-knife",
+              "color": "teal",
+              "zone": [
+                29700,
+                26980,
+                32700,
+                28780
+              ],
+              "repeats": 2
+            },
+            {
+              "name": "Table",
+              "icon": "mdi:table-chair",
+              "color": "amber",
+              "zone": [
+                27020,
+                26700,
+                28980,
+                28140
+              ]
+            },
+            {
+              "name": "Full clean",
+              "icon": "mdi:home"
+            }
+          ],
           "variant": "compact"
         }
       },
@@ -8841,6 +8907,55 @@
           "key": "suction_style",
           "label": "Suction speeds as",
           "does": "Draws the suction speeds as chips that fill the row, or as content-sized chips.",
+          "type": "choice",
+          "default": "full",
+          "values": {
+            "full": "Full",
+            "chips": "Chips"
+          }
+        },
+        {
+          "key": "show_suction",
+          "label": "Show the suction",
+          "does": "Shows the suction’s chips.",
+          "type": "boolean",
+          "default": true
+        },
+        {
+          "key": "map",
+          "label": "Map",
+          "does": "The robot’s map under the head, as a block: its picture (`image`: a camera, an image entity or an address), its `calibration`, its shape (`aspect_ratio`), its `rooms`, what stands on it (`controls`) and how many times a pick is cleaned (`repeats`).",
+          "type": "map",
+          "values": {
+            "image": "image",
+            "calibration": "calibration",
+            "aspect_ratio": "aspect_ratio",
+            "controls": "controls",
+            "": "",
+            "rooms": "rooms",
+            "room_action": "room_action",
+            "zone_action": "zone_action",
+            "point_action": "point_action"
+          }
+        },
+        {
+          "key": "show_map",
+          "label": "Show the map",
+          "does": "Shows the map; off, it is hidden and stays written.",
+          "type": "boolean",
+          "default": true
+        },
+        {
+          "key": "show_presets",
+          "label": "Show the presets",
+          "does": "Shows the presets.",
+          "type": "boolean",
+          "default": true
+        },
+        {
+          "key": "presets_style",
+          "label": "Presets as",
+          "does": "Draws the presets as chips that fill their row, or as content-sized ones.",
           "type": "choice",
           "default": "full",
           "values": {
@@ -9061,6 +9176,118 @@
           "helper": "A tap waits a moment to tell it from a double tap",
           "type": "action",
           "default": "none"
+        }
+      ],
+      "lists": [
+        {
+          "key": "presets",
+          "label": "Presets",
+          "does": "Cleaning presets as chips, under the map where there is one: each cleans what it names, and one that names nothing is a full clean. `presets: areas` is one for each area the robot has mapped in Home Assistant.",
+          "id": "name",
+          "item": [
+            {
+              "key": "name",
+              "label": "Name",
+              "does": "The preset’s name, on its chip and on the map.",
+              "type": "text"
+            },
+            {
+              "key": "icon",
+              "label": "Icon",
+              "does": "An icon before its name.",
+              "type": "icon"
+            },
+            {
+              "key": "color",
+              "label": "Colour",
+              "does": "The preset’s colour: its icon’s, its zone’s on the map, and its chip’s while the map shows it.",
+              "helper": "Empty: the card’s colour",
+              "type": "colour"
+            },
+            {
+              "key": "zone",
+              "label": "Zone",
+              "does": "A rectangle the preset cleans, as the robot counts: `[x1, y1, x2, y2]`.",
+              "helper": "Four numbers, as the robot counts: [x1, y1, x2, y2]",
+              "type": "object"
+            },
+            {
+              "key": "zones",
+              "label": "Zones",
+              "does": "Several rectangles the preset cleans in one go: `[[x1, y1, x2, y2], …]`.",
+              "helper": "A list of zones, four numbers each: [[x1, y1, x2, y2]]",
+              "type": "object"
+            },
+            {
+              "key": "rooms",
+              "label": "Rooms",
+              "does": "The rooms the preset cleans, by the robot’s own numbers for them: `[16, 17]`.",
+              "helper": "The rooms’ numbers, as the robot counts them: [16, 17]",
+              "type": "object"
+            },
+            {
+              "key": "areas",
+              "label": "Areas",
+              "does": "The areas of Home Assistant the preset cleans (`vacuum.clean_area`).",
+              "type": "area"
+            },
+            {
+              "key": "point",
+              "label": "Point",
+              "does": "A place the preset sends the robot to: `[x, y]`.",
+              "helper": "Two numbers, [x, y]: the robot goes there",
+              "type": "object"
+            },
+            {
+              "key": "repeats",
+              "label": "Times cleaned",
+              "does": "How many times it cleans what it names; once where it says none.",
+              "helper": "Empty: once",
+              "type": "number",
+              "range": "1 to 3"
+            },
+            {
+              "key": "confirmation",
+              "label": "Ask first",
+              "does": "Asks before the preset runs, in Home Assistant’s own dialog.",
+              "type": "boolean"
+            },
+            {
+              "key": "on_map",
+              "label": "On the map",
+              "does": "Draws the preset’s zone or point on the map; `false` leaves it to its chip.",
+              "helper": "Empty: drawn on the map",
+              "type": "choice",
+              "values": {
+                "true": "On",
+                "false": "Off"
+              }
+            },
+            {
+              "key": "tap_action",
+              "label": "Tap action",
+              "does": "What a tap does in the place of cleaning what it names; a call’s data may ask `[[selection]]`, `[[point_x]]`, `[[point_y]]` and `[[repeats]]`.",
+              "helper": "Empty: it cleans what it names. An action of your own takes its numbers as [[selection]], [[point_x]], [[point_y]] and [[repeats]], or those picked on the map where it names none",
+              "type": "action",
+              "default_in_words": "the card’s own"
+            },
+            {
+              "key": "hold_action",
+              "label": "Hold action",
+              "does": "What a long press does in the place of showing the preset on the map.",
+              "helper": "Empty: it is shown on the map",
+              "type": "action",
+              "default_in_words": "the card’s own"
+            },
+            {
+              "key": "double_tap_action",
+              "label": "Double tap action",
+              "does": "What two taps on the item do.",
+              "helper": "A tap waits a moment to tell it from a double tap",
+              "type": "action",
+              "default": "none"
+            }
+          ]
         }
       ],
       "older_names": [
