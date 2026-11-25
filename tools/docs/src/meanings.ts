@@ -113,7 +113,7 @@ export const MEANINGS: Readonly<Record<string, string>> = {
     'Cards that stand in the head in place of its icon and title, and stay while it is folded.',
   heading_style: 'The heading’s size: a page’s title, a group’s, or a quiet label.',
   height: 'The page’s height in pixels: it wins over the shape.',
-  hero: 'Draws the battery or the tank on a ruler, or as a ring.',
+  hero: 'Draws the battery or the tank on a ruler, as a ring, or as a liquid.',
   hero_double_tap_action: 'What two taps on the battery or the tank do.',
   hero_hold_action: 'What a long press on the battery or the tank does.',
   hero_tap_action: 'What a tap on the battery or the tank does.',
@@ -659,6 +659,8 @@ export const MEANINGS: Readonly<Record<string, string>> = {
   'vacuum.show_map': 'Shows the map; off, it is hidden and stays written.',
   'vacuum.presets_style':
     'Draws the presets as chips that fill their row, or as content-sized ones.',
+  'vehicle.animate':
+    'Lets the liquid move, its waves and its bubbles while the battery charges; off, it rests on its first frame.',
   'vehicle.badge':
     'Words, an entity’s state or a template of your own in the head’s badge, in place of what the car is doing.',
   'vehicle.energy':

@@ -34,6 +34,8 @@ import {
 import { energyStyles } from '@fluvy/ui/styles/energy';
 import { css, html, nothing, svg, type CSSResultGroup, type TemplateResult } from 'lit';
 
+import { chartStyles, drawGauge, resolveGauge } from '../chart/engine/index.js';
+import { waterline } from '../chart/engine/scenes.js';
 import { HeadFit, ROW_NAME_MIN } from '../energy/head.js';
 import { statesUnder, type QuickStatePosition } from '../room/room-card.js';
 import { MARK_LABEL, markedRuler } from '../energy/marked-ruler.js';
@@ -233,8 +235,13 @@ export interface VehicleCardConfig extends FluvyCardConfig, HeadConfig {
   energy?: 'auto' | 'electric' | 'fuel' | 'hybrid';
   /** Its tank's size, in the unit of what is in it (L, gal): the level, where the car says only what is in it. */
   tank_size?: number;
-  /** The battery (or the tank) on its ruler (the default) or as a ring; a hybrid's two are rulers. */
-  hero?: 'ruler' | 'ring';
+  /**
+   * The battery (or the tank) on its ruler (the default), as a ring, or as a liquid (#256: the gauges' water, its
+   * bubbles rising while the battery charges, its limit a hairline across it); a hybrid's two are rulers or liquids.
+   */
+  hero?: 'ruler' | 'ring' | 'liquid';
+  /** Whether a liquid moves (its waves, its bubbles): the house's charts' unless the card says. */
+  animate?: boolean;
   /**
    * The head's badge of the person's own (#251): words, an entity's state or a template, in place of what the car does
    * (which says it again where the answer is empty); "Unavailable" while the car is out of reach.
@@ -361,6 +368,8 @@ interface Gauge {
   /** The range's unit as its widest figure is laid out in. */
   readonly rangeUnit: string;
   readonly limit: number | null;
+  /** How fast it fills, in % an hour: the battery's while it charges, null otherwise (a liquid's bubbles, #256). */
+  readonly rise: number | null;
   readonly low: boolean;
   /** Its tone at rest: the card's colour (a lone tank's where the card names one), else the gas tone (a tank's). */
   readonly tone: Tone;
@@ -421,6 +430,10 @@ const STRIP_RADIUS = 26.5;
  */
 const CELL_MIN = 56;
 const WORD_CLEAR = 2;
+/** A gauge as a liquid (#256): its band in the marked ruler's room, 12 under the value row. */
+const LIQUID = 64;
+/** How fast a battery's liquid is drawn to fill where the car does not say when it is full, in % an hour. */
+const RISE = 10;
 /** The tyres' car from above: its box in the panel. */
 const CAR_WIDTH = 40;
 /** The wheels, in the order the tyres' panel reads them: the front's left and right, then the rear's. */
@@ -488,7 +501,8 @@ function carFromAbove(low: Readonly<Partial<Record<Wheel, boolean>>>): TemplateR
  * and by `roles`. A car that burns fuel (#207) draws its tank in the battery's place — its level in its tone, its range
  * beside it, the warning's when it runs low — and says on its line what is in it, its AdBlue, its oil and its service
  * when they call; a plug-in hybrid draws its battery and its tank (`energy`). Toyota's, Ford's, Mercedes-Benz's and
- * Stellantis's integrations from HACS are read for their tanks too.
+ * Stellantis's integrations from HACS are read for their tanks too. Asked to, it draws its battery or its tank as a
+ * liquid (#256).
  */
 export class FluvyVehicleCard extends Card<VehicleCardConfig> {
   /** The card's height at a 360 column, for the automatic dashboard's columns. */
@@ -535,6 +549,7 @@ export class FluvyVehicleCard extends Card<VehicleCardConfig> {
   static override styles: CSSResultGroup = [
     ...(Card.styles as CSSResultGroup[]),
     energyStyles,
+    chartStyles,
     sheetStyles.rooms,
     css`
       .vh-card {
@@ -614,6 +629,27 @@ export class FluvyVehicleCard extends Card<VehicleCardConfig> {
         display: flex;
         justify-content: center;
         margin-top: 16px;
+      }
+      /* the battery (or the tank) as a liquid (#256): the gauges' water in the marked ruler's room, 12 under the value
+         row, in the water's own corners */
+      .vh-liquid {
+        position: relative;
+        margin-top: 12px;
+        overflow: hidden;
+        border-radius: var(--fluvy-radius-lg);
+      }
+      .vh-liquid:has(> .fc-scene--small) {
+        border-radius: var(--fluvy-radius-control);
+      }
+      /* the charge limit: a hairline across the water at its level */
+      .vh-liquid__limit {
+        position: absolute;
+        right: 0;
+        left: 0;
+        height: 1px;
+        background: var(--fluvy-text);
+        opacity: 0.32;
+        pointer-events: none;
       }
       /* the line under the battery: one line, its parts fitted to it */
       .vh-line {
@@ -2546,6 +2582,7 @@ export class FluvyVehicleCard extends Card<VehicleCardConfig> {
       range: r.range,
       rangeUnit: this.rangeUnit(),
       limit: this.config?.show_limit !== false && r.limit !== null ? r.limit : null,
+      rise: r.charge === 'charging' ? this.rise(r) : null,
       low: r.low,
       tone: toneOf(this.config, 'accent'),
       entity: roles.battery,
@@ -2559,6 +2596,7 @@ export class FluvyVehicleCard extends Card<VehicleCardConfig> {
       range: r.tank.range,
       rangeUnit: this.rangeUnit(roles.fuel_range || r.energy === 'hybrid' ? 'fuel_range' : 'range'),
       limit: null,
+      rise: null,
       low: r.tank.low,
       tone: r.energy === 'fuel' ? toneOf(this.config, 'gas') : 'gas',
       entity: this.tankEntity(),
@@ -2567,7 +2605,17 @@ export class FluvyVehicleCard extends Card<VehicleCardConfig> {
     return r.energy === 'fuel' ? [tank] : [battery, tank];
   }
 
-  /** The heroes: each gauge on its ruler (or a lone one as a ring), or the compact card's bars. */
+  /**
+   * How fast a charging battery fills, in % an hour: what is left to its limit over the time the car says it takes,
+   * else a home charger's pace.
+   */
+  private rise(r: Reading): number {
+    const eta = this.eta(this.now());
+    const left = (r.limit ?? 100) - (r.level ?? 100);
+    return eta && left > 0 ? (left * 3600) / eta.left : RISE;
+  }
+
+  /** The heroes: each gauge on its ruler or as a liquid (or a lone one as a ring), or the compact card's bars. */
   private renderHeroes(r: Reading): TemplateResult | TemplateResult[] {
     const gauges = this.gauges(r);
     const [lone] = gauges.length === 1 ? gauges : [];
@@ -2659,8 +2707,8 @@ export class FluvyVehicleCard extends Card<VehicleCardConfig> {
   }
 
   /**
-   * A gauge on the charge cards' ruler: its level (what is in a tank where it has no level) and its range over it, a
-   * battery's limit marked.
+   * A gauge on the charge cards' ruler, or as a liquid in the ruler's room (`hero: liquid`, #256): its level (what is in
+   * a tank where it has no level) and its range over it, a battery's limit marked.
    */
   private renderRuler(r: Reading, g: Gauge): TemplateResult {
     const w = this.contentWidth;
@@ -2689,16 +2737,52 @@ export class FluvyVehicleCard extends Card<VehicleCardConfig> {
     };
     return html`<div class="vh-hero ${g.low && !r.unavailable ? 'is-low' : ''}">
       ${valueRow(this.head.ruler, w, main, side, forms)}
-      ${markedRuler({
-        hass: this.hass,
-        width: w,
-        value: r.unavailable ? null : g.level,
-        tone,
-        mark: g.limit !== null ? { percent: g.limit, text: s(this.hass, 'limit') } : null,
-        label: `${r.name} · ${g.label}`,
-        measure: (text) => this.head.ruler.width(MARK_LABEL, text),
-      })}
+      ${
+        this.config?.hero === 'liquid'
+          ? this.renderLiquid(r, g, tone)
+          : markedRuler({
+              hass: this.hass,
+              width: w,
+              value: r.unavailable ? null : g.level,
+              tone,
+              mark: g.limit !== null ? { percent: g.limit, text: s(this.hass, 'limit') } : null,
+              label: `${r.name} · ${g.label}`,
+              measure: (text) => this.head.ruler.width(MARK_LABEL, text),
+            })
+      }
       ${this.heroCover(g)}
+    </div>`;
+  }
+
+  /**
+   * A gauge's liquid (#256): the gauges' water across the column, the drawing alone under the value row that says its
+   * figure — two slow waves in the gauge's tone, at rest where motion is off; the tank's quicker ones with bubbles
+   * while the battery charges, as many and as fast as it fills; its limit a hairline at its level (the line under it
+   * says "Limit 80 %"; one of 100 % is the brim itself, and has none). Without a level, the band keeps its room, empty.
+   */
+  private renderLiquid(r: Reading, g: Gauge, tone: Tone): TemplateResult {
+    return html`<div class="vh-liquid">
+      ${drawGauge({
+        style: resolveGauge(g.rise === null ? 'liquid' : 'tank', this.config ?? {}),
+        size: this.contentWidth,
+        height: LIQUID,
+        min: 0,
+        max: 100,
+        value: r.unavailable ? null : g.level,
+        rise: g.rise,
+        format: String,
+        tone,
+        bare: true,
+      })}
+      ${
+        g.limit === null || g.limit >= 100
+          ? nothing
+          : html`<span
+              class="vh-liquid__limit"
+              data-measure="drawn"
+              style="top:${Math.round(waterline(LIQUID, g.limit / 100))}px"
+            ></span>`
+      }
     </div>`;
   }
 

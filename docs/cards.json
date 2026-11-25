@@ -13532,13 +13532,21 @@
         {
           "key": "hero",
           "label": "Battery as",
-          "does": "Draws the battery or the tank on a ruler, or as a ring.",
+          "does": "Draws the battery or the tank on a ruler, as a ring, or as a liquid.",
           "type": "choice",
           "default": "ruler",
           "values": {
             "ruler": "Ruler",
-            "ring": "Ring"
+            "ring": "Ring",
+            "liquid": "Liquid"
           }
+        },
+        {
+          "key": "animate",
+          "label": "Animate",
+          "does": "Lets the liquid move, its waves and its bubbles while the battery charges; off, it rests on its first frame.",
+          "type": "boolean",
+          "default": true
         },
         {
           "key": "image",

@@ -30,6 +30,10 @@ if (!customElements.get('fluvy-vehicle-card'))
  * and controls of the person's own (a heated seat, a script that finds it); its tyres in their decimals, the rear right
  * under its threshold; a badge of its own; small icons at its foot, and saying their states; compact; half a section;
  * and the picture at half the card's width, and alone, at a 360 column and in half a section.
+ *
+ * Then 1.26's (#256): the tank and the battery as a liquid — a petrol car's, an electric one's charging to its limit
+ * (its bubbles, the limit's hairline), a plug-in hybrid's two, a tank running low, the card's own colour, a car out of
+ * reach, half a section.
  */
 
 /** The mock's moment: the times to full are counted from it. */
@@ -1309,6 +1313,36 @@ export const sheet: SheetSpec = {
       cards: [
         card('d-model-y', { ...PICTURE_ALONE, cols: 6 }),
         haval({ ...PICTURE_ALONE, image_size: '80%', cols: 6 }),
+      ],
+    },
+    // #256: the tank and the battery as a liquid, in the ruler's room
+    { title: 'Its tank as a liquid', cards: [haval({ hero: 'liquid', show_rows: false })] },
+    {
+      title: 'Its battery as a liquid · charging to its limit',
+      cards: [card('d-model-y', { hero: 'liquid', show_rows: false })],
+    },
+    {
+      title: 'A plug-in hybrid · both as liquids',
+      cards: [card('d-niro', { energy: 'hybrid', hero: 'liquid', show_rows: false })],
+    },
+    {
+      title: 'A liquid · running low',
+      cards: [card('d-208', { hero: 'liquid', show_rows: false })],
+    },
+    {
+      title: 'A liquid in the card’s own colour',
+      cards: [card('d-model-y', { hero: 'liquid', color: 'teal', show_rows: false })],
+    },
+    {
+      title: 'A liquid · out of reach',
+      cards: [card('d-leaf', { hero: 'liquid', show_rows: false })],
+    },
+    {
+      title: 'Liquids · half a section',
+      width: 360,
+      cards: [
+        card('d-model-y', { hero: 'liquid', show_rows: false, cols: 6 }),
+        card('d-208', { hero: 'liquid', show_rows: false, cols: 6 }),
       ],
     },
     // three columns of 360 and their gaps: a phone's probe would squeeze them a third each (each card is measured in

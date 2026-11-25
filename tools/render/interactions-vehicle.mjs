@@ -8,8 +8,9 @@
  * stand when they read; a car that burns fuel draws its tank and a plug-in hybrid both, each opening its own details
  * (#207); an engine named by hand asks before it starts, the person's own controls and small icons act as a room's
  * rounds do, a tyre under its threshold is said, a badge of the person's own is drawn, and the picture alone is the
- * card's button (#248, #251, #254); and in every language no round's word runs past its cell, nor the line or the
- * head's line past their column.
+ * card's button (#248, #251, #254); the battery and the tank as a liquid in the ruler's room, its bubbles while it
+ * charges and its limit's hairline (#256); and in every language no round's word runs past its cell, nor the line or
+ * the head's line past their column.
  * Real cards on the playground's simulated hass. Exit code 1 on any failure.
  *   PLAYGROUND=http://127.0.0.1:5196/ node interactions-vehicle.mjs
  */
@@ -452,6 +453,89 @@ const handed = () => page.evaluate(() => window.__handed.splice(0));
   check(
     'the picture alone is the card’s button: it opens the battery',
     (await moreInfo(page)).at(-1) === 'sensor.model_y_battery_level',
+    JSON.stringify(await moreInfo(page)),
+  );
+}
+
+/* ---------- #256: the battery and the tank as a liquid ---------- */
+{
+  const liquid = (title, n = 0) =>
+    card(page, title, n).evaluate((el) => {
+      const root = el.shadowRoot;
+      const heroes = [...root.querySelectorAll('.vh-hero')];
+      return heroes.map((hero) => {
+        const row = hero.querySelector('.fv-value-row').getBoundingClientRect();
+        const band = hero.querySelector('.vh-liquid');
+        const water = band?.querySelector('.fc-water');
+        const box = band?.getBoundingClientRect();
+        const mark = band?.querySelector('.vh-liquid__limit')?.getBoundingClientRect();
+        return {
+          tone: [...(water?.classList ?? [])].find((name) => name.startsWith('fv-tone--')),
+          gap: box && Math.round(box.top - row.bottom),
+          width: box && Math.round(box.width),
+          height: box && Math.round(box.height),
+          tank: water?.classList.contains('fc-water--tank') ?? false,
+          bubbles: water?.querySelectorAll('.fc-bubble').length ?? 0,
+          moving: [...(water?.querySelectorAll('.fc-wave') ?? [])].every(
+            (wave) => getComputedStyle(wave).animationName !== 'none',
+          ),
+          mark: mark && box ? Math.round(mark.top - box.top) : null,
+          ruler: Boolean(hero.querySelector('fluvy-ruler')),
+        };
+      });
+    });
+  const [tank] = await liquid('Its tank as a liquid');
+  check(
+    'a tank as a liquid: the water across the column in the gas tone, 64 tall, 12 under its value row, no ruler, at rest but for its waves',
+    tank.tone === 'fv-tone--gas' &&
+      tank.gap === 12 &&
+      tank.width === 320 &&
+      tank.height === 64 &&
+      !tank.ruler &&
+      !tank.tank &&
+      tank.bubbles === 0 &&
+      tank.moving &&
+      tank.mark === null,
+    JSON.stringify(tank),
+  );
+  const [battery] = await liquid('Its battery as a liquid · charging to its limit');
+  check(
+    'a battery charging: the card’s colour, bubbles rising, its limit of 80 % a hairline 13 from the band’s top',
+    battery.tone === 'fv-tone--accent' &&
+      battery.tank &&
+      battery.bubbles === 6 &&
+      battery.mark === 13,
+    JSON.stringify(battery),
+  );
+  const hybrid = await liquid('A plug-in hybrid · both as liquids');
+  check(
+    'a hybrid: its battery and its tank both liquids, each in its tone, only the battery’s bubbling',
+    hybrid.length === 2 &&
+      hybrid[0].tone === 'fv-tone--accent' &&
+      hybrid[1].tone === 'fv-tone--gas' &&
+      hybrid[0].bubbles > 0 &&
+      hybrid[1].bubbles === 0,
+    JSON.stringify(hybrid),
+  );
+  const [low] = await liquid('A liquid · running low');
+  const lowCard = await read(card(page, 'A liquid · running low'));
+  check(
+    'a tank running low: the water in the warning’s tone, the line saying so',
+    low.tone === 'fv-tone--warning' && lowCard.line === 'Low fuel',
+    JSON.stringify({ low, line: lowCard.line }),
+  );
+  const [gone] = await liquid('A liquid · out of reach');
+  check(
+    'out of reach: the band keeps its room, empty',
+    gone.tone === 'fv-tone--neutral' && gone.height === 64 && gone.bubbles === 0,
+    JSON.stringify(gone),
+  );
+  await reset(page);
+  await card(page, 'Its tank as a liquid').locator('.vh-hero > .fv-tile__tap').click();
+  await settle(page, 200);
+  check(
+    'the liquid is the tank’s button, as its ruler is',
+    (await moreInfo(page)).at(-1) === 'sensor.haval_h6_fuel_level',
     JSON.stringify(await moreInfo(page)),
   );
 }

@@ -3861,8 +3861,8 @@ panel) and the controls' row (the map's zone columns as buttons: a circle and it
   the left, the end solid while shut, its lid up while open), a car's door and window (shut and open), the charge port,
   the odometer, a tyre.
 - **Heights** by the config alone (`vehicle-family.ts`): full 460 (its picture over the battery 176 more, a ring 68
-  more, its tyres 112 more, a row 48, the card's own controls 76 a row more), compact 200, mini 76. A car out of reach
-  keeps every part.
+  more, its tyres 112 more, a row 48, the card's own controls 76 a row more; a liquid as the ruler), compact 200, mini
+  76. A car out of reach keeps every part.
 - Its chunk is its own (`vehicle`): every page carries only its tag and height. Its editor went with the forms in 1.25
   (`vehicle-editor.ts`, fetched the first time a card is edited), so a dashboard never loads it.
 
@@ -3957,6 +3957,23 @@ glyph; every addition is off until a config asks for it.
   under what it follows; with every part hidden the card is the picture alone, and the picture its button (the head's
   tap, hold and double tap).
 - **Roles as a map** (`roles: { fuel: sensor.x }`) read as the list they mean, in the card and in its editor.
+
+### The battery or the tank as a liquid (1.26, #256)
+
+Asked by @SentinelXS. Off until a config asks: the card of 1.25 draws as it did.
+
+- **The battery or the tank as a liquid** (`hero: liquid`): the gauges' water (§ Charts: the liquid) in the marked
+  ruler's room, so the card keeps its height — the value row as it was (the figure and its unit, the range at its
+  side), 12 under it the band, 64 tall across the column, the drawing alone (`bare`: the row says the figure), in the
+  water's own corners (16; 12 in a column under 168). Its tone is the ruler's: the card's colour for the battery, the
+  gas tone for a tank, the warning's while it runs low (the water, the range's figure and the line together), the grey
+  empty band out of reach or without a level. A hybrid draws both as liquids; `ring` stays a lone gauge's.
+  - **Bubbles while the battery charges**: the tank's quicker waves and its bubbles, as many and as fast as it fills —
+    what is left to its limit over the time the car says it takes, a home charger's pace (10 % an hour) where it says
+    none, twice the bubbles from 30 % an hour (a fast charger). None at rest, none on a tank, none where motion is off
+    (the house's, the card's `animate: false`, the system's): the water then rests on its first frame, still a wave.
+  - **The charge limit** is a hairline across the band at its level (1 px, the text's ink at 32 %), no word: the line
+    under the band says "Limit 80 %". A limit of 100 % is the brim itself and has none; `show_limit: false` hides it.
 
 ## Drive pad (1.20, #178)
 

@@ -1,5 +1,5 @@
 // @vitest-environment happy-dom
-import type { HassEntity, HomeAssistant, LovelaceCardConfig } from '@fluvy/core';
+import type { HaFormSchemaItem, HassEntity, HomeAssistant, LovelaceCardConfig } from '@fluvy/core';
 import { afterEach, describe, expect, it } from 'vitest';
 import '../vehicle/english.js';
 import { normaliseConfig } from '../shared/config.js';
@@ -87,6 +87,18 @@ const sections = (card: Mounted): string[] =>
         .filter((c) => !/^is-|^fv-tone--/.test(c))
         .sort()
         .join('.')}`,
+  );
+/** The fields a form shows for what it holds: each where its own `when` and its row's hold. */
+const fieldsShown = (
+  schema: readonly HaFormSchemaItem[],
+  data: Readonly<Record<string, unknown>>,
+): string[] =>
+  schema.flatMap((item) =>
+    item.when && !item.when(data, undefined)
+      ? []
+      : item.schema
+        ? fieldsShown(item.schema, data)
+        : [item.name],
   );
 /** Every entity of a car out of reach. */
 const away = (car: typeof TESLA): Record<string, Partial<HassEntity>> =>
@@ -1214,5 +1226,163 @@ describe('the controls in the editor (#248)', () => {
       JSON.stringify(controls?.schemaOf?.(item)).match(/"name":"\w+"/g);
     expect(fields({ control: 'entity' })).toContain('"name":"entity"');
     expect(fields({ control: 'lock' })).not.toContain('"name":"entity"');
+  });
+});
+
+describe('the battery and the tank as a liquid (#256)', () => {
+  const water = (card: Mounted): HTMLElement[] => [
+    ...root(card).querySelectorAll<HTMLElement>('.vh-liquid > .fc-water'),
+  ];
+  const tones = (card: Mounted): string[] =>
+    water(card).map((el) => [...el.classList].find((name) => name.startsWith('fv-tone--')) ?? '');
+
+  it('draws the water in the marked ruler’s room, the value row over it as it was, at the ruler’s height', async () => {
+    const ruler = await mount({ device: TESLA.device });
+    const row = text(root(ruler).querySelector('.ef-top'));
+    document.body.replaceChildren();
+    const card = await mount({ device: TESLA.device, hero: 'liquid' });
+    const r = root(card);
+    expect(text(r.querySelector('.ef-top'))).toBe(row);
+    expect(r.querySelector('.vh-hero fluvy-ruler')).toBeNull();
+    const [band] = water(card);
+    expect(band?.style.width).toBe('320px');
+    expect(band?.style.height).toBe('64px');
+    // the drawing alone: the row says the figure
+    expect(band?.querySelector('.fc-reading')).toBeNull();
+    // its tap is the battery's, as the ruler's
+    expect(r.querySelector('.vh-hero > .fv-tile__tap')?.getAttribute('aria-label')).toBe(
+      'Battery · 64 %',
+    );
+    const at = (config: Record<string, unknown>) =>
+      FluvyVehicleCard.layoutHeight({ type: 'x', ...config } as LovelaceCardConfig);
+    expect(at({ hero: 'liquid' })).toBe(at({}));
+    expect(at({ hero: 'liquid', energy: 'hybrid' })).toBe(at({ energy: 'hybrid' }));
+  });
+
+  it('wears the ruler’s tones: the card’s colour, the gas tone for a tank, the warning’s when low, none out of reach', async () => {
+    expect(tones(await mount({ device: TESLA.device, hero: 'liquid' }))).toEqual([
+      'fv-tone--accent',
+    ]);
+    document.body.replaceChildren();
+    expect(tones(await mount({ device: CLIO.device, hero: 'liquid', tank_size: 42 }))).toEqual([
+      'fv-tone--gas',
+    ]);
+    document.body.replaceChildren();
+    // a tank running low: the water, the range's figure and the line say so together
+    const low = await mount(
+      { device: SPORTAGE.device, hero: 'liquid' },
+      house({ 'binary_sensor.sportage_fuel_low': { state: 'on' } }),
+    );
+    expect(tones(low)).toEqual(['fv-tone--warning']);
+    expect(root(low).querySelector('.vh-hero')?.classList.contains('is-low')).toBe(true);
+    expect(text(root(low).querySelector('.vh-line'))).toBe('Low fuel');
+    document.body.replaceChildren();
+    // out of reach: the band keeps its room, empty, the row a dash
+    const gone = await mount({ device: TESLA.device, hero: 'liquid' }, house(away(TESLA)));
+    expect(tones(gone)).toEqual(['fv-tone--neutral']);
+    expect(water(gone)[0]?.querySelector('.fc-wave')).toBeNull();
+    expect(water(gone)[0]?.style.height).toBe('64px');
+    expect(text(root(gone).querySelector('.ef-top'))).toContain('—');
+  });
+
+  it('draws both of a hybrid’s gauges as liquids, a lone gauge’s ring as it was, the compact card’s bars', async () => {
+    const hybrid = await mount({ device: NIRO.device, energy: 'hybrid', hero: 'liquid' });
+    expect(tones(hybrid)).toEqual(['fv-tone--accent', 'fv-tone--gas']);
+    expect(root(hybrid).querySelector('fluvy-ruler')).toBeNull();
+    document.body.replaceChildren();
+    const ring = await mount({ device: TESLA.device, hero: 'ring' });
+    expect(root(ring).querySelector('fluvy-dial')).not.toBeNull();
+    expect(water(ring)).toHaveLength(0);
+    document.body.replaceChildren();
+    const compact = await mount({ device: TESLA.device, hero: 'liquid', variant: 'compact' });
+    expect(water(compact)).toHaveLength(0);
+    expect(root(compact).querySelector('.vh-bar')).not.toBeNull();
+  });
+
+  it('lets bubbles rise while the battery charges, as fast as it fills; none at rest, and still where motion is off', async () => {
+    // 64 % to its limit of 80 % in 1 h 25 min: the tank's quicker waves, six bubbles
+    const charging = await mount({ device: TESLA.device, hero: 'liquid' });
+    const [band] = water(charging);
+    expect(band?.classList.contains('fc-water--tank')).toBe(true);
+    expect(band?.classList.contains('is-still')).toBe(false);
+    expect(band?.querySelectorAll('.fc-bubble')).toHaveLength(6);
+    document.body.replaceChildren();
+    // a fast charger fills it briskly: twice the bubbles
+    const fast = await mount(
+      { device: TESLA.device, hero: 'liquid' },
+      house({ 'sensor.model_y_time_to_full_charge': { state: '2026-11-04T12:07:12+00:00' } }),
+    );
+    expect(water(fast)[0]?.querySelectorAll('.fc-bubble')).toHaveLength(12);
+    document.body.replaceChildren();
+    // a car that does not say when it is full fills at a home charger's pace
+    const unsaid = await mount(
+      { device: TESLA.device, hero: 'liquid' },
+      house({ 'sensor.model_y_time_to_full_charge': { state: 'unknown' } }),
+    );
+    expect(water(unsaid)[0]?.querySelectorAll('.fc-bubble')).toHaveLength(6);
+    document.body.replaceChildren();
+    // not charging: the liquid's two slow waves, no bubble
+    const parked = await mount(
+      { device: TESLA.device, hero: 'liquid' },
+      house({
+        'sensor.model_y_charging': { state: 'disconnected' },
+        'binary_sensor.model_y_charge_cable': { state: 'off' },
+        'sensor.model_y_charger_power': { state: '0' },
+      }),
+    );
+    expect(water(parked)[0]?.classList.contains('fc-water--tank')).toBe(false);
+    expect(water(parked)[0]?.querySelectorAll('.fc-bubble')).toHaveLength(0);
+    document.body.replaceChildren();
+    // the card's own `animate: false`: its first frame, whatever the house says
+    const still = await mount({ device: TESLA.device, hero: 'liquid', animate: false });
+    expect(water(still)[0]?.classList.contains('is-still')).toBe(true);
+    document.body.replaceChildren();
+    // a hybrid's tank never bubbles, its battery does while it charges
+    const hybrid = await mount({ device: NIRO.device, energy: 'hybrid', hero: 'liquid' });
+    expect(water(hybrid).map((el) => el.querySelectorAll('.fc-bubble').length > 0)).toEqual([
+      true,
+      false,
+    ]);
+  });
+
+  it('marks the charge limit as a hairline across the water at its level, none where it is hidden or the brim', async () => {
+    const card = await mount({ device: TESLA.device, hero: 'liquid' });
+    const mark = root(card).querySelector<HTMLElement>('.vh-liquid__limit');
+    // 80 % of a 64 band: 13 from its top (12.8)
+    expect(mark?.style.top).toBe('13px');
+    expect(text(mark)).toBe('');
+    document.body.replaceChildren();
+    const hidden = await mount({ device: TESLA.device, hero: 'liquid', show_limit: false });
+    expect(root(hidden).querySelector('.vh-liquid__limit')).toBeNull();
+    document.body.replaceChildren();
+    const brim = await mount(
+      { device: TESLA.device, hero: 'liquid' },
+      house({ 'number.model_y_charge_limit': { state: '100' } }),
+    );
+    expect(root(brim).querySelector('.vh-liquid__limit')).toBeNull();
+    document.body.replaceChildren();
+    // a tank has no limit
+    const tank = await mount({ device: SPORTAGE.device, hero: 'liquid' });
+    expect(root(tank).querySelector('.vh-liquid__limit')).toBeNull();
+  });
+
+  it('offers the liquid in the editor, a hybrid’s rulers or liquids, and its motion while it is one', async () => {
+    const { choices, getConfigForm, defaults } = await import('./vehicle-editor.js');
+    const looks = (config: Record<string, unknown>) =>
+      choices({ type: 'x', ...config } as LovelaceCardConfig, undefined)['hero']?.map(
+        (option) => option.value,
+      );
+    // a lone gauge keeps the form's own three; a hybrid's two gauges are never rings
+    expect(looks({})).toBeUndefined();
+    expect(JSON.stringify(getConfigForm().schema)).toContain('"value":"liquid"');
+    expect(looks({ energy: 'hybrid' })).toEqual(['ruler', 'liquid']);
+    const shown = (data: Record<string, unknown>) =>
+      fieldsShown(getConfigForm().schema, { ...defaults({ type: 'x' }, undefined), ...data });
+    expect(shown({})).toContain('hero');
+    expect(shown({ energy: 'hybrid' })).toContain('hero');
+    expect(shown({})).not.toContain('animate');
+    expect(shown({ hero: 'liquid' })).toContain('animate');
+    expect(shown({ hero: 'liquid', show_hero: false })).not.toContain('animate');
+    expect(shown({ hero: 'liquid', variant: 'compact' })).not.toContain('hero');
   });
 });

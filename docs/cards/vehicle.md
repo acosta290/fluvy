@@ -45,6 +45,7 @@ name_lines: 1
 variant: full
 energy: hybrid
 # tank_size:
+hero: ruler
 # image:
 show_head: true
 show_hero: true
@@ -103,7 +104,8 @@ power_decimals: auto
 | `variant` | `full` | The card’s layout. `full` · `compact` · `mini`. |
 | `energy` | `auto` | What the car runs on: its battery, its tank, or both; automatic, its tank where it has one and no battery, else its battery. `auto` · `electric` · `fuel` · `hybrid` (Plug-in hybrid). |
 | `tank_size` |  | The tank’s size, so that a car which says only how much is in it shows its level. 0 to 500. |
-| `hero` | `ruler` | Draws the battery or the tank on a ruler, or as a ring. `ruler` · `ring`. |
+| `hero` | `ruler` | Draws the battery or the tank on a ruler, as a ring, or as a liquid. `ruler` · `ring` · `liquid`. |
+| `animate` | `true` | Lets the liquid move, its waves and its bubbles while the battery charges; off, it rests on its first frame. |
 | `image` |  | A picture of the car: an address, an entity whose picture it is, or the integration’s own. |
 | `image_position` | `hero` | Where the car’s picture stands: over its battery or its tank, or in the head. `hero` (Over the battery) · `head` (The head). |
 | `image_size` |  | The picture’s size over the battery: a share of the card’s width (50%) or a height (120px), the card’s height following it. |

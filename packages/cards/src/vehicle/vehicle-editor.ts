@@ -1,4 +1,5 @@
 import {
+  chartDefaults,
   isEntityId,
   strings,
   type HaFormSchemaItem,
@@ -26,12 +27,13 @@ import {
   numberField,
   onlyWhen,
   optionalActions,
+  optionChoices,
   ownTextField,
   selectField,
   textField,
   unitChoices,
 } from '../shared/form.js';
-import type { EditorDefaults, RowsListSpec } from '../shared/rows-editor.js';
+import type { EditorChoices, EditorDefaults, RowsListSpec } from '../shared/rows-editor.js';
 import { roundsList } from '../room/room-editor.js';
 import { VEHICLE_VARIANTS } from '../vehicle-family.js';
 import { VEHICLE_PLATFORMS, VEHICLE_ROLES, type VehicleRole } from './roles.js';
@@ -176,6 +178,7 @@ export const keys = configKeys<VehicleCardConfig>()([
   'energy',
   'tank_size',
   'hero',
+  'animate',
   'badge',
   'image',
   'image_position',
@@ -300,12 +303,17 @@ export const lists: readonly RowsListSpec[] = [
   },
 ];
 
+/** What the card's selects offer for its config (#256): a hybrid's two gauges are rulers or liquids, never rings. */
+export const choices: EditorChoices = (config) =>
+  config['energy'] === 'hybrid' ? { hero: optionChoices(['ruler', 'liquid']) } : {};
+
 /** What the editor shows where the config says nothing: what the card does then. */
 export const defaults: EditorDefaults = () => ({
   variant: 'full',
   scan: true,
   energy: 'auto',
   hero: 'ruler',
+  animate: chartDefaults().settings.animate,
   image_position: 'hero',
   show_head: true,
   show_hero: true,
@@ -365,9 +373,16 @@ export function getConfigForm(): LovelaceConfigForm {
         ]),
         onlyWhen(tanked, numberField('tank_size', 0, 500)),
       ),
-      onlyWhen(
-        (data) => full(data) && data['energy'] !== 'hybrid' && data['show_hero'] !== false,
-        selectField('hero', ['ruler', 'ring']),
+      // the battery's looks (a hybrid's: `choices`); a liquid moves, or rests on its first frame (#256)
+      fieldRow(
+        onlyWhen(
+          (data) => full(data) && heroed(data),
+          selectField('hero', ['ruler', 'ring', 'liquid']),
+        ),
+        onlyWhen(
+          (data) => full(data) && heroed(data) && data['hero'] === 'liquid',
+          boolField('animate'),
+        ),
       ),
       onlyWhen(notMini, textField('image')),
       onlyWhen(
