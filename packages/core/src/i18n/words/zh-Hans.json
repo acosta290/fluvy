@@ -49,7 +49,7 @@
   ],
   "battery": ["电池", "储能", "battery", "storage"],
   "charger": ["充电桩", "随车充", "charger", "wallbox", "evse", "ev_charg", "charge_point"],
-  "home": ["家庭", "全屋", "总负载", "总用电", "house", "home", "load"],
+  "home": ["家庭(?!劇院|剧院|影院|影音)", "全屋", "总负载", "总用电", "house", "home", "load"],
   "today": [
     "今日",
     "今天",

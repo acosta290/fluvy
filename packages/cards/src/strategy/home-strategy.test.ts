@@ -309,6 +309,35 @@ describe('custom:fluvy-home strategy — a house named in Japanese', () => {
     });
   });
 
+  it('takes no air conditioning’s or hot water’s system for the grid, nor a home theatre for the house: Japanese 系統 and the household’s 家庭', () => {
+    for (const language of ['ja', 'zh-Hans', 'zh-Hant']) {
+      const roles = findEnergyRoles(
+        powerHouse(
+          [
+            power('sensor.kuucho', '空調系統 功率'),
+            power('sensor.kyuto', '給湯系統 電力'),
+            power('sensor.danbo', '暖房系統 電力'),
+            power('sensor.theatre', '家庭劇院 功率'),
+            power('sensor.cinema', '家庭影院 功率'),
+            power('sensor.juchang', '家庭剧院 功率'),
+            power('sensor.av', '家庭影音 功率'),
+          ],
+          language,
+        ),
+        null,
+      );
+      expect(roles.gridPower, language).toBeUndefined();
+      expect(roles.homePower, language).toBeUndefined();
+    }
+    // the grid's 系統 and the household's 家庭 standing alone are theirs still
+    expect(
+      findEnergyRoles(
+        powerHouse([power('sensor.keito', '系統 電力'), power('sensor.katei', '家庭 功率')], 'ja'),
+        null,
+      ),
+    ).toMatchObject({ gridPower: 'sensor.keito', homePower: 'sensor.katei' });
+  });
+
   it('reads a Russian house by its names as written: its lights, its garden, its appliances’ switches, a lock that is none', () => {
     const registry = new HomeRegistry(
       house([
