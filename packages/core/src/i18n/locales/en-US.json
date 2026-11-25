@@ -131,7 +131,8 @@
     "key.captions": "Captions",
     "editor.side_keys": "Keys around the pad",
     "editor.apps_tint": "Apps in their colors",
-    "editor.nav": "The four keys around the pad"
+    "editor.nav": "The four keys around the pad",
+    "editor.gamepad_tint": "Colors of the buttons"
   },
   "swipe": {
     "editor.loop": "Go around from the last page"
