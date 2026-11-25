@@ -275,6 +275,10 @@ const BUDGETS = {
   // the controls that set a number in place (1.23, #218): a row's value between − and +, a figure typed, their sheet;
   // fetched by the first card that asks for one
   'number-controls': 4096,
+  // Home Assistant's own map on a plate of ours (1.26): what makes it through its card helpers once the plate has a
+  // box, fits it again as the plate's size settles and tells it the house and the page's mode; fetched by the first
+  // Map card drawn as a map (it left core). Measured at 0.8 KB
+  'ha-map': 2048,
   // the slider styles (1.18, #144): the bar, the liquid and a tile's fill the ruler draws when asked, and their sheet
   'slider-styles': 4096,
   // the switch styles (1.20, #177): the wall rocker a tile draws in its switch's place when asked, what a tile's

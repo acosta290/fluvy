@@ -458,6 +458,13 @@ const ROUND_GAUGE = /\/packages\/cards\/src\/shared\/round-gauge\.ts/;
 const NUMBER_CONTROLS = /\/packages\/cards\/src\/shared\/number-controls\.ts/;
 
 /**
+ * Home Assistant's own map on a plate of ours (1.26: what makes it through Home Assistant's card helpers once its
+ * plate has a box, fits it again as the plate's size settles and tells it the house and the page's mode) — fetched by
+ * the first Map card drawn as a map; a dashboard without one never pays for it. It left core in 1.26.
+ */
+const HA_MAP = /\/packages\/cards\/src\/shared\/ha-map\.ts/;
+
+/**
  * The slider styles (1.18, #144): the bar, the liquid and a tile's fill the ruler draws when asked, and their sheet —
  * fetched by the first ruler asked for one, or as the house asks for them; a house of rulers never pays for them.
  */
@@ -577,7 +584,7 @@ const FORMS =
  * sidebar, the Slider card, the ring, the Cover card, the drive pad, the robot's map, the Vacuum card, the Thermostat card, the platforms' logos, the
  * remote card, the Vehicle card, the Heating schedule card (its sheet on its own), Fluvy's own details, the items card (its sheet on its own), the light card's colours,
  * the Room lights card's rows, what the greeting draws beyond its words, colours worn as they are named, a room's quick actions, the cards' editor, the fields every editor is built of, the view icons, what a see-through
- * card wears, what a quiet one wears, what reads a card's thresholds, what draws a round's gauge, what sets a number in place, the slider styles,
+ * card wears, what a quiet one wears, what reads a card's thresholds, what draws a round's gauge, what sets a number in place, Home Assistant's map on a plate, the slider styles,
  * the switch styles, the page's background, this device's sidebar beside the page, a list in groups, the icon set's
  * other part, what only the chunks fetched later share, and everything else (Fluvy's packages and Lit) in `core`. The
  * bundle's own entry stays in `fluvy.js`. Rolldown processes the groups in this order; the priorities only say so out
@@ -653,6 +660,7 @@ export const GROUPS = [
   { name: 'thresholds', test: THRESHOLDS },
   { name: 'round-gauge', test: ROUND_GAUGE },
   { name: 'number-controls', test: NUMBER_CONTROLS },
+  { name: 'ha-map', test: HA_MAP },
   { name: 'slider-styles', test: SLIDER_STYLES },
   { name: 'switch-styles', test: SWITCH_STYLES },
   { name: 'background', test: BACKGROUND },

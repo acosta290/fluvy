@@ -4,7 +4,6 @@ import {
   strings,
   type EntityView,
   type FluvyCardConfig,
-  type HomeAssistant,
   type LovelaceCardConfig,
   type LovelaceGridOptions,
 } from '@fluvy/core';
@@ -22,6 +21,7 @@ import { HeadFit } from '../energy/head.js';
 import { mapHead, mapRow } from '../shared/map-head.js';
 import { Card, type CardEditor } from '../shared/base.js';
 import { EMPTY, entryCount, HEAD, ROW } from '../shared/heights.js';
+import type { HaMap } from '../shared/ha-map.js';
 import { emptyPanel, idsOf, listOf, type EmptyList, type EntityEntry } from '../shared/lists.js';
 import {
   distanceFromHome,
@@ -63,18 +63,6 @@ const FACES = 2;
 /** A zone column: two faces overlapping by 8. */
 const COLUMN = 80;
 
-type MapElement = HTMLElement & {
-  hass?: HomeAssistant;
-  layout?: string;
-  setConfig?: (config: LovelaceCardConfig) => void;
-};
-
-/** Home Assistant's map inside its card: what fits it to the people again (`fitMap`, a method of its own). */
-type HaMap = HTMLElement & { fitMap?: () => void };
-
-/** A plate's laid-out size, as the map was fitted at it. */
-const sizeOf = (plate: HTMLElement): string => `${plate.clientWidth}×${plate.clientHeight}`;
-
 /**
  * Where everyone is: Home Assistant's own map on a plate (`map`), the house's zones as columns with the faces in
  * each (`zones`, nothing fetched), or a row a person (`rows`). Who is away stands in the head; the map button
@@ -104,28 +92,13 @@ export class FluvyMapCard extends Card<MapCardConfig> {
     `,
   ];
 
-  static override properties = { ...Card.properties, mapFailed_: { state: true } };
-  /** Home Assistant's map card could not be made here: the zones stand in, silently. */
-  declare mapFailed_: boolean;
   private readonly head = new HeadFit(this);
-  private mapElement: MapElement | undefined;
-  private mapDark: boolean | undefined;
-  /** Home Assistant's map card is on its way (its card helpers load once). */
-  private makingMap = false;
   /**
-   * The plate, watched as it changes size (#220): Home Assistant's map is made once the plate has a box, and fitted to
-   * the people again each time its size settles otherwise — opened in an Expander, a Swipe's page or a sheet.
+   * Home Assistant's map on the plate (`shared/ha-map.ts`, a chunk of its own): asked for by the first card drawn as a
+   * map, which draws it as it lands; where it cannot be made, the zones stand in, silently.
    */
-  private readonly plateSize =
-    typeof ResizeObserver === 'function' ? new ResizeObserver(() => this.onPlate()) : undefined;
-  private observed: HTMLElement | undefined;
-  /** The plate's size the map was last fitted at. */
-  private fitted = '';
-
-  constructor() {
-    super();
-    this.mapFailed_ = false;
-  }
+  private map: HaMap | undefined;
+  private mapAsked = false;
 
   static override editor(): Promise<CardEditor> {
     return import('./map-editor.js');
@@ -265,84 +238,17 @@ export class FluvyMapCard extends Card<MapCardConfig> {
     };
   }
 
-  /**
-   * Home Assistant's map card, made once through its card helpers; when they are not there, the zones stand in. It
-   * lays out as in a section's grid (`layout`), filling the plate: in its own shape it was a square under the plate's
-   * 16:10, the plate showing its top, so what it fits to the people sat under the plate's middle (#220).
-   */
-  private async makeMap(): Promise<void> {
-    if (this.mapElement || this.mapFailed_ || this.makingMap) return;
-    this.makingMap = true;
-    try {
-      const helpers = (await window.loadCardHelpers?.()) as
-        { createCardElement?: (config: LovelaceCardConfig) => MapElement } | undefined;
-      const element = helpers?.createCardElement?.(this.mapConfig());
-      if (!element) throw new Error('no card helpers');
-      element.layout = 'grid';
-      if (this.rawHass) element.hass = this.rawHass;
-      this.mapElement = element;
-      this.mapDark = this.dark;
-      // it fits itself to the people as it loads, at the plate's size now
-      this.fitted = this.observed ? sizeOf(this.observed) : '';
-      this.requestUpdate();
-    } catch {
-      this.mapFailed_ = true;
-    } finally {
-      this.makingMap = false;
-    }
-  }
-
-  /** The plate on the page, where the card draws Home Assistant's map. */
-  private get plate(): HTMLElement | null {
-    return this.renderRoot.querySelector<HTMLElement>('.mp-plate');
-  }
-
-  /**
-   * The plate laid out anew: the map is made once it has a box (folded in an Expander, or on a Swipe's hidden page,
-   * it has none), and fitted again where its size settled otherwise than it was fitted at.
-   */
-  private onPlate(): void {
-    const plate = this.observed;
-    if (!plate?.clientWidth || !plate.clientHeight) return;
-    if (!this.mapElement) {
-      void this.makeMap();
-      return;
-    }
-    const size = sizeOf(plate);
-    if (size === this.fitted) return;
-    this.fitted = size;
-    this.mapElement.shadowRoot?.querySelector<HaMap>('ha-map')?.fitMap?.();
-  }
-
+  /** The first plate drawn fetches what makes Home Assistant's map on it, for someone to show there. */
   protected override updated(changed: PropertyValues): void {
     super.updated(changed);
-    const plate = this.plate ?? undefined;
-    if (plate !== this.observed) {
-      this.plateSize?.disconnect();
-      if (plate) this.plateSize?.observe(plate);
-      this.observed = plate;
-    }
-    // Home Assistant's map is made for someone to show on it, once its plate has a box
-    if (!plate || !idsOf(this.config?.entities).length) return;
-    if (!this.mapElement) {
-      if (plate.clientWidth && plate.clientHeight) void this.makeMap();
-      return;
-    }
-    if (changed.has('hass') && this.rawHass) this.mapElement.hass = this.rawHass;
-    if (changed.has('dark') && this.mapDark !== this.dark) {
-      this.mapDark = this.dark;
-      this.mapElement.setConfig?.(this.mapConfig());
-    }
-  }
-
-  override connectedCallback(): void {
-    super.connectedCallback();
-    if (this.observed) this.plateSize?.observe(this.observed);
-  }
-
-  override disconnectedCallback(): void {
-    super.disconnectedCallback();
-    this.plateSize?.disconnect();
+    if (this.mapAsked || !this.renderRoot.querySelector('.mp-plate')) return;
+    this.mapAsked = true;
+    void import('../shared/ha-map.js').then(({ HaMap }) => {
+      this.map = new HaMap(this, '.mp-plate', () =>
+        idsOf(this.config?.entities).length ? this.mapConfig() : undefined,
+      );
+      this.requestUpdate();
+    });
   }
 
   /* ---------- render ---------- */
@@ -485,7 +391,7 @@ export class FluvyMapCard extends Card<MapCardConfig> {
     const panel = emptyPanel(this, !people.length, 'person', 'common.no_people');
     const away = people.filter((person) => person.where !== 'home');
     const home = people.length - away.length;
-    const variant = this.variant === 'map' && this.mapFailed_ ? 'zones' : this.variant;
+    const variant = this.variant === 'map' && this.map?.failed ? 'zones' : this.variant;
     // the card's own title where it fits beside the map's round, a shorter one where it does not (as the people
     // card's); a typed one is the user's. Where not even the short one holds beside the round, the round gives way
     // to a row under the body: a control never goes
@@ -519,7 +425,7 @@ export class FluvyMapCard extends Card<MapCardConfig> {
           ? html`<div class="am-rows">${panel}</div>`
           : variant === 'map'
             ? html`<div class="fv-plate mp-plate" style="height:${this.plateHeight()}px">
-                  ${this.mapElement ?? nothing}
+                  ${this.map?.element ?? nothing}
                 </div>
                 ${this.renderWhoWhere(people)}`
             : variant === 'rows'

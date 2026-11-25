@@ -973,7 +973,8 @@ sheet asked for no dial draws its control with it too (§ Details sheets).
   columns in silence where the card helpers are missing. The map fills the plate (it lays out as in a section's
   grid: in its own square under a 1.6:1 plate, what it fitted to the people sat under the plate's middle, 1.23,
   #220), is made once the plate has a box (in an Expander, a Swipe's page or a sheet), and is fitted to the people
-  again each time the plate's size settles otherwise, by one observer of the plate, never a timer.
+  again each time the plate's size settles otherwise, by one observer of the plate, never a timer. What makes it is a
+  chunk of its own since 1.26 (`ha-map`, fetched by the first card drawn as a map).
 
 ## Compass (1.23, #209, by @twodrops)
 
