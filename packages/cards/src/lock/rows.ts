@@ -15,7 +15,7 @@ import {
   type HomeAssistant,
 } from '@fluvy/core';
 import { listRow, sheetStyles, wordsClass, type Tone } from '@fluvy/ui';
-import { html, nothing, type TemplateResult } from 'lit';
+import { css, html, nothing, type TemplateResult } from 'lit';
 import { HeadFit } from '../energy/head.js';
 import { Card, type RowsHost } from '../shared/base.js';
 import { currentTone, iconOf, toneFor } from '../shared/domain.js';
@@ -190,8 +190,20 @@ interface RowsElement {
   readonly config?: Readonly<Record<string, unknown>> | undefined;
 }
 
-/** What the rows wear beside a card's own sheets: the devices' rows, and a row's end (a dropdown's value). */
-const ROW_SHEETS = [sheetStyles.devices, rowEndStyles];
+/**
+ * A dropdown under its name whose value would not hold the row on one line (a Hue scene's name in half a section)
+ * breaks it between its words, balanced on two 20 lines inside its 44 (as a button its row sizes does): never cut.
+ */
+const stackedStyles = css`
+  .dv-rows .fv-row--stack > .in-value > .in-value__text {
+    white-space: normal;
+    text-wrap: balance;
+    line-height: 20px;
+  }
+`;
+
+/** What the rows wear beside a card's own sheets: the devices' rows, a row's end (a dropdown's value), and that. */
+const ROW_SHEETS = [sheetStyles.devices, rowEndStyles, stackedStyles];
 
 /**
  * The rows' sheets into a card's shadow root, once, beside its own (a lock's are its own already): a card of one
@@ -309,10 +321,11 @@ export class RowList {
    * the row draws it: its longest word, where it breaks between its words (Dutch "Niet / gedetecteerd" stays beside
    * its name), else the whole of it. Where even that would leave the name under its floor or the line's least form
    * would not hold (Home Assistant's one-word "Nedetekováno" at 204), it goes under the name, in the line's place.
+   * Its words are weighed in the rows, as they draw: prose's cap on a row of any other list (55 %) is none here.
    */
   private under(p: RowPlan): ValueFit {
     const { ruler } = this.headFit;
-    const cls = `fv-row__value ${wordsClass(p.value)}`.trim();
+    const cls = `dv-rows > fv-row__value ${wordsClass(p.value)}`.trim();
     const narrowest = p.value
       .split(/\s+/)
       .reduce((wide, w) => (ruler.width(cls, w) > ruler.width(cls, wide) ? w : wide));

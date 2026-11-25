@@ -1136,7 +1136,9 @@ control the house already has, read.
 - **The same rows under a card of one device (1.26, #262):** the Light, Fan, Cover, Thermostat, Media player and
   Humidity cards take them too, at their foot, 16 under their own controls: the same anatomy and rules, each row 60 in
   the declared height. Not on the compact light, fan or cover nor the mini player; a fan's and a thermostat's wait
-  with their presets while they keep to the essentials.
+  with their presets while they keep to the essentials. A dropdown under its name that would not hold the row on one
+  line breaks between its words, balanced on two 20 lines inside its 44, never cut; a state in many words is weighed
+  as the rows draw it (prose's 55 % cap is none there), so it goes under its name rather than squeeze it to nothing.
 - **Out of reach (1.9)**: unavailable, unknown or gone from the house, the camera keeps its head (the `ban` glyph where
   it is gone), its plate in its shape with the camera's glyph and why, and its rows.
 - **Back on screen, and a stream that failed (1.9):** a card put back off screen stays out until the viewport says it

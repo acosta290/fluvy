@@ -178,6 +178,47 @@ describe('the rows a card of one device lists (#262)', () => {
   });
 });
 
+/*
+ * A state in words of prose's length (Home Assistant's Dutch "Niet gedetecteerd") is weighed as the rows draw it: a
+ * row of any other list caps prose at 55 % of its row, which the rows lift, and a ruler that weighed it outside them
+ * found half its longest word, left it beside the name and squeezed the name to nothing at half a section.
+ */
+describe('a row’s state in many words in a narrow column', () => {
+  it('goes under the name where its longest word, weighed in the rows, would leave the name under its floor', async () => {
+    const card = document.createElement('fluvy-light-card') as CardElement & {
+      head: { ruler: unknown };
+    };
+    // the browser's widths: 8 a letter, prose held to 55 % where no row lifts its cap
+    Object.assign(card.head, {
+      ruler: {
+        width: (cls: string, text: string) =>
+          cls.includes('fv-row__value--text') && !cls.startsWith('dv-rows > ')
+            ? Math.round(text.length * 8 * 0.55)
+            : text.length * 8,
+        pill: (_cls: string, text: string, sides: number) => text.length * 8 + sides,
+        clear() {},
+      },
+    });
+    card.setConfig({
+      type: 'custom:fluvy-light-card',
+      entity: 'light.sofa_strip',
+      rows: ['binary_sensor.porch_motion'],
+    });
+    const motion = state('binary_sensor.porch_motion', 'off', { device_class: 'motion' });
+    card.hass = {
+      ...house([...STATES, motion]),
+      formatEntityState: (s: { entity_id?: string; state: string }) =>
+        s.entity_id === motion.entity_id ? 'Niet gedetecteerd' : s.state,
+    } as unknown as HomeAssistant;
+    card.width = 154;
+    document.body.append(card);
+    await card.updateComplete;
+    const row = card.shadowRoot!.querySelector('.dv-rows .fv-row')!;
+    expect(row.classList.contains('fv-row--stack')).toBe(true);
+    expect(row.querySelector('.fv-row__value')?.textContent?.trim()).toBe('Niet gedetecteerd');
+  });
+});
+
 describe('a card’s declared height with its rows (#262)', () => {
   const config = (more: Record<string, unknown> = {}): LovelaceCardConfig => ({
     type: 'custom:x',
