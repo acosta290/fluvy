@@ -3758,6 +3758,7 @@
     "editor.drive_style": "Где открывать пульт",
     "editor.drive_entity": "Управляемый робот",
     "editor.drive_entity_helper": "Тот же робот через другую интеграцию; пусто: робот карточки",
+    "editor.drive_entity_stuck": "Интеграция этого робота не позволяет им управлять. Если тот же робот подключён и через интеграцию, которая это умеет (Roborock в Xiaomi Home: рядом Xiaomi Miot Auto), выберите здесь этот пылесос",
     "editor.drive": "Действия управления",
     "editor.drive_helper": "Для робота, интеграция которого неизвестна: start, move и stop, каждое как действие, в YAML",
     "option.slow": "Медленная",

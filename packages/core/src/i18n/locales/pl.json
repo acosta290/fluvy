@@ -3757,6 +3757,7 @@
     "editor.drive_style": "Sterowanie otwiera się",
     "editor.drive_entity": "Sterowany robot",
     "editor.drive_entity_helper": "Ten sam robot przez inną integrację; puste: robot karty",
+    "editor.drive_entity_stuck": "Integracja tego robota nie pozwala nim sterować. Jeśli ten sam robot jest też skonfigurowany przez integrację, która to potrafi (Roborock w Xiaomi Home: obok Xiaomi Miot Auto), wybierz tutaj ten odkurzacz",
     "editor.drive": "Akcje sterowania",
     "editor.drive_helper": "Dla robota, którego integracja nie jest znana: start, move i stop, każde jako akcja, w YAML",
     "option.slow": "Wolno",

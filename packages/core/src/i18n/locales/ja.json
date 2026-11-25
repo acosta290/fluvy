@@ -3630,6 +3630,7 @@
     "editor.drive_style": "パッドを開く場所",
     "editor.drive_entity": "操作するロボット",
     "editor.drive_entity_helper": "別の統合を通した同じロボット。空欄ならカードのロボット",
+    "editor.drive_entity_stuck": "このロボットの統合では手動操作ができません。同じロボットを操作可能な統合でも設定している場合（Xiaomi Home の Roborock なら Xiaomi Miot Auto を併用）、その掃除機をここで選んでください",
     "editor.drive": "操作アクション",
     "editor.drive_helper": "統合が不明なロボット用:start、move、stop をそれぞれアクションとして YAML で指定",
     "option.slow": "低速",

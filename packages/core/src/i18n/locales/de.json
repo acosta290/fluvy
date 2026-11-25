@@ -3630,6 +3630,7 @@
     "editor.drive_style": "Die Steuerung öffnet sich",
     "editor.drive_entity": "Zu steuernder Roboter",
     "editor.drive_entity_helper": "Derselbe Roboter über eine andere Integration; leer gelassen, der Roboter der Karte",
+    "editor.drive_entity_stuck": "Die Integration dieses Roboters lässt sich nicht steuern. Ist derselbe Roboter auch über eine eingerichtet, die es kann (ein Roborock in Xiaomi Home: Xiaomi Miot Auto daneben), diesen Staubsauger hier wählen",
     "editor.drive": "Fahraktionen",
     "editor.drive_helper": "Für einen Roboter, dessen Integration nicht bekannt ist: start, move und stop, jeweils eine Aktion, in YAML",
     "option.slow": "Langsam",

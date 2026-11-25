@@ -374,6 +374,9 @@ drive_style: sheet # the pad in a sheet, not in the card
 | Xiaomi Miot Auto (HACS) | `xiaomi_miot.set_miot_property` (Dreame-made) or `send_command` (Roborock) |
 
 - Untested on real robots: reports are welcome. Drive where you can see the robot.
+- A robot on Xiaomi Home has no remote control there: set up Xiaomi Miot Auto beside it and name its vacuum in
+  `drive_entity` (a `roborock.vacuum.a01` drives so). The editor says it where the Drive command is asked of a robot
+  no way is known for.
 - With Xiaomi Miot Auto a refused command is only logged, so the pad seems to do nothing.
 - Ecovacs, iRobot and SharkIQ have no remote control in Home Assistant.
 

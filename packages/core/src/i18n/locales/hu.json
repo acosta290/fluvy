@@ -3630,6 +3630,7 @@
     "editor.drive_style": "A vezérlő megnyitása",
     "editor.drive_entity": "Vezetendő robot",
     "editor.drive_entity_helper": "Ugyanaz a robot egy másik integráción keresztül; üresen: a kártyáé",
+    "editor.drive_entity_stuck": "Ennek a robotnak az integrációja nem teszi lehetővé a vezetését. Ha ugyanaz a robot egy erre képes integráción keresztül is be van állítva (Roborock a Xiaomi Home-ban: mellette a Xiaomi Miot Auto), itt válassza azt a porszívót",
     "editor.drive": "Vezetési műveletek",
     "editor.drive_helper": "Olyan robothoz, amelynek integrációja nem ismert: start, move és stop, mindegyik egy művelet, YAML-ben",
     "option.slow": "Lassú",

@@ -3511,6 +3511,7 @@
     "editor.drive_style": "Feltet åbner",
     "editor.drive_entity": "Robot, der skal styres",
     "editor.drive_entity_helper": "Den samme robot via en anden integration; udeladt: kortets egen",
+    "editor.drive_entity_stuck": "Denne robots integration kan ikke styre den. Er den samme robot også sat op via en, der kan (en Roborock i Xiaomi Home: Xiaomi Miot Auto ved siden af), så vælg den støvsuger her",
     "editor.drive": "Styrehandlinger",
     "editor.drive_helper": "Til en robot, hvis integration ikke kendes: start, bevæg og stop, hver en handling, i YAML",
     "option.slow": "Langsom",

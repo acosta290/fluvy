@@ -3,6 +3,7 @@ import type { HaFormSchemaItem, HomeAssistant } from '@fluvy/core';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { familiesDefined } from '../index.js';
 import { visibleFields } from '../shared/form.js';
+import type { FormHelper } from '../shared/rows-editor.js';
 import { IDLE_MS } from './drive/session.js';
 import { getConfigForm } from './vacuum-editor.js';
 
@@ -465,5 +466,38 @@ describe('the Vacuum card’s editor', () => {
       'The same robot through another integration; left out, the card’s own',
     );
     expect(form.computeHelper?.({ name: 'show_drive' }, (key) => key)).toBeUndefined();
+  });
+
+  it('says under the robot to drive why a robot asked for its pad has none, and the way round it', () => {
+    const form = getConfigForm();
+    /** What stands under the field, as the editor asks it: of what the form holds, and of the house. */
+    const help = (data: Record<string, unknown>, hass: HomeAssistant): string | undefined =>
+      (form.computeHelper as FormHelper | undefined)?.(
+        { name: 'drive_entity' },
+        (key) => key,
+        data,
+        hass,
+      );
+    const usual = 'The same robot through another integration; left out, the card’s own';
+    // a robot on an integration no way is known for, as one set up through Xiaomi Home is (#178, by @maxhayim)
+    const stuck = robot();
+    const home = house('xiaomi_home', stuck).hass;
+    expect(help({ entity: stuck }, home)).toBe(usual);
+    expect(help({ entity: stuck, show_drive: false }, home)).toBe(usual);
+    expect(help({ entity: stuck, show_drive: true }, home)).toContain('cannot be driven');
+    expect(help({ entity: stuck, show_drive: true }, home)).toContain('Xiaomi Miot Auto');
+    // the way round it taken: the same robot through an integration that drives, named in the field
+    const other = robot();
+    const miio = house('xiaomi_miio', other).hass;
+    const both = {
+      ...home,
+      states: { ...home.states, ...miio.states },
+      entities: { ...home.entities, ...miio.entities },
+    } as HomeAssistant;
+    expect(help({ entity: stuck, show_drive: true, drive_entity: other }, both)).toBe(usual);
+    // a robot that can be driven, and one given calls of its own, keep the field's usual line
+    expect(help({ entity: other, show_drive: true }, miio)).toBe(usual);
+    const drive = { move: { action: 'xiaomi_miio.vacuum_remote_control_move' } };
+    expect(help({ entity: stuck, show_drive: true, drive }, home)).toBe(usual);
   });
 });

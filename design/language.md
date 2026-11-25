@@ -4005,7 +4005,10 @@ Return to dock are in the row), the compact card's pad in a sheet.
 - **The editor** folds the pad's fields under "Drive pad": the Drive command's switch where the robot can be driven,
   else a line in its place saying why ("This robot's integration has no remote control in Home Assistant"); the
   speed and where the pad opens once it is on (the second never on a compact card); the robot to drive where it is
-  another; the robot's own calls, as YAML.
+  another; the robot's own calls, as YAML. While the Drive command is asked of a robot no way is known for
+  (`show_drive: true` on a robot whose integration cannot be driven), the line under the robot to drive says so and
+  the way round it: the same robot through an integration that can, picked there (a Roborock on Xiaomi Home: Xiaomi
+  Miot Auto beside it; 1.26, by @maxhayim). It shows in that case only.
 - **Guards.** `drive.test.ts` holds each integration's calls to their exact data and the config's own profile to
   numbers only; `drive/session.test.ts` the mode's life on a clock (a tap, a hold, each way out);
   `drive-card.test.ts` the card (its cells, its parts kept, the calls in order, the sheet, the editor); the

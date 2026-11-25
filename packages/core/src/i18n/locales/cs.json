@@ -3691,6 +3691,7 @@
     "editor.drive_style": "Kříž se otevře",
     "editor.drive_entity": "Robot, který se řídí",
     "editor.drive_entity_helper": "Tentýž robot přes jinou integraci; bez zadání entita karty",
+    "editor.drive_entity_stuck": "Integrace tohoto robota jej neumožňuje řídit. Pokud je tentýž robot nastaven i přes integraci, která to umí (Roborock v Xiaomi Home: vedle něj Xiaomi Miot Auto), vyberte zde tento vysavač",
     "editor.drive": "Akce jízdy",
     "editor.drive_helper": "Pro robota, jehož integrace není známá: start, pohyb a zastavení, každé jako akce, v YAML",
     "option.slow": "Pomalu",

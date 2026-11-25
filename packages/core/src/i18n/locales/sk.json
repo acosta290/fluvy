@@ -3691,6 +3691,7 @@
     "editor.drive_style": "Ovládanie sa otvorí",
     "editor.drive_entity": "Riadený robot",
     "editor.drive_entity_helper": "Ten istý robot cez inú integráciu; prázdne: robot karty",
+    "editor.drive_entity_stuck": "Integrácia tohto robota ho neumožňuje riadiť. Ak je ten istý robot nastavený aj cez integráciu, ktorá to dokáže (Roborock v Xiaomi Home: vedľa neho Xiaomi Miot Auto), vyberte tu tento vysávač",
     "editor.drive": "Akcie riadenia",
     "editor.drive_helper": "Pre robota, ktorého integrácia nie je známa: start, move a stop, každé ako akcia, v YAML",
     "option.slow": "Pomalá",

@@ -3651,6 +3651,7 @@
     "editor.drive_style": "方向鍵顯示位置",
     "editor.drive_entity": "要遙控的機器人",
     "editor.drive_entity_helper": "透過另一個整合接入的同一台機器人；留空則使用卡片本身的機器人",
+    "editor.drive_entity_stuck": "此機器人的整合無法遙控。若同一台機器人也透過可遙控的整合接入（Xiaomi Home 中的 Roborock：另外安裝 Xiaomi Miot Auto），請在此選擇該掃地機",
     "editor.drive": "移動操作",
     "editor.drive_helper": "適用於整合未知的機器人：start、move 與 stop 各為一個操作，以 YAML 撰寫",
     "option.slow": "慢速",

@@ -3630,6 +3630,7 @@
     "editor.drive_style": "遥控打开位置",
     "editor.drive_entity": "要遥控的机器人",
     "editor.drive_entity_helper": "通过另一个集成接入的同一台机器人；留空：卡片的机器人",
+    "editor.drive_entity_stuck": "此机器人的集成无法遥控。如果同一台机器人还通过可遥控的集成接入（Xiaomi Home 中的 Roborock：同时安装 Xiaomi Miot Auto），请在此选择该扫地机",
     "editor.drive": "遥控动作",
     "editor.drive_helper": "用于集成未知的机器人：start、move 和 stop，各为一个动作，以 YAML 填写",
     "option.slow": "慢",

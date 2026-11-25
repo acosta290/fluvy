@@ -3511,6 +3511,7 @@
     "editor.drive_style": "Пултът се отваря",
     "editor.drive_entity": "Робот за управление",
     "editor.drive_entity_helper": "Същият робот през друга интеграция; празно: роботът на картата",
+    "editor.drive_entity_stuck": "Интеграцията на този робот не позволява да бъде управляван. Ако същият робот е настроен и през интеграция, която може (Roborock в Xiaomi Home: до него Xiaomi Miot Auto), изберете тази прахосмукачка тук",
     "editor.drive": "Действия за управление",
     "editor.drive_helper": "За робот с неизвестна интеграция: start, move и stop, всяко като действие, в YAML",
     "option.slow": "Бавна",

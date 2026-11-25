@@ -39,7 +39,7 @@ import {
 } from '../shared/form.js';
 import { configKeys } from '../shared/config.js';
 import { STATE_TINT_KEYS } from '../shared/state-tint.js';
-import type { EditorDefaults, RowsListSpec } from '../shared/rows-editor.js';
+import type { EditorDefaults, FormHelper, RowsListSpec } from '../shared/rows-editor.js';
 import { DRIVE_SPEEDS, DRIVE_STYLES, driveProfile } from './drive.js';
 import type { VacuumCardConfig } from './vacuum-card.js';
 
@@ -138,6 +138,18 @@ const HELPERS: Readonly<Partial<Record<string, MessageKey>>> = {
   room_action: word('action_helper'),
   zone_action: word('action_helper'),
   point_action: word('action_helper'),
+};
+
+/**
+ * What is said under a field. Under the robot to drive, while the Drive command is asked of a robot no way is known
+ * for (#178, by @maxhayim): that it cannot be driven as it is, and the way round it (the same robot through Xiaomi
+ * Miot Auto, picked there).
+ */
+const helper: FormHelper = (schema, _localize, data, hass) => {
+  const stuck =
+    schema.name === 'drive_entity' && data?.['show_drive'] === true && !drivable(data, hass);
+  const key = stuck ? 'drive.editor.drive_entity_stuck' : HELPERS[schema.name];
+  return key ? editorWord(key) : undefined;
 };
 
 /**
@@ -350,9 +362,6 @@ export function getConfigForm(): LovelaceConfigForm {
       'vacuum',
       'lawn_mower',
     ),
-    computeHelper: (schema) => {
-      const key = HELPERS[schema.name];
-      return key ? editorWord(key) : undefined;
-    },
+    computeHelper: helper,
   };
 }

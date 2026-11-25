@@ -3630,6 +3630,7 @@
     "editor.drive_style": "Kumanda şurada açılır",
     "editor.drive_entity": "Sürülecek robot",
     "editor.drive_entity_helper": "Aynı robot, başka bir entegrasyon üzerinden; boşsa kartınki",
+    "editor.drive_entity_stuck": "Bu robotun entegrasyonu onu sürmeye izin vermiyor. Aynı robot bunu yapabilen bir entegrasyonla da kuruluysa (Xiaomi Home’daki bir Roborock: yanında Xiaomi Miot Auto), o süpürgeyi burada seçin",
     "editor.drive": "Sürüş eylemleri",
     "editor.drive_helper": "Entegrasyonu bilinmeyen bir robot için: start, move ve stop, her biri bir eylem, YAML olarak",
     "option.slow": "Yavaş",

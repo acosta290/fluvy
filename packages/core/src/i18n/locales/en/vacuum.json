@@ -14,6 +14,7 @@
     "editor.drive_style": "The pad opens",
     "editor.drive_entity": "Robot to drive",
     "editor.drive_entity_helper": "The same robot through another integration; left out, the card’s own",
+    "editor.drive_entity_stuck": "This robot’s integration cannot be driven. Where the same robot is also set up through one that can (a Roborock on Xiaomi Home: Xiaomi Miot Auto beside it), choose that vacuum here",
     "editor.drive": "Drive actions",
     "editor.drive_helper": "For a robot whose integration is not known: start, move and stop, each an action, in YAML",
     "option.slow": "Slow",

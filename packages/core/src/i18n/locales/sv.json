@@ -3511,6 +3511,7 @@
     "editor.drive_style": "Styrplattan öppnas",
     "editor.drive_entity": "Robot att styra",
     "editor.drive_entity_helper": "Samma robot via en annan integration; utan den kortets egen",
+    "editor.drive_entity_stuck": "Den här robotens integration kan inte styra den. Om samma robot också är konfigurerad via en som kan (en Roborock i Xiaomi Home: Xiaomi Miot Auto bredvid), välj den dammsugaren här",
     "editor.drive": "Styråtgärder",
     "editor.drive_helper": "För en robot vars integration inte är känd: start, rörelse och stopp, var och en en åtgärd, i YAML",
     "option.slow": "Långsam",

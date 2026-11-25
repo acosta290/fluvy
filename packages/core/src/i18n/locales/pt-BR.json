@@ -3630,6 +3630,7 @@
     "editor.drive_style": "O controle abre",
     "editor.drive_entity": "Robô a dirigir",
     "editor.drive_entity_helper": "O mesmo robô por outra integração; sem ele, o do cartão",
+    "editor.drive_entity_stuck": "A integração deste robô não permite dirigi-lo. Se o mesmo robô também estiver configurado por uma que permita (um Roborock no Xiaomi Home: Xiaomi Miot Auto ao lado), escolha esse aspirador aqui",
     "editor.drive": "Ações de direção",
     "editor.drive_helper": "Para um robô cuja integração não é conhecida: start, move e stop, cada um uma ação, em YAML",
     "option.slow": "Lenta",

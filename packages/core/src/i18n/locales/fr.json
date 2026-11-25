@@ -3630,6 +3630,7 @@
     "editor.drive_style": "Le pavé s’ouvre",
     "editor.drive_entity": "Robot à piloter",
     "editor.drive_entity_helper": "Le même robot par une autre intégration ; sans elle, celui de la carte",
+    "editor.drive_entity_stuck": "L’intégration de ce robot ne permet pas de le piloter. Si le même robot est aussi installé par une intégration qui le permet (un Roborock dans Xiaomi Home : Xiaomi Miot Auto à côté), choisissez cet aspirateur ici",
     "editor.drive": "Actions de pilotage",
     "editor.drive_helper": "Pour un robot dont l’intégration n’est pas connue : start, move et stop, chacun une action, en YAML",
     "option.slow": "Lente",

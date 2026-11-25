@@ -3630,6 +3630,7 @@
     "editor.drive_style": "I comandi si aprono",
     "editor.drive_entity": "Robot da guidare",
     "editor.drive_entity_helper": "Lo stesso robot tramite un’altra integrazione; senza, quello della scheda",
+    "editor.drive_entity_stuck": "L’integrazione di questo robot non consente di guidarlo. Se lo stesso robot è configurato anche con una che lo consente (un Roborock in Xiaomi Home: Xiaomi Miot Auto accanto), scegli qui quell’aspirapolvere",
     "editor.drive": "Azioni di guida",
     "editor.drive_helper": "Per un robot la cui integrazione non è nota: start, move e stop, ciascuno un’azione, in YAML",
     "option.slow": "Lenta",
