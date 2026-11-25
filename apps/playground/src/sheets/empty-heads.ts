@@ -7,9 +7,10 @@ import { sheet as gallery } from './gallery.js';
  * A head with nothing in it (#259): a card whose config asks its circle away (`show_icon: never`), hides its name
  * (`name_lines: 0`) and turns off its line, its badge and whatever trails its head draws no head at all; its first part
  * sits at the card's 20 all round, its article says its title, and what it declares drops the head and the gap under
- * it. The reporter's Appliances card first, in its layouts and with nothing to list, each beside its headed twin in
- * half a section (a phone's two cards, 172) and in half a wider one (266); then every card whose head its config can
- * empty, the documentation's example beside it with its head emptied.
+ * it. The reporter's Appliances card first, in its layouts and with nothing to list, each over its headed twin; a lock
+ * and a blind beside theirs in half a section (a phone's two cards, 172) and in half a wider one (266); the heads of
+ * the same sweep (the chart's name with its value row off, the circle asked away where a head is drawn by hand); then
+ * every card whose head its config can empty, the documentation's example over its twin with its head emptied.
  *   ?sheet=empty-heads&at=2026-09-17T19:50:00Z
  */
 
@@ -132,6 +133,9 @@ const written = (config: Record<string, unknown>): LovelaceCardConfig =>
     Object.entries(config).filter(([, value]) => value !== undefined),
   ) as LovelaceCardConfig;
 
+/** The cards whose twins stand in frames of their own: a helper's figure is held level with the same helper's. */
+const APART = new Set(['helpers']);
+
 /**
  * A gallery example beside its twin with its head emptied; `more` set on both, a frame of its own named by what it
  * draws (`as`).
@@ -140,23 +144,26 @@ function emptied(
   title: string,
   quiet: Record<string, unknown>,
   more?: { readonly as: string; readonly config: Record<string, unknown> },
-): FrameSpec {
+): FrameSpec[] {
   const { cards, hass } = example(title);
   const card = { ...cards[0], ...more?.config } as LovelaceCardConfig & { cols?: number };
-  return {
-    title: `${title}${more ? ` · ${more.as}` : ''} · no head`,
-    cards: [card, written({ ...card, ...quiet, ...EMPTY })],
-    ...(hass ? { hass } : {}),
-  };
+  const named = `${title}${more ? ` · ${more.as}` : ''}`;
+  const twins = [card, written({ ...card, ...quiet, ...EMPTY })];
+  const house = hass ? { hass } : {};
+  return APART.has(title)
+    ? [
+        { title: `${named} · its head`, cards: [twins[0]!], ...house },
+        { title: `${named} · no head`, cards: [twins[1]!], ...house },
+      ]
+    : [{ title: `${named} · no head`, cards: twins, ...house }];
 }
 
 const frames: FrameSpec[] = [
   // the reporter's, a full card: the tiles from the card's 20, the fold's row under them
   pair('Appliances · the reporter’s tiles', REPORTERS, {}, house),
   pair('Appliances · tiles', list({ variant: 'tiles' }), { show_count: false }, house),
-  half('Appliances · rows', list(), { show_count: false }, house),
-  half('Appliances · compact', list({ variant: 'compact' }), { subtitle: '' }, house),
-  // nothing to list: the panel alone, its words wrapping in half a section as a headed card's do
+  pair('Appliances · rows', list(), { show_count: false }, house),
+  pair('Appliances · compact', list({ variant: 'compact' }), { subtitle: '' }, house),
   pair('Appliances · none', list({ appliances: [] }), { show_count: false }, house),
   // a phone's two cards: the door's lock and the blind, each beside its twin
   half('Lock · compact', example('lock · compact').cards[0] as LovelaceCardConfig, {
@@ -188,21 +195,21 @@ const frames: FrameSpec[] = [
     lights: [],
   }),
   // every head a config can empty, the documentation's example beside it emptied
-  ...QUIET.map(([title, quiet]) => emptied(title, quiet)),
+  ...QUIET.flatMap(([title, quiet]) => emptied(title, quiet)),
   // the period's chips under the head, or with none the body's first part: at the card's 20 either way
-  emptied(
+  ...emptied(
     'energy-balance',
     { subtitle: '', show_badge: false },
     { as: 'a day', config: { period: 'day', show_cost: false } },
   ),
-  emptied(
+  ...emptied(
     'energy-flow',
     { subtitle: '', badge: 'none' },
     { as: 'a day', config: { period: 'day' } },
   ),
-  emptied('energy-sankey', { subtitle: '' }, { as: 'no chips', config: { show_period: false } }),
-  emptied('energy-score', { subtitle: '' }, { as: 'no chips', config: { show_period: false } }),
-  emptied(
+  ...emptied('energy-sankey', { subtitle: '' }, { as: 'no chips', config: { show_period: false } }),
+  ...emptied('energy-score', { subtitle: '' }, { as: 'no chips', config: { show_period: false } }),
+  ...emptied(
     'energy-usage',
     { subtitle: '', show_badge: false },
     { as: 'no chips', config: { show_period: false } },
