@@ -23,6 +23,8 @@ items:
 
 ### A gauge on a round
 
+![Five rounds, each drawing its reading as an arc, an arc from zero, a sector or a fill, and in dark four batteries as keys with their levels](../images/1.26/round-gauges.webp)
+
 A round can draw its reading on itself: an arc round its edge, an arc from zero, a sector or a flood.
 
 ```yaml

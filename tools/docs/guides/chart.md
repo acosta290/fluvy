@@ -64,6 +64,8 @@ span: 3h
 readouts: true # a readout each over the chart, in place of the legend
 ```
 
+![A chart of three series with a readout each over it in place of the legend, and in dark each series' highest point marked and said under its readout](../images/1.26/chart-readouts.webp)
+
 ### Series
 
 - `source`: `history`, `statistics`, `attribute` or `forecast`. Left out: a weather's forecast, else a known list in

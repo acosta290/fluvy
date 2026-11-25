@@ -63,6 +63,8 @@ the Play Store, which has not opened many apps since August 2026.
 
 ### Xbox
 
+![An Xbox's remote in light and dark: its apps without their names, the arrow pad, the controller's A, B, X and Y with View, the Xbox button and Menu, and the playback keys](../images/1.26/remote-xbox.webp)
+
 An Xbox takes the arrows, A, B, X, Y, View, Menu and the Xbox button (`nexus`), and opens an app by its Microsoft
 Store id: Netflix, YouTube, Disney+, Prime Video and about twenty more open with `app` alone. Give any other app its id
 from the console's media browser as `app_id`.

@@ -105,6 +105,10 @@ show_rows: false # every part hidden: the card is the picture, its tap the card'
 
 ### A liquid, a mini map and its parts in your own order
 
+![A car's fuel as a liquid at 58 %, and in dark a battery as a liquid while it charges, its charge limit a line across it](../images/1.26/vehicle-liquid.webp)
+
+![A car with a mini map at its foot and its address in a pill over it, and in dark the map in the picture's place](../images/1.26/vehicle-map.webp)
+
 ```yaml
 type: custom:fluvy-vehicle-card
 device: 9b2d…

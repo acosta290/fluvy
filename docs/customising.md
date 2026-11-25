@@ -192,6 +192,8 @@ tap_action:
 An entity with nothing to set (a garage door, a light that only switches) is its keys alone. A cover's sheet on a
 ruler is its card across: its ends in the card's words and the card's favourites under the tilt.
 
+![A blind's details sheet twice: round its dial, and on a ruler across the sheet with its tilt and its card's favourites, much shorter](images/1.26/sheets-ruler.webp)
+
 A sheet opened from a Cover card reads the cover as that card does, with its dial or without: a position reported
 turned round (`invert_position`) or counted as the blind comes down (`direction: down`), a tilt turned round or in
 degrees (`invert_tilt`, `tilt_angle`).
@@ -435,6 +437,8 @@ rows:
     tap_action: { action: toggle } # a press: the button is pressed
   - sensor.living_room_light_level
 ```
+
+![A Light card with a gradient scene's dropdown, a button and a light level as rows under its colours, and in dark a Thermostat card with a schedule's switch and a preset's dropdown under its modes](images/1.26/extra-rows.webp)
 
 - A row takes what a Lock card's row takes: `name`, `icon`, `secondary`, `since`, `tone`, `color`, its own actions, and
   a select's `options` and `labels`. `show_rows: false` hides them all.

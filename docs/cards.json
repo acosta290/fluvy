@@ -13387,7 +13387,8 @@
       "example": {
         "type": "custom:fluvy-vehicle-card",
         "device": "d-niro",
-        "energy": "hybrid"
+        "energy": "hybrid",
+        "hero": "liquid"
       },
       "layout": {
         "key": "variant",
@@ -13403,12 +13404,14 @@
           "type": "custom:fluvy-vehicle-card",
           "device": "d-niro",
           "energy": "hybrid",
+          "hero": "liquid",
           "variant": "compact"
         },
         "mini": {
           "type": "custom:fluvy-vehicle-card",
           "device": "d-niro",
           "energy": "hybrid",
+          "hero": "liquid",
           "variant": "mini"
         }
       },

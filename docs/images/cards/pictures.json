@@ -355,17 +355,17 @@
     "height": 2000
   },
   "vehicle": {
-    "example": "411e9115cfa6",
+    "example": "70fa1ff4d936",
     "width": 784,
     "height": 1296
   },
   "vehicle.compact": {
-    "example": "6ada58dc37b7",
+    "example": "84e73f1ea2f6",
     "width": 784,
     "height": 536
   },
   "vehicle.mini": {
-    "example": "945ddd5230f3",
+    "example": "f50a59356035",
     "width": 784,
     "height": 216
   },

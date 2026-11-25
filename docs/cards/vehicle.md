@@ -14,6 +14,7 @@ A car, electric, petrol, diesel or plug-in hybrid: its battery or tank, range an
 type: custom:fluvy-vehicle-card
 device: d-niro
 energy: hybrid
+hero: liquid
 ```
 
 The picture above, on the demo house: put your own entities in place of its.
@@ -50,7 +51,8 @@ variant: full
 #   - rows
 energy: hybrid
 # tank_size:
-hero: ruler
+hero: liquid
+# animate: true
 # image:
 # map:
 show_head: true
@@ -352,6 +354,10 @@ show_rows: false # every part hidden: the card is the picture, its tap the card'
 ```
 
 ### A liquid, a mini map and its parts in your own order
+
+![A car's fuel as a liquid at 58 %, and in dark a battery as a liquid while it charges, its charge limit a line across it](../images/1.26/vehicle-liquid.webp)
+
+![A car with a mini map at its foot and its address in a pill over it, and in dark the map in the picture's place](../images/1.26/vehicle-map.webp)
 
 ```yaml
 type: custom:fluvy-vehicle-card
