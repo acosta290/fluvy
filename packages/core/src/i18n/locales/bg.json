@@ -3236,6 +3236,10 @@
     "dashboard.greeting_avatar": "Аватар в поздрава",
     "dashboard.avatar_shown": "Показан",
     "dashboard.avatar_hidden": "Скрит",
+    "dashboard.greeting": "Поздрав",
+    "dashboard.every_view": "Във всеки изглед",
+    "dashboard.first_view": "Само в първия изглед",
+    "dashboard.greeting_hidden": "Скрит",
     "cards.sheets_dial": "Подробности с циферблат"
   },
   "remote": {

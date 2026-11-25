@@ -3204,6 +3204,10 @@
     "dashboard.greeting_avatar": "Аватар в приветствии",
     "dashboard.avatar_shown": "Показан",
     "dashboard.avatar_hidden": "Скрыт",
+    "dashboard.greeting": "Приветствие",
+    "dashboard.every_view": "На каждом виде",
+    "dashboard.first_view": "Только на первом виде",
+    "dashboard.greeting_hidden": "Скрыто",
     "cards.sheets_dial": "Подробности с циферблатом"
   },
   "customise": {

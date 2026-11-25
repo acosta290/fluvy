@@ -1704,6 +1704,10 @@
     "dashboard.greeting_avatar": "Selamlamadaki avatar",
     "dashboard.avatar_shown": "Görünür",
     "dashboard.avatar_hidden": "Gizli",
+    "dashboard.greeting": "Selamlama",
+    "dashboard.every_view": "Her görünümde",
+    "dashboard.first_view": "Yalnızca ilk görünümde",
+    "dashboard.greeting_hidden": "Gizli",
     "cards.sheets_dial": "Kadranlı ayrıntılar"
   },
   "customise": {

@@ -162,6 +162,7 @@ const homePart = (part: string, style: CardStyle): (LovelaceCardConfig & { cols?
     style,
     areas: undefined,
     greetingTabs: false,
+    greeting: 'show',
     hass,
     header: 0,
     caps: {},

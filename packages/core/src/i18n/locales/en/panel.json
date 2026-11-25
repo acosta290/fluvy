@@ -508,6 +508,10 @@
     "dashboard.greeting_avatar": "Avatar in the greeting",
     "dashboard.avatar_shown": "Shown",
     "dashboard.avatar_hidden": "Hidden",
+    "dashboard.greeting": "Greeting",
+    "dashboard.every_view": "On every view",
+    "dashboard.first_view": "On the first view only",
+    "dashboard.greeting_hidden": "Hidden",
     "cards.sheets_dial": "Sheets with a dial"
   }
 }

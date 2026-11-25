@@ -1704,6 +1704,10 @@
     "dashboard.greeting_avatar": "Avatar de l'accueil",
     "dashboard.avatar_shown": "Affiché",
     "dashboard.avatar_hidden": "Masqué",
+    "dashboard.greeting": "Accueil",
+    "dashboard.every_view": "Sur chaque vue",
+    "dashboard.first_view": "Sur la première vue seulement",
+    "dashboard.greeting_hidden": "Masqué",
     "cards.sheets_dial": "Détails avec cadran"
   },
   "customise": {

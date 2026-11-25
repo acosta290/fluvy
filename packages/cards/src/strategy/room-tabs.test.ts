@@ -458,6 +458,7 @@ describe('the Lights and the Climate dashboards (#202)', () => {
       'tile_switch',
       'lights_variant',
       'scenes_style',
+      'greeting',
       'greeting_avatar',
       'greeting_tabs',
       'names',
@@ -469,6 +470,7 @@ describe('the Lights and the Climate dashboards (#202)', () => {
     expect(keys('climate')).toEqual([
       'thermostat_variant',
       'thermostat_state',
+      'greeting',
       'greeting_avatar',
       'greeting_tabs',
       'names',

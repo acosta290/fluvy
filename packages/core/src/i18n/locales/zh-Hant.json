@@ -3235,6 +3235,10 @@
     "dashboard.greeting_avatar": "問候語中的頭像",
     "dashboard.avatar_shown": "顯示",
     "dashboard.avatar_hidden": "隱藏",
+    "dashboard.greeting": "問候語",
+    "dashboard.every_view": "每個畫布",
+    "dashboard.first_view": "僅第一個畫布",
+    "dashboard.greeting_hidden": "隱藏",
     "cards.sheets_dial": "有圓盤的彈出視窗"
   },
   "remote": {

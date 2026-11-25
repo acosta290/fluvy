@@ -1704,6 +1704,10 @@
     "dashboard.greeting_avatar": "Avatar in der Begrüßung",
     "dashboard.avatar_shown": "Angezeigt",
     "dashboard.avatar_hidden": "Ausgeblendet",
+    "dashboard.greeting": "Begrüßung",
+    "dashboard.every_view": "In jeder Ansicht",
+    "dashboard.first_view": "Nur in der ersten Ansicht",
+    "dashboard.greeting_hidden": "Ausgeblendet",
     "cards.sheets_dial": "Ansichten mit Drehregler"
   },
   "customise": {

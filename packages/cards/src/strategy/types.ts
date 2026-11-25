@@ -74,6 +74,9 @@ export type Caps = 'none' | number | Readonly<Partial<Record<CapKey | 'all', num
  */
 export type RoomLook = Pick<RoomCardConfig, 'name_position' | 'readout_style' | 'readout_labels'>;
 
+/** Where a dashboard's greeting stands: on every view, on the first alone, on none. */
+export type Greeting = 'show' | 'first' | 'hide';
+
 /** What any of the automatic dashboards reads from its raw configuration; each template honours its own keys. */
 export interface FluvyStrategyConfig {
   type: StrategyType;
@@ -152,6 +155,12 @@ export interface FluvyStrategyConfig {
    * header's tabs wear the look: 1.5).
    */
   greeting_tabs?: 'show' | 'hide';
+  /**
+   * Where the greeting stands (1.26, discussion #208): at the top of every view (`show`, the default), of the first
+   * view alone (`first`: the tab the dashboard opens on), or of none (`hide`). The views as chips under it
+   * (`greeting_tabs`) stay where they are asked for.
+   */
+  greeting?: Greeting;
   /** The greeting's avatar (1.26, #260): shown (the default) or hidden, the greeting then the card's button. */
   greeting_avatar?: 'show' | 'hide';
   /**
@@ -359,9 +368,14 @@ export interface StrategyContext {
   readonly areas: readonly string[] | undefined;
   /** Whether every view's first column opens with the views as chips under the greeting. */
   readonly greetingTabs: boolean;
+  /** Where the greeting stands (`greeting`, discussion #208). */
+  readonly greeting: Greeting;
   /** The house the dashboard is generated for: the cards' heights count what its entities draw. */
   readonly hass: HomeAssistant;
-  /** What opens the first column of every view, in px at a 360 column (the greeting, the chips): the layout counts it. */
+  /**
+   * What opens the first column of every view, in px at a 360 column (the greeting where every view has it, the
+   * chips): the layout counts it, and over it what the first view alone opens with (`MoreHost.lead`).
+   */
   readonly header: number;
   /** How many of a long list a view shows (`caps`). */
   readonly caps: Caps;
@@ -428,6 +442,8 @@ export interface MoreHost {
    * named after that view too, and leads back to it.
    */
   readonly on?: Pick<MoreHost, 'path' | 'title' | 'icon'>;
+  /** What the view alone opens its first column with, over the header, in px: the greeting on the first view only. */
+  readonly lead?: number;
   /** Its columns, once `flowed` has cut them. */
   flow?: Flow;
 }

@@ -3204,6 +3204,10 @@
     "dashboard.greeting_avatar": "Аватар у привітанні",
     "dashboard.avatar_shown": "Показано",
     "dashboard.avatar_hidden": "Сховано",
+    "dashboard.greeting": "Привітання",
+    "dashboard.every_view": "На кожній вкладці",
+    "dashboard.first_view": "Лише на першій вкладці",
+    "dashboard.greeting_hidden": "Сховано",
     "cards.sheets_dial": "Подробиці з циферблатом"
   },
   "customise": {

@@ -142,7 +142,7 @@ export const moreHost = (
   icon: string,
   columns: number,
   edit: DashboardEdit = {},
-  more: Pick<MoreHost, 'taken' | 'on'> = {},
+  more: Pick<MoreHost, 'taken' | 'on' | 'lead'> = {},
 ): MoreHost => ({
   path,
   title,

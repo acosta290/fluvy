@@ -3215,6 +3215,10 @@
     "dashboard.greeting_avatar": "Avatar i hälsningen",
     "dashboard.avatar_shown": "Visas",
     "dashboard.avatar_hidden": "Dold",
+    "dashboard.greeting": "Hälsning",
+    "dashboard.every_view": "I varje vy",
+    "dashboard.first_view": "Bara i den första vyn",
+    "dashboard.greeting_hidden": "Dold",
     "cards.sheets_dial": "Ark med ratt"
   },
   "remote": {

@@ -3153,6 +3153,10 @@
     "dashboard.greeting_avatar": "Avatár az üdvözlésben",
     "dashboard.avatar_shown": "Látható",
     "dashboard.avatar_hidden": "Rejtett",
+    "dashboard.greeting": "Üdvözlés",
+    "dashboard.every_view": "Minden nézetben",
+    "dashboard.first_view": "Csak az első nézetben",
+    "dashboard.greeting_hidden": "Rejtett",
     "cards.sheets_dial": "Részletek tárcsával"
   },
   "customise": {

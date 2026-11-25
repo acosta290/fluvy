@@ -204,13 +204,19 @@ const GREETING_TABS = choice('greeting_tabs', 'dashboard.greeting_tabs', [
   { value: 'hide', label: 'dashboard.header_only' },
   { value: 'show', label: 'dashboard.under_greeting' },
 ]);
+/** Where the greeting stands (discussion #208): on every view, on the first of the tabs alone, on none. */
+const GREETING = panelChoice('greeting', 'dashboard.greeting', [
+  { value: 'show', label: 'dashboard.every_view' },
+  { value: 'first', label: 'dashboard.first_view' },
+  { value: 'hide', label: 'dashboard.greeting_hidden' },
+]);
 /** The greeting's avatar (#260): a wall's greeting has one too. */
 const GREETING_AVATAR = panelChoice('greeting_avatar', 'dashboard.greeting_avatar', [
   { value: 'show', label: 'dashboard.avatar_shown' },
   { value: 'hide', label: 'dashboard.avatar_hidden' },
 ]);
-/** What a dashboard that opens its views with the greeting says of it: its avatar, the tabs under it. */
-const GREETINGS: readonly TemplateOption[] = [GREETING_AVATAR, GREETING_TABS];
+/** What a dashboard that opens its views with the greeting says of it: where it stands, its avatar, the tabs under it. */
+const GREETINGS: readonly TemplateOption[] = [GREETING, GREETING_AVATAR, GREETING_TABS];
 /** What lies behind the cards: the house's, or the dashboard's own (a wall's shows on a wall that lets it through). */
 const BACKGROUND: TemplateOption = {
   key: 'background',

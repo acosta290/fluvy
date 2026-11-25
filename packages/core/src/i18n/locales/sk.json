@@ -3137,6 +3137,10 @@
     "dashboard.greeting_avatar": "Profilový obrázok v pozdrave",
     "dashboard.avatar_shown": "Zobrazený",
     "dashboard.avatar_hidden": "Skrytý",
+    "dashboard.greeting": "Pozdrav",
+    "dashboard.every_view": "V každom zobrazení",
+    "dashboard.first_view": "Len v prvom zobrazení",
+    "dashboard.greeting_hidden": "Skrytý",
     "cards.sheets_dial": "Podrobnosti s ciferníkom"
   },
   "customise": {

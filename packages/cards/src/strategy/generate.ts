@@ -5,6 +5,7 @@ import { APPLIANCES_PATH, applianceSections, appliancesView } from './appliances
 import { moreHost } from './caps.js';
 import { buildContext, framed, withCards } from './context.js';
 import { arranged, editOf, pinned, tuned } from './edit.js';
+import { HELLO_HEIGHT } from './layout.js';
 import { roomSections, roomView } from './rooms.js';
 import { HOME_TEMPLATE, templateOf, viewsOf, type Template } from './templates.js';
 import type {
@@ -142,17 +143,28 @@ export async function generateWith(
       return { id: part, cards: cards.map((card) => tuned(cards, card, own)) };
     });
   };
+  const order = ({ key }: { readonly key: string }): unknown => edit.views?.[key]?.order;
+  const specs = viewsOf(template, ctx).filter(
+    (spec, index) => index === 0 || !hidden.has(spec.key),
+  );
+  // the view the greeting stands on where it is the first's alone (`greeting: first`): the first of the tabs in the
+  // person's order, told before they are built (one that then holds nothing gives its place, never its height)
+  const leads =
+    ctx.greeting === 'first' && template.header === 'hello'
+      ? pinned(specs, order)[0]?.key
+      : undefined;
   /** A view's host: what it is built on, kept for whoever asked for them. */
   const hostOf = (path: string, title: string, icon: string): MoreHost => {
     const more = moreHost(path, title, icon, template.columns, edit, {
       taken: takenBy(path, title, icon),
+      // the greeting on the first view alone: its height over that view's first column
+      ...(path === leads ? { lead: HELLO_HEIGHT } : {}),
     });
     built?.push(more);
     return more;
   };
   const kept = pinned(
-    viewsOf(template, ctx)
-      .filter((spec, index) => index === 0 || !hidden.has(spec.key))
+    specs
       .map((spec) => {
         const title = spec.name ?? ctx.t(spec.title);
         const more = hostOf(spec.key, title, spec.icon);
@@ -167,7 +179,7 @@ export async function generateWith(
         ({ spec, sections }, index) =>
           index === 0 || (spec.when ? spec.when(ctx) : sections.length > 0),
       ),
-    ({ spec }) => edit.views?.[spec.key]?.order,
+    ({ spec }) => order(spec),
   );
   const views = kept.map(({ spec, title, sections }): View => ({
     title,

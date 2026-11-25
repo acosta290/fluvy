@@ -636,6 +636,19 @@ describe('the dashboard templates', () => {
       greeting_avatar: 'hide',
     });
     expect(strategyOptions({ greeting_avatar: false }, HOME_TEMPLATE)).toEqual({});
+    // …and where the greeting stands, on those that open their views with it alone (discussion #208)
+    expect(offers('greeting')).toEqual([
+      'home',
+      'rooms',
+      'energy',
+      'security',
+      'lights',
+      'climate',
+    ]);
+    for (const option of asked('greeting')) expect(option).toEqual([true, 'show']);
+    expect(strategyOptions({ greeting: 'first' }, HOME_TEMPLATE)).toEqual({ greeting: 'first' });
+    expect(strategyOptions({ greeting: 'never' }, HOME_TEMPLATE)).toEqual({});
+    expect(strategyOptions({ greeting: 'hide' }, templateById('wall'))).toEqual({});
     expect(strategyOptions('nonsense', HOME_TEMPLATE)).toEqual({});
     // the caps: every list whole, up to a number, or a list's own number or `none`, the lists every template knows
     for (const template of TEMPLATES) {

@@ -3137,6 +3137,10 @@
     "dashboard.greeting_avatar": "Avatar v pozdravu",
     "dashboard.avatar_shown": "Zobrazený",
     "dashboard.avatar_hidden": "Skrytý",
+    "dashboard.greeting": "Pozdrav",
+    "dashboard.every_view": "V každém pohledu",
+    "dashboard.first_view": "Jen v prvním pohledu",
+    "dashboard.greeting_hidden": "Skrytý",
     "cards.sheets_dial": "Panely s číselníkem"
   },
   "customise": {

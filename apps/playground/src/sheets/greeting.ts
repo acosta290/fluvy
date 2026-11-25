@@ -8,7 +8,8 @@ import { sheet as extras } from './home-extras.js';
  * without its avatar and without its name; its weather and its date as buttons of their own; and a line of quick
  * actions under it, as a room's and a car's — a lamp, the blinds, the front door's lock, a scene, the speaker and a
  * reading — at rest, saying their states under their glyphs and beside them, more than a phone's column holds, and
- * on the page's backgrounds, where a round at rest is a disc of the card's fill.
+ * on the page's backgrounds, where a round at rest is a disc of the card's fill. And the top of an automatic
+ * dashboard's view whose greeting is hidden (discussion #208): the views' chips first, or the cards themselves.
  */
 
 /** The greeting is frozen on the sheet's evening (the `_now` test hook), so every render says the same thing. */
@@ -34,6 +35,23 @@ const QUICK = [
 ];
 /** With what they say: the hall's temperature after them. */
 const SAID = [...QUICK.slice(0, 3), 'sensor.gr_temperature'];
+
+/** What an automatic dashboard's view opens with under a hidden greeting: a room's heading and its lights. */
+const VIEW: Placed[] = [
+  { type: 'custom:fluvy-heading-card', title: 'Hall', icon: 'fluvy:bulb' },
+  { type: 'custom:fluvy-tile-card', entity: 'light.gr_hall', cols: 6 },
+  { type: 'custom:fluvy-tile-card', entity: 'light.gr_desk', cols: 6 },
+];
+/** The views as chips, as the dashboard writes them under the greeting (`greeting_tabs: show`). */
+const TABS: Placed = {
+  type: 'custom:fluvy-chips-card',
+  chips: [
+    { label: 'Home', icon: 'fluvy:home', path: '/' },
+    { label: 'Rooms', icon: 'fluvy:rooms', path: '/fluvy-auto/rooms' },
+    { label: 'Climate', icon: 'fluvy:thermo', path: '/fluvy-auto/climate' },
+    { label: 'Energy', icon: 'fluvy:bolt', path: '/fluvy-auto/energy' },
+  ],
+};
 
 export const sheet: SheetSpec = {
   on: [extras],
@@ -148,6 +166,16 @@ export const sheet: SheetSpec = {
         { type: 'custom:fluvy-tile-card', entity: 'light.gr_hall', cols: 6 },
         { type: 'custom:fluvy-tile-card', entity: 'light.gr_desk', cols: 6 },
       ],
+    },
+    // discussion #208: a view whose greeting is hidden opens with the views' chips where they are asked for, else
+    // with its cards, each on the frame's own top
+    {
+      title: 'Greeting hidden · the views’ chips first',
+      cards: [TABS, ...VIEW],
+    },
+    {
+      title: 'Greeting hidden · the cards first',
+      cards: VIEW,
     },
   ],
 };

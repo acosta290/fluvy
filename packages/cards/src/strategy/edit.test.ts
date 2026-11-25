@@ -807,6 +807,33 @@ describe('a dashboard’s `edit` (#170)', () => {
   });
 });
 
+describe('the greeting on the first view alone (discussion #208)', () => {
+  /** The views that carry the greeting's height over their first column, each by its path. */
+  const leads = async (options: Partial<FluvyStrategyConfig>, edit?: unknown) =>
+    (await built('home', edit, [], options)).hosts
+      .filter((host) => host.lead !== undefined)
+      .map((host) => [host.path, host.lead]);
+
+  it('is counted over that view’s first column, and over no other’s: every view’s header is the tabs’ alone', async () => {
+    // on every view, or on none: the header every view shares says it, or says nothing
+    expect(await leads({})).toEqual([]);
+    expect(await leads({ greeting: 'hide' })).toEqual([]);
+    expect(await leads({ greeting: 'first' })).toEqual([['home', 76]]);
+  });
+
+  it('stands on the tab a person put first, its height with it', async () => {
+    const moved = { views: { lights: { order: 0 } } };
+    expect(await leads({ greeting: 'first' }, moved)).toEqual([['lights', 76]]);
+    const { views } = await built('home', moved, [], { greeting: 'first' });
+    expect(tabs(views)[0]).toBe('lights');
+    expect(
+      views
+        .filter((view) => view.sections.some((s) => s.cards.some((c) => c.type.includes('hello'))))
+        .map((view) => view.path),
+    ).toEqual(['lights']);
+  });
+});
+
 describe('pinned', () => {
   const order =
     (pins: Record<string, number>) =>

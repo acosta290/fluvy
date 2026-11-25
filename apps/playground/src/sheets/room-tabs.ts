@@ -393,6 +393,7 @@ function viewCards(
     style,
     areas: undefined,
     greetingTabs: false,
+    greeting: 'show',
     hass,
     header: 0,
     caps: {},

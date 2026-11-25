@@ -26,8 +26,9 @@ export const withCards = (sections: readonly Section[]): Section[] =>
   sections.filter((section) => section.cards.length > 0);
 
 /**
- * The template's frame: the greeting first in the first section, the views as chips under it when the dashboard
- * asks for them (and has more than one; a wall opens with neither), then empty sections up to the template's columns;
+ * The template's frame: the greeting first in the first section, where the dashboard has it on this view (`greeting`:
+ * every view, the first alone, none), the views as chips under it when the dashboard asks for them (and has more than
+ * one; a wall opens with neither), then empty sections up to the template's columns;
  * a band across them (a section spanning the columns) on a row of its own — before the columns where the view leads
  * with it (the Energy dashboard's period strip on its Today view), else after them (the appliances).
  */
@@ -38,10 +39,12 @@ export function framed(
   template: Pick<Template, 'header' | 'columns'> = { header: 'hello', columns: COLUMNS },
 ): View {
   const tabs = views.filter((other) => !other.subview);
+  // the greeting where the dashboard has it (discussion #208): on every view, or on the first of its tabs alone
+  const greeted = ctx.greeting === 'show' || (ctx.greeting === 'first' && view === views[0]);
   const header =
     template.header === 'hello'
       ? [
-          helloCard(ctx),
+          ...(greeted ? [helloCard(ctx)] : []),
           ...(ctx.greetingTabs && tabs.length > 1 ? [tabsCard(ctx.base, views)] : []),
         ]
       : [];
@@ -98,6 +101,8 @@ export async function buildContext(
     config.exclude,
     config.names === 'entity' || config.names === 'full' ? config.names : undefined,
   );
+  const greeting =
+    config.greeting === 'first' || config.greeting === 'hide' ? config.greeting : 'show';
   const ctx: StrategyContext = {
     home,
     t: config.language ? wordsIn(config.language) : (key) => home.t(key),
@@ -125,8 +130,11 @@ export async function buildContext(
     },
     areas: config.areas,
     greetingTabs: config.greeting_tabs === 'show',
+    greeting,
     hass,
-    header: HELLO_HEIGHT + (config.greeting_tabs === 'show' ? TABS_HEIGHT : 0),
+    header:
+      (greeting === 'show' ? HELLO_HEIGHT : 0) +
+      (config.greeting_tabs === 'show' ? TABS_HEIGHT : 0),
     caps: capsOf(config.caps),
     // each view gathers its own (`generateWith`); the first's until then
     more: moreHost('home', home.t('strategy.home'), 'fluvy:home', COLUMNS),

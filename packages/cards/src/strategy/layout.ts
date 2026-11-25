@@ -542,12 +542,14 @@ export function flowed(
   columns = 3,
 ): Section[] {
   const runs = blocks.filter((block) => block.length > 0);
+  // the header, and over it what the view alone opens with (the greeting on the first view only)
+  const header = ctx.header + (ctx.more?.lead ?? 0);
   let best: { columns: Card[][]; spread: number } | undefined;
   for (const cuts of cutsOf(runs.length, Math.min(columns, runs.length))) {
     const bounds = [0, ...cuts, runs.length];
     const laid = Array.from({ length: columns }, (_, i) => {
       const cards = runs.slice(bounds[i] ?? runs.length, bounds[i + 1] ?? runs.length).flat();
-      return { cards, height: (i === 0 ? ctx.header : 0) + heightOfAll(cards, ctx) };
+      return { cards, height: (i === 0 ? header : 0) + heightOfAll(cards, ctx) };
     });
     for (const item of loose) {
       const cards: readonly Card[] = Array.isArray(item) ? item : [item as Card];
@@ -567,7 +569,7 @@ export function flowed(
       blocks: runs,
       loose,
       sections,
-      lay: (again, feet) => flowed({ header: ctx.header, hass: ctx.hass }, again, feet, columns),
+      lay: (again, feet) => flowed({ header, hass: ctx.hass }, again, feet, columns),
     };
   return sections;
 }

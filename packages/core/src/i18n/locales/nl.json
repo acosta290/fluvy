@@ -1704,6 +1704,10 @@
     "dashboard.greeting_avatar": "Avatar in de begroeting",
     "dashboard.avatar_shown": "Zichtbaar",
     "dashboard.avatar_hidden": "Verborgen",
+    "dashboard.greeting": "Begroeting",
+    "dashboard.every_view": "In elke weergave",
+    "dashboard.first_view": "Alleen in de eerste weergave",
+    "dashboard.greeting_hidden": "Verborgen",
     "cards.sheets_dial": "Details met draaiknop"
   },
   "customise": {

@@ -1704,6 +1704,10 @@
     "dashboard.greeting_avatar": "Avatar del saludo",
     "dashboard.avatar_shown": "Visible",
     "dashboard.avatar_hidden": "Oculto",
+    "dashboard.greeting": "Saludo",
+    "dashboard.every_view": "En todas las vistas",
+    "dashboard.first_view": "Solo en la primera vista",
+    "dashboard.greeting_hidden": "Oculto",
     "cards.sheets_dial": "Detalles con dial"
   },
   "customise": {

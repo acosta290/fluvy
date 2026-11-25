@@ -2811,6 +2811,10 @@
     "dashboard.greeting_avatar": "Awatar w powitaniu",
     "dashboard.avatar_shown": "Widoczny",
     "dashboard.avatar_hidden": "Ukryty",
+    "dashboard.greeting": "Powitanie",
+    "dashboard.every_view": "W każdym widoku",
+    "dashboard.first_view": "Tylko w pierwszym widoku",
+    "dashboard.greeting_hidden": "Ukryte",
     "cards.sheets_dial": "Szczegóły z tarczą"
   },
   "customise": {

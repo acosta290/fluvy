@@ -3037,6 +3037,10 @@
     "dashboard.greeting_avatar": "あいさつのアバター",
     "dashboard.avatar_shown": "表示",
     "dashboard.avatar_hidden": "非表示",
+    "dashboard.greeting": "あいさつ",
+    "dashboard.every_view": "すべてのビュー",
+    "dashboard.first_view": "最初のビューのみ",
+    "dashboard.greeting_hidden": "非表示",
     "cards.sheets_dial": "ダイヤルを表示するシート"
   },
   "customise": {

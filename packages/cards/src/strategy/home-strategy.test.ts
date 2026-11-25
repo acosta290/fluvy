@@ -1736,6 +1736,47 @@ describe('custom:fluvy-home strategy', () => {
     ).toBe(true);
   });
 
+  it('keeps the greeting on every view unless asked: on the first of the tabs alone, or on none (discussion #208)', async () => {
+    const built = async (config: Record<string, unknown>) =>
+      (await generate({ type: 'custom:fluvy-home', ...config } as never, house(DEMO_ROOMS))).views;
+    const greeted = (views: readonly View[]): string[] =>
+      views
+        .filter((v) => v.sections.some((s) => s.cards.some((c) => c.type.includes('hello'))))
+        .map((v) => v.path);
+    const plain = await built({});
+    // unset, or said as it is by itself: the dashboard as it always was, every view and subview greeted
+    expect(greeted(plain)).toEqual(plain.map((v) => v.path));
+    expect(await built({ greeting: 'show' })).toEqual(plain);
+    expect(await built({ greeting: 'everywhere' })).toEqual(plain);
+    // the first view only: no other tab, no room's page, no list's
+    const first = await built({ greeting: 'first' });
+    expect(first.map((v) => v.path)).toEqual(plain.map((v) => v.path));
+    expect(first.some((v) => v.subview)).toBe(true);
+    expect(greeted(first)).toEqual(['home']);
+    expect(types(first[0]!.sections[0]!.cards)[0]).toBe('hello');
+    // hidden: no view has one, and each opens with its own cards
+    const none = await built({ greeting: 'hide' });
+    expect(greeted(none)).toEqual([]);
+    expect(none.map((v) => v.path)).toEqual(plain.map((v) => v.path));
+    const cardsOf = (views: readonly View[]): string[] =>
+      views.flatMap((v) => v.sections.flatMap((s) => types(s.cards))).sort();
+    // nothing but the greetings went
+    expect(cardsOf(none)).toEqual(cardsOf(plain).filter((type) => type !== 'hello'));
+    // the views as chips stay where they are asked for, and lead the view where no greeting does
+    const tabbed = await built({ greeting: 'hide', greeting_tabs: 'show' });
+    for (const v of tabbed) expect(types(v.sections[0]!.cards)[0]).toBe('chips');
+    const lead = await built({ greeting: 'first', greeting_tabs: 'show' });
+    expect(types(lead[0]!.sections[0]!.cards).slice(0, 2)).toEqual(['hello', 'chips']);
+    for (const v of lead.slice(1)) expect(types(v.sections[0]!.cards)[0]).toBe('chips');
+    // the first of the tabs is the person's to say: the greeting stands on the one they put first
+    const moved = await built({
+      greeting: 'first',
+      edit: { views: { rooms: { order: 0 } } },
+    });
+    expect(moved[0]!.path).toBe('rooms');
+    expect(greeted(moved)).toEqual(['rooms']);
+  });
+
   it('draws the greeting without its avatar where asked, on a wall too, and writes nothing unless asked (#260)', async () => {
     const hellos = async (config: Record<string, unknown>) =>
       (await generate(config as never, house(DEMO_ROOMS))).views

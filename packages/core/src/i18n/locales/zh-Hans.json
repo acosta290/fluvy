@@ -3078,6 +3078,10 @@
     "dashboard.greeting_avatar": "问候语中的头像",
     "dashboard.avatar_shown": "显示",
     "dashboard.avatar_hidden": "隐藏",
+    "dashboard.greeting": "问候语",
+    "dashboard.every_view": "每个视图",
+    "dashboard.first_view": "仅第一个视图",
+    "dashboard.greeting_hidden": "隐藏",
     "cards.sheets_dial": "带表盘的详情面板"
   },
   "customise": {
