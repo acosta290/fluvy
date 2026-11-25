@@ -635,6 +635,8 @@ describe('the vehicle card', () => {
     const hass = house();
     const card = await mount({ device: TESLA.device, quick_actions: quick }, hass);
     expect(sections(card).at(-1)).toBe('div.vh-quick');
+    // rounds alone stand each in the middle of its share of the column, as the controls over them
+    expect(root(card).querySelector('.vh-quick > .lt-bulbs--across')).not.toBeNull();
     const rounds = root(card).querySelectorAll<HTMLElement>('.vh-quick .lt-bulb');
     // a room's set means nothing on a car: its entities' rounds alone
     expect([...rounds].map((round) => round.getAttribute('aria-label'))).toEqual([
@@ -655,7 +657,40 @@ describe('the vehicle card', () => {
       quick_actions: quick,
       show_quick_states: true,
     });
-    expect(root(said).querySelector('.vh-quick.is-under .rm-quick--under')).not.toBeNull();
+    // saying their states, every cell is a key that fills its share: two in a column of 320, 8 apart, flush with it
+    const keys = (of: Mounted): HTMLElement[] => [
+      ...root(of).querySelectorAll<HTMLElement>(
+        '.vh-quick .lt-bulbs--keys[data-fill-row] > .lt-bulb',
+      ),
+    ];
+    expect(root(said).querySelector('.vh-quick.is-under')).not.toBeNull();
+    expect(
+      keys(said).map((key) => [key.style.width, key.classList.contains('lt-bulb--under')]),
+    ).toEqual([
+      ['156px', true],
+      ['156px', true],
+    ]);
+    document.body.replaceChildren();
+    // how many is the list's and the width's alone: keys of 64 at the least, pills of 96 beside
+    const five = ['a', 'b', 'c', 'd', 'e'].map((id) => `sensor.model_y_${id}`);
+    const fit = async (width: number, config: Record<string, unknown> = {}): Promise<string[]> => {
+      const drawn = await mount(
+        { device: TESLA.device, quick_actions: five, show_quick_states: true, ...config },
+        house(),
+        width,
+      );
+      const widths = keys(drawn).map((key) => key.style.width);
+      document.body.replaceChildren();
+      return widths;
+    };
+    expect(await fit(392)).toEqual(Array(5).fill('64px'));
+    expect(await fit(360)).toEqual(Array(4).fill('74px'));
+    expect(await fit(211)).toEqual(Array(2).fill('81px'));
+    expect(await fit(152)).toEqual(['112px']);
+    expect(await fit(360, { quick_state_position: 'beside' })).toEqual(Array(3).fill('101px'));
+    // without states five rounds hold where four keys do
+    const bare = await mount({ device: TESLA.device, quick_actions: five }, house(), 360);
+    expect(root(bare).querySelectorAll('.vh-quick .lt-bulb')).toHaveLength(5);
     document.body.replaceChildren();
     const strip = await mount({ device: TESLA.device, variant: 'mini', quick_actions: quick });
     expect(root(strip).querySelector('.vh-quick')).toBeNull();

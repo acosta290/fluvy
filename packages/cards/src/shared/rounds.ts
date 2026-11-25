@@ -547,12 +547,12 @@ export function roundOf(host: RoundsHost, item: RoundSpec): Round {
 }
 
 /**
- * The pills a round grows into where it says its state (#205), the rounds' own sheet: adopted by the card that draws
- * one (`wear`), so a house of rounds never pays for it.
+ * What a round grows into where it says its state (#205), the rounds' own sheet: a pill, its words beside its glyph,
+ * or a key, its words under it. Adopted by the card that draws one (`wear`), so a house of rounds never pays for it.
  */
 const PILLS = css`
-  /* the round grown into a pill of its own fill as wide as the card sets it (on the 4 grid, its words never cut), its
-     glyph where the round has it and its words 8 after it */
+  /* the round grown into a pill of its own fill as wide as the card sets it (on the 4 grid), its glyph where the
+     round has it and its words 8 after it */
   .lt-bulb--said {
     flex: none;
     justify-content: flex-start;
@@ -573,20 +573,29 @@ const PILLS = css`
     white-space: nowrap;
     color: var(--fluvy-text);
   }
+  /* a state's word that what the card sets it in cannot hold ends in an ellipsis (\`keyStates\`); a figure is never cut */
+  .lt-bulb > .lt-said {
+    min-width: 0;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
   .lt-bulb.is-on .lt-said {
     color: inherit;
   }
   .fv-ico--off .lt-said {
     color: var(--fluvy-text-secondary);
   }
-  /* …or under its glyph: a pill 64 tall and as wide as its words with 6 a side (44 the least), its words 4 under the
-     glyph in 12/600 on their 16 line; a room's rounds all at the block's top, the glyphs on one line, and on the photo
-     the pills' feet on the name pill's, 16 from the foot */
+  /* …or under its glyph, a key: 64 tall at a tappable's radius, its glyph 12 from its top on the rounds' glyph line,
+     its words 4 under it in 12/600 on their 16 line and 12 from its foot — and 12 from each of its sides, 8 where
+     their line is tight (the card sets its width; the radius leaves the words a straight side). A room's rounds all at
+     the block's top, the glyphs on one line, and on the photo the keys' feet on the name pill's, 16 from the foot */
   .lt-bulb.lt-bulb--under {
     flex-direction: column;
     gap: 4px;
     height: 64px;
-    padding: 12px 0 0;
+    padding: 12px 8px 0;
+    border-radius: var(--fluvy-radius-control);
   }
   .lt-bulb--under .lt-said {
     font-size: 12px;
@@ -599,54 +608,135 @@ const PILLS = css`
   .rm-hero > .rm-quick--under {
     bottom: 16px;
   }
+  /* rounds across a line (\`roundsAcross\`): each in the middle of its share of it, as a row of controls; where one
+     says its state, every cell a key 8 from the next, the first and the last flush with the line's ends — a pill's
+     glyph and words in its middle, 8 from its sides at the least */
+  .lt-bulbs--across {
+    flex: 1 1 auto;
+    justify-content: space-around;
+    gap: 0;
+  }
+  .lt-bulbs--keys {
+    flex: 1 1 auto;
+  }
+  .lt-bulbs--keys > .lt-bulb--said:not(.lt-bulb--under) {
+    justify-content: center;
+    padding: 0 8px;
+  }
 `;
 
-/** The pills' sheet on the card's root, after its own, once. */
+/** The rounds' sheet on the card's root, after its own, once. */
 export function wear(root: Node | undefined): void {
   const sheet = PILLS.styleSheet;
   if (root instanceof ShadowRoot && sheet && !root.adoptedStyleSheets.includes(sheet))
     root.adoptedStyleSheets = [...root.adoptedStyleSheets, sheet];
 }
 
-/** A state's words beside its glyph, and under it, as the pills' sheet sets them. */
+/** A state's words beside its glyph, and under it, as the rounds' sheet sets them. */
 const BESIDE = 'lt-said';
 const UNDER = 'lt-bulb--under > lt-said';
-/** What a pill adds to its words: beside, the glyph's 12 and 20 and 8 after it, and 16 after them; under, 6 a side. */
+/** What a pill adds to its words: the glyph's 12 and 20 and 8 after it, and 16 after them. */
 const BESIDE_SIDES = 56;
-const UNDER_SIDES = 12;
-
-/** A state's pill, on the 4 grid: never narrower than its round, its words under its glyph or beside it. */
-export const pillWidth = (host: RoundsHost, text: string, under: boolean): number =>
-  Math.max(
-    ROUND,
-    under ? host.ruler.pill(UNDER, text, UNDER_SIDES) : host.ruler.pill(BESIDE, text, BESIDE_SIDES),
-  );
+/**
+ * What a key keeps clear beside its words, widest first: 12 a side, then 8 where their line is tight (the owner's
+ * review of 1.25: no word against an edge).
+ */
+const KEY_SIDES = [24, 16] as const;
+/** A key's least width where the card sets it: as wide as it is tall, never a sliver. */
+export const KEY = 64;
+/** …and a pill's, its words beside its glyph: the glyph and its 8, the 12 a side, and words a little wider than a round. */
+export const KEY_BESIDE = 96;
+/** What stands before a pill's words where the card centres both in it: its glyph and the 8 after it. */
+const GLYPH = 28;
 
 /**
- * The states that hold in `room` (what the rounds leave), each by what its pill adds to its round (`grows`): every
- * one in the longest of its forms they all hold in (one with fewer forms in its shortest), the last ones left out
- * where even their shortest do not hold.
+ * A state's pill or key, on the 4 grid: never narrower than its round, its words beside its glyph or under it with
+ * `sides` clear beside them in all (a key's 12 a side where none is said).
+ */
+export const pillWidth = (
+  host: RoundsHost,
+  text: string,
+  under: boolean,
+  sides: number = under ? KEY_SIDES[0] : BESIDE_SIDES,
+): number => Math.max(ROUND, host.ruler.pill(under ? UNDER : BESIDE, text, sides));
+
+/** A state's key where the card sets its keys' width: its words 12 from each side, 64 the least. */
+export const keyWidth = (host: RoundsHost, text: string): number =>
+  Math.max(KEY, pillWidth(host, text, true));
+
+/** Each round's state in its `form`-th form (one with fewer forms in its shortest); none where it says none. */
+const formed = (rounds: readonly Round[], form: number): (string | undefined)[] =>
+  rounds.map(({ said }) => said?.[Math.min(form, said.length - 1)]);
+
+/** How many forms the round with the most says its state in. */
+const formsOf = (rounds: readonly Round[]): number =>
+  Math.max(0, ...rounds.map((round) => round.said?.length ?? 0));
+
+/**
+ * The states that hold in `room` (what the rounds leave) and what each keeps clear beside its words (`sides`), by what
+ * it adds to its round: every one in the longest of its forms they all hold in (one with fewer forms in its
+ * shortest), a key's words 12 from each of its sides, else 8; the last ones left out where even their shortest do not
+ * hold.
  */
 export function statesIn(
+  host: RoundsHost,
   rounds: readonly Round[],
   room: number,
-  grows: (text: string) => number,
-): (string | undefined)[] {
+  under: boolean,
+): { readonly states: (string | undefined)[]; readonly sides: number } {
   const asked = rounds.flatMap((round, index) => (round.said ? [index] : []));
-  const forms = Math.max(0, ...rounds.map((round) => round.said?.length ?? 0));
+  const forms = formsOf(rounds);
   for (let kept = asked.length; kept > 0; kept--)
-    for (let form = 0; form < forms; form++) {
-      const states = rounds.map(({ said }, index) =>
-        said && asked.indexOf(index) < kept ? said[Math.min(form, said.length - 1)] : undefined,
-      );
-      if (states.reduce((sum, state) => sum + (state ? grows(state) : 0), 0) <= room) return states;
-    }
-  return [];
+    for (const sides of under ? KEY_SIDES : [BESIDE_SIDES])
+      for (let form = 0; form < forms; form++) {
+        const states = formed(rounds, form).map((state, index) =>
+          asked.indexOf(index) < kept ? state : undefined,
+        );
+        const grown = states.reduce(
+          (sum, state) => sum + (state ? pillWidth(host, state, under, sides) - ROUND : 0),
+          0,
+        );
+        if (grown <= room) return { states, sides };
+      }
+  return { states: [], sides: 0 };
 }
 
 /**
- * A round drawn with the state it says (none: a round), its pill as wide as its words need, or `width` (the Rounds
- * card's keys, one width a card).
+ * The states of keys the card sets `key` wide, each round's (none: it says none), their words under their glyphs, or
+ * beside them in a pill — the ladder a key's words go down (the owner's review of 1.25): every one in the longest of
+ * its forms they all hold in 12 from each side of their keys, else 8; else each in its own longest that holds; else a
+ * word ends in an ellipsis 8 from the sides (its key cuts it), and a figure is never cut: its key shows its glyph
+ * alone (''), its state still said to a reader.
+ */
+export function keyStates(
+  host: RoundsHost,
+  rounds: readonly Round[],
+  key: number,
+  under = true,
+): (string | undefined)[] {
+  const room = key - (under ? 0 : GLYPH);
+  const holds = (text: string, sides: number): boolean =>
+    host.ruler.width(under ? UNDER : BESIDE, text) <= room - sides;
+  const forms = formsOf(rounds);
+  for (const sides of KEY_SIDES)
+    for (let form = 0; form < forms; form++) {
+      const states = formed(rounds, form);
+      if (states.every((state) => state === undefined || holds(state, sides))) return states;
+    }
+  return rounds.map(
+    ({ said }) =>
+      said &&
+      (KEY_SIDES.map((sides) => said.find((text) => holds(text, sides))).find(Boolean) ??
+        (said.some((text) => /\d/.test(text)) ? '' : said[0])),
+  );
+}
+
+/** What a reader hears for a round: its name, and its state whole where it is asked to say it, drawn or not. */
+const spoken = ({ name, said }: Round): string => (said?.[0] ? `${name}, ${said[0]}` : name);
+
+/**
+ * A round drawn with the state it says (none: a round; '': its key or its pill with its glyph alone), as wide as its
+ * words need, or `width` (keys the card sets: the Rounds card's, one width a card; the Vehicle card's, its cells').
  */
 export const drawRound = (
   host: RoundsHost,
@@ -654,7 +744,12 @@ export const drawRound = (
   text: string | undefined,
   under: boolean,
   width = text ? pillWidth(host, text, under) : 0,
-): TemplateResult => levelRound({ ...round, state: text ? { text, width, under } : undefined });
+): TemplateResult =>
+  levelRound({
+    ...round,
+    label: spoken(round),
+    state: text === undefined ? undefined : { text, width, under },
+  });
 
 /** How many rounds a line's `room` holds: 44 each, 8 apart, 12 after what is before them. */
 export const roundsHeld = (room: number): number =>
@@ -665,11 +760,11 @@ export const roundsTaken = (count: number): number => 12 + count * (ROUND + ROUN
 
 /**
  * Rounds on one line in `room` (`roundsHeld`): as many as it holds, in their order;
- * then the states asked for in the room they leave (#205), each round that says one grown into the pill that holds
- * it — under its glyph (as wide as its words, 44 the least), or beside it (`beside`: as tall as a round) — in the
- * longest forms that hold (`statesIn`): a state that does not is left out whole, its round a round again. With a
- * state under its glyph every round stands at the block's top (none drawn: centred, as ever); the block ends its
- * line wherever it stands, its words placed from that end.
+ * then the states asked for in the room they leave (#205), each round that says one grown into what holds it — a
+ * key, its words under its glyph (as wide as its words and their sides, 44 the least), or a pill, its words beside it
+ * (`beside`: as tall as a round) — in the longest forms that hold (`statesIn`): a state that does not is left out
+ * whole, its round a round again. With a state under its glyph every round stands at the block's top (none drawn:
+ * centred, as ever); the block ends its line wherever it stands, its words placed from that end.
  */
 export function roundsIn(
   host: RoundsHost,
@@ -679,18 +774,51 @@ export function roundsIn(
 ): RoundsBlock {
   const rounds = items.slice(0, roundsHeld(room)).map((item) => roundOf(host, item));
   if (!rounds.length) return { taken: 0, template: nothing };
-  // their words are measured in the pills' sheet, which the card wears from the first state asked for
+  // their words are measured in the rounds' sheet, which the card wears from the first state asked for
   if (rounds.some((round) => round.said)) wear(host.root);
-  const grows = (text: string): number => pillWidth(host, text, under) - ROUND;
   const taken = roundsTaken(rounds.length);
-  const states = statesIn(rounds, room - taken, grows);
+  const { states, sides } = statesIn(host, rounds, room - taken, under);
+  const widths = states.map((state) => (state ? pillWidth(host, state, under, sides) : ROUND));
   return {
-    taken: states.reduce((sum, state) => sum + (state ? grows(state) : 0), taken),
+    taken: widths.reduce((sum, width) => sum + width - ROUND, taken),
     template: html`<div
       class="lt-bulbs rm-quick ${under && states.some(Boolean) ? 'rm-quick--under' : ''}"
       data-align="end"
     >
-      ${rounds.map((round, index) => drawRound(host, round, states[index], under))}
+      ${rounds.map((round, index) => drawRound(host, round, states[index], under, widths[index]))}
     </div>`,
   };
+}
+
+/**
+ * Rounds across a line `width` wide (the Vehicle card's foot; the owner's review of 1.25): equal cells, as many as
+ * hold — by the list and the width alone, never by what the rounds read — those that do not giving way from the end.
+ * None asked to say its state, each round stands in the middle of its share of the line, as a row of controls does;
+ * one asked, every cell is a key 8 from the next (a pill, its words beside its glyph: `beside`), the first and the
+ * last flush with the line's ends, 64 wide at the least (a pill 96), its words down the keys' ladder (`keyStates`).
+ */
+export function roundsAcross(
+  host: RoundsHost,
+  items: readonly RoundSpec[],
+  width: number,
+  under = host.look?.beside !== true,
+): TemplateResult | typeof nothing {
+  const keys = items.some((item) => item.show_state ?? host.look?.states ?? false);
+  const least = keys ? (under ? KEY : KEY_BESIDE) : ROUND;
+  const count = Math.min(
+    items.length,
+    Math.max(1, Math.floor((width + ROUND_GAP) / (least + ROUND_GAP))),
+  );
+  const rounds = items.slice(0, count).map((item) => roundOf(host, item));
+  if (!count) return nothing;
+  wear(host.root);
+  if (!keys)
+    return html`<div class="lt-bulbs lt-bulbs--across" data-align="center">
+      ${rounds.map((round) => drawRound(host, round, undefined, under))}
+    </div>`;
+  const key = Math.floor((width - (count - 1) * ROUND_GAP) / count);
+  const states = keyStates(host, rounds, key, under);
+  return html`<div class="lt-bulbs lt-bulbs--keys" data-fill-row>
+    ${rounds.map((round, index) => drawRound(host, round, states[index] ?? '', under, key))}
+  </div>`;
 }

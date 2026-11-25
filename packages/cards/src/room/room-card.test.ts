@@ -1381,9 +1381,11 @@ describe('a room’s quick actions (#113)', () => {
       ruler,
       reads(),
     );
-    // the lights' share of all they could give and where the blinds stand, as their rings drew them: no ring now
-    expect(states(card)).toEqual(['57 %', '40 %', '21.5 °C', 'Open', '—']);
+    // the lights' share of all they could give and where the blinds stand, as their rings drew them: no ring now; the
+    // temperature its degree alone, which holds 12 from its key's sides where "21.5 °C" would not
+    expect(states(card)).toEqual(['57 %', '40 %', '21.5°', 'Open', '—']);
     expect(root(card).querySelector('.lt-ring')).toBeNull();
+    // a reader hears each state whole, whatever its key draws of it
     expect(names(card)).toEqual([
       'Lights, 57 %',
       'Blinds, 40 %',
@@ -1391,10 +1393,10 @@ describe('a room’s quick actions (#113)', () => {
       'Window, Open',
       'Outside, —',
     ]);
-    // under their glyphs by default, each pill as wide as its words and 6 a side, 44 the least
+    // under their glyphs by default, each a key as wide as its words and 12 a side, 44 the least
     expect(root(card).querySelector('.rm-quick')?.classList.contains('rm-quick--under')).toBe(true);
     const [, , temperature, , outside] = rounds(card);
-    expect(temperature?.style.width).toBe('68px');
+    expect(temperature?.style.width).toBe('64px');
     expect(outside?.style.width).toBe('44px');
     // one out of reach keeps its dashed ring and takes no tap
     expect(outside?.classList.contains('fv-ico--off')).toBe(true);
@@ -1433,9 +1435,23 @@ describe('a room’s quick actions (#113)', () => {
     expect(await at(320, 'beside')).toEqual(['21.5 °C']);
     expect(await at(300, 'beside')).toEqual(['21.5°']);
     expect(await at(280, 'beside')).toEqual([]);
-    // under them, a state takes its words' width alone: both where both rounds hold
-    expect(await at(280, 'under')).toEqual(['21.5 °C', '48 %']);
-    expect(await at(260, 'under')).toEqual(['21.5°', '48 %']);
+    // under them, a state takes its words' width and its key's sides: both whole in a row of 300 (their keys 80 and
+    // 56), the degree alone before the sides give (64), then both 8 from their sides (56 and 48), then the last left out
+    const widths = (card: RoomElement): string[] => rounds(card).map((round) => round.style.width);
+    expect(await at(300, 'under')).toEqual(['21.5 °C', '48 %']);
+    expect(await at(280, 'under')).toEqual(['21.5°', '48 %']);
+    const tight = await roomAt(
+      { area: 'lounge', variant: 'row', quick_actions: [TEMPERATURE, HUMIDITY] },
+      260,
+      ruler,
+      reads(),
+    );
+    expect([states(tight), widths(tight)]).toEqual([
+      ['21.5°', '48 %'],
+      ['56px', '48px'],
+    ]);
+    expect(await at(256, 'under')).toEqual(['21.5°']);
+    expect(await at(252, 'under')).toEqual([]);
     // the rounds stay whatever their states do
     const bare = await roomAt(
       {

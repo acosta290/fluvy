@@ -871,6 +871,13 @@ const HAVAL_QUICK = [
   { entity: 'sensor.haval_h6_next_service', name: 'Service', icon: 'fluvy:wrench' },
   { entity: 'binary_sensor.haval_h6_tailgate', name: 'Tailgate' },
 ];
+/** …saying their states, the card its head, its tank and them alone. */
+const HAVAL_STATES = {
+  quick_actions: HAVAL_QUICK,
+  show_quick_states: true,
+  show_rows: false,
+  show_controls: false,
+};
 /** Its badge of the person's own (#251): its GPS and its GSM, kept live. */
 const HAVAL_BADGE =
   "{{ 'GPS ok' if is_state('binary_sensor.haval_h6_gps', 'on') else 'No GPS' }} · GSM {{ states('sensor.haval_h6_gsm_signal') }}/5";
@@ -1241,14 +1248,20 @@ export const sheet: SheetSpec = {
     },
     {
       title: 'GWM · small icons at its foot',
+      cards: [haval({ quick_actions: HAVAL_QUICK, show_rows: false }), haval(HAVAL_STATES)],
+    },
+    // the owner's review of 1.25: a key each across the column where they say their states — beside their glyphs
+    // too, and in half a section, where those that do not hold give way from the end
+    {
+      title: 'GWM · its small icons’ states beside them',
+      cards: [haval({ ...HAVAL_STATES, quick_state_position: 'beside' })],
+    },
+    {
+      title: 'GWM · its small icons’ states in half a section',
+      width: 360,
       cards: [
-        haval({ quick_actions: HAVAL_QUICK, show_rows: false }),
-        haval({
-          quick_actions: HAVAL_QUICK,
-          show_quick_states: true,
-          show_rows: false,
-          show_controls: false,
-        }),
+        haval({ ...HAVAL_STATES, cols: 6 }),
+        haval({ ...HAVAL_STATES, quick_state_position: 'beside', cols: 6 }),
       ],
     },
     {

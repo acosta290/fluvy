@@ -55,6 +55,30 @@ const overflows = (locator) =>
     return out;
   });
 
+/**
+ * A card's small icons at its foot, each by its place on their line: its box from the line's start and to its end, its
+ * centre as a share of the line, its words, what they keep clear of its sides and whether they are cut.
+ */
+const foot = (locator) =>
+  locator.evaluate((el) => {
+    const line = el.shadowRoot.querySelector('.vh-quick').getBoundingClientRect();
+    return [...el.shadowRoot.querySelectorAll('.vh-quick .lt-bulb')].map((round) => {
+      const box = round.getBoundingClientRect();
+      const said = round.querySelector('.lt-said');
+      const words = said?.textContent ? said.getBoundingClientRect() : undefined;
+      return {
+        left: box.left - line.left,
+        right: line.right - box.right,
+        width: box.width,
+        height: box.height,
+        centre: (box.left + box.width / 2 - line.left) / line.width,
+        said: said?.textContent ?? null,
+        sides: words ? Math.min(words.left - box.left, box.right - words.right) : Infinity,
+        cut: said ? said.scrollWidth > said.clientWidth + 0.5 : false,
+      };
+    });
+  });
+
 const page = await suite.sheet('vehicle');
 await page.evaluate(() => {
   window.__handed = [];
@@ -384,6 +408,32 @@ const handed = () => page.evaluate(() => window.__handed.splice(0));
     (await moreInfo(page)).at(-1) === 'sensor.haval_h6_gsm_signal',
     JSON.stringify(await moreInfo(page)),
   );
+  // the owner's review of 1.25: the small icons across the column — each in the middle of its share of it, as the
+  // controls over them; saying their states, a key each, equal, 8 apart, flush with the column's edges
+  const icons = await foot(card(page, 'GWM · small icons at its foot', 0));
+  check(
+    'its small icons stand each in the middle of its share of the column',
+    icons.length === 4 &&
+      icons.every(
+        ({ width, centre }, n) => width === 44 && Math.abs(centre - (n + 0.5) / 4) < 0.002,
+      ),
+    JSON.stringify(icons),
+  );
+  const keys = await foot(card(page, 'GWM · small icons at its foot', 1));
+  check(
+    'saying their states they are keys that fill the column: equal, 8 apart, flush with its edges, 64 tall',
+    keys.map((key) => key.said).join('|') === 'On|4|3,200 km|Closed' &&
+      keys.every(({ width, height }) => width === keys[0].width && height === 64) &&
+      keys[0].left === 0 &&
+      keys.at(-1).right < keys.length &&
+      keys.slice(1).every((key, n) => key.left - keys[n].left - keys[n].width === 8),
+    JSON.stringify(keys),
+  );
+  check(
+    'no word of a key against its edge: 8 from its sides at the least, none cut',
+    keys.every(({ sides, cut }) => sides >= 8 && !cut),
+    JSON.stringify(keys),
+  );
   const alone = card(page, 'The picture alone');
   const picture = await alone.evaluate((el) => ({
     parts: [...el.shadowRoot.querySelector('[data-card]').children].map((c) => c.className.trim()),
@@ -470,6 +520,14 @@ for (const lang of await everyLanguage()) {
     `${lang}: every round’s word in its cell, every line in its column`,
     bad.length === 0,
     bad.join(' | '),
+  );
+  // a key's words 8 from its sides at the least; a word it cannot hold ends in its ellipsis, a figure is never cut
+  const keys = await foot(card(at, 'GWM · small icons at its foot', 1));
+  const edged = keys.filter(({ sides, cut, said }) => sides < 8 || (cut && /\d/.test(said)));
+  check(
+    `${lang}: its keys fill the column, no word against an edge, no figure cut`,
+    keys.length === 4 && edged.length === 0,
+    JSON.stringify(edged),
   );
   await at.close();
 }

@@ -250,12 +250,37 @@ describe('the Rounds card (#224)', () => {
       const short = await drawn({ variant: 'labels', items: QUICK_PICKS.slice(0, 2) });
       expect(widths(short)).toEqual(['64px', '64px']);
       document.body.replaceChildren();
-      // a word its cell cannot hold with its sides leaves its round a round: in a 66 column "Locked" needs 68
+      // a word its cell cannot hold 12 from its sides is held 8 from them, the keys their cell's width: in a 66 column
+      // "Locked" needs 68
       const items = ['lock.front_door', 'switch.washer'];
+      const said = (card: CardElement): string[] =>
+        rounds(card).map((key) => key.querySelector('.lt-said')?.textContent ?? '');
       const narrow = await drawn({ variant: 'labels', items }, house().hass, 106);
-      const said = rounds(narrow).map((key) => key.querySelector('.lt-said')?.textContent ?? '');
-      expect(said).toEqual(['', 'Off']);
-      expect(widths(narrow)).toEqual(['', '64px']);
+      expect(said(narrow)).toEqual(['Locked', 'Off']);
+      expect(widths(narrow)).toEqual(['66px', '66px']);
+      document.body.replaceChildren();
+      // a word no side holds is its key's to cut (its ellipsis), a figure never: its key keeps its glyph alone, and a
+      // reader hears both whole
+      const long = house({
+        ...STATES,
+        'lock.front_door': state('lock.front_door', 'unlocking', { friendly_name: 'Front door' }),
+        'sensor.service': state('sensor.service', '3200', {
+          friendly_name: 'Service',
+          unit_of_measurement: 'km',
+        }),
+      }).hass;
+      const cut = await drawn(
+        { variant: 'labels', items: ['lock.front_door', 'sensor.service'] },
+        long,
+        106,
+      );
+      expect(said(cut)).toEqual(['Unlocking', '']);
+      expect(rounds(cut).map((key) => key.getAttribute('aria-label'))).toEqual([
+        'Front door, Unlocking',
+        'Service, 3,200 km',
+      ]);
+      expect(rounds(cut).every((key) => key.classList.contains('lt-bulb--under'))).toBe(true);
+      expect(widths(cut)).toEqual(['66px', '66px']);
     } finally {
       restore();
     }

@@ -935,22 +935,25 @@ sheet asked for no dial draws its control with it too (§ Details sheets).
   Never a line of their own: the card's height is its config's. A press on a round is the round's, never the room's (its picture's, its row's or its head's button);
   `show_quick_actions: false` hides them.
 - **Their states (1.22, #205).** Asked for (a round's `show_state`, else the card's `show_quick_states`; none by
-  default), a round grows into a **pill of its own fill** that holds its state, its words never cut: **under its glyph**
-  (the default: 64 tall, as wide as its words and 6 a side, 44 the least; the glyph 12 from its top, the words 4 under
-  it in 12/600 on their 16 line) or **beside it** (`quick_state_position: beside`: 44 tall, the glyph where the round
-  has it, the words 8 after it in 15/600 and 16 after them), on the 4 grid, tabular figures. A pill has no ring: its
-  words say the level the ring drew. What it says: that level where a person reads one ("57 %": a set of several
+  default), a round grows in its own fill into what holds its state, its words never cut: **a key, its words under its
+  glyph** (the default, and the Rounds card's key since the owner's review of 1.25: 64 tall at a tappable's radius, as
+  wide as its words and 12 a side, 8 where the line is tight, 44 the least; the glyph 12 from its top, the words 4
+  under it in 12/600 on their 16 line — a pill's curve brought "640 ppm" against its edge) or **a pill, its words beside
+  it** (`quick_state_position: beside`: 44 tall, the glyph where the round has it, the words 8 after it in 15/600 and
+  16 after them), on the 4 grid, tabular figures. Neither has a ring: its words say the level the ring drew. What it
+  says: that level where a person reads one ("57 %": a set of several
   lights, blinds or fans, the share its ring draws; a light that dims, a blind that says its position, a fan its
   speed), else Home Assistant's own state as it is drawn (a tap's at once) — a reading with its unit in the house's
   decimals ("21.5 °C", "48 %"), a door's "Open", a light that only switches "On", a set off its first member's word;
   "—" out of reach, in the dashed ring. Off it rests on the neutral fill in the text's ink, lit in its colour's fill and
   ink, as a round; a reading (never on) that names its own `tone` or `color` wears it at rest. The rounds keep their
   count and order; the states go in the room they leave, every one in the longest form they all hold in — whole, then a
-  temperature with its degree alone ("21.5°"), a large count in short words ("12K lx") — the last left out where even
-  that does not hold, its round a round again (beside a phone's row holds two; under, as many as the rounds). Under
-  their glyphs every round stands at the block's top, the glyphs on one line, and the row and the head are 20 taller
-  whatever the width draws (96, 64: the config's, as the photo's foot is, where the pills' feet stand on the name
-  pill's, 16 from the foot); beside, nothing moves.
+  temperature with its degree alone ("21.5°"), a large count in short words ("12K lx") — a key's words 12 from its
+  sides in every form before they stand 8 from them, the last left out where even that does not hold, its round a
+  round again (beside a phone's row holds two; under, as many as the rounds). A reader hears every state whole,
+  drawn or not. Under their glyphs every round stands at the block's top, the glyphs on one line, and the row and the
+  head are 20 taller whatever the width draws (96, 64: the config's, as the photo's foot is, where the keys' feet
+  stand on the name pill's, 16 from the foot); beside, nothing moves.
 
 ## Map
 
@@ -3323,17 +3326,21 @@ details. An item's own name, icon, tone, colour, actions and `show_state`.
   one's few in the first columns), each round or key centred in its cell; asked to stand from the start, in the
   middle or from edge to edge, a cell is the line's share up to 96 (64 the least). Rounds alone stand from the
   line's start by default, as the room lights' do.
-- **Labels**: each round grown into a key in its cell (the owner's review, 1.23): the quick actions' pill under its
-  glyph (64 tall, its glyph 12 from its top on the rounds' glyph line, its words 12/600 4 under it and 12 from its
-  foot) at a tappable's radius (12), its words never closer than 12 to its sides; every key of the card one width,
-  the widest's on the 4 grid (64 the least: as wide as it is tall), centred in its cell (the line's share), so the
-  keys read as one set of buttons across the card; a cell where keys say their states is 72 at the least (a key and a word such as "Locked" 12 from each
-  side). Lit, its colour's fill and ink, as an active option tile (no ring: its words say its level); at rest the
-  neutral fill; out of reach the dashed ring round its corners and "—"; the focus ring 2 outside its corners. The
-  states in the longest form they all hold (a temperature's degree alone, a count's short words), else each in its
-  own, else none — that round a round again, its glyph on the keys' glyph line. A round's own `show_state` asks for
-  its key in any layout, and `false` takes it away. A room's quick actions keep their pill (§ Room): packed beside a
-  room's name, a key's sides would cost a reading or the name its room.
+- **Labels**: each round grown into a key in its cell (the owner's review, 1.23), the rounds' own key (§ Room, *Their
+  states*: 64 tall, its glyph 12 from its top on the rounds' glyph line, its words 12/600 4 under it and 12 from its
+  foot, at a tappable's radius); every key of the card one width, the widest's on the 4 grid (64 the least: as wide
+  as it is tall), centred in its cell (the line's share), so the keys read as one set of buttons across the card; a
+  cell where keys say their states is 72 at the least (a key and a word such as "Locked" 12 from each side). Lit, its
+  colour's fill and ink, as an active option tile (no ring: its words say its level); at rest the neutral fill; out of
+  reach the dashed ring round its corners and "—"; the focus ring 2 outside its corners. A round's own `show_state`
+  asks for its key in any layout, and `false` takes it away.
+- **A key's words go down one ladder** wherever a card sets its keys' width (`keyStates`, the owner's review of 1.25:
+  no word against an edge; this card's cells, the Vehicle card's foot): every state in the longest form they all hold
+  in **12 from each side** of their keys (a temperature's degree alone, a count's short words), else **8** (the
+  radius leaves the words a straight side: the key is then its cell's width); else each in its own longest that holds;
+  else **a word ends in an ellipsis** 8 from the sides ("Geschlos…": the one text besides a name that may, `data-word`
+  to the measurer), and **a figure is never cut**: its key keeps its glyph alone, on the keys' glyph line. A reader
+  hears every state whole.
 - **Row**: a list row each (60), its circle lit as its round, its name over its state; the whole row its round's tap
   and hold.
 - **The head** only where the card has a title: its icon (`grid` by default) lit while any is on, "2 of 6 on" under it
@@ -3893,11 +3900,16 @@ glyph; every addition is off until a config asks for it.
 - **The badge** (`badge`): words, an entity's state or a template in place of what the car is doing, in the head
   (stepping into its line where it would not hold, as a person's own badge does) and on the strip's line; none while
   its template is asked, the car's own where the answer is empty, "Unavailable" first.
-- **Small icons at the foot** (`quick_actions`): a room's quick actions (`roundsIn`), each an entity's 44 round, 8
-  apart from the line's start, as many as one line holds (those that do not give way from the end), their states in
-  pills under their glyphs (the line 64 tall) or beside them (`show_quick_states`, `quick_state_position`). 16 under
-  what they follow, in the whole card and the compact one; the line is declared by the config, kept while none of them
-  can be drawn.
+- **Small icons at the foot** (`quick_actions`): a room's rounds across the column (`roundsAcross`; the owner's review
+  of 1.25: a row fills its width, no word against an edge), as many as one line holds by the list and the width alone,
+  those that do not giving way from the end. Each an entity's 44 round **in the middle of its share of the line**, as
+  the controls over them stand. Asked for their states (`show_quick_states`, a round's own `show_state`), **every cell
+  is a key** — the rounds' key, 64 tall, its words under its glyph — 8 from the next, the first and the last flush
+  with the column's edges, 64 wide at the least (352 holds four of 82, a phone's 320 four of 74, 226 three of 70),
+  its words down the keys' ladder (§ Rounds); `quick_state_position: beside` draws pills as tall as a round, 96 at
+  the least, glyph and words in their middle. A round that says none among them is a key with its glyph alone. 16
+  under what they follow, in the whole card and the compact one; the line is declared by the config (44, 64 with
+  states under), kept while none of them can be drawn.
 - **The picture at its own size** (`image_size`): a share of the card's width (`50%`, its plate 2:1 that wide,
   centred) or a height (`120px`, the plate that tall across the column, the whole car inside it); the plate's height
   is on the 4 grid at every width, the card's height following it. `show_head: false` and `show_hero: false` hide the

@@ -12,6 +12,8 @@ const RING_LENGTH = 2 * Math.PI * RING;
 export interface LevelRound {
   /** What a reader hears it is, and reads on hover. */
   readonly name: string;
+  /** What a reader hears where it is more than its name (its state, said whole whatever its words draw of it). */
+  readonly label?: string | undefined;
   readonly glyph: IconRef | string;
   /** It can be read; else the dashed ring, which takes no tap (a hold still opens it). One with no tap is drawn as it
    * reads, its tap off. */
@@ -28,16 +30,18 @@ export interface LevelRound {
   readonly onHold: (() => void) | undefined;
   /** Where it stands among rounds placed one by one (`left`, `top`). */
   readonly place?: string | undefined;
-  /** What it says of its state (#205): the round grows into a pill as wide as `width` that holds its words, beside its
-   * glyph or `under` it, in the rounds' own sheet (`rounds.ts`), and has no ring (the words say its level). */
+  /** What it says of its state (#205): the round grows into a pill as wide as `width` that holds its words beside its
+   * glyph, or a key that holds them `under` it, in the rounds' own sheet (`rounds.ts`), and has no ring (the words
+   * say its level); no words, its glyph alone in it. */
   readonly state?:
     { readonly text: string; readonly width: number; readonly under?: boolean } | undefined;
 }
 
 /**
  * A round (`lt-bulb`): its glyph; on, its colour's fill and a 2 px ring of its level 4 inside its edge, from the top;
- * off, the neutral circle; unreadable, the dashed ring; a pill with its words where it says its state. A tap is its
- * own, a hold its details: a press on it never reaches what lies under it (the room's button, a head's).
+ * off, the neutral circle; unreadable, the dashed ring; a pill or a key with its words where it says its state (a
+ * state's word, `data-word`, may end in an ellipsis; a figure never). A tap is its own, a hold its details: a press on
+ * it never reaches what lies under it (the room's button, a head's).
  */
 export function levelRound(round: LevelRound): TemplateResult {
   const tone: Tone = !round.usable ? 'off' : round.on ? round.tone : 'neutral';
@@ -50,7 +54,7 @@ export function levelRound(round: LevelRound): TemplateResult {
     role=${round.switches ? 'switch' : nothing}
     aria-checked=${round.switches ? String(round.on) : nothing}
     aria-disabled=${round.usable && round.onTap ? nothing : 'true'}
-    aria-label=${said ? `${round.name}, ${said.text}` : round.name}
+    aria-label=${round.label ?? round.name}
     title=${round.name}
     .fvTap=${round.usable ? round.onTap : undefined}
     .fvHold=${round.onHold}
@@ -61,7 +65,7 @@ export function levelRound(round: LevelRound): TemplateResult {
     ${icon(round.glyph)}
     ${
       said
-        ? html`<span class="lt-said">${said.text}</span>`
+        ? html`<span class="lt-said" data-word>${said.text}</span>`
         : round.on
           ? svg`<svg class="lt-ring" viewBox="0 0 ${ROUND} ${ROUND}" aria-hidden="true"><circle cx=${ROUND / 2} cy=${ROUND / 2} r=${RING} stroke-dasharray="${((RING_LENGTH * round.level) / 100).toFixed(2)} ${RING_LENGTH.toFixed(2)}"></circle></svg>`
           : nothing

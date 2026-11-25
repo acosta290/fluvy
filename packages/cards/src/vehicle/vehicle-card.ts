@@ -47,7 +47,7 @@ import { BrokenPictures, imageEntity, imageOf } from '../shared/picture.js';
 import { Ticker, MINUTE } from '../shared/ticker.js';
 import {
   roundOf,
-  roundsIn,
+  roundsAcross,
   roundsOf,
   roundTap,
   type RoundSpec,
@@ -786,7 +786,8 @@ export class FluvyVehicleCard extends Card<VehicleCardConfig> {
       .vh-rows {
         margin-top: 16px;
       }
-      /* the quick actions: one line of rounds at the foot, from its start; 64 tall where their states stand under them */
+      /* the quick actions: one line of rounds at the foot, across the column; 64 tall where their states stand under
+         them */
       .vh-quick {
         display: flex;
         height: 44px;
@@ -2142,23 +2143,20 @@ export class FluvyVehicleCard extends Card<VehicleCardConfig> {
   }
 
   /**
-   * The quick actions at the foot (#251), as a room's are drawn (`roundsIn`): 44 rounds 8 apart from the line's start,
-   * as many as it holds, those that do not giving way from the end; each lit in its tone while on, its tap and its
-   * hold, its state in a pill where asked (under its glyph, the line 64 tall, or beside it). The line keeps its place
-   * while none of them can be drawn: the card's height is its config's.
+   * The quick actions at the foot (#251), a room's rounds across the column (`roundsAcross`): as many as it holds,
+   * those that do not giving way from the end, each in the middle of its share of the line, as the controls over them;
+   * each lit in its tone while on, its tap and its hold. Where one says its state every cell is a key that fills its
+   * share, flush with the column's edges, its words under its glyph (the line 64 tall) or beside it, never against an
+   * edge. The line keeps its place while none of them can be drawn: the card's height is its config's.
    */
   private renderQuick(): TemplateResult | typeof nothing {
     const c = this.config;
     if (!c || this.variant === 'mini' || !Array.isArray(c.quick_actions) || !c.quick_actions.length)
       return nothing;
     const look = { ...c, states: c.show_quick_states, beside: c.quick_state_position === 'beside' };
-    // the line starts at the column's edge: none of the 12 a room's rounds keep from what is before them
-    const { template } = roundsIn(
-      { ...this.host(), look },
-      this.quickActions(),
-      this.contentWidth + 12,
-    );
-    return html`<div class="vh-quick ${statesUnder(c) ? 'is-under' : ''}">${template}</div>`;
+    return html`<div class="vh-quick ${statesUnder(c) ? 'is-under' : ''}">
+      ${roundsAcross({ ...this.host(), look }, this.quickActions(), this.contentWidth)}
+    </div>`;
   }
 
   /* ---------- the rows ---------- */
