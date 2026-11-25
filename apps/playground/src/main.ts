@@ -62,7 +62,9 @@ import { loadFixture, SHEETS, type FrameSpec, type SheetSpec } from './scenes.js
  * ?mode=dark             Home Assistant's dark mode + the dark token block
  * ?width=392             a frame's width: the section's, which a full card fills (a half card is (width − 16) / 2);
  *                        a frame with a width of its own keeps it
- * ?lang=es               UI language
+ * ?lang=es               UI language (`en-US`: American English chosen, whatever the house speaks)
+ * ?country=US           the house's country (Home Assistant's general settings): its English (`lang=en`, the default)
+ *                        in a house in the United States reads American English, as Automatic picks it
  * ?clock=12             Home Assistant's 12-hour clock ("9:50 PM"; the house's time format)
  * ?theme=off             drop the theme tokens: the cards must fall back to their own
  * &fallback=mist           …and those are this palette's, the page wearing none (a dashboard without the look, #40)
@@ -134,6 +136,7 @@ const dashboard = params.get('dashboard');
 const automatic = dashboard === 'auto';
 const only = automatic ? params.get('house') : (dashboard ?? params.get('sheet'));
 const language = params.get('lang') ?? 'en';
+const country = params.get('country') ?? undefined;
 const clock = params.get('clock') === '12' ? '12' : undefined;
 /** The house's status colours the URL asks for (none: every status the palette's). */
 const statuses = parseStatuses(
@@ -157,7 +160,7 @@ if (insets.length && insets.every((px) => px >= 0)) {
 document.documentElement.dataset['mode'] = dark ? 'dark' : 'light';
 document.documentElement.lang = language;
 // the language's words before anything is drawn: a screenshot never catches the English fallback
-await ensureLanguage(resolveLanguage(language));
+await ensureLanguage(resolveLanguage(language, country));
 if (params.get('theme') === 'off') {
   delete document.documentElement.dataset['palette'];
   document.documentElement.style.setProperty('--fluvy-theme', 'initial');
@@ -310,6 +313,7 @@ const mock = createHouse(
   {
     dark,
     language,
+    country,
     clock,
     // the Energy date pickers' collections, on the range `?period=` names (today otherwise)
     period: MOCK_PERIODS.find((period) => period === params.get('period')),

@@ -263,6 +263,8 @@ const LATENCY = 140;
 export interface MockOptions {
   readonly dark?: boolean;
   readonly language?: string;
+  /** The house's country (`US`): where Home Assistant's English reads as American English. */
+  readonly country?: string;
   /** Home Assistant's time format: a 12-hour clock ("9:50 PM") or the 24-hour one (the default). */
   readonly clock?: '12' | '24';
   readonly now?: Date;
@@ -506,6 +508,7 @@ export function createHass(seeds: readonly StateSeed[], options: MockOptions = {
             : { temperature: '°C', length: 'km' },
         currency: 'EUR',
         time_zone: 'Europe/Madrid',
+        ...(options.country ? { country: options.country } : {}),
       },
       user: { id: 'u1', name: 'Marta', is_admin: true },
       connection,

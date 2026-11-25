@@ -628,7 +628,7 @@ export class FluvyActivity extends LitElement {
   }
 
   readonly t = (key: ActivityString, values?: Record<string, string | number>): string =>
-    s({ language: this.language }, key, values);
+    s(this.hass, key, values);
 
   /** A count in the page's words ("3 changes"), its figure as the language writes numbers. */
   count(
@@ -636,7 +636,7 @@ export class FluvyActivity extends LitElement {
     n: number,
     values?: Record<string, string | number>,
   ): string {
-    return plural({ language: this.language }, `activity.${key}`, n, {
+    return plural(this.hass, `activity.${key}`, n, {
       n: this.number(n),
       ...values,
     });

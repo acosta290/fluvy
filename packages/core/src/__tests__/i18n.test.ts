@@ -93,14 +93,31 @@ describe('the language registry', () => {
     expect(isCardLanguage('zh-Hant')).toBe(true);
   });
 
-  it('offers English first, then the rest by their own names', () => {
-    const offered = offeredLanguages().map((l) => l.code);
-    expect(offered[0]).toBe('en');
+  it('offers the two Englishes first, the United Kingdom’s then the United States’, then the rest by their own names', () => {
+    const offered = offeredLanguages();
+    expect(offered.slice(0, 2).map((l) => [l.code, l.name])).toEqual([
+      ['en', 'English (United Kingdom)'],
+      ['en-US', 'English (United States)'],
+    ]);
     expect(offered).toHaveLength(LANGUAGE_CODES.length);
-    const names = offeredLanguages()
-      .slice(1)
-      .map((l) => l.name);
+    const names = offered.slice(2).map((l) => l.name);
     expect(names).toEqual([...names].sort((a, b) => a.localeCompare(b)));
+  });
+
+  it('reads American English where Home Assistant speaks its English in a house in the United States, and English everywhere else', () => {
+    // Home Assistant's `en` is American: a house in the US, its territories or the Philippines reads it so
+    for (const country of ['US', 'PR', 'GU', 'VI', 'AS', 'MP', 'UM', 'PH'])
+      expect(resolveLanguage('en', country), country).toBe('en-US');
+    // its English (GB), its English anywhere else or nowhere said, and any other language, as they were
+    expect(resolveLanguage('en-GB', 'US')).toBe('en');
+    for (const country of ['GB', 'IE', 'AU', 'CA', 'IN', 'NZ', null, undefined])
+      expect(resolveLanguage('en', country), String(country)).toBe('en');
+    expect(resolveLanguage('es', 'US')).toBe('es');
+    expect(resolveLanguage('en-AU')).toBe('en');
+    // the code it is kept under, as Fluvy remembers it
+    expect(resolveLanguage('en-US')).toBe('en-US');
+    expect(isCardLanguage('en-US')).toBe(true);
+    expect(LANGUAGES['en-US']).toMatchObject({ over: 'en', dayParts: LANGUAGES.en.dayParts });
   });
 
   it('keeps every greeting band in the day, in order', () => {
@@ -141,6 +158,32 @@ describe('the words', () => {
     expect(localize({ language: 'fi' }, 'common.on')).toBe('On');
     expect(localize(undefined, 'person.count', { home: 2, total: 3 })).toBe('2 of 3 home');
     expect(languageOf({ language: 'pt' })).toBe('pt-PT');
+  });
+
+  it('follow the house’s country, remembered from a whole hass for a page that hands over its language alone', () => {
+    const house = (country: string | null) =>
+      ({ language: 'en', config: { country } }) as unknown as Parameters<typeof languageOf>[0];
+    try {
+      expect(languageOf(house('US'))).toBe('en-US');
+      expect(localize({ language: 'en' }, 'light.color')).toBe('Color');
+      expect(languageOf(house('GB'))).toBe('en');
+      expect(localize({ language: 'en' }, 'light.color')).toBe('Colour');
+    } finally {
+      languageOf(house(null));
+    }
+  });
+
+  it('say American English’s own texts, and English’s where it says the same', () => {
+    expect(localize({ language: 'en-US' }, 'light.color')).toBe('Color');
+    expect(localize({ language: 'en-US' }, 'vehicle.trunk' as MessageKey)).toBe('Trunk');
+    expect(localize({ language: 'en-US' }, 'common.on')).toBe('On');
+    // a count it says in its own words, and one it leaves to English in a namespace it holds
+    expect(
+      [1, 2].map((n) => plural({ language: 'en-US' }, 'lights.no_colour', n, { names: 'Desk' })),
+    ).toEqual(['Desk takes no color', 'Desk take no color']);
+    expect(
+      [1, 3].map((n) => plural({ language: 'en-US' }, 'history-bars.last_days', n, { count: n })),
+    ).toEqual(['Yesterday', 'Last 3 days']);
   });
 
   it('follow the person’s choice over Home Assistant’s', () => {

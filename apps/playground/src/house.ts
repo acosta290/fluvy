@@ -18,6 +18,8 @@ export type { MockHouse };
 export interface HouseOptions {
   readonly dark: boolean;
   readonly language: string;
+  /** The house's country (`US`); none unsaid. */
+  readonly country?: string | undefined;
   /** Home Assistant's 12-hour clock; the 24-hour one unsaid. */
   readonly clock?: '12' | undefined;
   /** The range the Energy date pickers' collections start on (today unsaid). */
@@ -58,6 +60,7 @@ export function createHouse(drawn: readonly SheetSpec[], options: HouseOptions):
   return createHass([...states.values()], {
     dark: options.dark,
     language: options.language,
+    ...(options.country ? { country: options.country } : {}),
     ...(options.clock ? { clock: options.clock } : {}),
     now: NOW,
     registry,

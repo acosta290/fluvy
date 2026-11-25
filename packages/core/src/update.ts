@@ -109,7 +109,7 @@ function offer(running: string, served: string, hass: () => HomeAssistant | unde
   const update = `${running}>${served}`;
   if (offered === update) return;
   offered = update;
-  const code = rememberedLanguage() ?? resolveLanguage(hass()?.language);
+  const code = rememberedLanguage() ?? resolveLanguage(hass()?.language, hass()?.config?.country);
   void ensureLanguage(code).then(() => {
     const app = document.querySelector('home-assistant');
     if (!app) return;

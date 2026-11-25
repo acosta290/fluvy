@@ -66,7 +66,7 @@ export function renderHead(page: FluvyHistory): TemplateResult {
       period: page.t('period'),
       week: page.t('preset.week'),
       lastDay: page.t('last_day'),
-      days: (n) => plural({ language: page.language }, 'page.days', n),
+      days: (n) => plural(page.hass, 'page.days', n),
       since: (when) => page.t('since', { when }),
     },
   });
@@ -76,7 +76,7 @@ export function renderHead(page: FluvyHistory): TemplateResult {
   // whether it followed the clock there or the calendar picked it
   const isToday = page.following || sameRange(page.range, dayRange(new Date(page.now)));
   const count = (key: 'sources_count' | 'measures' | 'states_count', n: number): string =>
-    plural({ language: page.language }, `history.${key}`, n);
+    plural(page.hass, `history.${key}`, n);
   const facts = [
     count('sources_count', sources),
     ...(shown.tracks ? [count('measures', shown.tracks)] : []),

@@ -200,7 +200,7 @@ export class FluvyHistory extends LitElement {
   }
 
   readonly t = (key: HistoryString, values?: Record<string, string | number>): string =>
-    s({ language: this.language }, key, values);
+    s(this.hass, key, values);
 
   /** A time of day as the house writes it ("12:44", "12:44 PM"). */
   time(ms: number): string {

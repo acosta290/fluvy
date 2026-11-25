@@ -2656,9 +2656,12 @@ function devicePerformance(ctx: PanelContext): TemplateResult {
     <p class="pn-hint pn-hint--after">${ctx.t('pref.performance_sub')}</p>`;
 }
 
-/** Automatic (with the language it resolves to now), then Fluvy's languages by their own names, English beside. */
+/**
+ * Automatic (with the language it resolves to now, the house's country with it), then Fluvy's languages by their own
+ * names, English beside.
+ */
 function languageOptions(ctx: PanelContext): SelectOption[] {
-  const resolved = LANGUAGES[resolveLanguage(ctx.hass.language)];
+  const resolved = LANGUAGES[resolveLanguage(ctx.hass.language, ctx.hass.config?.country)];
   return [
     { value: 'auto', label: ctx.t('pref.auto'), hint: resolved.name },
     ...offeredLanguages().map((language) => ({

@@ -13,9 +13,14 @@ import {
 } from './build.js';
 import { plain } from '../../../packages/core/src/plain.js';
 import {
+  BRITISH_KEPT,
+  britishIn,
+  britishInIntegration,
+  britishWords,
   catalogueCodes,
   compare,
   compareIntegration,
+  compareOverlay,
   counts,
   englishCounts,
   englishParts,
@@ -23,33 +28,40 @@ import {
   LOCALES,
   reached,
   readCatalogue,
-  ROOT,
+  registry,
   type Catalogue,
 } from './lib.js';
 
+/** The languages with a whole catalogue of their own: every one on disk but those laid over another. */
+async function wholeLanguages(): Promise<string[]> {
+  const { over } = await registry();
+  return (await catalogueCodes()).filter((code) => !over.has(code));
+}
+
 describe('the catalogues on disk', () => {
-  it('are the languages the registry names', async () => {
-    const registry = await readFile(
-      join(ROOT, 'packages', 'core', 'src', 'i18n', 'languages.ts'),
-      'utf8',
-    );
-    const codes =
-      /LANGUAGE_CODES = \[([^\]]+)\]/
-        .exec(registry)?.[1]
-        ?.match(/'([^']+)'/g)
-        ?.map((s) => s.slice(1, -1)) ?? [];
+  it('are the languages the registry names, American English laid over English', async () => {
+    const { codes, over } = await registry();
     expect([...codes].sort()).toEqual(await catalogueCodes());
+    expect([...over]).toEqual([['en-US', 'en']]);
   });
 
   it('mirror English key for key, with the same placeholders and words', async () => {
     const english = await readCatalogue('en');
-    for (const code of await catalogueCodes()) {
+    for (const code of await wholeLanguages()) {
       if (code === 'en') continue;
       const errors = compare(code, await readCatalogue(code), english, true).filter(
         (p) => p.level === 'error',
       );
       expect(errors.map((p) => `${p.language} ${p.text}`)).toEqual([]);
     }
+  });
+
+  it('lay American English over English: only what it says differently, every British word English says given', async () => {
+    const english = await readCatalogue('en');
+    const american = await readCatalogue('en-US');
+    expect(compareOverlay('en-US', american, english).map((p) => p.text)).toEqual([]);
+    expect(britishWords(english, american).map((p) => p.text)).toEqual([]);
+    expect((await britishInIntegration()).map((p) => p.text)).toEqual([]);
   });
 
   it('keep English in parts, core first, each namespace in one of them', async () => {
@@ -73,8 +85,10 @@ describe('the catalogues on disk', () => {
       )),
     ];
     for (const tables of shipped) expect(tables).not.toHaveProperty('words');
-    for (const code of await catalogueCodes())
+    for (const code of await wholeLanguages())
       expect(Object.keys((await readCatalogue(code))['words'] ?? {}).length).toBeGreaterThan(0);
+    // a language laid over another names things in that one's words: its stems are English's
+    expect((await readCatalogue('en-US'))['words']).toEqual({});
   });
 
   it('say English’s counts in English’s two forms, each with its other form', async () => {
@@ -82,7 +96,7 @@ describe('the catalogues on disk', () => {
   });
 
   it('have their integration translation, key for key with strings.json', async () => {
-    for (const code of await catalogueCodes())
+    for (const code of await wholeLanguages())
       expect((await compareIntegration(code)).map((p) => p.text)).toEqual([]);
   });
 
@@ -101,7 +115,7 @@ describe('the catalogues on disk', () => {
   });
 
   it('give every appliance kind plain stems in every language: a name is read with its accents taken off, Cyrillic, kana and kanji as written', async () => {
-    for (const code of await catalogueCodes()) {
+    for (const code of await wholeLanguages()) {
       const words = (await readCatalogue(code))['words'] as Record<string, readonly string[]>;
       const kinds = Object.entries(words).filter(([category]) => category.startsWith('appliance_'));
       expect(kinds.length, code).toBe(21);
@@ -254,6 +268,126 @@ describe('a count', () => {
       'openings.open_many: a form English never says (its counts are _one and the other form)',
       'openings.open_one: a count without its other form (open)',
       'openings.sensor_one: a count without its other form (sensor)',
+    ]);
+  });
+});
+
+describe('a language laid over another', () => {
+  const english = {
+    vehicle: { trunk: 'Boot', tyres: 'Tyres', limit: 'Limit {percent} %' },
+    lights: { no_colour_one: '{names} takes no colour', no_colour_other: '{names} take no colour' },
+    page: { days_other: '{n} days' },
+  };
+  const said = (catalogue: Catalogue): string[] =>
+    compareOverlay('en-US', catalogue, english).map((p) => `${p.level} ${p.text}`);
+
+  it('holds only what it says differently: nothing it leaves to English is missing', () => {
+    expect(said({ vehicle: { trunk: 'Trunk' } })).toEqual([]);
+    expect(said({})).toEqual([]);
+  });
+
+  it('says nothing English lacks, nothing empty, nothing English says already, with English’s placeholders', () => {
+    expect(
+      said({
+        vehicle: { trunk: 'Trunk', tyres: 'Tyres', limit: 'Limit {n} %', spare: 'Spare' },
+        cover: { open: 'Open' },
+      }),
+    ).toEqual([
+      'error vehicle.tyres: says what English says, so it is left out',
+      'error vehicle.limit: placeholders {n} ≠ English {percent}',
+      'error vehicle.spare: not in English',
+      'error cover: a namespace English lacks',
+    ]);
+    expect(said({ vehicle: { trunk: ' ' } })).toEqual(['error vehicle.trunk: empty']);
+  });
+
+  it('says a count in both of English’s forms or neither: one alone would say the other in British words', () => {
+    expect(said({ lights: { no_colour_one: '{names} takes no color' } })).toEqual([
+      'error lights.no_colour: one of its two forms (no_colour_one, no_colour_other): both are said, or neither',
+    ]);
+    expect(
+      said({
+        lights: {
+          no_colour_one: '{names} takes no color',
+          no_colour_other: '{names} take no color',
+        },
+      }),
+    ).toEqual([]);
+    // a count English says only of two or more has one form
+    expect(said({ page: { days_other: '{n} whole days' } })).toEqual([]);
+  });
+
+  it('keeps English’s order, a warning', () => {
+    expect(said({ vehicle: { tyres: 'Tires', trunk: 'Trunk' } })).toEqual([
+      "warning vehicle: keys are not in English's order",
+    ]);
+  });
+});
+
+describe('the British words', () => {
+  it('are told in a text, the British spelling and the British word, never a word that only looks like one', () => {
+    for (const [text, word] of [
+      ['Colour temperature', 'Colour'],
+      ['Show favourites', 'favourites'],
+      ['Customised: some of it is yours', 'Customised'],
+      ['Centred on zero', 'Centred'],
+      ['Low tyre pressure', 'tyre'],
+      ['Kilometres', 'Kilometres'],
+      ['Programme aborted', 'Programme'],
+      ['Cancelled', 'Cancelled'],
+      ['Open the boot?', 'boot'],
+      ['Bonnet open', 'Bonnet'],
+      ['Hob', 'Hob'],
+      ['Cooker hood', 'Cooker'],
+      ['Tumble dryer', 'Tumble'],
+      ['Unload now for fewer creases', 'creases'],
+      ['Subtitles', 'Subtitles'],
+      ['Switch it off now?', 'Switch it off'],
+      ['A line after each one switched on', 'switched on'],
+      ['Keys round the pad', 'round the'],
+      ['Go round from the last page', 'Go round'],
+      ['with no spaces, quotes or brackets', 'brackets'],
+      ['Marta’s flat', 'flat'],
+    ] as const)
+      expect(britishIn(text), text).toBe(word);
+    for (const text of [
+      'Color round for the room',
+      'A round, chip or tile for each light',
+      'Increase',
+      'Decrease',
+      'Subtitle',
+      'Reboot',
+      'Slow cooker',
+      'Switch under the list',
+      'A tap switches what is safe to switch',
+      'Analysis',
+      'Realistic',
+      'Hours',
+    ])
+      expect(britishIn(text), text).toBeUndefined();
+  });
+
+  it('each have their American text, or stand kept with why; an American text says none of them', () => {
+    const english = {
+      vehicle: { trunk: 'Boot', title: 'Car' },
+      option: { flat: 'Flat' },
+    };
+    expect(BRITISH_KEPT).toHaveProperty('option.flat');
+    expect(britishWords(english, {}).map((p) => p.text)).toEqual([
+      'vehicle.trunk: English says “Boot”: give it its American text in en-US.json, or keep it in BRITISH_KEPT with why',
+    ]);
+    expect(britishWords(english, { vehicle: { trunk: 'Trunk' } })).toEqual([]);
+    expect(britishWords(english, { vehicle: { trunk: 'Front boot' } }).map((p) => p.text)).toEqual([
+      'vehicle.trunk: the American text still says “boot”',
+    ]);
+  });
+
+  it('keep nothing on the list that is no longer said', () => {
+    expect(britishWords({ option: { flat: 'Plain' } }, {}).map((p) => p.text)).toEqual([
+      'option.flat: kept in BRITISH_KEPT, but says nothing British any more: take it off',
+    ]);
+    expect(britishWords({ option: {} }, {}).map((p) => p.text)).toEqual([
+      'option.flat: kept in BRITISH_KEPT, but English has no such key',
     ]);
   });
 });

@@ -1,0 +1,161 @@
+{
+  "light": {
+    "color": "Color",
+    "temperature": "Color temperature"
+  },
+  "lights": {
+    "editor_tint": "Show each tile’s color",
+    "no_colour_one": "{names} takes no color",
+    "no_colour_other": "{names} take no color"
+  },
+  "cover": {
+    "favourites": "Favorites"
+  },
+  "option": {
+    "signed": "Centered on zero",
+    "picker": "Color picker",
+    "custom": "Custom color",
+    "full_colour": "Full color",
+    "full_brightness": "Full color, with the brightness"
+  },
+  "appliance": {
+    "kind_washer": "Washer",
+    "kind_dryer": "Dryer",
+    "kind_hob": "Cooktop",
+    "kind_hood": "Range hood",
+    "step_anti_crease": "Wrinkle guard",
+    "m_service": "Needs service",
+    "mode_holiday": "Vacation",
+    "anti_crease": "Unload now for fewer wrinkles",
+    "aborted": "Program aborted",
+    "power_on": "Turn on",
+    "power_off": "Turn off",
+    "confirm_stop": "Stop the program?",
+    "confirm_power_off": "Turn it off while it runs?",
+    "confirm_power_off_now": "Turn it off now?",
+    "confirm_power_off_cold": "Turn it off? It stops cooling.",
+    "plate": "Burner {n}",
+    "r_program": "Program",
+    "editor_show_programs": "Programs to choose from",
+    "role_program": "Program",
+    "row_program": "Program",
+    "state_cancelled": "Canceled",
+    "state_odor_removal": "Removing odors",
+    "burner_center": "Center"
+  },
+  "cards-about": {
+    "light": "The precision dimmer: relative drag, slide away to slow down, hold for the 1 % scale, color temperature.",
+    "lights": "A room’s lights on one card: one tap for the whole room, a round, chip or tile for each light, in its color.",
+    "cover": "Blinds, shutters, garage doors and valves: vertical position ruler, tilt, open · stop · close, favorites.",
+    "gauge": "A ring gauge for any numeric sensor with min, max and average, or centered on zero for a meter that runs both ways.",
+    "energy-flow": "Where the house’s energy comes from and where it goes, live or over a period: import and export at once, every source, lanes in their origin’s color.",
+    "history-bars": "A sensor’s last days, weeks or months as bars from its long-term statistics: the total and the average in the head, the value over each bar, and a strip of facts under them — the highest and lowest, or what it comes to in CO₂, trees, kilometers or money.",
+    "appliance": "A washer, dryer, dishwasher, oven, cooktop, fridge, coffee machine, pet feeder, fountain, litter box or small appliance on a plug, pictured: what it does, when it is ready, what it uses, its reminders.",
+    "template": "A tile whose name, line, icon, color and fill are templates, with or without an entity; a Mushroom template card pastes in.",
+    "vehicle": "A car, electric, gas, diesel or plug-in hybrid: its battery or tank, range and charge limit, when it is full, where it is, and its lock, climate, charging, trunk and windows in one row. Tesla, BMW, Renault, Volvo, Kia, Hyundai, Volkswagen, Škoda, Polestar, MG, Toyota, Ford, Mercedes-Benz, Peugeot and more.",
+    "chart": "Any time series on one chart — history, statistics, a list in an attribute (Nordpool’s prices, a solar forecast) or a weather’s forecast — past to future with now marked, thresholds in their colors and the cheapest hours found.",
+    "swipe": "Any cards, one a page, turned by a swipe or the page marks under them: side by side on a wide screen, around from the last to the first.",
+    "schedule": "A room’s heating week on Home Assistant’s own schedule helper: a timeline a day in its presets’ colors, Comfort, Eco and Away with their temperatures, its times edited, a day copied to others, the schedule on or off."
+  },
+  "chart-card": {
+    "editor.color_helper": "Empty: the card’s color, or the palette’s series colors for several. The palette’s colors follow it; a color name or a #hex stays as typed"
+  },
+  "customise": {
+    "title": "Customize"
+  },
+  "editor": {
+    "temperature_tint": "Tint the color temperature ruler",
+    "color": "Color",
+    "card_color": "Card color",
+    "show_color": "Show color",
+    "colors": "Quick colors",
+    "color_help": "Pick one, or choose Custom color and pick any color in its well",
+    "item_color_helper": "Empty: the light’s bulb color where the card shows bulbs’ colors, else the card’s",
+    "item_color_card_helper": "Empty: the card’s color",
+    "item_color_own_helper": "Empty: the color the card gives it",
+    "rgb": "Any color",
+    "swatch_name_help": "What the round says; empty, the color’s word or its hex",
+    "color_round": "Color round for the room",
+    "color_sheet": "Fluvy’s color sheet",
+    "color_control": "Color control",
+    "show_favorites": "Show favorites",
+    "favorites_style": "Favorites as",
+    "favorites": "Favorites",
+    "tint": "Show its color",
+    "light_colors": "Each light on in its bulb’s color",
+    "tint_strength": "How much color",
+    "state_colors": "Colors by state",
+    "thresholds_helper": "A reading takes the color of the nearest threshold it is past",
+    "state_icon_colors_helper": "A state and its tone or color on each line (warning: warning)",
+    "exact_colors": "Exact colors"
+  },
+  "energy-usage": {
+    "editor_color_helper": "Empty: its energy’s own color. The palette’s colors follow it; a color name or a #hex stays as typed",
+    "editor_shade_helper": "Empty: a shade of water’s or gas’s color. The palette’s colors follow it; a color name or a #hex stays as typed"
+  },
+  "history-bars": {
+    "kind_km": "Kilometers",
+    "editor_factor_help": "CO₂: kg per kWh · trees: kg a tree takes in a year · kilometers: km per kWh · money: the price per unit"
+  },
+  "expander": {
+    "editor.icon_color": "Icon color"
+  },
+  "panel": {
+    "custom.surface_sub": "Outlined puts the cards on a page of their own color, each closed by a line, with no shadows: made for e-paper. Ink draws that line in the text’s color.",
+    "custom.hex": "Any color",
+    "custom.pick": "Pick a color",
+    "custom.highlight_sub": "A second color for you and for now: your avatar, today in the calendar, the open tab",
+    "chrome.page_sub": "On the page's color",
+    "chrome.separators_sub": "A line after each one turned on",
+    "dashboard.customise": "Customize",
+    "dashboard.customised": "Customized: some of it is yours",
+    "lights.tint": "Show their color",
+    "lights.colors": "In their bulb’s color",
+    "background.color": "Color",
+    "background.refused": "A path such as /local/garden.jpg or a web address, with no spaces, quotes or parentheses",
+    "background.two": "Two colors",
+    "background.second": "Second color",
+    "cards.border_sub": "The hairline around every card and tile",
+    "statuses.title": "Status colors",
+    "charts.bubble_tone": "In color",
+    "charts.series": "Series colors",
+    "charts.new_sub": "Six colors of your own",
+    "charts.colours": "Colors",
+    "charts.colour": "Color {n}",
+    "charts.check_ok": "Every color stands apart and reads on either card",
+    "cards.tint": "Devices show their state’s color",
+    "cards.exact": "Exact colors",
+    "cards.exact_sub": "Color names as Home Assistant draws them and a hex as typed, not the palette’s shades"
+  },
+  "remote": {
+    "key.captions": "Captions",
+    "editor.side_keys": "Keys around the pad",
+    "editor.apps_tint": "Apps in their colors",
+    "editor.nav": "The four keys around the pad"
+  },
+  "swipe": {
+    "editor.loop": "Go around from the last page"
+  },
+  "template": {
+    "editor.color_helper": "In YAML, a template may give a color or a tone"
+  },
+  "vehicle": {
+    "trunk": "Trunk",
+    "frunk": "Frunk",
+    "open_trunk_confirm": "Open the trunk?",
+    "close_trunk_confirm": "Close the trunk?",
+    "open_frunk_confirm": "Open the frunk?",
+    "tyres": "Tires",
+    "editor.show_tyres": "Show the tires",
+    "trunk_open": "Trunk open",
+    "frunk_open": "Frunk open",
+    "adblue": "DEF",
+    "bonnet": "Hood",
+    "bonnet_open": "Hood open",
+    "adblue_low": "DEF low",
+    "tyre_pressure_low": "Low tire pressure",
+    "editor.tyre_decimals": "Tire decimals",
+    "editor.tyre_low": "Low tire under",
+    "editor.tyre_low_helper": "A pressure in the tires’ unit, an entity, or a template such as {{ states('sensor.x') }}"
+  }
+}

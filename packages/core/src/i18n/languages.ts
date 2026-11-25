@@ -1,11 +1,13 @@
 /**
  * The languages Fluvy speaks: one entry per catalogue in `./locales/`, with what the panel shows for it and the
  * cultural data its words need (the greeting's hours). Everything that lists, offers or resolves a language reads
- * this table; adding a language is one entry here, one catalogue, one integration translation file.
+ * this table; adding a language is one entry here, one catalogue, one integration translation file. A language laid
+ * over another (`over`: American English over English) is one entry and a catalogue of only what it says differently.
  */
 
 export const LANGUAGE_CODES = [
   'en',
+  'en-US',
   'es',
   'de',
   'nl',
@@ -44,6 +46,17 @@ export interface DayParts {
 
 export interface LanguageInfo {
   readonly code: LanguageCode;
+  /**
+   * The language this one is laid over key by key: its catalogue holds only the texts it says differently, and every
+   * other word is that language's (American English's "Color" over English's "Colour").
+   */
+  readonly over?: LanguageCode;
+  /**
+   * The countries whose houses read this language where Home Assistant speaks the one it is laid over: Home
+   * Assistant's own English is American, so a house in the United States, its territories or the Philippines reads
+   * American English.
+   */
+  readonly countries?: readonly string[];
   /** The language's own name: what the select shows. */
   readonly name: string;
   /** Its English name: the select's hint, and what the docs say. */
@@ -73,13 +86,25 @@ export interface LanguageInfo {
   readonly script?: string;
 }
 
+/** English greets the evening until 22:00 and only then says "night" (a farewell before that), on either side. */
+const ENGLISH_DAYS: DayParts = { morning: 5, afternoon: 12, evening: 18, night: 22 };
+
 export const LANGUAGES: Readonly<Record<LanguageCode, LanguageInfo>> = {
   en: {
     code: 'en',
-    name: 'English',
-    english: 'English',
-    // English greets the evening until 22:00 and only then says "night" (a farewell before that)
-    dayParts: { morning: 5, afternoon: 12, evening: 18, night: 22 },
+    name: 'English (United Kingdom)',
+    english: 'English (United Kingdom)',
+    dayParts: ENGLISH_DAYS,
+  },
+  'en-US': {
+    code: 'en-US',
+    over: 'en',
+    name: 'English (United States)',
+    english: 'English (United States)',
+    dayParts: ENGLISH_DAYS,
+    // the United States, its territories (Puerto Rico, Guam, the Virgin Islands, American Samoa, the Northern
+    // Mariana Islands, the outlying islands) and the Philippines, which write American English
+    countries: ['US', 'PR', 'GU', 'VI', 'AS', 'MP', 'UM', 'PH'],
   },
   es: {
     code: 'es',
@@ -241,10 +266,14 @@ export const isLanguageCode = (value: unknown): value is LanguageCode =>
 export const isCardLanguage = (value: unknown): value is CardLanguage =>
   value === 'auto' || isLanguageCode(value);
 
-/** The languages a person may choose, English first and the rest by their own names. */
+/**
+ * The languages a person may choose: the two Englishes first, the United Kingdom's then the United States', and the
+ * rest by their own names.
+ */
 export const offeredLanguages = (): readonly LanguageInfo[] => [
   LANGUAGES.en,
-  ...LANGUAGE_CODES.filter((code) => code !== 'en')
+  LANGUAGES['en-US'],
+  ...LANGUAGE_CODES.filter((code) => !code.startsWith('en'))
     .map((code) => LANGUAGES[code])
     .sort((a, b) => a.name.localeCompare(b.name)),
 ];
@@ -267,13 +296,19 @@ function variantOf(own: LanguageCode, tag: string): boolean {
 }
 
 /**
- * The language Fluvy speaks for a tag Home Assistant reports: the tag itself, else the language Home Assistant files
- * under it (`pt` → `pt-PT`); the same for its base (`es-ES` → `es`, `pt-AO` → `pt-PT`); else the first variant
- * shipped for that base in the tag's script (`zh-CN` → `zh-Hans`, `zh-TW` → `zh-Hant`), else English.
+ * The language Fluvy speaks for a tag Home Assistant reports, in a house in `country` (`hass.config.country`): the
+ * language laid over the tag's in that country (Home Assistant's `en` in the United States → `en-US`; its `en-GB`,
+ * and its `en` anywhere else, stay English); else the tag itself, else the language Home Assistant files under it
+ * (`pt` → `pt-PT`); the same for its base (`es-ES` → `es`, `pt-AO` → `pt-PT`); else the first variant shipped for that
+ * base in the tag's script (`zh-CN` → `zh-Hans`, `zh-TW` → `zh-Hant`), else English.
  */
-export function resolveLanguage(tag: string | undefined): LanguageCode {
+export function resolveLanguage(tag: string | undefined, country?: string | null): LanguageCode {
   if (!tag) return 'en';
   const code = tag.replace('_', '-');
+  const local = LANGUAGE_CODES.find(
+    (own) => LANGUAGES[own].over === code && LANGUAGES[own].countries?.includes(country ?? ''),
+  );
+  if (local) return local;
   const base = code.split('-')[0]?.toLowerCase() ?? '';
   for (const candidate of [code, base]) {
     if (isLanguageCode(candidate)) return candidate;

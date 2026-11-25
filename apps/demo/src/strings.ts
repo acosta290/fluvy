@@ -1666,8 +1666,16 @@ const sv: Table = {
   'themes.mode': 'Läge',
 };
 
+/** American English: the demo's English, but where Marta lives. */
+const enUS: Table = {
+  ...en,
+  'banner.text':
+    "A simulated home: Marta's apartment on a Thursday evening. Every card, page and setting here is the real one; Home Assistant is stood in for by a small stand-in that changes state 140 ms after a service call. Nothing is connected.",
+};
+
 const TABLES: Readonly<Record<LanguageCode, Table>> = {
   en,
+  'en-US': enUS,
   es,
   de,
   nl,

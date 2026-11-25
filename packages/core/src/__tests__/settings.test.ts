@@ -56,6 +56,13 @@ describe('parsing stored settings', () => {
     );
   });
 
+  it('keeps English (United States) as a language of its own, and English as the United Kingdom’s', () => {
+    // one more allowed value, no new version: a code a Fluvy does not know is Automatic to it, as `fi` is here
+    expect(parsePersonal({ language: 'en-US' }).language).toBe('en-US');
+    expect(parsePersonal({ language: 'en' }).language).toBe('en');
+    expect(parsePersonal({ language: 'en-GB' }).language).toBe('auto');
+  });
+
   it('keeps what is well formed', () => {
     expect(
       parseHouse({

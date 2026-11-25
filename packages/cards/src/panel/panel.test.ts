@@ -2583,6 +2583,29 @@ describe('the settings panel', () => {
     panel.remove();
   });
 
+  it('offers both Englishes first, Automatic saying which one the house reads, its country with it (#267)', async () => {
+    const { panel, root, settle } = await mount(false);
+    panel.tab = 'preferences';
+    await settle();
+    const options = () =>
+      (root.querySelector('fluvy-select') as unknown as { options: readonly object[] }).options;
+    expect(options().slice(0, 3)).toEqual([
+      { value: 'auto', label: 'Automatic', hint: 'English (United Kingdom)' },
+      { value: 'en', label: 'English (United Kingdom)' },
+      { value: 'en-US', label: 'English (United States)' },
+    ]);
+    panel.hass = { ...panel.hass, config: { ...panel.hass.config, country: 'US' } };
+    await settle();
+    expect(options()[0]).toEqual({
+      value: 'auto',
+      label: 'Automatic',
+      hint: 'English (United States)',
+    });
+    panel.hass = { ...panel.hass, config: { ...panel.hass.config, country: null } };
+    await settle();
+    panel.remove();
+  });
+
   it('holds sliders for this person from Just for you, shown on the page before it is saved (#166)', async () => {
     const { panel, root, row, button, handle, previews, settle } = await mount(false);
     panel.tab = 'preferences';

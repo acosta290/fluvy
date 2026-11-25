@@ -10,7 +10,8 @@ language, so the card starts from Fluvy's.
 
 | Code | Language | Catalogue | Maintainer |
 | --- | --- | --- | --- |
-| `en` | English | `packages/core/src/i18n/locales/en/` — the source every other language mirrors, in parts | — |
+| `en` | English (United Kingdom) | `packages/core/src/i18n/locales/en/` — the source every other language mirrors, in parts | — |
+| `en-US` | English (United States) | `packages/core/src/i18n/locales/en-US.json` — only the texts American English says differently, laid over `en`; Home Assistant's English (`en`) reads it in a house in the United States, its territories or the Philippines | — |
 | `es` | Spanish | `packages/core/src/i18n/locales/es.json` | — |
 | `de` | German | `packages/core/src/i18n/locales/de.json` | — |
 | `nl` | Dutch | `packages/core/src/i18n/locales/nl.json` | — |
@@ -98,6 +99,19 @@ language, so the card starts from Fluvy's.
   more than one script names its own as `script`: Simplified Chinese is `Hans` and Traditional `Hant`, so a tag
   reads the one it is written in, said or by its region (`zh-CN` Simplified; `zh-TW`, `zh-HK` Traditional), and
   never falls to the other by the base language they share.
+- **American English** (`en-US`) is laid over English (`over: 'en'` in the registry): its catalogue holds only the
+  texts an American says or spells differently (Trunk for Boot, Tires, Color, Customize, Favorites, Center, a
+  Cooktop, a Range hood, Vacation, Turn on), and every other word is English's, looked up key by key; a count
+  overrides both of its forms or neither. Home Assistant has two Englishes, its own `en` (American) and `en-GB`:
+  Automatic reads American English where Home Assistant speaks `en` and the house's country (Settings › System ›
+  General) is the United States, one of its territories or the Philippines, and English everywhere else, `en-GB`
+  included; Preferences offers both by hand. `pnpm i18n` checks it by what it holds (every key English's, the same
+  placeholders, none the same as English's) and never for what it leaves to English, and holds English to it: an
+  English text with a British spelling or word (colour, tyre, centre, programme, boot, bonnet, petrol, hob, holiday,
+  "switch on", "round" for around, brackets for parentheses…) has its American text, or stands in `BRITISH_KEPT`
+  (`tools/i18n/src/lib.ts`) with why both Englishes say it. A new English text that trips it gets its American text
+  in `en-US.json` in the same change. The integration's own English (`strings.json`) is shown as it is beside Home
+  Assistant's American English, so it says no British word at all.
 - **The integration** has a translation of its own texts (the Repairs it raises, its setup dialog) in
   `custom_components/fluvy/translations/<code>.json`, key for key with `strings.json` — under Home Assistant's code
   for the language where it is not ours (`pt.json` for Portugal's Portuguese).

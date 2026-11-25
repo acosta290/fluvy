@@ -78,7 +78,7 @@ export function describeRange(page: FluvyActivity): PeriodTitle {
       period: page.t('period'),
       week: page.t('preset.week'),
       lastDay: page.t('last_day'),
-      days: (n) => plural({ language: page.language }, 'page.days', n),
+      days: (n) => plural(page.hass, 'page.days', n),
       since: (when) => page.t('since', { when }),
     },
   });

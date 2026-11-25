@@ -145,6 +145,8 @@ export interface HomeAssistant {
     unit_system: { temperature: string; length: string; [k: string]: string };
     currency?: string;
     time_zone?: string;
+    /** The house's country, an ISO 3166 code (`US`), or null where none is set. */
+    country?: string | null;
     [k: string]: unknown;
   };
   user?: { id: string; name: string; is_admin: boolean };

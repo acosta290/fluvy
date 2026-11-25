@@ -5,9 +5,11 @@
  *
  * The layout: every language but English is one catalogue, `locales/<code>.json`, with every namespace (a language
  * is fetched whole, the first time it is spoken). English is in parts, `locales/en/<part>.json`: `core.json` ships
- * inline, and each lazy family's part travels with that family's chunk. The naming words the automatic dashboard
- * reads a house by are build input only, `words/<code>.json`, never shipped. A tool reads a language whole, its words
- * under `words` (`readCatalogue`), and writes it back to that layout (`writeCatalogue`).
+ * inline, and each lazy family's part travels with that family's chunk. A language laid over another (American
+ * English over English, `over` in the registry) is a catalogue of only the texts it says differently, with no naming
+ * words and no integration file of its own. The naming words the automatic dashboard reads a house by are build input
+ * only, `words/<code>.json`, never shipped. A tool reads a language whole, its words under `words` (`readCatalogue`),
+ * and writes it back to that layout (`writeCatalogue`).
  */
 import { readdir, readFile, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
@@ -22,6 +24,8 @@ export const ENGLISH = join(LOCALES, 'en');
 export const WORDS = join(I18N, 'words');
 export const INTEGRATION = join(ROOT, 'custom_components', 'fluvy');
 export const DOCS_TABLE = join(ROOT, 'docs', 'translating.md');
+/** The language registry, read as text: the tools cannot import the browser package. */
+export const REGISTRY = join(I18N, 'languages.ts');
 
 export type Table = Readonly<Record<string, string>>;
 export type Words = Readonly<Record<string, readonly string[]>>;
@@ -97,6 +101,28 @@ export async function writeCatalogue(code: string, catalogue: Catalogue): Promis
   }
   for (const [file, value] of files) await writeFile(file, `${JSON.stringify(value, null, 2)}\n`);
   return files.map(([file]) => file);
+}
+
+/**
+ * The languages the registry names (`LANGUAGE_CODES`), and those laid over another, each with the one under it
+ * (`code: 'en-US', over: 'en'`).
+ */
+export async function registry(): Promise<{
+  readonly codes: readonly string[];
+  readonly over: ReadonlyMap<string, string>;
+}> {
+  const source = await readFile(REGISTRY, 'utf8');
+  const codes =
+    /LANGUAGE_CODES = \[([^\]]+)\]/
+      .exec(source)?.[1]
+      ?.match(/'([^']+)'/g)
+      ?.map((s) => s.slice(1, -1)) ?? [];
+  const over = new Map(
+    [...source.matchAll(/code: '([^']+)',\s*over: '([^']+)'/g)].map(
+      ([, code, under]) => [code as string, under as string] as const,
+    ),
+  );
+  return { codes, over };
 }
 
 /** The languages that have a catalogue on disk (English's is the folder of its parts). */
@@ -294,6 +320,146 @@ export function compare(
   for (const namespace of Object.keys(catalogue))
     if (!(namespace in english)) problem('error', `${namespace}: a namespace English lacks`);
   return problems;
+}
+
+/**
+ * A language laid over another (American English over English) against the one under it. It holds only what it says
+ * differently, so nothing is ever missing; what it holds is checked as a whole language's is (every namespace and key
+ * English's, none empty, the same placeholders), and none says what English says: a text the same in both is left
+ * out. A count holds both of English's forms or neither (one alone would say the other in the other language's words,
+ * `plural()` taking each form where it finds it), and its keys stand in English's order.
+ */
+export function compareOverlay(
+  language: string,
+  catalogue: Catalogue,
+  under: Catalogue,
+): Problem[] {
+  const problems: Problem[] = [];
+  const problem = (level: Problem['level'], text: string): void => {
+    problems.push({ level, language, text });
+  };
+  for (const [namespace, own] of Object.entries(catalogue)) {
+    if (isWords(namespace)) continue;
+    const table = under[namespace] as Table | undefined;
+    if (!table) {
+      problem('error', `${namespace}: a namespace English lacks`);
+      continue;
+    }
+    for (const [key, text] of Object.entries(own as Table)) {
+      const theirs = table[key];
+      if (theirs === undefined) problem('error', `${namespace}.${key}: not in English`);
+      else if (typeof text !== 'string' || text.trim() === '')
+        problem('error', `${namespace}.${key}: empty`);
+      else if (text === theirs)
+        problem('error', `${namespace}.${key}: says what English says, so it is left out`);
+      else if (placeholders(text).join(',') !== placeholders(theirs).join(','))
+        problem(
+          'error',
+          `${namespace}.${key}: placeholders {${placeholders(text).join(', ')}} ≠ English {${placeholders(theirs).join(', ')}}`,
+        );
+    }
+    for (const [count, { other, from }] of counts(table))
+      if (from === 0 && `${count}_one` in own !== other in own)
+        problem(
+          'error',
+          `${namespace}.${count}: one of its two forms (${count}_one, ${other}): both are said, or neither`,
+        );
+    const order = Object.keys(table).filter((k) => k in own);
+    const ownOrder = Object.keys(own).filter((k) => k in table);
+    if (order.join('\n') !== ownOrder.join('\n'))
+      problem('warning', `${namespace}: keys are not in English's order`);
+  }
+  return problems;
+}
+
+/**
+ * British spellings and words, each a text American English says another way: colour, favourite, customise, centre,
+ * tyre, kilometre, programme, odour, grey, cancelled and travelled; a car's boot, bonnet and petrol; a kitchen's hob,
+ * cooker hood and tumble dryer; a holiday, a crease, subtitles, brackets; switching something on, a preposition's
+ * "round", a flat to live in; and the rest a new English text is likely to bring.
+ */
+const BRITISH: readonly RegExp[] = [
+  /colour|favourit|honour|behaviour|neighbour|harbour|humour|labour|flavour|rumour|vapour|odour|armour|rigour|vigour|endeavour|savour/i,
+  /centre|metre|litre|theatre|fibre|calibre|sombre|spectre|lustre|meagre|\btyres?\b/i,
+  /(organis|recognis|realis|summaris|minimis|maximis|optimis|prioritis|personalis|customis|normalis|synchronis|categoris|apologis|memoris|visualis|initialis|authoris|finalis|utilis|stabilis|standardis|emphasis|criticis|specialis|capitalis|localis|symbolis|sanitis|serialis|randomis|deodoris|immobilis|energis|harmonis|familiaris|itemis|economis|modernis)(e|ed|es|ing|ation|ations|er|ers)\b|\b(analys|paralys|catalys)(e|ed|es|ing)\b/i,
+  /(travell|labell|modell|fuell|signall|levell|totall|channell|diall|cancell|marvell|counsell|tunnell|pedall|shovell)(ed|ing|er|ers|ous)\b/i,
+  /programme|catalogue|analogue|cheque|tonne|storey|\bkerb|plough|pyjama|aluminium|aeroplane|manoeuvr|jewellery|speciality|sceptic|draught|\bmould|\bgrey|enquir|\bpractis(e|ed|es|ing)\b|\bfulfil\b|fulfilment|\benrol\b|enrolment|instalment|skilful|wilful|\bageing\b|judgement|defence|licence|offence|pretence/i,
+  /whilst|amongst|amidst|\b(learnt|spelt|dreamt|spoilt|leant)\b|fortnight|\bmaths\b|full stop|per cent/i,
+  /\bboots?\b|bonnet|petrol|windscreen|handbrake|gearbox|wing mirror|number ?plate|car park|motorway|\blorr(y|ies)\b|sat ?nav|demist|adblue/i,
+  /\bhobs?\b|(?<!(slow|rice|pressure) )cooker|tumble|washing machine|washing[ -]up|extractor|\bgrill|fan oven|immersion|aircon|cupboard|wardrobe|\btorch|rubbish|dustbin|hoover|\bmains\b|fuse ?box|consumer unit|post ?code|letter ?box|\bparcels?\b|mobile phone|\bmums?\b|\bcos(y|ier|iest)\b|\bflats?\b/i,
+  /holiday|\bcreas(e|es|ed|ing)\b|\bsubtitles\b|bracket|\bneeds a service\b/i,
+  /\bswitch(es|ed|ing)? (it |them )?(on|off)\b/i,
+  /\bround (the|every|a|an|it|its|their|each|from)\b|\b(go|goes|going|went|gone|come|comes|turn|turns|all) round\b/i,
+];
+
+/**
+ * English texts that say a word `BRITISH` knows and are American English too, each with why: they keep no `en-US`
+ * text (one the same as English's is refused).
+ */
+export const BRITISH_KEPT: Readonly<Record<string, string>> = {
+  'option.flat': 'a flat style (no shadow, no gradient), not a home',
+};
+
+/** The first British spelling or word a text says, if any. */
+export function britishIn(text: string): string | undefined {
+  for (const word of BRITISH) {
+    const found = word.exec(text);
+    if (!found) continue;
+    // the whole words it stands in ("Kilometres", never "metre")
+    const start = text.slice(0, found.index).search(/\p{L}*$/u);
+    const end = found.index + found[0].length;
+    return text.slice(start, end + (/^\p{L}*/u.exec(text.slice(end))?.[0].length ?? 0));
+  }
+  return undefined;
+}
+
+/**
+ * American English keeps up with English: every English text that says a British spelling or word has its text in
+ * American English's catalogue, or stands in `BRITISH_KEPT` with why both say it (and a kept text still says one);
+ * no American text says one itself. Another builder's new English is held to it the day it lands.
+ */
+export function britishWords(english: Catalogue, american: Catalogue): Problem[] {
+  const problems: Problem[] = [];
+  const problem = (text: string): void => {
+    problems.push({ level: 'error', language: 'en-US', text });
+  };
+  const known = new Set<string>();
+  for (const [namespace, table] of Object.entries(english)) {
+    if (isWords(namespace)) continue;
+    for (const [key, text] of Object.entries(table as Table)) {
+      const id = `${namespace}.${key}`;
+      known.add(id);
+      const said = britishIn(text);
+      const own = (american[namespace] as Table | undefined)?.[key];
+      if (said && own === undefined && !(id in BRITISH_KEPT))
+        problem(
+          `${id}: English says “${said}”: give it its American text in en-US.json, or keep it in BRITISH_KEPT with why`,
+        );
+      if (id in BRITISH_KEPT && !said)
+        problem(`${id}: kept in BRITISH_KEPT, but says nothing British any more: take it off`);
+      const stays = own === undefined ? undefined : britishIn(own);
+      if (stays) problem(`${id}: the American text still says “${stays}”`);
+    }
+  }
+  for (const id of Object.keys(BRITISH_KEPT))
+    if (!known.has(id)) problem(`${id}: kept in BRITISH_KEPT, but English has no such key`);
+  return problems;
+}
+
+/**
+ * The integration's English (`strings.json`), which Home Assistant shows as it is beside its own American English:
+ * it says no British spelling or word at all.
+ */
+export async function britishInIntegration(): Promise<Problem[]> {
+  const source = flatten(
+    JSON.parse(await readFile(join(INTEGRATION, 'strings.json'), 'utf8')) as unknown,
+  );
+  return Object.entries(source).flatMap(([key, text]) => {
+    const said = britishIn(text);
+    return said
+      ? [{ level: 'error' as const, language: 'en', text: `strings.json: ${key} says “${said}”` }]
+      : [];
+  });
 }
 
 /** Flattens `strings.json`-shaped translation files to dotted keys. */

@@ -35,7 +35,7 @@
 import { writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { plain } from '../../../packages/core/src/plain.js';
-import { catalogueCodes, readCatalogue, ROOT, type Words } from './lib.js';
+import { catalogueCodes, readCatalogue, registry, ROOT, type Words } from './lib.js';
 
 export const OUT = join(ROOT, 'packages', 'cards', 'src', 'strategy', 'words.generated.ts');
 export const APPLIANCE_OUT = join(
@@ -241,11 +241,15 @@ function literal(source: string, flags: string): string {
   return `/${source.replace(/\//g, '\\/')}/${flags}`;
 }
 
-/** Every language's stems of each category asked for, and the languages they came from. */
+/**
+ * Every language's stems of each category asked for, and the languages they came from: a language laid over another
+ * (American English) names things in that one's words, its stems among them.
+ */
 async function stemsOf(
   categories: readonly string[],
 ): Promise<{ codes: string[]; lists: Map<string, string[]> }> {
-  const codes = await catalogueCodes();
+  const { over } = await registry();
+  const codes = (await catalogueCodes()).filter((code) => !over.has(code));
   const lists = new Map<string, string[]>();
   for (const code of codes) {
     const words = (await readCatalogue(code))['words'] as Words | undefined;

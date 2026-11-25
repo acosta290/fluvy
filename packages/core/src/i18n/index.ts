@@ -38,6 +38,7 @@ const speakers = new Set<(code: LanguageCode) => void>();
 
 /** Each language's catalogue as its own chunk: the loader map is explicit so the bundler sees every one. */
 const LOADERS: Record<Exclude<LanguageCode, 'en'>, () => Promise<{ default: Loaded }>> = {
+  'en-US': () => import('./locales/en-US.json'),
   es: () => import('./locales/es.json'),
   de: () => import('./locales/de.json'),
   nl: () => import('./locales/nl.json'),
@@ -73,6 +74,8 @@ export function addEnglish(
 
 let override: LanguageCode | undefined;
 let hinted: LanguageCode | undefined;
+/** The house's country, from the last whole `hass`: a page's `{ language }` alone resolves as the house does. */
+let country: string | null | undefined;
 
 /**
  * Fluvy speaks `code` on this page: remembered, so the next page load fetches it before `hass` arrives, and told to
@@ -120,11 +123,15 @@ export function markLanguage(host: Element, page: string | undefined): void {
 }
 
 /**
- * The one decision: the language Fluvy speaks for this `hass` — the person's choice, else Home Assistant's, resolved
- * to a language Fluvy has. Asking for a language starts fetching its words if they are not here yet.
+ * The one decision: the language Fluvy speaks for this `hass` — the person's choice, else Home Assistant's in the
+ * house's country, resolved to a language Fluvy has. Asking for a language starts fetching its words if they are not
+ * here yet.
  */
-export function languageOf(hass: Pick<HomeAssistant, 'language'> | undefined): LanguageCode {
-  const code = override ?? resolveLanguage(hass?.language);
+export function languageOf(
+  hass: (Pick<HomeAssistant, 'language'> & Partial<Pick<HomeAssistant, 'config'>>) | undefined,
+): LanguageCode {
+  if (hass?.config) country = hass.config.country;
+  const code = override ?? resolveLanguage(hass?.language, country);
   if (!catalogues[code]) void ensureLanguage(code);
   // a word asked with neither Home Assistant's language nor the person's is English by default, not the page's
   if (override || hass?.language) hint(code);
