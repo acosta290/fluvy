@@ -1,7 +1,16 @@
 // its chunk lands the first time a sheet opens: the playground defines the sheets from their module
 import '../../../../packages/cards/src/details/open.js';
+import { FluvyCoverCard } from '../../../../packages/cards/src/cover/cover-card.js';
+import { FluvyThermostatCard } from '../../../../packages/cards/src/thermostat/thermostat-card.js';
 import type { StateSeed } from '../hass.js';
-import type { SheetSpec } from '../scenes.js';
+import type { FrameSpec, SheetSpec } from '../scenes.js';
+
+// their chunks land after the page has drawn: the sheet defines the cards from their modules, as the cover sheets do
+for (const [tag, card] of [
+  ['fluvy-cover-card', FluvyCoverCard],
+  ['fluvy-thermostat-card', FluvyThermostatCard],
+] as const)
+  if (!customElements.get(tag)) customElements.define(tag, card);
 
 /**
  * Fluvy's own details sheets (1.20, #162), each docked in its frame as a phone draws it (`_docked`) and, at the foot of
@@ -11,6 +20,13 @@ import type { SheetSpec } from '../scenes.js';
  * speaker playing, a television) and a fan (three speeds with its rows, a purifier, one that only switches); each
  * kind out of reach; and the tiles that open them (`?sheets=fluvy`), with one whose action keeps Home Assistant's
  * dialog and a sensor, which has no sheet.
+ *
+ * Then the same sheets without their dial (1.26, #258: the house's, an action's or a card's say), each one's control
+ * on a ruler across the sheet: every kind beside its dial; a blind as its horizontal card draws it, with its tilt and
+ * the card's favourites; a garage door and a light that only switches, their keys alone; a thermostat with what it
+ * measures over its ruler, and a range on two; a television muted, a fan in its own speeds; out of reach, and as a
+ * wide screen's dialog. And the covers whose card turns their position round or counts as the blind comes down, each
+ * beside the sheet it opens, which reads as the card does; with the cards and the tiles that ask for no dial.
  */
 
 type Attributes = Record<string, unknown>;
@@ -62,6 +78,8 @@ const HISTORY: Readonly<Record<string, (end: number) => unknown[]>> = {
   'water_heater.dt_tank': temperatures('eco', 'current_temperature', 49, 5),
   'humidifier.dt_nursery': temperatures('on', 'current_humidity', 44, 6),
   'cover.dt_blind': states([24, 'closed'], [14.5, 'open'], [1.5, 'closed'], [0.5, 'open']),
+  'cover.dt_shutter': states([24, 'closed'], [13, 'open']),
+  'cover.dt_skylight': states([24, 'open'], [20, 'closed'], [11.5, 'open']),
   'cover.dt_garage': states(
     [24, 'closed'],
     [13.6, 'open'],
@@ -85,6 +103,62 @@ const sheetOf = (tag: string, entity: string, docked: true | 'wide' = true) => (
   type: `custom:fluvy-details-${tag}`,
   entity,
   _docked: docked,
+});
+
+/** The places a blind's card names, as its sheet across says them too (#258). */
+const FAVOURITES = [
+  { name: 'Morning', position: 60 },
+  { name: 'Night', position: 0 },
+];
+
+/** A frame of one sheet without its dial (#258): a phone's, or a wide screen's dialog. */
+const ruled = (
+  title: string,
+  tag: string,
+  entity: string,
+  more: Readonly<Record<string, unknown>> = {},
+  wide = false,
+): FrameSpec => ({
+  title: `${title} (#258)`,
+  ...(wide ? { width: 392 } : {}),
+  cards: [{ ...sheetOf(tag, entity, wide ? 'wide' : true), show_dial: false, ...more }],
+});
+
+/**
+ * A kind's sheet round its dial and on a ruler, side by side, for the eye (each is measured in a frame of its own):
+ * what the choice changes on a phone.
+ */
+const pair = (
+  title: string,
+  tag: string,
+  entity: string,
+  more: Readonly<Record<string, unknown>> = {},
+): FrameSpec => ({
+  title: `${title} · its dial, and a ruler in its place (#258)`,
+  width: 736,
+  measure: false,
+  cards: [
+    { ...sheetOf(tag, entity), cols: 6 },
+    { ...sheetOf(tag, entity), show_dial: false, ...more, cols: 6 },
+  ],
+});
+
+/** A Cover card over the sheet it opens, the sheet reading its cover as the card says (#258). */
+const agreed = (
+  title: string,
+  entity: string,
+  reads: Readonly<Record<string, unknown>>,
+  more: Readonly<Record<string, unknown>> = {},
+): FrameSpec => ({
+  title: `${title} (#258)`,
+  cards: [
+    { type: 'custom:fluvy-cover-card', entity, ...reads, ...more },
+    {
+      ...sheetOf('cover', entity),
+      ...reads,
+      ...(more['sheet_dial'] === false ? { show_dial: false } : {}),
+    },
+  ],
 });
 
 /** A frame of one sheet: a phone's, or a wide screen's dialog (always 392: the dialog's own width). */
@@ -258,6 +332,29 @@ const STATES: readonly StateSeed[] = [
     'unavailable',
     { friendly_name: 'Awning', device_class: 'awning', supported_features: COVER_ALL },
   ],
+  // a shutter that reports 100 % where it is closed: at 20 it is nearly open, and its card turns the figure round
+  [
+    'cover.dt_shutter',
+    'open',
+    {
+      friendly_name: 'Roller shutter',
+      device_class: 'shutter',
+      current_position: 20,
+      supported_features: COVER_ALL,
+    },
+  ],
+  // a skylight's blind, which its card counts as it comes down, its slats' tilt in degrees
+  [
+    'cover.dt_skylight',
+    'open',
+    {
+      friendly_name: 'Skylight blind',
+      device_class: 'blind',
+      current_position: 65,
+      current_tilt_position: 50,
+      supported_features: COVER_ALL | COVER_TILT,
+    },
+  ],
   [
     'valve.dt_garden',
     'closed',
@@ -355,6 +452,8 @@ const AREAS: Readonly<Record<string, string>> = {
   'humidifier.dt_nursery': 'dt_nursery',
   'cover.dt_blind': 'dt_bedroom',
   'cover.dt_gone': 'dt_terrace',
+  'cover.dt_shutter': 'dt_living',
+  'cover.dt_skylight': 'dt_study',
   'media_player.dt_kitchen': 'dt_kitchen',
   'media_player.dt_tv': 'dt_living',
   'fan.dt_ceiling': 'dt_bedroom',
@@ -376,6 +475,7 @@ export const sheet: SheetSpec = {
       dt_terrace: { area_id: 'dt_terrace', name: 'Terrace' },
       dt_garden: { area_id: 'dt_garden', name: 'Garden' },
       dt_utility: { area_id: 'dt_utility', name: 'Utility room' },
+      dt_study: { area_id: 'dt_study', name: 'Study' },
     },
   },
   ws: {
@@ -457,6 +557,93 @@ export const sheet: SheetSpec = {
               tap_action: { action: 'more-info', history: false },
             },
             { entity: 'media_player.dt_tv', tap_action: { action: 'more-info', history: false } },
+          ],
+        },
+      ],
+    },
+    // #258: each kind's control on a ruler across the sheet, in its dial's place
+    pair('Cover', 'cover', 'cover.dt_blind', { favorites: FAVOURITES }),
+    pair('Light', 'light', 'light.dt_floor'),
+    pair('Climate', 'climate', 'climate.dt_living'),
+    pair('Media', 'media', 'media_player.dt_kitchen'),
+    pair('Fan', 'fan', 'fan.dt_ceiling'),
+    ruled('Cover · on a ruler, its tilt and its card’s favourites', 'cover', 'cover.dt_blind', {
+      favorites: FAVOURITES,
+    }),
+    ruled('Cover · on a ruler, a garage door', 'cover', 'cover.dt_garage'),
+    ruled('Valve · on a ruler', 'cover', 'valve.dt_garden'),
+    ruled('Light · on a ruler', 'light', 'light.dt_floor'),
+    ruled('Light · on a ruler, off', 'light', 'light.dt_reading'),
+    ruled('Light · on a ruler, one that only switches', 'light', 'light.dt_fairy'),
+    ruled('Climate · on a ruler', 'climate', 'climate.dt_living'),
+    ruled('Climate · on a ruler, an air conditioner', 'climate', 'climate.dt_bedroom'),
+    ruled('Climate · on two rulers, a range', 'climate', 'climate.dt_study'),
+    ruled('Water heater · on a ruler', 'climate', 'water_heater.dt_tank'),
+    ruled('Humidifier · on a ruler', 'climate', 'humidifier.dt_nursery'),
+    ruled('Media · on a ruler', 'media', 'media_player.dt_kitchen'),
+    ruled('Media · on a ruler, a television muted', 'media', 'media_player.dt_tv'),
+    ruled('Fan · on a ruler', 'fan', 'fan.dt_ceiling'),
+    ruled('Fan · on a ruler, a purifier', 'fan', 'fan.dt_purifier'),
+    ruled('Fan · on a ruler, one that only switches', 'fan', 'fan.dt_extractor'),
+    ruled('Light · on a ruler, out of reach', 'light', 'light.dt_gone'),
+    ruled('Climate · on a ruler, out of reach', 'climate', 'climate.dt_gone'),
+    ruled('Cover · on a ruler, out of reach', 'cover', 'cover.dt_gone'),
+    ruled('Media · on a ruler, out of reach', 'media', 'media_player.dt_gone'),
+    ruled('Fan · on a ruler, out of reach', 'fan', 'fan.dt_gone'),
+    ruled(
+      'Cover · on a ruler, a wide screen',
+      'cover',
+      'cover.dt_blind',
+      { favorites: FAVOURITES },
+      true,
+    ),
+    ruled('Climate · on two rulers, a wide screen', 'climate', 'climate.dt_study', {}, true),
+    // #258, the fix: a sheet reads its cover as the Cover card that opens it does
+    agreed('Cover · its card turns the position round, its sheet agrees', 'cover.dt_shutter', {
+      invert_position: true,
+    }),
+    agreed('Cover · its card counts as it comes down, its sheet agrees', 'cover.dt_skylight', {
+      direction: 'down',
+      tilt_angle: 90,
+    }),
+    agreed(
+      'Cover · the horizontal card and its sheet across',
+      'cover.dt_skylight',
+      {
+        direction: 'down',
+        tilt_angle: 90,
+        open_label: 'Raised',
+        closed_label: 'Lowered',
+        favorites: [
+          { name: 'Reading', position: 40 },
+          { name: 'Film', position: 100 },
+        ],
+      },
+      { variant: 'horizontal', sheet_dial: false },
+    ),
+    {
+      title: 'Cards and tiles that open a sheet with no dial (#258)',
+      cards: [
+        {
+          type: 'custom:fluvy-cover-card',
+          entity: 'cover.dt_blind',
+          variant: 'compact',
+          sheet_dial: false,
+        },
+        {
+          type: 'custom:fluvy-thermostat-card',
+          entity: 'climate.dt_living',
+          variant: 'compact',
+          sheet_dial: false,
+        },
+        {
+          type: 'custom:fluvy-tiles-card',
+          columns: 2,
+          tiles: [
+            { entity: 'light.dt_floor', tap_action: { action: 'more-info', dial: false } },
+            { entity: 'fan.dt_ceiling', tap_action: { action: 'more-info', dial: false } },
+            { entity: 'media_player.dt_kitchen', tap_action: { action: 'more-info', dial: true } },
+            { entity: 'cover.dt_shutter' },
           ],
         },
       ],

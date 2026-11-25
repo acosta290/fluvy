@@ -134,6 +134,7 @@ export type HouseEdit = Partial<
     | 'statuses'
     | 'sheets'
     | 'sheetsHistory'
+    | 'sheetsDial'
     | 'rooms'
     | 'levelIcons'
     | 'exactColors'
@@ -585,13 +586,17 @@ export function changeLines(ctx: PanelContext): string[] {
   }
   if (house.sheets)
     lines.push(`${t('cards.title')} · ${t('cards.sheets')} · ${onOff(house.sheets === 'fluvy')}`);
-  if (house.sheetsHistory)
-    lines.push(
-      `${t('cards.title')} · ${t('cards.sheets_history')} · ${
-        house.sheetsHistory.map((kind) => localize(ctx.hass, SHEET_WORD[kind])).join(', ') ||
-        localize(ctx.hass, 'option.none')
-      }`,
-    );
+  for (const [kinds, label] of [
+    [house.sheetsHistory, 'cards.sheets_history'],
+    [house.sheetsDial, 'cards.sheets_dial'],
+  ] as const)
+    if (kinds)
+      lines.push(
+        `${t('cards.title')} · ${t(label)} · ${
+          kinds.map((kind) => localize(ctx.hass, SHEET_WORD[kind])).join(', ') ||
+          localize(ctx.hass, 'option.none')
+        }`,
+      );
   if (house.levelIcons !== undefined)
     lines.push(`${t('cards.title')} · ${t('cards.levels')} · ${onOff(house.levelIcons)}`);
   if (house.exactColors !== undefined)

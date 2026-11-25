@@ -85,6 +85,8 @@ describe('runAction', () => {
       await runAction(card, hass, { action: 'more-info', entity: 'fan.attic', details: 'fluvy' });
       // and whether its last 24 hours show (#243)
       await runAction(card, hass, { action: 'more-info', history: false }, 'media_player.den');
+      // and whether it keeps its dial (#258)
+      await runAction(card, hass, { action: 'more-info', dial: false }, 'cover.blind');
 
       expect(
         opener.mock.calls.map(([node, home, entity, own]) => [
@@ -93,12 +95,14 @@ describe('runAction', () => {
           entity,
           own.details,
           own.history,
+          own.dial,
         ]),
       ).toEqual([
-        [card, hass, 'light.desk', undefined, undefined],
-        [card, hass, 'light.desk', 'home-assistant', undefined],
-        [card, hass, 'fan.attic', 'fluvy', undefined],
-        [card, hass, 'media_player.den', undefined, false],
+        [card, hass, 'light.desk', undefined, undefined, undefined],
+        [card, hass, 'light.desk', 'home-assistant', undefined, undefined],
+        [card, hass, 'fan.attic', 'fluvy', undefined, undefined],
+        [card, hass, 'media_player.den', undefined, false, undefined],
+        [card, hass, 'cover.blind', undefined, undefined, false],
       ]);
       // taken: Home Assistant's dialog stays shut
       expect(dialog).toEqual([]);

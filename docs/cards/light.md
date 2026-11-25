@@ -80,6 +80,7 @@ light_whites: temperature
 #   action: none
 # icon_double_tap_action:
 #   action: none
+# sheet_dial: true
 ```
 
 ## Options
@@ -104,6 +105,8 @@ light_whites: temperature
 | `light_whites` | `temperature` | Draws a lit white by its colour temperature, or as the palette’s light. `palette` (The theme’s light) · `temperature` (The bulb’s white). |
 | [`colors`](#colors) |  | Quick colours offered as rounds, in this order. A list: [its items](#colors). |
 | [`rows`](#rows) |  | The rows the card lists, in this order. A list: [its items](#rows). |
+| **Interactions** |  |  |
+| `sheet_dial` | `true` | Whether the details sheet the card opens keeps its dial; off, its control is a ruler across the sheet. Left out, the house’s. |
 
 <details>
 <summary>Its look and its actions, as on every card</summary>

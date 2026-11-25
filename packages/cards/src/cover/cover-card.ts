@@ -144,6 +144,11 @@ export interface CoverCardConfig extends RowsCardConfig, StateTintConfig {
   /** The words at the position ruler's ends, and at its presets' (#203): "Open" and "Closed" where none is given. */
   open_label?: string;
   closed_label?: string;
+  /**
+   * Whether the details sheet the card opens for its cover keeps its dial (#258): off, the position is a ruler across
+   * the sheet, as the horizontal card draws it, with the card's favourites; unset, as the house's sheets are.
+   */
+  sheet_dial?: boolean;
 }
 
 /**

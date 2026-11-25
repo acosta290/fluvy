@@ -2048,7 +2048,9 @@
     "state_icon_colors_helper": "每行一个状态及其色调或颜色（warning: warning）",
     "horizontal": "横向",
     "exact_colors": "精确颜色",
-    "exact_colors_helper": "名称按 Home Assistant 的颜色，十六进制色值按输入。未设置：沿用 Fluvy 设置中所有卡片的值"
+    "exact_colors_helper": "名称按 Home Assistant 的颜色，十六进制色值按输入。未设置：沿用 Fluvy 设置中所有卡片的值",
+    "sheet_dial": "详情面板中的表盘",
+    "sheet_dial_helper": "未设置：沿用 Fluvy 设置中所有详情面板的设置"
   },
   "energy-period-card": {
     "name": "能源周期",
@@ -3065,7 +3067,8 @@
     "cards.exact": "精确颜色",
     "cards.exact_sub": "颜色名称按 Home Assistant 的颜色显示，十六进制色值按输入显示，而非配色的色调",
     "scope.activity_who": "谁操作的",
-    "scope.activity_who_sub": "活动中的每条记录都显示操作人及其照片；可按人员筛选"
+    "scope.activity_who_sub": "活动中的每条记录都显示操作人及其照片；可按人员筛选",
+    "cards.sheets_dial": "带表盘的详情面板"
   },
   "customise": {
     "title": "自定义",

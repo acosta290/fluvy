@@ -736,7 +736,8 @@ longer than the ends' 56 ends in an ellipsis.
 
 The Cover card's position on one row, asked for (`variant: horizontal`; `full` stays the default): the reporter's
 mockup reproduced in the house's forms, the head as every cover's (the circle and its glyph, the name, the room and the
-kind, the state's badge).
+kind, the state's badge). The row is the house's (1.26, #258: one rule and one sheet, `shared/across.ts`): a details
+sheet asked for no dial draws its control with it too (§ Details sheets).
 
 - **The row**, 24 under the head: the position's readout at the left in a column as wide as its widest figure (100 %,
   "down" after it where the cover is counted so) or its label, on the 4 grid, and the house's ruler 24 beside it
@@ -3926,10 +3927,10 @@ codes): only where the config lists it, never among the default groups, so no ca
 ## Details sheets (1.20)
 
 What a Fluvy card opens for an entity's details (#162), where Home Assistant's dialog opened before: one family of
-sheets, each built round **one control, a dial**, for the kinds whose card is built round one too — a light, a
-thermostat (a climate, a water heater, a humidifier), a cover (and a valve), a player and a fan. Every other entity,
-and every card that is not Fluvy's, keeps Home Assistant's dialog. The house may keep it for all (`sheets`), an action
-may say its own (`details`).
+sheets, each built round **one control, a dial** (a ruler in its place where it is asked for, 1.26), for the kinds
+whose card is built round one too — a light, a thermostat (a climate, a water heater, a humidifier), a cover (and a
+valve), a player and a fan. Every other entity, and every card that is not Fluvy's, keeps Home Assistant's dialog. The
+house may keep it for all (`sheets`), an action may say its own (`details`).
 
 - **The sheet.** The language's sheet (392 at the most, 16 sides, a content column of 360, radius 24 at the top, the
   grabber), opened on the page's body as a modal dialog over a 48 % scrim: at the foot of a phone, rising 320 ms; on a
@@ -3980,8 +3981,42 @@ may say its own (`details`).
   figure is cut. The house may leave it off a kind (1.25, #243: a speaker's day says little), an action may ask it or
   not (`history`): the sheet then ends on what its body holds, its own padding under it, and asks the recorder
   nothing. In the panel the kinds are a chip row under the sheets' row, every one chosen as before.
+- **A ruler in the dial's place (1.26, #258).** Asked, a sheet draws its one control as the row across (§ The cover
+  across) and nothing else of it moves: who asks is the action (`dial: false`), else the kind's own card for its own
+  entity (`sheet_dial`), else the house (the kinds it keeps the dial for, a chip row under the row of the last 24
+  hours; every kind until chosen). Nothing changes by itself: a sheet nobody speaks of keeps its dial.
+  - **The row**, 24 under the head, 60 tall: the figure at the left in a column as wide as the widest it can say (its
+    ends' figures, the word for off) or its label, on the 4 grid, and the house's ruler 24 beside it (16 where 24
+    leaves it under 128), band 44, in the house's slider style, a hold to slide where the person asks for one. Its
+    label is what the dial said under its figure (Position, Brightness, Speed, Volume, Target); the figure sits on the
+    knob's centre line and follows the finger; a state's word stands for it at rest ("Off"), a dash out of reach. In a
+    sheet too narrow for the two (a card read at twice its size), the figure stands over the ruler, the ends' words 16
+    under it, and a label wider than the sheet is its glyph, read out still.
+  - **Over the ruler**, on the label's line, its ends in the ruler words' 11/500: a cover's "Closed" and "Open" (the
+    card's own words, its figures where the words do not hold), a light's and a player's "0 %" and "100 %", a fan's
+    stops by name where they hold 12 apart (Off · Low · Mid · High, else the ends and the middle, else the ends), a
+    thermostat's "15°" and "30°" with what it measures between them at its place on the scale ("Now 20.8°": it takes
+    an end's place where it would run into that end's figure, and gives way where the ruler holds no reading). While
+    the fine scale is up, the figures it reads there.
+  - **A word after the figure** in the unit's ink, which gives way before the row stacks: a cover counted as it comes
+    down ("35 % down", its ruler lit from the open end), a player "Muted".
+  - **A range** is two rows, its low end over its high one, 16 apart; each figure is a button with a finger's 44 round
+    it that gives the keys to its end, the end they step in the accent's ink, as on the Thermostat card; the end a
+    ruler moved last is theirs.
+  - **The keys** under it are the same keys in the row across's look: equal outlined pills on the sheet's own fill, a
+    switch that is on in its tone's fill. **Nothing to set** (a garage door, a light that only switches, a fan with no
+    speeds, a player with no volume): no row, the keys alone 16 under the head.
+  - **A cover's sheet is its card across**: under the tilt the card's favourites as chips under their label, the one
+    it stands at lit (`show_favorites`, `favorites_style`); they never stand under the dial. On a phone its sheet goes
+    from about 500 to about 350.
+- **As its card reads it (1.26, #258).** A sheet opened from a Cover card reads that cover as the card does, with its
+  dial or without: a position reported turned round (`invert_position`: its figure, its knob and what it sends, both
+  commands live), one counted as the blind comes down (`direction: down`: the dial counts so too, 0 at its start), a
+  tilt turned round or in degrees (`invert_tilt`, `tilt_angle`: "0° · 45° · 90°" under its ruler). A tile, a row and a
+  card of another cover say nothing of it: the sheet then reads Home Assistant's own figures.
 - **Out of reach.** The sheet keeps its anatomy: the head in the off skin saying why, its rounds alive; the dial at
-  "—" with no knob, the keys and the rows still, the chips dashed, all faded as one; the day in the neutral ink.
+  "—" with no knob (a ruler at rest, its figure a dash), the keys and the rows still, the chips dashed, all faded as
+  one; the day in the neutral ink.
 - **Focus.** It opens on Close; Tab walks the sheet and nothing behind it; Escape, Close and a tap on the scrim close
   it and give the focus back to what was tapped; leaving the page closes it too.
 

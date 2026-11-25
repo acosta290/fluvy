@@ -5,27 +5,36 @@ import {
   isUsable,
   moreInfo,
   navigate,
+  sliderStill,
+  sliderStyleOf,
   stateText,
   type EntityView,
   type FluvyCardConfig,
   type HomeAssistant,
 } from '@fluvy/core';
-import { ico, round, type Tone } from '@fluvy/ui';
+import { ico, round, type RulerChangeDetail, type RulerWindowDetail, type Tone } from '@fluvy/ui';
+import { acrossStyles } from '@fluvy/ui/styles/across';
 import { html, nothing, type CSSResultGroup, type PropertyValues, type TemplateResult } from 'lit';
 import { chartStyles } from '../chart/engine/index.js';
+import { acrossFit, acrossRow, levelReadout } from '../shared/across.js';
+import type { Labels } from '../shared/axis.js';
 import { Card } from '../shared/base.js';
 import { iconOf } from '../shared/domain.js';
 import { fitLine, TextRuler } from '../shared/fit.js';
 import { FontsSettled } from '../shared/fonts.js';
 import { LaidWidth } from '../shared/laid.js';
 import { rowEndStyles } from '../shared/row-end.js';
+import type { Ticks } from '../shared/scale.js';
 import { sheetDialog, sheetInsets } from '../shared/sheet-insets.js';
+import type { Reading } from '../shared/value-row.js';
 import { DayStrip, type DaySpec } from './history.js';
 import { detailsStyles } from './styles.js';
 
 export interface DetailsConfig extends FluvyCardConfig {
   /** false: no last 24 hours at its foot, and nothing asked of the recorder (#243: an action's, or the house's). */
   show_history?: boolean;
+  /** false: its one control on a ruler across the sheet, in its dial's place (#258: an action's, its card's, the house's). */
+  show_dial?: boolean;
   /**
    * Test hook: the sheet drawn in the flow instead of in a modal dialog (the playground), as a phone's sheet or, `wide`,
    * as a wide screen's dialog. Undocumented.
@@ -62,6 +71,54 @@ const RING_LARGE = 80;
 export const configOf = (card: unknown): Readonly<Record<string, unknown>> | undefined =>
   (card as { readonly config?: Readonly<Record<string, unknown>> } | undefined)?.config;
 
+/**
+ * What a sheet sets on a ruler across it, in its dial's place (`show_dial: false`, #258): the figure it says, the
+ * scale it is set on and the words over that scale.
+ */
+export interface Across {
+  /** A second ruler's key (a range's high end): each ruler keeps its own fine scale and its own finger. */
+  readonly key?: string;
+  /** The entity's name and what the ruler sets ("Position"): the readout's label, and the two said to a reader. */
+  readonly name: string;
+  readonly title: string;
+  /** The label where a narrow sheet cannot hold its words: a glyph, the words read out still. */
+  readonly glyph: string;
+  /** Where it stands on its scale; none where it cannot say. */
+  readonly value: number | null;
+  /** A word in the figure's place while no finger is on the ruler (a state's "Off"). */
+  readonly text?: string | undefined;
+  /** Every word that may stand there: the readout's column holds them as it holds its figures. */
+  readonly words?: readonly string[];
+  readonly unit: string;
+  /** A word that may follow the figure (a cover counted "down", a player "Muted"): what gives way first. */
+  readonly said?: string;
+  /** Whether that word follows the figure now; it does where none is said. */
+  readonly saying?: boolean;
+  readonly min: number;
+  readonly max: number;
+  readonly step: number;
+  /** Where its lit ticks start: the open end of a blind counted as it comes down; its start where none is said. */
+  readonly origin?: number;
+  /** Its ticks, where its stops are its own (a fan's speeds); the ruler's where none is said. */
+  readonly ticks?: Ticks;
+  readonly tone: Tone;
+  /** No knob (the device is off, or cannot say); `wake`, a finger on it still wakes the device at that value. */
+  readonly inactive?: boolean;
+  readonly wake?: boolean;
+  readonly disabled: boolean;
+  /** A value on the scale as its figure says it: the readout's, the bubble's. */
+  readonly format: (value: number) => string;
+  /** A value as an end of the ruler says it ("15°", "40 %"): its fine scale's ends. */
+  readonly edge: (value: number) => string;
+  /** The words over the ruler on its whole scale, each at its fraction of a ruler `length` long. */
+  readonly labels: (length: number) => Labels;
+  /** The figure a button: one end of a range, lit while the keys step it, which a tap gives them. */
+  readonly end?: { readonly on: boolean; readonly choose: () => void };
+  /** The value under the finger while it drags; none once it lets go or is taken away. */
+  readonly preview?: (value: number | null) => void;
+  readonly change: (value: number) => void;
+}
+
 /** What an entity says of itself on the head's line. */
 export interface Status {
   /** Its state first ("On", "Heating"), then what it adds ("72 %", "46 % RH"): what gives way where the line is short. */
@@ -83,9 +140,10 @@ const keepTouch = { handleEvent: (event: Event): void => event.stopPropagation()
  * A details sheet (1.20, #162): what a Fluvy card opens for an entity Fluvy has a sheet for, in Home Assistant's
  * dialog's place — a bottom sheet on a phone, a dialog in the middle of a wide screen. One family, each of a kind: the
  * entity's circle in its tone, its name over its area and its state, a round to Home Assistant's own details (its
- * settings, its history, what it relates to) and one to close; then the kind's one control, a dial, the keys and the
- * rows under it (`renderBody`); and at the foot its last 24 hours, a tap from Fluvy's History page, where they are not
- * turned off (`show_history`, #243). It is a card in
+ * settings, its history, what it relates to) and one to close; then the kind's one control, a dial — or, asked
+ * (`show_dial: false`, #258), a ruler across the sheet, its figure beside it (`across`) — the keys and the rows under
+ * it (`renderBody`); and at the foot its last 24 hours, a tap from Fluvy's History page, where they are not turned off
+ * (`show_history`, #243). It is a card in
  * all but where it stands: it reads the look, speaks the person's language, shows a change at once and calls Home
  * Assistant as a card does. Opened on the page's body, it follows Home Assistant through the card that opened it and
  * reads at that card's size (#190).
@@ -98,6 +156,7 @@ export abstract class DetailsSheet extends Card<DetailsConfig> {
     rowEndStyles,
     chartStyles,
     sheetDialog,
+    acrossStyles,
     detailsStyles,
     sheetInsets,
   ];
@@ -120,6 +179,9 @@ export abstract class DetailsSheet extends Card<DetailsConfig> {
   /** Widths laid out by the browser in the sheet's own classes. */
   protected readonly ruler = new TextRuler(() => this.renderRoot as ParentNode | undefined);
   private readonly day = new DayStrip(this);
+  /** Each ruler's fine scale while it is up, and the value under the finger while one drags it, by the ruler's key. */
+  private readonly fine = new Map<string, RulerWindowDetail>();
+  private readonly held = new Map<string, number>();
   /** The screen it stands on, asked whether it is a wide one at the sheet's size. */
   private screen: MediaQueryList | undefined;
   /** The size it reads at: the one the card that opened it reads at. */
@@ -313,6 +375,102 @@ export abstract class DetailsSheet extends Card<DetailsConfig> {
     return this.ring >= RING_LARGE;
   }
 
+  /** Whether its one control is its dial; a ruler across the sheet where it is not (`show_dial`, #258). */
+  protected get dial(): boolean {
+    return this.config?.show_dial !== false;
+  }
+
+  /**
+   * The ruler in the dial's place (#258), the house's row across (`shared/across.ts`): the figure in a column as wide
+   * as the widest it can say, the ruler beside it in the house's slider style, its words over its ends; the figure
+   * over the ruler in a sheet too narrow for the two. The figure follows the finger, a state's word giving way to it;
+   * while the fine scale is up the ends say the figures it reads there.
+   */
+  protected across(o: Across): TemplateResult {
+    const key = o.key ?? '';
+    const held = this.held.get(key);
+    const zoomed = this.fine.get(key);
+    const shown = held ?? o.value;
+    const worded = held === undefined && o.text !== undefined;
+    const figure = worded ? o.text : shown === null ? '—' : o.format(shown);
+    const bare = worded || shown === null;
+    // every figure it can say: its ends', and the words that may stand for them
+    const figures: Reading[] = [
+      ...[o.min, o.max].map((value) => ({ value: o.format(value), unit: o.unit })),
+      ...(o.words ?? []).map((value) => ({ value })),
+    ];
+    const fit = acrossFit(this.ruler, this.room, o.title, figures, o.said);
+    const length = fit?.length ?? this.room;
+    const letGo = (): void => {
+      this.held.delete(key);
+      o.preview?.(null);
+    };
+    return acrossRow(
+      fit,
+      levelReadout(this.ruler, fit?.column ?? this.room, {
+        label: o.title,
+        glyph: o.glyph,
+        value: o.end
+          ? html`<button
+              class="dt-end ${o.end.on ? 'is-on' : ''}"
+              aria-pressed=${String(o.end.on)}
+              aria-label="${o.name} · ${o.title} ${figure} ${bare ? '' : o.unit}"
+              @click=${o.end.choose}
+            >
+              ${figure}
+            </button>`
+          : figure,
+        unit: bare ? '' : o.unit,
+        said: bare || o.saying === false ? '' : (o.said ?? ''),
+        figures,
+      }),
+      zoomed
+        ? [
+            [0, o.edge(zoomed.min)],
+            [1, o.edge(zoomed.max)],
+          ]
+        : o.labels(length),
+      html`<fluvy-ruler
+        .value=${o.value ?? o.min}
+        .min=${o.min}
+        .max=${o.max}
+        .step=${o.step}
+        .origin=${o.origin ?? Number.NaN}
+        .minor=${o.ticks?.minor ?? 0}
+        .major=${o.ticks?.major ?? 0}
+        .length=${length}
+        .tone=${o.tone}
+        ?inactive=${o.inactive ?? false}
+        ?wake=${o.wake ?? false}
+        ?disabled=${o.disabled}
+        .look=${sliderStyleOf(undefined)}
+        ?still=${sliderStill()}
+        unit=${o.unit}
+        .label=${`${o.name} · ${o.title}`}
+        .format=${o.format}
+        @fluvy-input=${(event: CustomEvent<RulerChangeDetail>) => {
+          this.held.set(key, event.detail.value);
+          o.preview?.(event.detail.value);
+          this.requestUpdate();
+        }}
+        @fluvy-change=${(event: CustomEvent<RulerChangeDetail>) => {
+          letGo();
+          o.change(event.detail.value);
+          this.requestUpdate();
+        }}
+        @fluvy-cancel=${() => {
+          letGo();
+          this.requestUpdate();
+        }}
+        @fluvy-window=${(event: CustomEvent<RulerWindowDetail>) => {
+          if (event.detail.fine) this.fine.set(key, event.detail);
+          else this.fine.delete(key);
+          this.requestUpdate();
+        }}
+      ></fluvy-ruler>`,
+    );
+  }
+
   /** The words under the dial's figure, where its disc holds them whole (8 on each side); none where it does not. */
   protected dialWords(words: string): string {
     const disc = Math.floor((this.ring - 10) / 4) * 8;
@@ -418,7 +576,7 @@ export abstract class DetailsSheet extends Card<DetailsConfig> {
     // out of reach, the sheet keeps its anatomy, its controls still and faded: its head and its day still answer
     const unusable = !isUsable(view);
     return html`<div
-      class="fv-sheet dt-sheet"
+      class="fv-sheet dt-sheet ${this.dial ? '' : 'cv-card--across'}"
       data-card
       data-accent=${(unusable ? undefined : this.accent?.(view)) ?? nothing}
     >

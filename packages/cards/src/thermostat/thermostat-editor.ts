@@ -24,6 +24,7 @@ import {
   sectionField,
   selectField,
   headFields,
+  sheetDialDefault,
   stateLabels,
   stateTintFields,
   textField,
@@ -87,6 +88,7 @@ export const defaults: EditorDefaults = (config, hass) => {
     show_window: false,
     show_battery: false,
     show_rows: true,
+    sheet_dial: sheetDialDefault('climate'),
     ...(modes.length ? { modes } : {}),
     ...Object.fromEntries(Object.entries(found).filter(([, id]) => id)),
   };
@@ -127,6 +129,7 @@ export const keys = configKeys<ThermostatCardConfig>()([
   'show_battery',
   'battery_entity',
   'humidity_entity',
+  'sheet_dial',
   ...STATE_TINT_KEYS,
   'rows',
   'show_rows',
@@ -258,7 +261,7 @@ export function getConfigForm(): LovelaceConfigForm {
       ...rowsFields(),
       ...colourFields(),
       ...stateTintFields(STATES),
-      actionFields({ icon: true }),
+      actionFields({ icon: true, dial: () => true }),
     ],
     ...stateLabels(
       formLabels({

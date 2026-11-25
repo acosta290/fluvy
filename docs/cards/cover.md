@@ -91,6 +91,7 @@ slider_style: house
 #   action: none
 # icon_double_tap_action:
 #   action: none
+# sheet_dial: true
 ```
 
 ## Options
@@ -123,6 +124,8 @@ slider_style: house
 | `tilt_style` | `steps` | How the tilt is set: its figure with − and +, or its slats on a ruler. `steps` · `slats`. |
 | `invert_tilt` | `false` | Reads the tilt the other way round: its figure, its slats, its presets and what it sends. |
 | `tilt_presets` | none | Tilts offered as chips under the tilt control, each a tap away. Any of `0` · `25` · `50` · `75` · `100`, or your own. |
+| **Interactions** |  |  |
+| `sheet_dial` | `true` | Whether the details sheet the card opens keeps its dial; off, its control is a ruler across the sheet. Left out, the house’s. |
 
 <details>
 <summary>Its look and its actions, as on every card</summary>

@@ -1389,7 +1389,9 @@
     "state_icon_colors_helper": "W każdym wierszu stan i jego ton lub kolor (warning: warning)",
     "horizontal": "Poziomy",
     "exact_colors": "Dokładne kolory",
-    "exact_colors_helper": "Nazwy tak, jak rysuje je Home Assistant, kod hex tak, jak wpisano. Nieustawione: wspólne dla wszystkich kart, z ustawień Fluvy"
+    "exact_colors_helper": "Nazwy tak, jak rysuje je Home Assistant, kod hex tak, jak wpisano. Nieustawione: wspólne dla wszystkich kart, z ustawień Fluvy",
+    "sheet_dial": "Tarcza w szczegółach",
+    "sheet_dial_helper": "Nieustawione: wspólne dla wszystkich szczegółów, z ustawień Fluvy"
   },
   "energy": {
     "solar": "PV",
@@ -2796,7 +2798,8 @@
     "cards.exact": "Dokładne kolory",
     "cards.exact_sub": "Nazwy kolorów tak, jak rysuje je Home Assistant, i kod hex tak, jak wpisano, nie odcienie palety",
     "scope.activity_who": "Kto to zrobił",
-    "scope.activity_who_sub": "Każdy wpis w Aktywności wskazuje osobę, która za nim stoi, z jej zdjęciem; filtr według osoby"
+    "scope.activity_who_sub": "Każdy wpis w Aktywności wskazuje osobę, która za nim stoi, z jej zdjęciem; filtr według osoby",
+    "cards.sheets_dial": "Szczegóły z tarczą"
   },
   "customise": {
     "title": "Dostosowanie",

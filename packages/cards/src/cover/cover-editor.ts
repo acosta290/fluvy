@@ -11,6 +11,7 @@ import {
   nameIconFields,
   numberField,
   onlyWhen,
+  sheetDialDefault,
   orderedField,
   ownTextField,
   rowsFields,
@@ -57,6 +58,7 @@ export const keys = configKeys<CoverCardConfig>()([
   'closed_label',
   'rows',
   'show_rows',
+  'sheet_dial',
 ]);
 
 export const lists: readonly RowsListSpec[] = [
@@ -85,6 +87,7 @@ export const defaults: EditorDefaults = () => ({
   invert_position: false,
   invert_tilt: false,
   show_rows: true,
+  sheet_dial: sheetDialDefault('cover'),
 });
 
 type Data = Readonly<Record<string, unknown>>;
@@ -102,9 +105,11 @@ const features = (data: Data, hass?: HomeAssistant): number => {
  */
 const full = (data: Data): boolean =>
   data['variant'] === undefined || data['variant'] === 'full' || data['variant'] === 'horizontal';
-/** The full card of a cover that takes a position. */
-const positioned = (data: Data, hass?: HomeAssistant): boolean =>
-  full(data) && (features(data, hass) & SET_POSITION) !== 0;
+/** A cover that takes a position: what its details sheet sets on its dial. */
+const sets = (data: Data, hass?: HomeAssistant): boolean =>
+  (features(data, hass) & SET_POSITION) !== 0;
+/** The full card of one. */
+const positioned = (data: Data, hass?: HomeAssistant): boolean => full(data) && sets(data, hass);
 /** …that tilts its slats, and shows it. */
 const tilted = (data: Data, hass?: HomeAssistant): boolean =>
   full(data) &&
@@ -179,7 +184,7 @@ export function getConfigForm(): LovelaceConfigForm {
       ...sliderFields().map((row) => onlyWhen(full, row)),
       ...colourFields(),
       ...stateTintFields(STATES),
-      actionFields({ icon: true }),
+      actionFields({ icon: true, dial: sets }),
     ],
     ...stateLabels(editorLabels(coverStrings, { tilt_angle: 'tilt_angle' }, {}), STATES, 'cover'),
   };

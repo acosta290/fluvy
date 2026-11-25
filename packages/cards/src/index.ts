@@ -172,6 +172,7 @@ setDetailsSheets(
   detailsSheets(
     () => lookHandle()?.settings().sheets,
     () => lookHandle()?.settings().sheetsHistory,
+    () => lookHandle()?.settings().sheetsDial,
   ),
 );
 

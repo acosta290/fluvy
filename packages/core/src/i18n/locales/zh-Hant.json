@@ -2172,7 +2172,9 @@
     "state_icon_colors_helper": "每行一個狀態及其色調或顏色（warning: warning）",
     "horizontal": "水平",
     "exact_colors": "精確顏色",
-    "exact_colors_helper": "名稱依 Home Assistant 的顏色，十六進位色碼依輸入。未設定：沿用 Fluvy 設定中所有卡片的值"
+    "exact_colors_helper": "名稱依 Home Assistant 的顏色，十六進位色碼依輸入。未設定：沿用 Fluvy 設定中所有卡片的值",
+    "sheet_dial": "詳細資訊彈出視窗中的圓盤",
+    "sheet_dial_helper": "未設定：沿用 Fluvy 設定中所有彈出視窗的設定"
   },
   "energy-period-card": {
     "name": "能源期間",
@@ -3222,7 +3224,8 @@
     "cards.exact": "精確顏色",
     "cards.exact_sub": "顏色名稱依 Home Assistant 的顏色顯示，十六進位色碼依輸入顯示，而非配色的色調",
     "scope.activity_who": "誰操作的",
-    "scope.activity_who_sub": "活動中的每筆紀錄都顯示操作者及其照片；可依人員篩選"
+    "scope.activity_who_sub": "活動中的每筆紀錄都顯示操作者及其照片；可依人員篩選",
+    "cards.sheets_dial": "有圓盤的彈出視窗"
   },
   "remote": {
     "key.power": "電源",

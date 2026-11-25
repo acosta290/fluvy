@@ -26,7 +26,8 @@ const HOLD_MS = 5000;
  * A light's details: its brightness on the dial, in the lamp's own colour; under it one step down, its switch and one
  * step up; then the light card's own colour controls — the hue ruler or the temperature ruler in one slot, and the
  * quick colours — and its effect where it has some. A light that only switches is its ring, lit or not, and its
- * switch.
+ * switch. Without its dial (`show_dial: false`, #258) the brightness is a ruler across the sheet, as the light card
+ * sets it: at rest while the lamp is off, a finger on it waking the lamp there; one that only switches is its switch.
  */
 export class FluvyDetailsLight extends DetailsSheet {
   static override styles: CSSResultGroup = [
@@ -259,64 +260,96 @@ export class FluvyDetailsLight extends DetailsSheet {
     ];
     const effects = view.supports(EFFECT) ? listAttr(view.attr('effect_list')) : [];
     const effect = this.effect.read(view.attr<string | null>('effect') ?? null);
-    return html`<div class="dt-hero">
-        <fluvy-dial
-          .radius=${this.ring}
-          .large=${this.large}
-          .stepper=${false}
-          .tone=${tone}
-          .min=${0}
-          .max=${100}
-          .step=${1}
-          .value=${dimmable ? level : undefined}
-          .gauge=${!dimmable}
-          .fill=${dimmable ? undefined : on ? 1 : 0}
-          .unit=${'%'}
-          .sub=${dimmable ? this.dialWords(brightness) : ''}
-          .text=${unusable ? '—' : dimmable && lit ? undefined : shownStateText(this.hass, view, on ? 'on' : 'off')}
-          .name=${`${name} · ${brightness}`}
-          min-label=${dimmable ? this.percent(0) : ''}
-          max-label=${dimmable ? this.percent(100) : ''}
-          ?disabled=${unusable}
-          .format=${(value: number) => this.percent(value)}
-          @fluvy-input=${(event: CustomEvent<DialChangeDetail>) =>
-            this.level.input(event.detail.value ?? 0, false)}
-          @fluvy-change=${(event: CustomEvent<DialChangeDetail>) =>
-            this.level.set(event.detail.value ?? 0)}
-        ></fluvy-dial>
-      </div>
-      ${keys(
-        row,
-        this.room,
-        () => {
-          this.expect(view.id, on ? 'off' : 'on');
-          this.call('light', on ? 'turn_off' : 'turn_on');
-        },
-        (direction) => this.level.step(clamp(this.level.current + direction, 0, 100)),
-      )}
-      ${dimmable ? this.renderColour(view, name, on, modes, unusable) : nothing}
-      ${sheetRows(
-        this.ruler,
-        this.room,
-        effects.length
-          ? [
-              {
-                kind: 'choice',
-                icon: 'sparkle',
-                title: this.t('sheets.effect'),
-                chosen: effect,
-                options: effects,
-                word: (option) => modeWord(this.rawHass, view, 'effect', option),
-                disabled: unusable,
-                choose: (option) => {
-                  this.effect.set(option);
-                  this.expect(view.id, 'on');
-                  this.call('light', 'turn_on', { effect: option });
-                },
+    const off = shownStateText(this.hass, view, 'off');
+    const edge = (value: number): string => `${this.percent(value)} %`;
+    return html`${
+      this.dial
+        ? html`<div class="dt-hero">
+            <fluvy-dial
+              .radius=${this.ring}
+              .large=${this.large}
+              .stepper=${false}
+              .tone=${tone}
+              .min=${0}
+              .max=${100}
+              .step=${1}
+              .value=${dimmable ? level : undefined}
+              .gauge=${!dimmable}
+              .fill=${dimmable ? undefined : on ? 1 : 0}
+              .unit=${'%'}
+              .sub=${dimmable ? this.dialWords(brightness) : ''}
+              .text=${unusable ? '—' : dimmable && lit ? undefined : shownStateText(this.hass, view, on ? 'on' : 'off')}
+              .name=${`${name} · ${brightness}`}
+              min-label=${dimmable ? this.percent(0) : ''}
+              max-label=${dimmable ? this.percent(100) : ''}
+              ?disabled=${unusable}
+              .format=${(value: number) => this.percent(value)}
+              @fluvy-input=${(event: CustomEvent<DialChangeDetail>) =>
+                this.level.input(event.detail.value ?? 0, false)}
+              @fluvy-change=${(event: CustomEvent<DialChangeDetail>) =>
+                this.level.set(event.detail.value ?? 0)}
+            ></fluvy-dial>
+          </div>`
+        : dimmable
+          ? this.across({
+              name,
+              title: brightness,
+              glyph: 'sun',
+              value: unusable ? null : level,
+              text: unusable || lit ? undefined : off,
+              words: [off],
+              unit: '%',
+              min: 0,
+              max: 100,
+              step: 1,
+              tone,
+              inactive: !on,
+              wake: !unusable,
+              disabled: unusable,
+              format: (value) => this.percent(value),
+              edge,
+              labels: () => [
+                [0, edge(0)],
+                [1, edge(100)],
+              ],
+              preview: (value) =>
+                value === null ? this.level.cancel() : this.level.input(value, false),
+              change: (value) => this.level.set(value),
+            })
+          : nothing
+    }
+    ${keys(
+      row,
+      this.room,
+      () => {
+        this.expect(view.id, on ? 'off' : 'on');
+        this.call('light', on ? 'turn_off' : 'turn_on');
+      },
+      (direction) => this.level.step(clamp(this.level.current + direction, 0, 100)),
+    )}
+    ${dimmable ? this.renderColour(view, name, on, modes, unusable) : nothing}
+    ${sheetRows(
+      this.ruler,
+      this.room,
+      effects.length
+        ? [
+            {
+              kind: 'choice',
+              icon: 'sparkle',
+              title: this.t('sheets.effect'),
+              chosen: effect,
+              options: effects,
+              word: (option) => modeWord(this.rawHass, view, 'effect', option),
+              disabled: unusable,
+              choose: (option) => {
+                this.effect.set(option);
+                this.expect(view.id, 'on');
+                this.call('light', 'turn_on', { effect: option });
               },
-            ]
-          : [],
-      )}`;
+            },
+          ]
+        : [],
+    )}`;
   }
 }
 

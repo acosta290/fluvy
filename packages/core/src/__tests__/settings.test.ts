@@ -95,6 +95,7 @@ describe('parsing stored settings', () => {
         sheets: 'home-assistant',
         // a kind once, in their order, nothing that is not one
         sheetsHistory: ['fan', 'light', 'fan', 'switch', 3],
+        sheetsDial: ['media', 'cover', 'cover', 'lock', null],
         // an area's id once, nothing that is not one
         rooms: { sort: 'name', order: ['kitchen', 'kitchen', 3, '', 'hall'] },
         levelIcons: true,
@@ -136,6 +137,7 @@ describe('parsing stored settings', () => {
       background: BACKGROUND_DEFAULTS,
       sheets: 'home-assistant',
       sheetsHistory: ['light', 'fan'],
+      sheetsDial: ['cover', 'media'],
       rooms: { sort: 'name', order: ['kitchen', 'hall'] },
       levelIcons: true,
       exactColors: true,
@@ -279,7 +281,7 @@ describe('parsing stored settings', () => {
     const upgraded = parseHouse({ version: 8, palette: 'volt', activity: true });
     expect(upgraded.activityWho).toBe(false);
     expect(upgraded.version).toBe(SETTINGS_VERSION);
-    expect(SETTINGS_VERSION).toBe(9);
+    expect(SETTINGS_VERSION).toBe(10);
     expect(HOUSE_DEFAULTS.activityWho).toBe(false);
     // only a true turns it on
     for (const broken of ['true', 1, null, {}])
@@ -295,7 +297,7 @@ describe('parsing stored settings', () => {
     const upgraded = parseHouse({ version: 8, palette: 'volt' });
     expect(upgraded.exactColors).toBe(false);
     expect(upgraded.version).toBe(SETTINGS_VERSION);
-    expect(SETTINGS_VERSION).toBe(9);
+    expect(SETTINGS_VERSION).toBe(10);
     expect(HOUSE_DEFAULTS.exactColors).toBe(false);
     // only a true turns them on
     for (const broken of ['true', 1, null, {}])
@@ -311,7 +313,7 @@ describe('parsing stored settings', () => {
     const upgraded = parseHouse({ version: 8, palette: 'volt' });
     expect(upgraded.sheetsHistory).toEqual(['light', 'climate', 'cover', 'media', 'fan']);
     expect(upgraded.version).toBe(SETTINGS_VERSION);
-    expect(SETTINGS_VERSION).toBe(9);
+    expect(SETTINGS_VERSION).toBe(10);
     expect(HOUSE_DEFAULTS.sheetsHistory).toEqual(SHEET_KINDS);
     // none chosen is none; anything but a list is every kind
     expect(parseSheetKinds([])).toEqual([]);
@@ -321,6 +323,24 @@ describe('parsing stored settings', () => {
     expect(
       resolveSettings(parseHouse({ sheetsHistory: ['climate'] }), PERSONAL_DEFAULTS).sheetsHistory,
     ).toEqual(['climate']);
+  });
+
+  it('reads which kinds’ sheets keep their dial: every kind where a 9 stored none (1.26, #258: nothing changes on upgrade)', () => {
+    // a 1.25 house stored none: every sheet is built round its dial, as before
+    const upgraded = parseHouse({ version: 9, palette: 'volt', sheetsHistory: ['light'] });
+    expect(upgraded.sheetsDial).toEqual(['light', 'climate', 'cover', 'media', 'fan']);
+    expect(upgraded.sheetsHistory).toEqual(['light']);
+    expect(upgraded.version).toBe(SETTINGS_VERSION);
+    expect(SETTINGS_VERSION).toBe(10);
+    expect(HOUSE_DEFAULTS.sheetsDial).toEqual(SHEET_KINDS);
+    // none chosen is none, every sheet a ruler; anything but a list is every kind
+    expect(parseHouse({ sheetsDial: [] }).sheetsDial).toEqual([]);
+    for (const broken of ['cover', null, { cover: false }, 0])
+      expect(parseHouse({ sheetsDial: broken }).sheetsDial).toEqual(SHEET_KINDS);
+    // the house's, whoever looks
+    expect(
+      resolveSettings(parseHouse({ sheetsDial: ['light', 'fan'] }), PERSONAL_DEFAULTS).sheetsDial,
+    ).toEqual(['light', 'fan']);
   });
 
   it('reads the cards’ surface, each broken field as solid and blurred (1.15: nothing changes on upgrade)', () => {

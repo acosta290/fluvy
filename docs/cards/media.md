@@ -61,6 +61,7 @@ slider_style: house
 #   action: more-info
 # double_tap_action:
 #   action: none
+# sheet_dial: true
 ```
 
 ## Options
@@ -83,6 +84,8 @@ slider_style: house
 | `slider_style` | `house` | The slider’s style; left out, the style set for every slider. `house` · `ruler` · `bar` · `liquid`. |
 | `slider_words` | `ends` | Writes the words at the slider’s ends, or none. `ends` · `none`. |
 | [`rows`](#rows) |  | The rows the card lists, in this order. A list: [its items](#rows). |
+| **Interactions** |  |  |
+| `sheet_dial` | `true` | Whether the details sheet the card opens keeps its dial; off, its control is a ruler across the sheet. Left out, the house’s. |
 
 <details>
 <summary>Its look and its actions, as on every card</summary>

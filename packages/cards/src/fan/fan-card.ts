@@ -71,6 +71,11 @@ export interface FanCardConfig extends RowsCardConfig, StateTintConfig {
   show_direction?: boolean;
   /** While the fan is off: everything (default), or `essentials` — the switch and the speed ruler; presets, oscillation and direction wait for it to run. */
   when_off?: WhenOff;
+  /**
+   * Whether the details sheet the card opens for its fan keeps its dial (#258): off, the speed is a ruler across the
+   * sheet; unset, as the house's sheets are.
+   */
+  sheet_dial?: boolean;
 }
 
 /* fan supported_features */

@@ -1820,6 +1820,14 @@
           "helper": "A tap waits a moment to tell it from a double tap",
           "type": "action",
           "default": "none"
+        },
+        {
+          "key": "sheet_dial",
+          "label": "Dial in the details sheet",
+          "does": "Whether the details sheet the card opens keeps its dial; off, its control is a ruler across the sheet. Left out, the house’s.",
+          "helper": "Untouched: every sheet’s, from Fluvy’s settings",
+          "type": "boolean",
+          "default": true
         }
       ],
       "lists": [
@@ -3333,6 +3341,14 @@
           "helper": "A tap waits a moment to tell it from a double tap",
           "type": "action",
           "default": "none"
+        },
+        {
+          "key": "sheet_dial",
+          "label": "Dial in the details sheet",
+          "does": "Whether the details sheet the card opens keeps its dial; off, its control is a ruler across the sheet. Left out, the house’s.",
+          "helper": "Untouched: every sheet’s, from Fluvy’s settings",
+          "type": "boolean",
+          "default": true
         }
       ],
       "lists": [
@@ -6108,6 +6124,14 @@
           "helper": "A tap waits a moment to tell it from a double tap",
           "type": "action",
           "default": "none"
+        },
+        {
+          "key": "sheet_dial",
+          "label": "Dial in the details sheet",
+          "does": "Whether the details sheet the card opens keeps its dial; off, its control is a ruler across the sheet. Left out, the house’s.",
+          "helper": "Untouched: every sheet’s, from Fluvy’s settings",
+          "type": "boolean",
+          "default": true
         }
       ],
       "lists": [
@@ -7853,6 +7877,14 @@
           "helper": "A tap waits a moment to tell it from a double tap",
           "type": "action",
           "default": "none"
+        },
+        {
+          "key": "sheet_dial",
+          "label": "Dial in the details sheet",
+          "does": "Whether the details sheet the card opens keeps its dial; off, its control is a ruler across the sheet. Left out, the house’s.",
+          "helper": "Untouched: every sheet’s, from Fluvy’s settings",
+          "type": "boolean",
+          "default": true
         }
       ],
       "lists": [
@@ -8387,6 +8419,14 @@
           "helper": "A tap waits a moment to tell it from a double tap",
           "type": "action",
           "default": "none"
+        },
+        {
+          "key": "sheet_dial",
+          "label": "Dial in the details sheet",
+          "does": "Whether the details sheet the card opens keeps its dial; off, its control is a ruler across the sheet. Left out, the house’s.",
+          "helper": "Untouched: every sheet’s, from Fluvy’s settings",
+          "type": "boolean",
+          "default": true
         }
       ],
       "lists": [

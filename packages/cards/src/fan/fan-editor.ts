@@ -1,4 +1,4 @@
-import type { LovelaceConfigForm } from '@fluvy/core';
+import { resolveEntity, type HaFormSchemaItem, type LovelaceConfigForm } from '@fluvy/core';
 import { HEAD_BASE, SLIDER_BASE } from '../shared/base.js';
 import {
   actionFields,
@@ -14,6 +14,7 @@ import {
   rowsList,
   selectField,
   headFields,
+  sheetDialDefault,
   sliderFields,
   stateLabels,
   stateTintFields,
@@ -40,6 +41,7 @@ export const keys = configKeys<FanCardConfig>()([
   'show_oscillation',
   'show_direction',
   'when_off',
+  'sheet_dial',
   ...STATE_TINT_KEYS,
   'rows',
   'show_rows',
@@ -47,6 +49,15 @@ export const keys = configKeys<FanCardConfig>()([
 
 /** The rows it lists under its presets (#262), on every card but the compact one. */
 export const lists: readonly RowsListSpec[] = [rowsList(notCompact)];
+
+/* fan supported_features: its speed can be set */
+const SET_SPEED = 1;
+
+/** A fan with speeds, as the house describes it (one it has not described has them): what its sheet's dial sets. */
+const sets: NonNullable<HaFormSchemaItem['when']> = (data, hass) => {
+  const view = resolveEntity(hass, String(data['entity']));
+  return !view.stateObj || view.supports(SET_SPEED);
+};
 
 /** What the editor shows where the config says nothing: what the card does then. */
 export const defaults: EditorDefaults = () => ({
@@ -58,6 +69,7 @@ export const defaults: EditorDefaults = () => ({
   show_direction: true,
   when_off: 'all',
   show_rows: true,
+  sheet_dial: sheetDialDefault('fan'),
 });
 
 export function getConfigForm(): LovelaceConfigForm {
@@ -75,7 +87,7 @@ export function getConfigForm(): LovelaceConfigForm {
       ...sliderFields(),
       ...colourFields(),
       ...stateTintFields(STATES),
-      actionFields({ icon: true }),
+      actionFields({ icon: true, dial: sets }),
     ],
     ...stateLabels(formLabels({ show_presets: 'fan.preset' }), STATES, 'fan'),
   };

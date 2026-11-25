@@ -2152,7 +2152,9 @@
     "state_icon_colors_helper": "En tilstand og dens tone eller farve på hver linje (warning: warning)",
     "horizontal": "Vandret",
     "exact_colors": "Præcise farver",
-    "exact_colors_helper": "Navne, som Home Assistant tegner dem, en hexkode, som den er skrevet. Uberørt: alle korts, fra Fluvys indstillinger"
+    "exact_colors_helper": "Navne, som Home Assistant tegner dem, en hexkode, som den er skrevet. Uberørt: alle korts, fra Fluvys indstillinger",
+    "sheet_dial": "Skive i detaljearket",
+    "sheet_dial_helper": "Uberørt: alle arks, fra Fluvys indstillinger"
   },
   "energy-period-card": {
     "name": "Energiperiode",
@@ -3202,7 +3204,8 @@
     "cards.exact": "Præcise farver",
     "cards.exact_sub": "Farvenavne, som Home Assistant tegner dem, og en hexkode, som den er skrevet, ikke palettens nuancer",
     "scope.activity_who": "Hvem gjorde det",
-    "scope.activity_who_sub": "Hver post i Aktivitet viser personen bag den, med billede; et filter efter person"
+    "scope.activity_who_sub": "Hver post i Aktivitet viser personen bag den, med billede; et filter efter person",
+    "cards.sheets_dial": "Ark med skive"
   },
   "remote": {
     "key.power": "Tænd/sluk",

@@ -23,6 +23,7 @@ import {
   rowsList,
   selectField,
   headFields,
+  sheetDialDefault,
   sliderFields,
   textField,
   tintField,
@@ -155,6 +156,7 @@ export const keys = configKeys<LightCardConfig>()([
   'light_whites',
   'rows',
   'show_rows',
+  'sheet_dial',
 ]);
 
 /**
@@ -213,6 +215,7 @@ export const defaults: EditorDefaults = (config, hass) => ({
   tint_strength: 'full',
   light_whites: 'temperature',
   show_rows: true,
+  sheet_dial: sheetDialDefault('light'),
 });
 
 export function getConfigForm(): LovelaceConfigForm {
@@ -262,7 +265,8 @@ export function getConfigForm(): LovelaceConfigForm {
           (bulbWarms(data, hass) || bulbColours(data, hass)),
         selectField('light_whites', ['palette', 'temperature']),
       ),
-      actionFields({ icon: true }),
+      // its sheet's dial is its brightness: none to keep for a bulb that only switches
+      actionFields({ icon: true, dial: bulbDims }),
     ],
     ...formLabels({
       show_temperature: 'light.temperature',

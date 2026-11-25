@@ -15,6 +15,8 @@ import {
   onlyWhen,
   pickFields,
   selectField,
+  sheetDialDefault,
+  sheetDialField,
   textField,
   toneField,
   visibleFields,
@@ -266,6 +268,59 @@ describe('a form that shows only what can act', () => {
         byName(() => true),
       )[0],
     ).toBe(rows[0]);
+  });
+});
+
+describe('whether a card’s details sheet keeps its dial (#258)', () => {
+  const shown = (data: Readonly<Record<string, unknown>>, sets?: () => boolean): boolean =>
+    visibleFields([sheetDialField(sets)], data).length === 1;
+  const blind = { entity: 'cover.blind' };
+
+  it('is a switch with its word, the house’s until chosen: every kind’s where no look says', () => {
+    const field = sheetDialField();
+    expect(field.selector).toEqual({ boolean: {} });
+    expect(field.helper).toBe('editor.sheet_dial_helper');
+    document.documentElement.lang = 'en';
+    expect(label(formLabels(), 'sheet_dial')).toBe('Dial in the details sheet');
+    for (const kind of ['light', 'climate', 'cover', 'media', 'fan'] as const)
+      expect(sheetDialDefault(kind)).toBe(true);
+  });
+
+  it('shows while the card opens its own entity’s sheet: its tap and its hold do where none is chosen', () => {
+    expect(shown(blind)).toBe(true);
+    // a tap that toggles leaves the hold, which still opens the details
+    expect(shown({ ...blind, tap_action: { action: 'toggle' } })).toBe(true);
+    expect(
+      shown({ ...blind, tap_action: { action: 'toggle' }, hold_action: { action: 'none' } }),
+    ).toBe(false);
+    // a double tap, or the circle's, opens them too
+    expect(
+      shown({
+        ...blind,
+        tap_action: { action: 'none' },
+        hold_action: { action: 'none' },
+        icon_tap_action: { action: 'more-info' },
+      }),
+    ).toBe(true);
+  });
+
+  it('hides where no action of the card opens that sheet, or the action says the dial itself', () => {
+    const only = (action: Record<string, unknown>) => ({
+      ...blind,
+      tap_action: { action: 'more-info', ...action },
+      hold_action: { action: 'none' },
+    });
+    expect(shown(only({}))).toBe(true);
+    // another entity's details, Home Assistant's dialog, and an action that says its own dial
+    expect(shown(only({ entity: 'light.desk' }))).toBe(false);
+    expect(shown(only({ details: 'home-assistant' }))).toBe(false);
+    expect(shown(only({ dial: false }))).toBe(false);
+    expect(shown(only({ details: 'fluvy' }))).toBe(true);
+  });
+
+  it('hides where the sheet has no dial to keep: the card says what its entity sets', () => {
+    expect(shown(blind, () => false)).toBe(false);
+    expect(shown(blind, () => true)).toBe(true);
   });
 });
 

@@ -11,13 +11,17 @@
  * goes to the History page, each closing it. Every docked sheet stands as tall as it draws, without a scroller, and
  * one out of reach calls nothing. A sheet shows its last 24 hours where the house does for its kind (#243: the lights
  * alone, `&sheetsday=light`) and an action says nothing else (`history: false`), and one without them asks the
- * recorder nothing.
+ * recorder nothing. A sheet keeps its dial where the house does for its kind (#258: `&sheetsdial=light,climate`), its
+ * own card says so (`sheet_dial`) or an action does (`dial`), the nearest first; without it its control is a ruler
+ * across the sheet, a phone's cover sheet a third shorter: dragged, its figure follows the finger and its release
+ * sends once, an arrow key steps it, its figure reads on the knob's centre line and its keys are pills. And a cover's
+ * sheet reads its cover as the Cover card that opened it does: a position turned round, one counted as it comes down.
  * Real cards on the playground's simulated hass.
  * Exit code 1 on any failure.
  *   PLAYGROUND=http://127.0.0.1:5183/ node interactions-details-sheets.mjs
  */
-import { dialTo, mousePointer } from './lib/gestures.mjs';
-import { calls, frame, moreInfo, reset, settle, startSuite } from './lib/suite.mjs';
+import { dialTo, mousePointer, rulerGeometry } from './lib/gestures.mjs';
+import { calls, frame, moreInfo, reset, settle, startSuite, tapHead } from './lib/suite.mjs';
 
 const suite = await startSuite();
 const { check } = suite;
@@ -424,6 +428,269 @@ const knobOf = (page) => page.locator('body > fluvy-details-light fluvy-dial [da
     JSON.stringify(shown),
   );
   await own.close();
+}
+
+/* ---------- a sheet without its dial: who says so, and its ruler (#258) ---------- */
+{
+  /** The sheet open now: its control (a dial, a ruler across, or neither), what it says and how tall it stands. */
+  const controlOf = (page) =>
+    page.evaluate(() => {
+      const sheet = [...document.body.children].find((el) =>
+        el.localName.startsWith('fluvy-details-'),
+      );
+      if (!sheet) return null;
+      const root = sheet.shadowRoot;
+      const box = root.querySelector('.fv-sheet').getBoundingClientRect();
+      const text = (el) => el?.textContent.replace(/\s+/g, ' ').trim() ?? '';
+      return {
+        tag: sheet.localName,
+        dial: Boolean(root.querySelector('fluvy-dial')),
+        ruler: Boolean(root.querySelector('.cv-across fluvy-ruler')),
+        says: [...root.querySelectorAll('.cv-across .fv-readout__value > span')].map(text),
+        ends: [...root.querySelectorAll('.cv-across .fv-ruler-labels span')].map(text),
+        dialled: root.querySelector('fluvy-dial')?.value ?? null,
+        line: text(root.querySelector('.fv-sheet__head .fv-card__sub')),
+        height: Math.round(box.height),
+        scrolls:
+          root.querySelector('.fv-sheet').scrollHeight >
+          root.querySelector('.fv-sheet').clientHeight + 1,
+      };
+    });
+  const close = async (page) => {
+    await page.keyboard.press('Escape');
+    await settle(page, 350);
+  };
+  const rect = (locator) =>
+    locator.evaluate((el) => {
+      const box = el.getBoundingClientRect();
+      return { x: box.x, y: box.y, w: box.width, h: box.height, bottom: box.bottom };
+    });
+  const middle = (box) => box.y + box.h / 2;
+
+  // the house keeps the dial for its lights and its thermostats: a blind opens on a ruler, a lamp round its dial
+  const house = await suite.page(
+    'sheet=details-sheets&width=328&lang=en&sheets=fluvy&sheetsdial=light,climate',
+    { viewport: PHONE, reducedMotion: 'reduce' },
+  );
+  await tap(house, 'Floor lamp');
+  const lamp = await controlOf(house);
+  await close(house);
+  await tap(house, 'Blind');
+  const blind = await controlOf(house);
+  check(
+    'the house keeps the dial for its lights alone of the two: the lamp’s sheet round its dial, the blind’s on a ruler',
+    lamp?.dial === true && !lamp.ruler && blind?.dial === false && blind.ruler === true,
+    JSON.stringify({ lamp, blind }),
+  );
+  check(
+    'the blind’s sheet says its position beside the ruler, the ends in words: 65 %, Closed and Open',
+    blind?.says.join(' ') === '65 %' && blind.ends.join() === 'Closed,Open' && !blind.scrolls,
+    JSON.stringify(blind),
+  );
+
+  // its geometry: the figure on the knob's centre line, the ends' words on the label's line, the keys pills of 44
+  const sheet = house.locator('body > fluvy-details-cover');
+  const across = sheet.locator('.cv-across');
+  const [label, value, words, knob, key] = await Promise.all([
+    rect(across.locator('.fv-readout__label')),
+    rect(across.locator('.fv-readout__value')),
+    rect(across.locator('.fv-ruler-labels')),
+    rect(across.locator('fluvy-ruler .fv-knob')),
+    rect(sheet.locator('.dt-keys .fv-action').first()),
+  ]);
+  const pill = await sheet
+    .locator('.dt-keys .fv-action')
+    .first()
+    .evaluate((el) => parseFloat(getComputedStyle(el).borderTopLeftRadius));
+  check(
+    'the figure reads on the knob’s centre line, the ends’ words on the label’s line, the keys outlined pills 44 tall',
+    Math.abs(middle(value) - middle(knob)) <= 0.5 &&
+      Math.abs(label.y - words.y) <= 0.5 &&
+      key.h === 44 &&
+      pill >= 22,
+    JSON.stringify({
+      value: middle(value),
+      knob: middle(knob),
+      label: label.y,
+      words: words.y,
+      key,
+      pill,
+    }),
+  );
+
+  // dragged, the figure follows the finger and nothing is sent; let go, the position once
+  const ruler = across.locator('fluvy-ruler');
+  const geo = await rulerGeometry(ruler.locator('.fv-ruler'), ruler.locator('.fv-knob'));
+  const pointer = mousePointer(house);
+  await reset(house);
+  await pointer.move(geo.at(65), geo.y);
+  await pointer.down();
+  await pointer.move(geo.at(50), geo.y, 6);
+  await pointer.move(geo.at(30), geo.y, 12);
+  await settle(house, 60);
+  const during = await controlOf(house);
+  const early = await calls(house);
+  await pointer.up();
+  await settle(house, 400);
+  let c = await calls(house);
+  check(
+    'the ruler dragged to 30: the figure follows the finger and nothing is sent until it lets go',
+    during?.says[0] === '30' && early.length === 0,
+    JSON.stringify({ during: during?.says, early }),
+  );
+  check(
+    'let go, the position is sent once, and the head’s line follows: Open · 30 %',
+    c.length === 1 &&
+      c[0].s === 'cover.set_cover_position' &&
+      c[0].d.position === 30 &&
+      c[0].t.entity_id === 'cover.dt_blind' &&
+      (await controlOf(house))?.line === 'Bedroom · Open · 30 %',
+    JSON.stringify([c, (await controlOf(house))?.line]),
+  );
+
+  // the keyboard: an arrow on the ruler steps the position
+  await reset(house);
+  await ruler.locator('.fv-ruler').focus();
+  await house.keyboard.press('ArrowRight');
+  await settle(house, 300);
+  c = await calls(house);
+  check(
+    'an arrow key on the ruler steps the position: 31 %',
+    c.length === 1 && c[0].d.position === 31,
+    JSON.stringify(c),
+  );
+  await close(house);
+  await house.close();
+
+  // a phone's cover sheet without its dial: a third shorter than with it
+  const plain = await open(PHONE);
+  await tap(plain, 'Blind');
+  const tall = await controlOf(plain);
+  check(
+    'on a phone the blind’s sheet on a ruler stands at least 140 shorter than round its dial, and scrolls nothing',
+    tall?.dial === true && blind !== null && tall.height - blind.height >= 140 && !blind.scrolls,
+    JSON.stringify({ dial: tall?.height, ruler: blind?.height }),
+  );
+  await close(plain);
+
+  // a card's own say, and an action's, in a house that keeps every dial
+  const said = frame(plain, 'Cards and tiles that open a sheet with no dial (#258)');
+  await tapHead(said.locator('fluvy-cover-card'));
+  await settle(plain, 350);
+  const fromCover = await controlOf(plain);
+  await close(plain);
+  await tapHead(said.locator('fluvy-thermostat-card'));
+  await settle(plain, 350);
+  const fromThermostat = await controlOf(plain);
+  await close(plain);
+  check(
+    'a Cover card and a Thermostat card that say sheet_dial: false open their own sheets on a ruler',
+    fromCover?.tag === 'fluvy-details-cover' &&
+      fromCover.ruler &&
+      !fromCover.dial &&
+      fromThermostat?.tag === 'fluvy-details-climate' &&
+      fromThermostat.ruler &&
+      !fromThermostat.dial &&
+      fromThermostat.ends.join() === '15°,Now 20.8°,30°',
+    JSON.stringify({ fromCover, fromThermostat }),
+  );
+  /** A finger on a tile of the frame, by its whole name. */
+  const tapTile = async (page, name) => {
+    const tile = frame(page, 'Cards and tiles that open a sheet with no dial (#258)')
+      .locator('fluvy-tiles-card .fv-tile')
+      .filter({ has: page.locator('.fv-tile__name', { hasText: new RegExp(`^\\s*${name}`) }) });
+    await tile.scrollIntoViewIfNeeded();
+    const box = await tile.boundingBox();
+    await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
+    await settle(page, 350);
+  };
+  await tapTile(plain, 'Floor lamp');
+  const fromTile = await controlOf(plain);
+  await close(plain);
+  check(
+    'a tile whose action says dial: false opens the lamp’s sheet on a ruler',
+    fromTile?.tag === 'fluvy-details-light' && fromTile.ruler && !fromTile.dial,
+    JSON.stringify(fromTile),
+  );
+
+  // the fix: a sheet reads its cover as the Cover card that opened it does
+  const turned = frame(plain, 'Cover · its card turns the position round, its sheet agrees (#258)');
+  const figureOf = (card) =>
+    card.evaluate((el) =>
+      [...el.shadowRoot.querySelectorAll('.fv-readout__value > span')].map((part) =>
+        part.textContent.trim(),
+      ),
+    );
+  const cardSays = await figureOf(turned.locator('fluvy-cover-card'));
+  await tapHead(turned.locator('fluvy-cover-card'));
+  await settle(plain, 350);
+  const agreed = await controlOf(plain);
+  check(
+    'a cover that reports 20 where its card says 80 %: the sheet the card opens says 80 % too, on its dial and its head',
+    cardSays.join(' ') === '80 %' &&
+      agreed?.dialled === 80 &&
+      agreed.line === 'Living room · Open · 80 %',
+    JSON.stringify({ cardSays, agreed }),
+  );
+  await close(plain);
+  const downward = frame(plain, 'Cover · the horizontal card and its sheet across (#258)');
+  const downSays = await downward
+    .locator('fluvy-cover-card')
+    .evaluate((el) =>
+      [...el.shadowRoot.querySelectorAll('.cv-across .fv-readout__value > span')].map((part) =>
+        part.textContent.trim(),
+      ),
+    );
+  await tapHead(downward.locator('fluvy-cover-card'));
+  await settle(plain, 350);
+  const across2 = await controlOf(plain);
+  check(
+    'a horizontal card that counts down opens its sheet across: 35 % on both, "down" where it holds, the ends in the card’s words',
+    downSays.slice(0, 2).join(' ') === '35 %' &&
+      across2?.ruler === true &&
+      across2.says.join(' ') === '35 % down' &&
+      across2.ends.join() === 'Lowered,Raised',
+    JSON.stringify({ downSays, across2 }),
+  );
+  await close(plain);
+  await plain.close();
+
+  // an action's dial: true in a house that keeps none
+  const none = await suite.page('sheet=details-sheets&width=328&lang=en&sheets=fluvy&sheetsdial=', {
+    viewport: PHONE,
+    reducedMotion: 'reduce',
+  });
+  await tapTile(none, 'Kitchen s');
+  const kept = await controlOf(none);
+  await close(none);
+  await tap(none, 'Kitchen speaker');
+  const left = await controlOf(none);
+  check(
+    'in a house that keeps no dial a tile whose action says dial: true opens the speaker’s dial, any other its ruler',
+    kept?.dial === true && !kept.ruler && left?.dial === false && left.ruler === true,
+    JSON.stringify({ kept, left }),
+  );
+  await close(none);
+  await none.close();
+
+  // a wide screen: the dialog in the middle, on its ruler
+  const desk = await suite.page(
+    'sheet=details-sheets&width=328&lang=en&sheets=fluvy&sheetsdial=light',
+    { viewport: DESKTOP, reducedMotion: 'reduce' },
+  );
+  await tap(desk, 'Thermostat');
+  const wide = await sheetOf(desk);
+  const control = await controlOf(desk);
+  check(
+    'on a wide screen the thermostat’s sheet is the dialog in the middle, its target on a ruler',
+    wide?.wide === true &&
+      Math.abs((wide.box.left + wide.box.right) / 2 - DESKTOP.width / 2) < 1 &&
+      control?.ruler === true &&
+      !control.dial &&
+      !wide.scrolls,
+    JSON.stringify({ wide, control }),
+  );
+  await desk.close();
 }
 
 await suite.finish();

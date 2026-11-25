@@ -15,7 +15,8 @@ import type { DetailsSheet } from './sheet.js';
  * Fluvy's own details sheets (#162): who opens them (the kinds with a sheet, the house's choice, an action's own),
  * each kind's sheet and what its dial, its keys and its rows call, what an entity's features leave out, a sheet out
  * of reach, and the dialog itself: its focus, its ways out, the round to Home Assistant's own details and the day's
- * way to History. And a cover's sheet reading its cover as the Cover card that opened it does (#258).
+ * way to History. And the sheets without their dial (#258): who says so (an action, the card, the house), what each
+ * kind's ruler calls, and a cover's sheet reading its cover as the Cover card that opened it does.
  */
 
 const STAMP = '2026-11-13T19:00:00+00:00';
@@ -367,6 +368,129 @@ describe('who opens the details', () => {
       return found!;
     });
     expect(sheet.shadowRoot!.querySelector('.dt-day')).not.toBeNull();
+  });
+
+  it('keeps the dial as an action says, else as the kind’s own card does of its own entity, else where the house does (#258)', async () => {
+    // the house keeps the dial for its lights and its thermostats alone
+    setDetailsSheets(
+      detailsSheets(
+        () => 'fluvy',
+        undefined,
+        () => ['light', 'climate'],
+      ),
+    );
+    /** Whether the sheet a card of `config` opened by `action` is built round its dial. */
+    const dialled = async (
+      state: HassEntity,
+      config: Record<string, unknown> = {},
+      action: Record<string, unknown> = {},
+    ): Promise<boolean> => {
+      const home = house(state);
+      const card = Object.assign(document.createElement('div'), { rawHass: home, config });
+      document.body.replaceChildren(card);
+      await runAction(card, home, { action: 'more-info', ...action }, state.entity_id);
+      const sheet = await vi.waitFor(() => {
+        const found = [...document.body.children].find((el) =>
+          el.localName.startsWith('fluvy-details-'),
+        ) as Sheet | undefined;
+        expect(found?.shadowRoot?.querySelector('.fv-sheet')).toBeTruthy();
+        return found!;
+      });
+      await sheet.updateComplete;
+      const root = sheet.shadowRoot!;
+      // one or the other, never both
+      expect(root.querySelectorAll('fluvy-dial, .cv-across').length).toBeGreaterThan(0);
+      expect(Boolean(root.querySelector('fluvy-dial'))).toBe(!root.querySelector('.cv-across'));
+      return Boolean(root.querySelector('fluvy-dial'));
+    };
+    const cover = { type: 'custom:fluvy-cover-card', entity: 'cover.blind' };
+    const light = { type: 'custom:fluvy-light-card', entity: 'light.floor' };
+    const table: readonly [
+      who: string,
+      state: HassEntity,
+      card: Record<string, unknown>,
+      action: Record<string, unknown>,
+      dial: boolean,
+    ][] = [
+      // the house
+      ['the house keeps a light’s', FLOOR, {}, {}, true],
+      ['the house keeps a thermostat’s, a water heater’s too', TANK, {}, {}, true],
+      ['the house leaves a cover’s, a valve’s too', VALVE, {}, {}, false],
+      ['the house leaves a player’s', SPEAKER, {}, {}, false],
+      ['a card that says nothing is the house’s', BLIND, cover, {}, false],
+      // the card, of its own entity
+      ['the Cover card keeps its cover’s', BLIND, { ...cover, sheet_dial: true }, {}, true],
+      ['the Light card leaves its light’s', FLOOR, { ...light, sheet_dial: false }, {}, false],
+      // another kind's card, a card of another entity and a word that is no yes or no say nothing
+      [
+        'a tile is no Cover card',
+        BLIND,
+        { type: 'custom:fluvy-tile-card', entity: 'cover.blind', sheet_dial: true },
+        {},
+        false,
+      ],
+      [
+        'a card of another cover',
+        BLIND,
+        { ...cover, entity: 'cover.other', sheet_dial: true },
+        {},
+        false,
+      ],
+      ['a word of its own', FLOOR, { ...light, sheet_dial: 'no' }, {}, true],
+      // the action, before both
+      ['an action keeps it', BLIND, {}, { dial: true }, true],
+      ['an action leaves it', FLOOR, {}, { dial: false }, false],
+      [
+        'an action over its card, kept',
+        BLIND,
+        { ...cover, sheet_dial: false },
+        { dial: true },
+        true,
+      ],
+      [
+        'an action over its card, left',
+        FLOOR,
+        { ...light, sheet_dial: true },
+        { dial: false },
+        false,
+      ],
+    ];
+    for (const [who, state, card, action, dial] of table)
+      expect([who, await dialled(state, card, action)]).toEqual([who, dial]);
+    // a card of one's own says it too (`__fluvy.openDetails`)
+    document.body.replaceChildren(
+      Object.assign(document.createElement('home-assistant'), { hass: house(FLOOR) }),
+    );
+    openEntityDetails('light.floor', { dial: false });
+    const sheet = await vi.waitFor(() => {
+      const found = document.body.querySelector<Sheet>('fluvy-details-light');
+      expect(found?.shadowRoot?.querySelector('.fv-sheet')).toBeTruthy();
+      return found!;
+    });
+    expect(sheet.shadowRoot!.querySelector('fluvy-dial')).toBeNull();
+    expect(sheet.shadowRoot!.querySelector('.cv-across fluvy-ruler')).not.toBeNull();
+  });
+
+  it('keeps every kind’s dial where nobody says otherwise, as before 1.26', async () => {
+    setDetailsSheets(detailsSheets(() => 'fluvy'));
+    for (const state of [FLOOR, THERMOSTAT, BLIND, SPEAKER, CEILING_FAN]) {
+      const home = house(state);
+      const card = document.createElement('div');
+      document.body.replaceChildren(card);
+      await runAction(card, home, { action: 'more-info' }, state.entity_id);
+      const sheet = await vi.waitFor(() => {
+        const found = [...document.body.children].find((el) =>
+          el.localName.startsWith('fluvy-details-'),
+        ) as Sheet | undefined;
+        expect(found?.shadowRoot?.querySelector('.fv-sheet')).toBeTruthy();
+        return found!;
+      });
+      expect([state.entity_id, Boolean(sheet.shadowRoot!.querySelector('fluvy-dial'))]).toEqual([
+        state.entity_id,
+        true,
+      ]);
+      expect(sheet.shadowRoot!.querySelector('.cv-across')).toBeNull();
+    }
   });
 
   it('never answers a more-info it was not handed: Home Assistant’s own cards keep the dialog', async () => {
@@ -828,6 +952,264 @@ describe('a fan’s sheet', () => {
   });
 });
 
+describe('a sheet on a ruler, in its dial’s place (#258)', () => {
+  /** A kind's sheet docked without its dial, with what its config says besides. */
+  async function ruled(
+    tag: string,
+    state: HassEntity,
+    hass: House = house(state),
+    more: Record<string, unknown> = {},
+  ): Promise<Sheet> {
+    const sheet = document.createElement(tag) as Sheet;
+    sheet.setConfig({
+      type: `custom:${tag}`,
+      entity: state.entity_id,
+      _docked: true,
+      show_dial: false,
+      ...more,
+    });
+    sheet.hass = hass;
+    document.body.append(sheet);
+    await sheet.updateComplete;
+    return sheet;
+  }
+  type Ruler = HTMLElement & Record<string, unknown>;
+  /** The rulers across the sheet, as it set them (a range has two). */
+  const rulers = (sheet: Sheet): Ruler[] => [
+    ...root(sheet).querySelectorAll<Ruler>('.cv-across fluvy-ruler'),
+  ];
+  const slide = (sheet: Sheet, value: number, type = 'fluvy-change', at = 0): void => {
+    rulers(sheet)[at]!.dispatchEvent(new CustomEvent(type, { detail: { value } }));
+  };
+  /** What a row says: its label, then its figure, its unit and the word after them. */
+  const says = (sheet: Sheet, at = 0): string[] => {
+    const readout = root(sheet).querySelectorAll('.cv-across > .fv-readout')[at]!;
+    return [
+      readout.querySelector('.fv-readout__label')?.textContent?.trim() ?? '',
+      ...[...readout.querySelectorAll('.fv-readout__value > span')].map(
+        (part) => part.textContent?.trim() ?? '',
+      ),
+    ];
+  };
+  /** The words over a row's ruler. */
+  const over = (sheet: Sheet, at = 0): string[] =>
+    [
+      ...root(sheet).querySelectorAll('.cv-across')[at]!.querySelectorAll('.fv-ruler-labels span'),
+    ].map((word) => word.textContent?.trim() ?? '');
+
+  it('draws no dial: the figure beside a ruler in the house’s style, the keys and the rest as they were', async () => {
+    const sheet = await ruled('fluvy-details-light', FLOOR);
+    expect(root(sheet).querySelector('fluvy-dial, .dt-hero')).toBeNull();
+    expect(says(sheet)).toEqual(['Brightness', '72', '%']);
+    expect(over(sheet)).toEqual(['0 %', '100 %']);
+    const [ruler] = rulers(sheet);
+    expect([ruler!['value'], ruler!['min'], ruler!['max'], ruler!['step']]).toEqual([
+      72, 0, 100, 1,
+    ]);
+    expect([ruler!['look'], ruler!['label']]).toEqual(['ruler', 'Floor lamp · Brightness']);
+    // its keys as the row across draws them, its colours and its effect under them
+    expect(one(sheet, '.fv-sheet').classList.contains('cv-card--across')).toBe(true);
+    expect(keyIds(sheet)).toEqual(['down', 'power', 'up']);
+    expect(root(sheet).querySelectorAll('button.lc-swatch')).toHaveLength(6);
+    expect(rowTitles(sheet)).toEqual(['Effect']);
+    // and the dial's sheet wears none of it
+    const dialled = await docked('fluvy-details-light', FLOOR);
+    expect(one(dialled, '.fv-sheet').classList.contains('cv-card--across')).toBe(false);
+    expect(root(dialled).querySelector('.cv-across')).toBeNull();
+  });
+
+  it('sets a light’s brightness, the figure following the finger and a lamp that is off waking under it', async () => {
+    const hass = house(FLOOR);
+    const sheet = await ruled('fluvy-details-light', FLOOR, hass);
+    slide(sheet, 31, 'fluvy-input');
+    await sheet.updateComplete;
+    expect(says(sheet)).toEqual(['Brightness', '31', '%']);
+    expect(calls(hass)).toEqual([]);
+    slide(sheet, 40);
+    expect(calls(hass)).toEqual([['light.turn_on', { brightness_pct: 40 }, 'light.floor']]);
+    // down to nothing is off
+    slide(sheet, 0);
+    expect(calls(hass).at(-1)).toEqual(['light.turn_off', {}, 'light.floor']);
+    // a lamp that is off says so, its ruler at rest; a finger on it reads the level, and taken away, the word again
+    const off = entity('light.reading', 'off', {
+      friendly_name: 'Reading lamp',
+      supported_color_modes: ['brightness'],
+    });
+    const resting = await ruled('fluvy-details-light', off);
+    expect(says(resting)).toEqual(['Brightness', 'Off']);
+    expect([rulers(resting)[0]!['inactive'], rulers(resting)[0]!['wake']]).toEqual([true, true]);
+    slide(resting, 55, 'fluvy-input');
+    await resting.updateComplete;
+    expect(says(resting)).toEqual(['Brightness', '55', '%']);
+    rulers(resting)[0]!.dispatchEvent(new CustomEvent('fluvy-cancel'));
+    await resting.updateComplete;
+    expect(says(resting)).toEqual(['Brightness', 'Off']);
+  });
+
+  it('sets a cover’s position, its ends in words, and a valve’s by its own service', async () => {
+    const hass = house(BLIND);
+    const sheet = await ruled('fluvy-details-cover', BLIND, hass);
+    expect(says(sheet)).toEqual(['Position', '65', '%']);
+    expect(over(sheet)).toEqual(['Closed', 'Open']);
+    expect(rulers(sheet)[0]!['value']).toBe(65);
+    slide(sheet, 30);
+    expect(calls(hass)).toEqual([['cover.set_cover_position', { position: 30 }, 'cover.blind']]);
+    // the tilt keeps its own ruler under the keys
+    expect(root(sheet).querySelectorAll('fluvy-ruler')).toHaveLength(2);
+    const water = house(VALVE);
+    const valve = await ruled('fluvy-details-cover', VALVE, water);
+    slide(valve, 50);
+    expect(calls(water)).toEqual([['valve.set_valve_position', { position: 50 }, 'valve.garden']]);
+  });
+
+  it('sets a fan’s speed on its own stops, each named over the ruler', async () => {
+    const hass = house(CEILING_FAN);
+    const sheet = await ruled('fluvy-details-fan', CEILING_FAN, hass);
+    expect(says(sheet)).toEqual(['Speed', '67', '%']);
+    expect(over(sheet)).toEqual(['Off', 'Low', 'Mid', 'High']);
+    expect(rulers(sheet)[0]!['step']).toBeCloseTo(33.33, 1);
+    slide(sheet, 33.33);
+    expect(calls(hass)).toEqual([['fan.set_percentage', { percentage: 33 }, 'fan.ceiling']]);
+  });
+
+  it('sets a player’s volume, and says Muted after its figure while it is', async () => {
+    const hass = house(SPEAKER);
+    const sheet = await ruled('fluvy-details-media', SPEAKER, hass);
+    expect(says(sheet)).toEqual(['Volume', '32', '%']);
+    slide(sheet, 50);
+    expect(calls(hass)).toEqual([
+      ['media_player.volume_set', { volume_level: 0.5 }, 'media_player.kitchen'],
+    ]);
+    const muted = await ruled('fluvy-details-media', {
+      ...SPEAKER,
+      attributes: { ...SPEAKER.attributes, is_volume_muted: true },
+    });
+    expect(says(muted)).toEqual(['Volume', '32', '%', 'Muted']);
+  });
+
+  it('sets a thermostat’s target, what it measures said over the ruler where it reads', async () => {
+    const hass = house(THERMOSTAT);
+    const sheet = await ruled('fluvy-details-climate', THERMOSTAT, hass);
+    expect(says(sheet)).toEqual(['Target', '21.5', '°C']);
+    expect(over(sheet)).toEqual(['15°', 'Now 20.8°', '30°']);
+    const [ruler] = rulers(sheet);
+    expect([ruler!['value'], ruler!['min'], ruler!['max'], ruler!['step']]).toEqual([
+      21.5, 15, 30, 0.5,
+    ]);
+    slide(sheet, 22);
+    expect(calls(hass)).toEqual([
+      ['climate.set_temperature', { temperature: 22 }, 'climate.living'],
+    ]);
+    // the figure keeps what was set until the thermostat says it
+    await sheet.updateComplete;
+    expect(says(sheet)).toEqual(['Target', '22.0', '°C']);
+    // off, it says so, its ruler at rest
+    const off = await ruled('fluvy-details-climate', {
+      ...THERMOSTAT,
+      state: 'off',
+      attributes: { ...THERMOSTAT.attributes, hvac_action: 'off' },
+    });
+    expect(says(off)).toEqual(['Target', 'Off']);
+    expect([rulers(off)[0]!['inactive'], rulers(off)[0]!['disabled']]).toEqual([true, true]);
+    // a water heater and a humidifier by their own services
+    const tank = house(TANK);
+    slide(await ruled('fluvy-details-climate', TANK, tank), 55);
+    expect(calls(tank)).toEqual([
+      ['water_heater.set_temperature', { temperature: 55 }, 'water_heater.tank'],
+    ]);
+    const air = house(HUMIDIFIER);
+    const humidifier = await ruled('fluvy-details-climate', HUMIDIFIER, air);
+    expect(says(humidifier)).toEqual(['Target', '50', '%']);
+    slide(humidifier, 45);
+    expect(calls(air)).toEqual([
+      ['humidifier.set_humidity', { humidity: 45 }, 'humidifier.nursery'],
+    ]);
+  });
+
+  it('sets a range on two rulers, each figure a button that gives the keys to its end', async () => {
+    const hass = house(RANGE);
+    const sheet = await ruled('fluvy-details-climate', RANGE, hass);
+    expect([says(sheet, 0), says(sheet, 1)]).toEqual([
+      ['Low', '20.0', '°C'],
+      ['High', '24.0', '°C'],
+    ]);
+    const ends = (): (string | null)[] =>
+      [...root(sheet).querySelectorAll('.dt-end')].map((end) => end.getAttribute('aria-pressed'));
+    // the keys step the low end until another is chosen
+    expect(ends()).toEqual(['true', 'false']);
+    slide(sheet, 19, 'fluvy-change', 0);
+    slide(sheet, 26, 'fluvy-change', 1);
+    expect(calls(hass)).toEqual([
+      ['climate.set_temperature', { target_temp_low: 19, target_temp_high: 24 }, 'climate.study'],
+      ['climate.set_temperature', { target_temp_low: 19, target_temp_high: 26 }, 'climate.study'],
+    ]);
+    // the end its ruler moved last is the keys', and a tap on a figure gives them to its end
+    await sheet.updateComplete;
+    expect(ends()).toEqual(['false', 'true']);
+    one<HTMLButtonElement>(sheet, '.dt-end').click();
+    await sheet.updateComplete;
+    expect(ends()).toEqual(['true', 'false']);
+    hass.callService.mockClear();
+    step(sheet, 'up');
+    await wait(700);
+    expect(calls(hass)).toEqual([
+      ['climate.set_temperature', { target_temp_low: 19.5, target_temp_high: 26 }, 'climate.study'],
+    ]);
+    // a low end pushed past the high one takes it along, as on the Thermostat card
+    hass.callService.mockClear();
+    slide(sheet, 28, 'fluvy-change', 0);
+    expect(calls(hass)).toEqual([
+      ['climate.set_temperature', { target_temp_low: 28, target_temp_high: 28 }, 'climate.study'],
+    ]);
+  });
+
+  it('is its keys alone for an entity with nothing to set, and its rows', async () => {
+    for (const [tag, state, ids] of [
+      ['fluvy-details-cover', GARAGE, ['open', 'close']],
+      ['fluvy-details-light', FAIRY, ['power']],
+      ['fluvy-details-fan', EXTRACTOR, ['power']],
+      ['fluvy-details-media', RADIO, ['play']],
+    ] as const) {
+      const sheet = await ruled(tag, state);
+      expect([tag, root(sheet).querySelector('fluvy-dial, fluvy-ruler, .cv-across')]).toEqual([
+        tag,
+        null,
+      ]);
+      expect([tag, keyIds(sheet)]).toEqual([tag, ids]);
+    }
+  });
+
+  it('out of reach, keeps its row: a dash for its figure, its ruler still and at rest, nothing called', async () => {
+    const gone = entity('cover.awning', 'unavailable', {
+      friendly_name: 'Awning',
+      supported_features: 1 | 2 | 4 | 8,
+    });
+    const hass = house(gone);
+    const sheet = await ruled('fluvy-details-cover', gone, hass);
+    expect(says(sheet)).toEqual(['Position', '—']);
+    expect(over(sheet)).toEqual(['Closed', 'Open']);
+    expect([rulers(sheet)[0]!['disabled'], rulers(sheet)[0]!['inactive']]).toEqual([true, true]);
+    for (const key of root(sheet).querySelectorAll<HTMLButtonElement>('.dt-keys .fv-action'))
+      expect(key.disabled).toBe(true);
+    expect(calls(hass)).toEqual([]);
+  });
+
+  it('says the figures its fine scale reads at its ends while it is up, its words again after', async () => {
+    const sheet = await ruled('fluvy-details-cover', BLIND);
+    const window = (fine: boolean): void => {
+      rulers(sheet)[0]!.dispatchEvent(
+        new CustomEvent('fluvy-window', { detail: { min: 60, max: 70, fine, marks: [] } }),
+      );
+    };
+    window(true);
+    await sheet.updateComplete;
+    expect(over(sheet)).toEqual(['60 %', '70 %']);
+    window(false);
+    await sheet.updateComplete;
+    expect(over(sheet)).toEqual(['Closed', 'Open']);
+  });
+});
+
 describe('a cover’s sheet reads its cover as the Cover card that opened it does (#258)', () => {
   /** A shutter that reports 100 % where it is closed: at 20 it is nearly open. */
   const SHUTTER = entity('cover.shutter', 'open', {
@@ -840,13 +1222,14 @@ describe('a cover’s sheet reads its cover as the Cover card that opened it doe
   async function openedBy(
     config: Record<string, unknown>,
     hass: House = house(SHUTTER),
+    dial = true,
   ): Promise<Sheet> {
     const from = Object.assign(document.createElement('div'), {
       rawHass: hass,
       config: { type: 'custom:fluvy-cover-card', entity: SHUTTER.entity_id, ...config },
     });
     document.body.append(from);
-    openDetails(from, hass, SHUTTER.entity_id, false);
+    openDetails(from, hass, SHUTTER.entity_id, false, dial);
     const sheet = [...document.body.children].find(
       (child) => child.localName === 'fluvy-details-cover',
     ) as Sheet;
@@ -855,7 +1238,13 @@ describe('a cover’s sheet reads its cover as the Cover card that opened it doe
   }
   const status = (sheet: Sheet): string => text(sheet, '.fv-sheet__head .fv-card__sub');
   const tilt = (sheet: Sheet): HTMLElement & Record<string, unknown> =>
-    one(sheet, 'fluvy-ruler') as HTMLElement & Record<string, unknown>;
+    one(sheet, 'fluvy-ruler:not(.cv-across fluvy-ruler)') as HTMLElement & Record<string, unknown>;
+  const chips = (sheet: Sheet): [string, boolean][] =>
+    [...root(sheet).querySelectorAll<HTMLElement>('.fv-chip')].map((chip) => [
+      chip.textContent?.replace(/\s+/g, ' ').trim() ?? '',
+      chip.classList.contains('is-active'),
+    ]);
+
   it('asked nothing, reads Home Assistant’s own figures, as it did', async () => {
     const hass = house(SHUTTER);
     const sheet = await openedBy({}, hass);
@@ -929,6 +1318,58 @@ describe('a cover’s sheet reads its cover as the Cover card that opened it doe
       await sheet.updateComplete;
       expect([config.type, dial(sheet)['value']]).toEqual([config.type, 20]);
     }
+  });
+
+  it('on a ruler, is the card across: lit from the open end and "down" after its figure, the ends in the card’s words', async () => {
+    const hass = house(SHUTTER);
+    const sheet = await openedBy(
+      { direction: 'down', open_label: 'Raised', closed_label: 'Lowered' },
+      hass,
+      false,
+    );
+    const ruler = one(sheet, '.cv-across fluvy-ruler') as HTMLElement & Record<string, unknown>;
+    expect([ruler['value'], ruler['origin']]).toEqual([20, 100]);
+    expect(
+      [...root(sheet).querySelectorAll('.cv-across .fv-readout__value > span')].map((part) =>
+        part.textContent?.trim(),
+      ),
+    ).toEqual(['80', '%', 'down']);
+    expect(
+      [...root(sheet).querySelectorAll('.cv-across .fv-ruler-labels span')].map((word) =>
+        word.textContent?.trim(),
+      ),
+    ).toEqual(['Lowered', 'Raised']);
+    ruler.dispatchEvent(new CustomEvent('fluvy-change', { detail: { value: 35 } }));
+    expect(calls(hass)).toEqual([['cover.set_cover_position', { position: 35 }, 'cover.shutter']]);
+  });
+
+  it('on a ruler, draws the card’s favourites as chips, the one it stands at lit, each sending the cover there', async () => {
+    const hass = house(SHUTTER);
+    const favorites = [
+      { name: 'Morning', position: 80 },
+      { name: 'Night', position: 0 },
+      { name: 'Shade', tilt: 30 },
+    ];
+    const sheet = await openedBy({ invert_position: true, favorites }, hass, false);
+    expect(text(sheet, '.fv-label:last-of-type')).toBe('Favourites');
+    expect(chips(sheet)).toEqual([
+      ['Morning · 80 %', true],
+      ['Night · closed', false],
+      ['Shade · tilt 30 %', false],
+    ]);
+    const tap = (at: number): void =>
+      root(sheet).querySelectorAll<HTMLElement>('.fv-chip')[at]!.click();
+    tap(1);
+    tap(2);
+    expect(calls(hass)).toEqual([
+      ['cover.set_cover_position', { position: 100 }, 'cover.shutter'],
+      ['cover.set_cover_tilt_position', { tilt_position: 30 }, 'cover.shutter'],
+    ]);
+    // none where the card hides them, and never under the dial
+    const hidden = await openedBy({ favorites, show_favorites: false }, house(SHUTTER), false);
+    expect(chips(hidden)).toEqual([]);
+    const dialled = await openedBy({ favorites });
+    expect(chips(dialled)).toEqual([]);
   });
 
   it('opened by no card, reads what its own config says', async () => {

@@ -2152,7 +2152,9 @@
     "state_icon_colors_helper": "Ett tillstånd och dess ton eller färg på varje rad (warning: warning)",
     "horizontal": "Horisontell",
     "exact_colors": "Exakta färger",
-    "exact_colors_helper": "Namn som Home Assistant ritar dem, en hexkod som den skrivs. Orört: som alla kort, från Fluvys inställningar"
+    "exact_colors_helper": "Namn som Home Assistant ritar dem, en hexkod som den skrivs. Orört: som alla kort, från Fluvys inställningar",
+    "sheet_dial": "Ratt i detaljarket",
+    "sheet_dial_helper": "Orört: som alla ark, från Fluvys inställningar"
   },
   "energy-period-card": {
     "name": "Energiperiod",
@@ -3202,7 +3204,8 @@
     "cards.exact": "Exakta färger",
     "cards.exact_sub": "Färgnamn som Home Assistant ritar dem och en hexkod som den skrivs, inte palettens nyanser",
     "scope.activity_who": "Vem som gjorde det",
-    "scope.activity_who_sub": "Varje post i Aktivitet visar personen bakom den, med bild; ett filter per person"
+    "scope.activity_who_sub": "Varje post i Aktivitet visar personen bakom den, med bild; ett filter per person",
+    "cards.sheets_dial": "Ark med ratt"
   },
   "remote": {
     "key.power": "Ström",

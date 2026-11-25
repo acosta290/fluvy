@@ -11,10 +11,22 @@ import {
   setTintDefaults,
   type HouseSettings,
 } from '@fluvy/core';
-import { afterAll, describe, expect, it } from 'vitest';
+import { afterAll, describe, expect, it, vi } from 'vitest';
 import { catalogue } from '../index.js';
 import type { Card, CardEditor } from './base.js';
 import { editorDefaults, HOUSE_KEYS } from './rows-editor.js';
+
+/**
+ * The house as the running look has it, where a default reads it there and nothing wears it on the cards: the kinds
+ * whose details sheets keep their dial (`sheetsDial`, #258).
+ */
+const look = vi.hoisted(() => ({
+  house: undefined as { sheetsDial: readonly string[] } | undefined,
+}));
+vi.mock('@fluvy/core', async (original) => ({
+  ...(await original<typeof import('@fluvy/core')>()),
+  lookHandle: () => (look.house ? { settings: () => look.house } : undefined),
+}));
 
 /**
  * The house's keys (`HOUSE_KEYS`), held to every card of the catalogue: a card's editor defaults are read under the
@@ -34,6 +46,7 @@ type Settings = Pick<
   | 'cards'
   | 'sliders'
   | 'exactColors'
+  | 'sheetsDial'
 >;
 
 /** The house's settings a card's default may read, worn as the look engine wears them (`look/start.ts`). */
@@ -44,6 +57,7 @@ const wear = (house: Settings): void => {
   setCardDefaults(house.cards);
   setSliderDefaults(house.sliders);
   setExactDefault(house.exactColors);
+  look.house = { sheetsDial: house.sheetsDial };
 };
 
 /** A house with every such setting off the factory's, its charts in `style` and its gauges in `gauge`. */
@@ -68,6 +82,7 @@ const moved = (
   cards: { opacity: 60, blur: false, unavailable: 'quiet', border: false },
   sliders: { style: 'bar', words: 'none' },
   exactColors: true,
+  sheetsDial: [],
 });
 
 /** Every other house: each chart style with a gauge beside it, every gauge among them. */

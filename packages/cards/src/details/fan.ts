@@ -1,8 +1,9 @@
 import { formatNumber, numberAttr, strings, type EntityView } from '@fluvy/core';
 import { clamp, type DialChangeDetail, type Tone } from '@fluvy/ui';
-import { html, type TemplateResult } from 'lit';
+import { html, nothing, type TemplateResult } from 'lit';
 import { Burst, Hold, shownStateText } from '../cover/common.js';
-import { speedCount } from '../fan/fan-card.js';
+import { speedCount, speedScale } from '../fan/fan-card.js';
+import { heldLabels } from '../shared/axis.js';
 import { modeWord } from '../shared/mode-words.js';
 import { fanPercentage } from '../shared/scale.js';
 import type { DaySpec } from './history.js';
@@ -22,7 +23,9 @@ type Direction = 'forward' | 'reverse';
 /**
  * A fan's details: its speed on the dial, in the fan's own speeds (a three-speed fan has three stops); under it one
  * speed down, its switch and one up; then its oscillation, its direction and its preset, each a row. A fan that only
- * switches is its ring, lit while it runs, and its switch.
+ * switches is its ring, lit while it runs, and its switch. Without its dial (`show_dial: false`, #258) the speed is a
+ * ruler across the sheet, as the fan card sets it: its stops the fan's own speeds, each named over the ruler where
+ * they hold, at rest while the fan is off, a finger on it starting the fan there; one that only switches is its switch.
  */
 export class FluvyDetailsFan extends DetailsSheet {
   static override properties = { ...DetailsSheet.properties, dragged: { state: true } };
@@ -203,42 +206,76 @@ export class FluvyDetailsFan extends DetailsSheet {
       },
       ...(speeds ? [step(1, 'plus', this.t('common.increase'))] : []),
     ];
-    return html`<div class="dt-hero">
-        <fluvy-dial
-          .radius=${this.ring}
-          .large=${this.large}
-          .stepper=${false}
-          .tone=${lit ? 'fan' : 'neutral'}
-          .min=${0}
-          .max=${100}
-          .step=${100 / speedCount(view)}
-          .value=${speeds ? (speed ?? undefined) : undefined}
-          .gauge=${!speeds}
-          .fill=${speeds ? undefined : on ? 1 : 0}
-          .unit=${'%'}
-          .sub=${speeds ? this.dialWords(words) : ''}
-          .text=${unusable || (speeds && on && speed === null) ? '—' : speeds && lit ? undefined : shownStateText(this.hass, view, on ? 'on' : 'off')}
-          .name=${`${name} · ${words}`}
-          min-label=${speeds ? this.percent(0) : ''}
-          max-label=${speeds ? this.percent(100) : ''}
-          ?disabled=${unusable || (speeds && speed === null)}
-          .format=${(value: number) => this.percent(value)}
-          @fluvy-input=${(event: CustomEvent<DialChangeDetail>) => {
-            this.dragged = event.detail.value ?? null;
-          }}
-          @fluvy-change=${(event: CustomEvent<DialChangeDetail>) => {
-            this.dragged = null;
-            this.setSpeed(view, event.detail.value ?? 0, false);
-          }}
-        ></fluvy-dial>
-      </div>
-      ${keys(
-        row,
-        this.room,
-        () => this.power(view, !on),
-        (direction) => this.stepSpeed(view, direction),
-      )}
-      ${sheetRows(this.ruler, this.room, this.rows(view, unusable))}`;
+    const count = speedCount(view);
+    const stop = 100 / count;
+    const off = shownStateText(this.hass, view, 'off');
+    return html`${
+      this.dial
+        ? html`<div class="dt-hero">
+            <fluvy-dial
+              .radius=${this.ring}
+              .large=${this.large}
+              .stepper=${false}
+              .tone=${lit ? 'fan' : 'neutral'}
+              .min=${0}
+              .max=${100}
+              .step=${stop}
+              .value=${speeds ? (speed ?? undefined) : undefined}
+              .gauge=${!speeds}
+              .fill=${speeds ? undefined : on ? 1 : 0}
+              .unit=${'%'}
+              .sub=${speeds ? this.dialWords(words) : ''}
+              .text=${unusable || (speeds && on && speed === null) ? '—' : speeds && lit ? undefined : shownStateText(this.hass, view, on ? 'on' : 'off')}
+              .name=${`${name} · ${words}`}
+              min-label=${speeds ? this.percent(0) : ''}
+              max-label=${speeds ? this.percent(100) : ''}
+              ?disabled=${unusable || (speeds && speed === null)}
+              .format=${(value: number) => this.percent(value)}
+              @fluvy-input=${(event: CustomEvent<DialChangeDetail>) => {
+                this.dragged = event.detail.value ?? null;
+              }}
+              @fluvy-change=${(event: CustomEvent<DialChangeDetail>) => {
+                this.dragged = null;
+                this.setSpeed(view, event.detail.value ?? 0, false);
+              }}
+            ></fluvy-dial>
+          </div>`
+        : speeds
+          ? this.across({
+              name,
+              title: words,
+              glyph: 'fan',
+              // on its own stops, as the fan card draws it
+              value: unusable || speed === null ? null : Math.round(speed / stop) * stop,
+              text: unusable || lit || (on && speed === null) ? undefined : off,
+              words: [off],
+              unit: '%',
+              min: 0,
+              max: 100,
+              step: stop,
+              ticks: speedScale(this.hass, count),
+              tone: lit ? 'fan' : 'neutral',
+              inactive: speed === null || !on,
+              wake: !unusable && speed !== null,
+              disabled: unusable,
+              format: (value) => this.percent(value),
+              edge: (value) => `${this.percent(value)} %`,
+              labels: (length) =>
+                heldLabels(this.ruler, length, speedScale(this.hass, count).labels),
+              preview: (value) => {
+                this.dragged = value;
+              },
+              change: (value) => this.setSpeed(view, value, false),
+            })
+          : nothing
+    }
+    ${keys(
+      row,
+      this.room,
+      () => this.power(view, !on),
+      (direction) => this.stepSpeed(view, direction),
+    )}
+    ${sheetRows(this.ruler, this.room, this.rows(view, unusable))}`;
   }
 }
 

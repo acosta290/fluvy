@@ -2,7 +2,7 @@
 import '../media/english.js';
 import { formatNumber, numberAttr, playerOff, textAttr, type EntityView } from '@fluvy/core';
 import { clamp, type DialChangeDetail, type Tone } from '@fluvy/ui';
-import { html, type TemplateResult } from 'lit';
+import { html, nothing, type TemplateResult } from 'lit';
 import { actionsThatFit, Hold, shownStateText } from '../cover/common.js';
 import {
   fitControls,
@@ -31,7 +31,8 @@ const inUse = (state: string): boolean =>
  * A player's details: its volume on the dial; under it its switch, the track before, play or pause, the track after
  * and mute, each one it takes; then its source and its sound mode, each a row that opens its options. Its artwork is
  * the head's picture, what plays the head's line. A player with no volume to set is its ring, lit while it plays, and
- * its keys.
+ * its keys. Without its dial (`show_dial: false`, #258) the volume is a ruler across the sheet, "Muted" after its
+ * figure while it is; a player with no volume to set is its keys.
  */
 export class FluvyDetailsMedia extends DetailsSheet {
   /** The volume the finger set, shown until the player reports it. */
@@ -203,35 +204,65 @@ export class FluvyDetailsMedia extends DetailsSheet {
     const lit = !unusable && !playerOff(state) && !muted;
     const words = this.t('media.volume');
     const percent = (value: number): string => formatNumber(this.hass, value, { digits: 0 });
-    return html`<div class="dt-hero">
-        <fluvy-dial
-          .radius=${this.ring}
-          .large=${this.large}
-          .stepper=${false}
-          .tone=${lit ? 'media' : 'neutral'}
-          .min=${0}
-          .max=${100}
-          .step=${1}
-          .value=${sets ? (level ?? undefined) : undefined}
-          .gauge=${!sets}
-          .fill=${sets ? undefined : this.active(view) && !unusable ? 1 : 0}
-          .unit=${'%'}
-          .sub=${sets ? this.dialWords(muted ? this.t('common.muted') : words) : ''}
-          .text=${unusable || (sets && level === null) ? '—' : sets ? undefined : shownStateText(this.hass, view, state)}
-          .name=${`${name} · ${words}`}
-          min-label=${sets ? percent(0) : ''}
-          max-label=${sets ? percent(100) : ''}
-          ?disabled=${unusable || (sets && level === null)}
-          .format=${percent}
-          @fluvy-change=${(event: CustomEvent<DialChangeDetail>) => {
-            const value = Math.round(event.detail.value ?? 0);
-            this.volume.set(value);
-            this.call('media_player', 'volume_set', { volume_level: value / 100 });
-          }}
-        ></fluvy-dial>
-      </div>
-      ${keys(this.keysOf(view, name, state, unusable), this.room, (key) => this.press(view, key))}
-      ${sheetRows(this.ruler, this.room, this.rows(view, unusable))}`;
+    const edge = (value: number): string => `${percent(value)} %`;
+    const setVolume = (level: number): void => {
+      const value = Math.round(level);
+      this.volume.set(value);
+      this.call('media_player', 'volume_set', { volume_level: value / 100 });
+    };
+    return html`${
+      this.dial
+        ? html`<div class="dt-hero">
+            <fluvy-dial
+              .radius=${this.ring}
+              .large=${this.large}
+              .stepper=${false}
+              .tone=${lit ? 'media' : 'neutral'}
+              .min=${0}
+              .max=${100}
+              .step=${1}
+              .value=${sets ? (level ?? undefined) : undefined}
+              .gauge=${!sets}
+              .fill=${sets ? undefined : this.active(view) && !unusable ? 1 : 0}
+              .unit=${'%'}
+              .sub=${sets ? this.dialWords(muted ? this.t('common.muted') : words) : ''}
+              .text=${unusable || (sets && level === null) ? '—' : sets ? undefined : shownStateText(this.hass, view, state)}
+              .name=${`${name} · ${words}`}
+              min-label=${sets ? percent(0) : ''}
+              max-label=${sets ? percent(100) : ''}
+              ?disabled=${unusable || (sets && level === null)}
+              .format=${percent}
+              @fluvy-change=${(event: CustomEvent<DialChangeDetail>) =>
+                setVolume(event.detail.value ?? 0)}
+            ></fluvy-dial>
+          </div>`
+        : sets
+          ? this.across({
+              name,
+              title: words,
+              glyph: 'volume',
+              value: unusable ? null : level,
+              unit: '%',
+              said: this.t('common.muted'),
+              saying: muted,
+              min: 0,
+              max: 100,
+              step: 1,
+              tone: lit ? 'media' : 'neutral',
+              inactive: unusable || level === null,
+              disabled: unusable || level === null,
+              format: percent,
+              edge,
+              labels: () => [
+                [0, edge(0)],
+                [1, edge(100)],
+              ],
+              change: setVolume,
+            })
+          : nothing
+    }
+    ${keys(this.keysOf(view, name, state, unusable), this.room, (key) => this.press(view, key))}
+    ${sheetRows(this.ruler, this.room, this.rows(view, unusable))}`;
   }
 }
 

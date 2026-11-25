@@ -150,13 +150,42 @@ tap_action:
 
 A sheet without its last 24 hours asks Home Assistant's recorder nothing.
 
+### A ruler in the dial's place
+
+A sheet can draw its one control on a ruler across it, the figure beside it, in place of its dial: shorter on a phone,
+and set with one thumb (a range is two rulers, low over high). Every sheet keeps its dial until one of three says
+otherwise, the nearest first: the action (`dial`), then the card built round that control (`sheet_dial` on the Cover,
+Thermostat, Light, Fan and Media cards, for their own entity; *Dial in the details sheet* in their editors), then the
+house (*Sheets with a dial* in the settings panel, Appearance → Cards: every kind until chosen).
+
+```yaml
+type: custom:fluvy-cover-card
+entity: cover.living_room_blind
+variant: horizontal
+sheet_dial: false # its sheet on a ruler, as the card; `true` keeps the dial where the house does not
+---
+type: custom:fluvy-tile-card
+entity: light.floor_lamp
+tap_action:
+  action: more-info
+  dial: false # this tile's sheet on a ruler, whatever the house keeps
+```
+
+An entity with nothing to set (a garage door, a light that only switches) is its keys alone. A cover's sheet on a
+ruler is its card across: its ends in the card's words and the card's favourites under the tilt.
+
+A sheet opened from a Cover card reads the cover as that card does, with its dial or without: a position reported
+turned round (`invert_position`) or counted as the blind comes down (`direction: down`), a tilt turned round or in
+degrees (`invert_tilt`, `tilt_angle`).
+
 A card of your own opens the same, by the house's choice: Fluvy's sheet where it has one, else Home Assistant's
-dialog. Pass your card's element as `from`, so the focus comes back to it, and `history` to say whether its last 24
-hours show:
+dialog. Pass your card's element as `from`, so the focus comes back to it, `history` to say whether its last 24
+hours show and `dial` whether it keeps its dial:
 
 ```js
 window.__fluvy?.openDetails('climate.living_room', { from: this });
 window.__fluvy?.openDetails('media_player.kitchen_speaker', { from: this, history: false });
+window.__fluvy?.openDetails('cover.living_room_blind', { from: this, dial: false });
 ```
 
 ## Customisation

@@ -84,6 +84,7 @@ show_rows: true
 #   action: none
 # icon_double_tap_action:
 #   action: none
+# sheet_dial: true
 ```
 
 ## Options
@@ -123,6 +124,8 @@ show_rows: true
 | `show_battery` | `false` | Warns of a low battery on the head’s line. |
 | `battery_entity` |  | The battery sensor the card reads its charge from. A `sensor`. |
 | `humidity_entity` |  | The humidity sensor the card reads, where it is not the one found by itself. |
+| **Interactions** |  |  |
+| `sheet_dial` | `true` | Whether the details sheet the card opens keeps its dial; off, its control is a ruler across the sheet. Left out, the house’s. |
 
 <details>
 <summary>Its look and its actions, as on every card</summary>

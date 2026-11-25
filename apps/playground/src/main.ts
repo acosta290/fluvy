@@ -90,7 +90,9 @@ import { loadFixture, SHEETS, type FrameSpec, type SheetSpec } from './scenes.js
  * ?sheets=fluvy         the house's details sheets (fluvy's settings → Appearance → Cards, #162): a card's more-info opens
  *                        Fluvy's own sheet for a light, a thermostat, a cover, a player or a fan; without it, as in a
  *                        house that keeps Home Assistant's dialog, every more-info is the mock's; &sheetsday=light,climate
- *                        the kinds whose sheets show their last 24 hours (#243: every kind where it names none)
+ *                        the kinds whose sheets show their last 24 hours (#243: every kind where it names none);
+ *                        &sheetsdial=light,climate the kinds whose sheets keep their dial (#258: every kind where it
+ *                        names none, none where it is empty), the rest drawn on a ruler
  * ?hold=1               a person's hold to slide (fluvy's settings → Preferences, #166): on a touch screen (a phone, or
  *                        the browser's touch emulation) a slider moves only after a still press of 200 ms
  * ?levels=1             the house's icons show their level (fluvy's settings → Appearance › Cards, #226): a battery's
@@ -268,15 +270,14 @@ const levels =
 
 // the house's details, as fluvy's settings would say them: the playground starts no look, so nobody says, and a card's
 // details are Home Assistant's dialog (what every suite counts) until the page asks for Fluvy's sheets; the kinds
-// whose sheets show their last 24 hours (#243), every kind until the page names them
+// whose sheets show their last 24 hours (#243) and those that keep their dial (#258), every kind until the page names
+// them
 if (params.get('sheets') === 'fluvy') {
-  const days = params.get('sheetsday');
-  setDetailsSheets(
-    detailsSheets(
-      () => 'fluvy',
-      () => (days === null ? undefined : parseSheetKinds(days.split(','))),
-    ),
-  );
+  const kinds = (key: string) => () => {
+    const named = params.get(key);
+    return named === null ? undefined : parseSheetKinds(named.split(','));
+  };
+  setDetailsSheets(detailsSheets(() => 'fluvy', kinds('sheetsday'), kinds('sheetsdial')));
 }
 
 // this device in Lite: the house's settings above, turned down as the look turns them down

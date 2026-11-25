@@ -2143,7 +2143,9 @@
     "state_icon_colors_helper": "У кожному рядку стан і його тон або колір (warning: warning)",
     "horizontal": "Горизонтальний",
     "exact_colors": "Точні кольори",
-    "exact_colors_helper": "Назви так, як їх малює Home Assistant, hex-код як введено. Не задано: як у всіх карток у налаштуваннях Fluvy"
+    "exact_colors_helper": "Назви так, як їх малює Home Assistant, hex-код як введено. Не задано: як у всіх карток у налаштуваннях Fluvy",
+    "sheet_dial": "Циферблат у подробицях",
+    "sheet_dial_helper": "Не задано: як у всіх подробиць у налаштуваннях Fluvy"
   },
   "energy-period-card": {
     "name": "Період енергії",
@@ -3189,7 +3191,8 @@
     "cards.exact": "Точні кольори",
     "cards.exact_sub": "Назви кольорів так, як їх малює Home Assistant, і hex-код як введено, а не відтінки палітри",
     "scope.activity_who": "Хто це зробив",
-    "scope.activity_who_sub": "Кожен запис «Активності» називає людину, яка за ним стоїть, з її фото; фільтр за особою"
+    "scope.activity_who_sub": "Кожен запис «Активності» називає людину, яка за ним стоїть, з її фото; фільтр за особою",
+    "cards.sheets_dial": "Подробиці з циферблатом"
   },
   "customise": {
     "title": "Налаштувати",

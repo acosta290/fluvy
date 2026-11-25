@@ -70,6 +70,7 @@ slider_style: house
 #   action: none
 # icon_double_tap_action:
 #   action: none
+# sheet_dial: true
 ```
 
 ## Options
@@ -94,6 +95,8 @@ slider_style: house
 | `tint_style` | `wash` | How the colour is shown: a wash over the card, the card’s edge, or the control alone. `wash` · `edge` · `control`. |
 | `state_colors` |  | A colour for each of the device’s states, held under this key: a tone, none, or a colour of your own. Its keys: `on` · `off`. |
 | [`rows`](#rows) |  | The rows the card lists, in this order. A list: [its items](#rows). |
+| **Interactions** |  |  |
+| `sheet_dial` | `true` | Whether the details sheet the card opens keeps its dial; off, its control is a ruler across the sheet. Left out, the house’s. |
 
 <details>
 <summary>Its look and its actions, as on every card</summary>

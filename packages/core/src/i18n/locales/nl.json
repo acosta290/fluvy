@@ -688,7 +688,9 @@
     "state_icon_colors_helper": "Per regel een status en zijn tint of kleur (warning: warning)",
     "horizontal": "Horizontaal",
     "exact_colors": "Exacte kleuren",
-    "exact_colors_helper": "Namen zoals Home Assistant ze tekent, een hexcode zoals getypt. Onaangeroerd: die van alle kaarten, uit de instellingen van Fluvy"
+    "exact_colors_helper": "Namen zoals Home Assistant ze tekent, een hexcode zoals getypt. Onaangeroerd: die van alle kaarten, uit de instellingen van Fluvy",
+    "sheet_dial": "Draaiknop in de details",
+    "sheet_dial_helper": "Onaangeroerd: die van alle details, uit de instellingen van Fluvy"
   },
   "strategy": {
     "home": "Thuis",
@@ -1691,7 +1693,8 @@
     "cards.exact": "Exacte kleuren",
     "cards.exact_sub": "Kleurnamen zoals Home Assistant ze tekent en een hexcode zoals getypt, niet de tinten van het palet",
     "scope.activity_who": "Wie het deed",
-    "scope.activity_who_sub": "Elke regel in Activiteit noemt de persoon erachter, met foto; een filter per persoon"
+    "scope.activity_who_sub": "Elke regel in Activiteit noemt de persoon erachter, met foto; een filter per persoon",
+    "cards.sheets_dial": "Details met draaiknop"
   },
   "customise": {
     "title": "Aanpassen",

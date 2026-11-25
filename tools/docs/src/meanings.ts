@@ -238,6 +238,8 @@ export const MEANINGS: Readonly<Record<string, string>> = {
   scan: 'Searches the device for the rest of its entities; off, the card reads only those named.',
   session_energy: 'A sensor of the energy this charging session has added.',
   setpoint_style: 'Shows each compartment’s temperature as a readout, or with − and + to set it.',
+  sheet_dial:
+    'Whether the details sheet the card opens keeps its dial; off, its control is a ruler across the sheet. Left out, the house’s.',
   short_names: 'Shortens a name inside a group by the group’s own name.',
   show_action: 'Says on its line what a climate is doing and what it is set to.',
   show_actions: 'Shows the start, pause and cancel buttons.',

@@ -1450,7 +1450,9 @@
     "state_icon_colors_helper": "Na každom riadku stav a jeho tón alebo farba (warning: warning)",
     "horizontal": "Vodorovné",
     "exact_colors": "Presné farby",
-    "exact_colors_helper": "Názvy tak, ako ich kreslí Home Assistant, hex kód tak, ako je zadaný. Bez zmeny: ako pri všetkých kartách v nastaveniach Fluvy"
+    "exact_colors_helper": "Názvy tak, ako ich kreslí Home Assistant, hex kód tak, ako je zadaný. Bez zmeny: ako pri všetkých kartách v nastaveniach Fluvy",
+    "sheet_dial": "Ciferník v podrobnostiach",
+    "sheet_dial_helper": "Bez zmeny: ako pri všetkých podrobnostiach v nastaveniach Fluvy"
   },
   "page": {
     "menu": "Otvoriť ponuku",
@@ -3123,7 +3125,8 @@
     "cards.exact": "Presné farby",
     "cards.exact_sub": "Názvy farieb tak, ako ich kreslí Home Assistant, a hex kód tak, ako je zadaný, nie odtiene palety",
     "scope.activity_who": "Kto to urobil",
-    "scope.activity_who_sub": "Každý záznam v Aktivite uvádza osobu, ktorá zaň stojí, s jej fotkou; filter podľa osoby"
+    "scope.activity_who_sub": "Každý záznam v Aktivite uvádza osobu, ktorá zaň stojí, s jej fotkou; filter podľa osoby",
+    "cards.sheets_dial": "Podrobnosti s ciferníkom"
   },
   "customise": {
     "title": "Prispôsobenie",

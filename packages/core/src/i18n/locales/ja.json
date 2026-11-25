@@ -638,7 +638,9 @@
     "state_icon_colors_helper": "1行に状態とそのトーンまたは色（warning: warning）",
     "horizontal": "横向き",
     "exact_colors": "正確な色",
-    "exact_colors_helper": "色の名前は Home Assistant の色、カラーコードは入力どおり。変更しないときは Fluvy の設定のすべてのカードの値"
+    "exact_colors_helper": "色の名前は Home Assistant の色、カラーコードは入力どおり。変更しないときは Fluvy の設定のすべてのカードの値",
+    "sheet_dial": "詳細シートにダイヤルを表示",
+    "sheet_dial_helper": "変更しないときは Fluvy の設定のすべてのシートの値"
   },
   "strategy": {
     "home": "ホーム",
@@ -3024,7 +3026,8 @@
     "cards.exact": "正確な色",
     "cards.exact_sub": "色の名前は Home Assistant の色で、カラーコードは入力どおりに表示し、パレットの色合いにはしません",
     "scope.activity_who": "誰が操作したか",
-    "scope.activity_who_sub": "アクティビティの各項目に操作した人を写真付きで表示（人で絞り込むことも可能）"
+    "scope.activity_who_sub": "アクティビティの各項目に操作した人を写真付きで表示（人で絞り込むことも可能）",
+    "cards.sheets_dial": "ダイヤルを表示するシート"
   },
   "customise": {
     "title": "カスタマイズ",

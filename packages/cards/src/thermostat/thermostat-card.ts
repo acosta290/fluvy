@@ -109,6 +109,11 @@ export interface ThermostatCardConfig extends RowsCardConfig, ReadingsAsk, State
   focus?: ThermostatFocus;
   /** Readings under the value (#215): up to four, each an id or a sensor with what it says of its own. */
   readouts?: ReadonlyArray<string | ThermostatReadout>;
+  /**
+   * Whether the details sheet the card opens for its thermostat keeps its dial (#258): off, the target is a ruler
+   * across the sheet, a range two; unset, as the house's sheets are.
+   */
+  sheet_dial?: boolean;
 }
 
 export type ModesStyle = 'tiles' | 'icons' | RowStyle;

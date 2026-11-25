@@ -56,10 +56,11 @@ each dashboard's travel in the settings file, and in Home Assistant's backups wi
 ## Cards
 
 How solid every card is, whether it draws its border, how one looks while a device is unavailable, whose details it
-opens and which of them show their last 24 hours, when a device shows its state's colour, whether its icon shows a
-level and whether it wears the colours it names exactly, where a card says nothing of its own (1.15, 1.19, 1.16, 1.20,
-1.22, 1.23, 1.25). Solid, bordered, dashed, every day, never and off until chosen, so a dashboard looks as it did;
-Fluvy's details sheets are on from 1.20, where Home Assistant's dialog opened before:
+opens, which of them show their last 24 hours and which keep their dial, when a device shows its state's colour,
+whether its icon shows a level and whether it wears the colours it names exactly, where a card says nothing of its own
+(1.15, 1.19, 1.16, 1.20, 1.22, 1.23, 1.25, 1.26). Solid, bordered, dashed, every day, every dial, never and off until
+chosen, so a dashboard looks as it did; Fluvy's details sheets are on from 1.20, where Home Assistant's dialog opened
+before:
 
 | Setting | Values | What a card takes from it |
 | --- | --- | --- |
@@ -68,6 +69,7 @@ Fluvy's details sheets are on from 1.20, where Home Assistant's dialog opened be
 | **Border** | on · off (on by default) | `card_border`: off, a card draws no border, the hairline round it — round each tile where the card is a tile or a group of them — so it stands on its fill alone, or on its content alone where it is see-through at 0 % |
 | **Fluvy's details sheets** | on · off (on by default) | whose details a `more-info` opens for a light, a thermostat (a climate, a water heater, a humidifier), a cover or a valve, a media player and a fan: Fluvy's own [sheet](customising.md#details-sheets), or, off, Home Assistant's dialog as for every other entity. An action's own `details: fluvy` or `details: home-assistant` wins. Stored as `sheets: fluvy` or `sheets: home-assistant` |
 | **Sheets show their last 24 hours** | Lights · Climate · Blinds · Media · Fans, each on or off (every one by default; shown while the sheets are on) | which sheets end with the last 24 hours (1.25): a kind turned off draws its sheet without them and asks Home Assistant's recorder nothing. An action's own `history: true` or `history: false` wins. Stored as `sheetsHistory` |
+| **Sheets with a dial** | Lights · Climate · Blinds · Media · Fans, each on or off (every one by default; shown while the sheets are on) | which sheets are built round their dial (1.26): a kind turned off draws its control on [a ruler across the sheet](customising.md#a-ruler-in-the-dials-place), shorter on a phone. A card's own `sheet_dial` wins, and an action's own `dial: true` or `dial: false` over both. Stored as `sheetsDial` |
 | **When unavailable** | Dashed · As when off (Dashed by default) | `unavailable`: `dashed` draws a card or a tile out of reach on the page's fill in a dashed hairline, its words faded and the ⊘ glyph in its circle; `quiet` (As when off) draws it as it is while off — its own surface, its own glyph, its words and controls at full strength — still saying "Unavailable", every value it cannot know a dash, every control still |
 | **Devices show their state's colour** | Never · When active · Always (Never by default) | `tint` on the lock, cover, alarm, vacuum, fan and thermostat cards: their state's colour beyond the circle while the device is active (unlocked, open, armed, cleaning, on, heating), or at rest too where the rest has a colour (a locked lock) — see [a device's state in colour](customising.md#a-devices-state-in-colour) |
 | **Shown as** | Wash · Edge · Control (Wash by default; shown while the colour shows) | `tint_style`: a quiet wash of the colour over the card, its edge alone in the colour, or the control alone (a lock's knob) |

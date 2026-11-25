@@ -638,7 +638,9 @@
     "state_icon_colors_helper": "Soronként egy állapot és a tónusa vagy színe (warning: warning)",
     "horizontal": "Vízszintes",
     "exact_colors": "Pontos színek",
-    "exact_colors_helper": "A nevek úgy, ahogy a Home Assistant rajzolja őket, a hex kód úgy, ahogy beírták. Érintetlenül: az összes kártyáé, a Fluvy beállításaiból"
+    "exact_colors_helper": "A nevek úgy, ahogy a Home Assistant rajzolja őket, a hex kód úgy, ahogy beírták. Érintetlenül: az összes kártyáé, a Fluvy beállításaiból",
+    "sheet_dial": "Tárcsa a részleteknél",
+    "sheet_dial_helper": "Érintetlenül: az összes részleté, a Fluvy beállításaiból"
   },
   "strategy": {
     "home": "Otthon",
@@ -3140,7 +3142,8 @@
     "cards.exact": "Pontos színek",
     "cards.exact_sub": "A színnevek úgy, ahogy a Home Assistant rajzolja őket, a hex kód úgy, ahogy beírták, nem a paletta árnyalatai",
     "scope.activity_who": "Ki csinálta",
-    "scope.activity_who_sub": "A Tevékenység minden bejegyzése megnevezi a mögötte álló személyt, a képével; szűrés személy szerint"
+    "scope.activity_who_sub": "A Tevékenység minden bejegyzése megnevezi a mögötte álló személyt, a képével; szűrés személy szerint",
+    "cards.sheets_dial": "Részletek tárcsával"
   },
   "customise": {
     "title": "Testreszabás",

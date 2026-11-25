@@ -688,7 +688,9 @@
     "state_icon_colors_helper": "Un estado y su tono o color en cada línea (warning: warning)",
     "horizontal": "Horizontal",
     "exact_colors": "Colores exactos",
-    "exact_colors_helper": "Los nombres como los dibuja Home Assistant, un código hex tal como se escribe. Sin tocar, el de todas las tarjetas en los ajustes de Fluvy"
+    "exact_colors_helper": "Los nombres como los dibuja Home Assistant, un código hex tal como se escribe. Sin tocar, el de todas las tarjetas en los ajustes de Fluvy",
+    "sheet_dial": "Dial en los detalles",
+    "sheet_dial_helper": "Sin tocar, el de todos los detalles en los ajustes de Fluvy"
   },
   "strategy": {
     "home": "Inicio",
@@ -1691,7 +1693,8 @@
     "cards.exact": "Colores exactos",
     "cards.exact_sub": "Los nombres de color como los dibuja Home Assistant y un código hex tal como se escribe, no los tonos de la paleta",
     "scope.activity_who": "Quién fue",
-    "scope.activity_who_sub": "Cada entrada de Actividad nombra a la persona que la hizo, con su foto; un filtro por persona"
+    "scope.activity_who_sub": "Cada entrada de Actividad nombra a la persona que la hizo, con su foto; un filtro por persona",
+    "cards.sheets_dial": "Detalles con dial"
   },
   "customise": {
     "title": "Personalizar",

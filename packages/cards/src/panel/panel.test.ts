@@ -1882,6 +1882,61 @@ describe('the settings panel', () => {
     guest.panel.remove();
   });
 
+  it('lets the house choose which sheets keep their dial, every kind until chosen (1.26, #258)', async () => {
+    const { panel, root, row, button, handle, settle } = await mount();
+    const label = 'Sheets with a dial';
+    /** The kinds' chips under the row's label, each with its words and whether it is chosen; none while the sheets are off. */
+    const chips = () => {
+      const title = [...root.querySelectorAll('.pn-label')].find(
+        (p) => p.textContent?.trim() === label,
+      );
+      return title
+        ? [...title.nextElementSibling!.querySelectorAll<HTMLElement>('.fv-chip')]
+        : null;
+    };
+    const kinds = () =>
+      chips()?.map((chip) => [chip.textContent?.trim(), chip.classList.contains('is-active')]) ??
+      null;
+    // every kind, by default: nothing changes on upgrade
+    expect(kinds()).toEqual([
+      ['Lights', true],
+      ['Climate', true],
+      ['Blinds', true],
+      ['Media', true],
+      ['Fans', true],
+    ]);
+    // it stands under the row of the last 24 hours, and moves none of that row's
+    const labels = [...root.querySelectorAll('.pn-label')].map((p) => p.textContent?.trim());
+    expect(labels.indexOf(label)).toBe(labels.indexOf('Sheets show their last 24 hours') + 1);
+    chips()!
+      .find((chip) => chip.textContent?.trim() === 'Blinds')!
+      .click();
+    await settle();
+    expect(kinds()?.map(([, on]) => on)).toEqual([true, true, false, true, true]);
+    expect(root.querySelector('.pn-bar__text')?.textContent?.trim()).toBe(
+      'Cards · Sheets with a dial · Lights, Climate, Media, Fans',
+    );
+    button('Save')!.click();
+    await settle();
+    expect(handle.settings().sheetsDial).toEqual(['light', 'climate', 'media', 'fan']);
+    expect(handle.settings().sheetsHistory).toEqual(['light', 'climate', 'cover', 'media', 'fan']);
+    // none chosen is every sheet on a ruler
+    for (const word of ['Lights', 'Climate', 'Media', 'Fans']) {
+      chips()!
+        .find((chip) => chip.textContent?.trim() === word)!
+        .click();
+      await settle();
+    }
+    expect(root.querySelector('.pn-bar__text')?.textContent?.trim()).toBe(
+      'Cards · Sheets with a dial · None',
+    );
+    // the sheets off: Home Assistant's dialog has no dial of ours to keep
+    row('Fluvy’s details sheets')?.querySelector<HTMLElement>('.fv-hit')?.click();
+    await settle();
+    expect(kinds()).toBeNull();
+    panel.remove();
+  });
+
   it('lets the house give Home Assistant’s history back in its details dialog, ours until then (1.20, #162)', async () => {
     const { panel, root, row, button, handle, settle } = await mount();
     await handle.store.saveHouse({ scope: 'everywhere' });
@@ -3357,9 +3412,11 @@ describe('the settings panel', () => {
       cards: { opacity: 75, blur: false, unavailable: 'quiet', border: false },
       sliders: { style: 'bar', words: 'none' },
       background,
-      // whose details a card opens (1.20, #162), and which kinds' show their last 24 hours (1.25, #243)
+      // whose details a card opens (1.20, #162), which kinds' show their last 24 hours (1.25, #243) and which keep
+      // their dial (1.26, #258)
       sheets: 'home-assistant',
       sheetsHistory: ['climate', 'cover'],
+      sheetsDial: ['light', 'fan'],
       // the order every list by room reads the rooms in (1.21, #189)
       rooms: { sort: 'home_assistant', order: ['kitchen', 'hall'] },
       // when the devices show their state's colour, and as what (1.22, #196)
@@ -3416,6 +3473,7 @@ describe('the settings panel', () => {
       background,
       sheets: 'home-assistant',
       sheetsHistory: ['climate', 'cover'],
+      sheetsDial: ['light', 'fan'],
       rooms: { sort: 'home_assistant', order: ['kitchen', 'hall'] },
       stateTint: 'always',
       stateTintStyle: 'edge',
@@ -3454,6 +3512,7 @@ describe('the settings panel', () => {
       background: BACKGROUND_DEFAULTS,
       sheets: 'fluvy',
       sheetsHistory: ['light', 'climate', 'cover', 'media', 'fan'],
+      sheetsDial: ['light', 'climate', 'cover', 'media', 'fan'],
       rooms: { sort: 'auto', order: [] },
       stateTint: 'off',
       stateTintStyle: 'wash',
@@ -3494,6 +3553,7 @@ describe('the settings panel', () => {
     localStorage.removeItem('fluvy:device');
     expect(handle.settings().sheets).toBe('home-assistant');
     expect(handle.settings().sheetsHistory).toEqual(['climate', 'cover']);
+    expect(handle.settings().sheetsDial).toEqual(['light', 'fan']);
     expect(handle.settings().rooms).toEqual({ sort: 'home_assistant', order: ['kitchen', 'hall'] });
     expect([handle.settings().stateTint, handle.settings().stateTintStyle]).toEqual([
       'always',

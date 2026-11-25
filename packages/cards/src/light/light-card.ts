@@ -91,6 +91,11 @@ export interface LightCardConfig extends RowsCardConfig {
   tint_strength?: TintStrength;
   /** A lit white: by its temperature (`temperature`, the default since 1.10), or as the palette's lit light (`palette`). */
   light_whites?: LightWhites;
+  /**
+   * Whether the details sheet the card opens for its light keeps its dial (#258): off, the brightness is a ruler
+   * across the sheet; unset, as the house's sheets are.
+   */
+  sheet_dial?: boolean;
 }
 
 /** The colour controls' module: fetched the first time a colour bulb is drawn, once for every light card. */

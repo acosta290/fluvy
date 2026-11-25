@@ -3,8 +3,8 @@ import { css } from 'lit';
 /**
  * The details sheets' own rules (1.20, #162) on the language's sheet, card head, dial, action row, chips and rows, and
  * on the dialog every sheet of ours stands in at a phone's foot (`sheetDialog`): the size the sheet reads at, the
- * dialog in the middle of a wide screen, the head's picture and its two rounds, the dial's place, the keys under it,
- * and the day's line at the foot. Tokens only.
+ * dialog in the middle of a wide screen, the head's picture and its two rounds, the dial's place (a ruler's rows in
+ * it, where the sheet is asked for none), the keys under it, and the day's line at the foot. Tokens only.
  */
 export const detailsStyles = css`
   :host(:not([docked])) {
@@ -115,6 +115,30 @@ export const detailsStyles = css`
     display: flex;
     justify-content: center;
     margin-top: 16px;
+  }
+
+  /* a ruler in the dial's place (#258, the row across): a range's two, its low end over its high one, 16 apart */
+  .cv-across + .cv-across {
+    margin-top: 16px;
+  }
+  /* a range's end on its ruler's row: a button that gives the keys to its end, a finger's 44 round its figure; the
+     end they step in the accent's ink, as on the Thermostat card */
+  .dt-end {
+    position: relative;
+    display: inline-block;
+    letter-spacing: inherit;
+  }
+  .dt-end::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: max(100%, 44px);
+    height: 44px;
+    translate: -50% -50%;
+  }
+  .dt-end.is-on {
+    color: var(--fluvy-accent);
   }
 
   /* the keys under the dial: a switch that is on wears its tone's fill, as a lit tile does */

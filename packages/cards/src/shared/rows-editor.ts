@@ -1404,7 +1404,8 @@ export function editorDefaults(
  * reads there — a card's surface and its colours as named, its look out of reach, the words under its slider, when a
  * device shows its state's colour and as what — and the ones a card's own defaults read there: a light's colours on
  * its tile, its row or its room, the hours a chart of the past shows (`hours`, a Chart card's `span`), a gauge's style
- * and whether it moves, and a chart's style with every fine key that style or the house's chart settings decide. Written into a config, such a
+ * and whether it moves, a chart's style with every fine key that style or the house's chart settings decide, and
+ * whether the details sheet a card opens keeps its dial (`sheet_dial`, #258). Written into a config, such a
  * key stops following the house: what prints a card's defaults as YAML (the docs' and the demo's "all options") says
  * it and never writes it. By the key alone, so a card whose default for one is its own (a tile's `tint`) is not
  * pinned either; a default that names the house out loud (`slider_style: house`, `show_grid: auto`) pins nothing and
@@ -1433,6 +1434,7 @@ export const HOUSE_KEYS: ReadonlySet<string> = new Set([
   'highlight',
   'animate',
   'points',
+  'sheet_dial',
 ]);
 
 /**

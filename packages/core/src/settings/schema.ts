@@ -50,6 +50,9 @@ export type { CardLanguage };
 
 export const SETTINGS_KEY = 'fluvy';
 /**
+ * 10 since 1.26: the house says which kinds' details sheets keep their dial (`sheetsDial`, #258): every kind where a 9
+ * stored none, every sheet built round its dial as before, so nothing changes on upgrade (a 1.25 bundle reads a 10's
+ * as its own, and keeps the field on a save).
  * 9 since 1.25: the house says whether its Activity view shows who did each entry (`activityWho`), whether its cards
  * wear the colours they name as they are named (`exactColors`, #250: Home Assistant's own value for a name, a hex as
  * given) and which kinds' details sheets show their last 24 hours at their foot (`sheetsHistory`, #243): off, off and
@@ -82,7 +85,7 @@ export const SETTINGS_KEY = 'fluvy';
  * one added inside such a field (1.16's `cards.unavailable`): a 1.15 bundle draws it as its default, and a save of
  * the cards from it writes the default back.
  */
-export const SETTINGS_VERSION = 9;
+export const SETTINGS_VERSION = 10;
 
 /** A palette saved to the house: a palette file as it was shared. */
 export type SavedPalette = PaletteFile;
@@ -240,6 +243,8 @@ export interface HouseSettings {
   readonly sheets: Sheets;
   /** The kinds whose sheet shows its last 24 hours where an action says nothing of its own (1.25, #243). */
   readonly sheetsHistory: readonly SheetKind[];
+  /** The kinds whose sheet keeps its dial where neither an action nor its card says (1.26, #258); the rest, a ruler. */
+  readonly sheetsDial: readonly SheetKind[];
   /** The order every list by room reads the house's rooms in (1.21, #189). */
   readonly rooms: RoomOrder;
   /** Fluvy's icons show what an entity reads where they can (1.23, #226): a battery's charge, a signal's bars, a valve. */
@@ -302,6 +307,7 @@ export interface EffectiveSettings {
   readonly background: PageBackground;
   readonly sheets: Sheets;
   readonly sheetsHistory: readonly SheetKind[];
+  readonly sheetsDial: readonly SheetKind[];
   readonly rooms: RoomOrder;
   readonly levelIcons: boolean;
   readonly exactColors: boolean;
@@ -360,6 +366,8 @@ export const HOUSE_DEFAULTS: HouseSettings = {
   sheets: 'fluvy',
   // every sheet with its last 24 hours, as before 1.25
   sheetsHistory: SHEET_KINDS,
+  // every sheet round its dial, as before 1.26
+  sheetsDial: SHEET_KINDS,
   // every list by room in its own order, as before 1.21
   rooms: { sort: 'auto', order: [] },
   // every icon of its kind's one glyph, as before 1.23
@@ -458,11 +466,12 @@ export function parseIcons(raw: unknown): MenuIcons {
   };
 }
 
-/** The kinds whose sheets show their last 24 hours: those it knows, each once, in their order; no list is every kind. */
+/**
+ * The kinds a house chose for its sheets (those that show their last 24 hours, those that keep their dial): the ones it
+ * knows, each once, in their order; no list is every kind.
+ */
 export const parseSheetKinds = (raw: unknown): readonly SheetKind[] =>
-  Array.isArray(raw)
-    ? SHEET_KINDS.filter((kind) => raw.includes(kind))
-    : HOUSE_DEFAULTS.sheetsHistory;
+  Array.isArray(raw) ? SHEET_KINDS.filter((kind) => raw.includes(kind)) : SHEET_KINDS;
 
 /** The house's order of its rooms: a sort it knows, and the area ids that come first, each once. */
 export function parseRooms(raw: unknown): RoomOrder {
@@ -512,6 +521,7 @@ export function parseHouse(raw: unknown): HouseSettings {
     background: parseBackground(value['background']),
     sheets: value['sheets'] === 'home-assistant' ? 'home-assistant' : d.sheets,
     sheetsHistory: parseSheetKinds(value['sheetsHistory']),
+    sheetsDial: parseSheetKinds(value['sheetsDial']),
     rooms: parseRooms(value['rooms']),
     levelIcons: value['levelIcons'] === true,
     exactColors: value['exactColors'] === true,
@@ -581,6 +591,7 @@ export function resolveSettings(
     background: house.background,
     sheets: house.sheets,
     sheetsHistory: house.sheetsHistory,
+    sheetsDial: house.sheetsDial,
     rooms: house.rooms,
     levelIcons: house.levelIcons,
     exactColors: house.exactColors,

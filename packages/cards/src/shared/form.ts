@@ -5,6 +5,7 @@ import {
   domainOf,
   idsOf,
   localize,
+  lookHandle,
   resolveEntity,
   type ActionConfig,
   type FluvyCardConfig,
@@ -15,6 +16,7 @@ import {
   type LovelaceCardConfig,
   type LovelaceConfigForm,
   type MessageKey,
+  type SheetKind,
   SLIDER_STYLES,
   SLIDER_WORDS,
   sliderDefaults,
@@ -324,12 +326,62 @@ export const optionalActions = (...schema: HaFormSchemaItem[]): HaFormSchemaItem
 /** What an action does where none is chosen, as its picker says it; `null`: what the card does of its own, unsaid. */
 type Fallback = ActionConfig['action'] | null;
 
+/** What a card of one entity answers: its tap and its hold, the details where none is chosen, then the rest, nothing. */
+const OWN_ACTIONS = [
+  'tap_action',
+  'hold_action',
+  'double_tap_action',
+  'icon_tap_action',
+  'icon_hold_action',
+  'icon_double_tap_action',
+] as const;
+
+/**
+ * Whether a card opens Fluvy's details sheet of its own entity and leaves the sheet's dial to itself: one of its taps
+ * or holds is the details, of the card's entity, Fluvy's by the action's own say or the house's, and says nothing of
+ * the dial (an action's `dial` is said before the card's).
+ */
+const opensSheet = (data: Readonly<Record<string, unknown>>): boolean =>
+  OWN_ACTIONS.some((key, at) => {
+    const action = (data[key] ?? (at < 2 ? { action: 'more-info' } : undefined)) as
+      ActionConfig | undefined;
+    return (
+      action?.action === 'more-info' &&
+      (action.entity ?? data['entity']) === data['entity'] &&
+      (action.details ?? lookHandle()?.settings().sheets ?? 'fluvy') === 'fluvy' &&
+      typeof action.dial !== 'boolean'
+    );
+  });
+
+/**
+ * Whether the house keeps the dial of a kind's details sheets (fluvy's settings › Appearance › Cards, `sheetsDial`):
+ * what a card of that kind does while its `sheet_dial` says nothing, and so what its editor shows. Every kind's
+ * where no look says.
+ */
+export const sheetDialDefault = (kind: SheetKind): boolean =>
+  lookHandle()?.settings().sheetsDial.includes(kind) ?? true;
+
+/**
+ * Whether the details sheet of the card's own entity keeps its dial (`sheet_dial`, 1.26, #258): a switch, the house's
+ * for its kind until chosen (`sheetDialDefault`), as the words under it say. Shown where it can act: while the card
+ * opens that sheet (`opensSheet`) and `sets` says the sheet has a dial to keep (a cover that takes a position, a
+ * lamp that dims).
+ */
+export const sheetDialField = (
+  sets: NonNullable<HaFormSchemaItem['when']> = () => true,
+): HaFormSchemaItem => ({
+  ...boolField('sheet_dial'),
+  helper: 'editor.sheet_dial_helper',
+  when: (data, hass) => opensSheet(data) && sets(data, hass),
+});
+
 /**
  * What a card, or an item, answers, in its Interactions section (#179): a tap and a still press — the details where
  * none is chosen, nothing on a card of many (`many`: no entity of its own to open), each its own where the card says
  * (`tap`, `hold`) — then, added as Home Assistant's own editors add them, a double tap and, where it has a circle that
  * may answer on its own (`icon`), the circle's tap, hold and double tap: nothing until set (a tile's circle that is its
- * switch flips it: `iconTap`).
+ * switch flips it: `iconTap`). Under them, on a card built round one control (`dial`: whether its entity has one to
+ * set), whether the details sheet those open keeps its dial (`sheetDialField`).
  */
 export const actionFields = ({
   icon = false,
@@ -337,12 +389,14 @@ export const actionFields = ({
   tap,
   hold,
   iconTap = 'none',
+  dial,
 }: {
   icon?: boolean;
   many?: boolean;
   tap?: Fallback;
   hold?: Fallback;
   iconTap?: Fallback;
+  dial?: NonNullable<HaFormSchemaItem['when']>;
 } = {}): HaFormSchemaItem => {
   const fallback = many ? 'none' : 'more-info';
   const said = (own: Fallback | undefined): ActionConfig['action'] | undefined =>
@@ -360,6 +414,7 @@ export const actionFields = ({
           ]
         : []),
     ),
+    ...(dial ? [sheetDialField(dial)] : []),
   ]);
 };
 

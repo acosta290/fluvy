@@ -688,7 +688,9 @@
     "state_icon_colors_helper": "Her satırda bir durum ve tonu ya da rengi (warning: warning)",
     "horizontal": "Yatay",
     "exact_colors": "Tam renkler",
-    "exact_colors_helper": "Adlar Home Assistant’ın çizdiği gibi, hex kodu yazıldığı gibi. Dokunulmazsa, Fluvy ayarlarındaki tüm kartlarınki"
+    "exact_colors_helper": "Adlar Home Assistant’ın çizdiği gibi, hex kodu yazıldığı gibi. Dokunulmazsa, Fluvy ayarlarındaki tüm kartlarınki",
+    "sheet_dial": "Ayrıntılarda kadran",
+    "sheet_dial_helper": "Dokunulmazsa, Fluvy ayarlarındaki tüm ayrıntılarınki"
   },
   "strategy": {
     "home": "Ana sayfa",
@@ -1691,7 +1693,8 @@
     "cards.exact": "Tam renkler",
     "cards.exact_sub": "Renk adları Home Assistant’ın çizdiği gibi, hex kodu yazıldığı gibi; paletin tonları değil",
     "scope.activity_who": "Kimin yaptığı",
-    "scope.activity_who_sub": "Etkinlik’teki her kayıt, arkasındaki kişiyi fotoğrafıyla gösterir; kişiye göre filtre"
+    "scope.activity_who_sub": "Etkinlik’teki her kayıt, arkasındaki kişiyi fotoğrafıyla gösterir; kişiye göre filtre",
+    "cards.sheets_dial": "Kadranlı ayrıntılar"
   },
   "customise": {
     "title": "Özelleştirme",

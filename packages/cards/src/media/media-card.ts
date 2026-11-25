@@ -62,6 +62,7 @@ import {
   rowsFields,
   rowsList,
   selectField,
+  sheetDialDefault,
   sliderFields,
   textField,
 } from '../shared/form.js';
@@ -127,6 +128,11 @@ export interface MediaCardConfig extends RowsCardConfig {
    * · Volume 7"). A player out of reach still says why.
    */
   secondary?: string;
+  /**
+   * Whether the details sheet the card opens for its player keeps its dial (#258): off, the volume is a ruler across
+   * the sheet; unset, as the house's sheets are.
+   */
+  sheet_dial?: boolean;
 }
 
 export type ImageMode = 'fallback' | 'always';
@@ -351,6 +357,7 @@ export class FluvyMediaCard extends Card<MediaCardConfig> {
     'secondary',
     'rows',
     'show_rows',
+    'sheet_dial',
   ]);
   /** The rows it lists under the player and the hero (#262): the mini row has none. */
   static override lists: readonly RowsListSpec[] = [rowsList(notMini)];
@@ -381,7 +388,13 @@ export class FluvyMediaCard extends Card<MediaCardConfig> {
           onlyWhen(({ show_volume, variant }) => show_volume !== false && variant !== 'mini', row),
         ),
         ...colourFields(),
-        actionFields(),
+        // its sheet's dial is its volume: none to keep for a player whose volume cannot be set
+        actionFields({
+          dial: (data, hass) => {
+            const view = resolveEntity(hass, String(data['entity']));
+            return !view.stateObj || view.supports(MEDIA.VOLUME_SET);
+          },
+        }),
       ],
       ...formLabels({ image_mode: 'media.editor_image_mode' }),
     };
@@ -398,6 +411,7 @@ export class FluvyMediaCard extends Card<MediaCardConfig> {
       controls: [...MINI_CONTROLS],
       image_mode: 'fallback',
       show_rows: true,
+      sheet_dial: sheetDialDefault('media'),
     };
   };
 

@@ -688,7 +688,9 @@
     "state_icon_colors_helper": "Pro Zeile ein Zustand und sein Farbton oder seine Farbe (warning: warning)",
     "horizontal": "Horizontal",
     "exact_colors": "Exakte Farben",
-    "exact_colors_helper": "Namen wie in Home Assistant, Hex-Werte wie eingegeben. Unverändert: wie in den Fluvy-Einstellungen für alle Karten"
+    "exact_colors_helper": "Namen wie in Home Assistant, Hex-Werte wie eingegeben. Unverändert: wie in den Fluvy-Einstellungen für alle Karten",
+    "sheet_dial": "Drehregler in der Detailansicht",
+    "sheet_dial_helper": "Unverändert: wie in den Fluvy-Einstellungen für alle Ansichten"
   },
   "strategy": {
     "home": "Zuhause",
@@ -1691,7 +1693,8 @@
     "cards.exact": "Exakte Farben",
     "cards.exact_sub": "Farbnamen wie in Home Assistant und Hex-Werte wie eingegeben, nicht die Töne der Palette",
     "scope.activity_who": "Wer es war",
-    "scope.activity_who_sub": "Jeder Eintrag in Aktivität nennt die Person dahinter, mit ihrem Bild; ein Filter nach Person"
+    "scope.activity_who_sub": "Jeder Eintrag in Aktivität nennt die Person dahinter, mit ihrem Bild; ein Filter nach Person",
+    "cards.sheets_dial": "Ansichten mit Drehregler"
   },
   "customise": {
     "title": "Anpassen",

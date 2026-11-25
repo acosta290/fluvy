@@ -1,4 +1,6 @@
-import { formatNumber, sliderStill, sliderStyleOf, type EntityView } from '@fluvy/core';
+// the Cover card's own words (a position counted "down"): the cover family's, here before the sheet says them
+import '../cover/english.js';
+import { formatNumber, sliderStill, sliderStyleOf, strings, type EntityView } from '@fluvy/core';
 import {
   clamp,
   label,
@@ -10,7 +12,11 @@ import {
 } from '@fluvy/ui';
 import { html, nothing, type TemplateResult } from 'lit';
 import { Hold, releasePresses, shownStateText, StableTemplate } from '../cover/common.js';
+import type { CoverFavorite } from '../cover/cover-card.js';
 import {
+  endsOf,
+  favoriteChips,
+  favoritesFor,
   mirror,
   motionOf,
   near,
@@ -21,9 +27,14 @@ import {
   type Motion,
   type Percent,
 } from '../cover/reads.js';
+import { endsHold } from '../shared/across.js';
+import { chipRow } from '../shared/chips.js';
 import type { DaySpec } from './history.js';
 import { keys, sheetRows, STEPS_END, type Key } from './parts.js';
 import { configOf, DetailsSheet, type DetailsConfig, type LiveHass, type Status } from './sheet.js';
+
+const coverStrings = strings('cover');
+const cardStrings = strings('cover-card');
 
 /* cover / valve supported_features */
 const OPEN = 1;
@@ -35,8 +46,8 @@ const CLOSE_TILT = 32;
 const SET_TILT_POSITION = 128;
 
 /**
- * What the card that opened a sheet says of its cover's figures (#258): a Cover card's own keys, for the cover it is
- * the card of. Nothing where any other card opened it: a tile reads a cover as Home Assistant does.
+ * What the card that opened a sheet says of its cover's figures and places (#258): a Cover card's own keys, for the
+ * cover it is the card of. Nothing where any other card opened it: a tile reads a cover as Home Assistant does.
  */
 function readsOf(card: unknown, entityId: string | undefined): CoverReads {
   const config = configOf(card);
@@ -57,6 +68,9 @@ function readsOf(card: unknown, entityId: string | undefined): CoverReads {
  * (`invert_position`) or counted as the blind comes down (`direction: down`, the dial then counting so too), a tilt
  * turned round or in degrees (`invert_tilt`, `tilt_angle`), so the card and its sheet never say two figures of one
  * blind.
+ *
+ * Without its dial (`show_dial: false`) it is that card across: the position's figure beside the house's ruler, the
+ * ends in the card's words (`open_label`, `closed_label`), the commands, the tilt, and the card's favourites as chips.
  */
 export class FluvyDetailsCover extends DetailsSheet {
   private travelling = false;
@@ -197,6 +211,14 @@ export class FluvyDetailsCover extends DetailsSheet {
     this.call('cover', 'set_cover_tilt_position', { tilt_position: value });
   }
 
+  /** A favourite of the card's: the position and the tilt it names, each where the cover takes one. */
+  private goTo(view: EntityView, favorite: CoverFavorite): void {
+    if (typeof favorite.position === 'number' && view.supports(SET_POSITION))
+      this.moveTo(view, this.said(favorite.position));
+    if (typeof favorite.tilt === 'number' && view.supports(SET_TILT_POSITION))
+      this.tiltTo(favorite.tilt);
+  }
+
   private percent(value: number): string {
     return formatNumber(this.hass, value, { digits: 0 });
   }
@@ -291,6 +313,50 @@ export class FluvyDetailsCover extends DetailsSheet {
       ])}`;
   }
 
+  /**
+   * The position on a ruler across the sheet (#258), as the horizontal Cover card draws it: lit from the closed end
+   * to the knob, from the open end where the position is counted as the blind comes down, "down" after its figure;
+   * the ends in the card's words where the ruler holds both, else in their figures.
+   */
+  private renderAcross(
+    view: EntityView,
+    name: string,
+    position: Percent,
+    lit: boolean,
+    unusable: boolean,
+  ): TemplateResult {
+    const down = this.reads.direction === 'down';
+    const edge = (opening: number): string => percentText(this.hass, this.said(opening));
+    const { open, closed } = endsOf(this.hass, this.reads);
+    return this.across({
+      name,
+      title: this.t('cover.position'),
+      glyph: 'updown',
+      value: unusable ? null : position,
+      unit: '%',
+      ...(down ? { said: cardStrings(this.hass, 'down'), origin: 100 } : {}),
+      min: 0,
+      max: 100,
+      step: 1,
+      tone: lit ? this.tone(view) : 'neutral',
+      inactive: unusable || position === null,
+      disabled: unusable,
+      format: (opening) => this.percent(this.said(opening)),
+      edge,
+      labels: (length) =>
+        endsHold(this.ruler, length, closed, open)
+          ? [
+              [0, closed],
+              [1, open],
+            ]
+          : [
+              [0, edge(0)],
+              [1, edge(100)],
+            ],
+      change: (opening) => this.moveTo(view, opening),
+    });
+  }
+
   protected renderBody(view: EntityView, unusable: boolean): TemplateResult {
     const name = this.nameFor(view, undefined);
     const motion = this.motion(view);
@@ -302,34 +368,63 @@ export class FluvyDetailsCover extends DetailsSheet {
       view.domain === 'cover' &&
       (view.supports(SET_TILT_POSITION) || view.supports(OPEN_TILT) || view.supports(CLOSE_TILT));
     const where = this.t('cover.position');
-    return html`<div class="dt-hero">
-        <fluvy-dial
-          .radius=${this.ring}
-          .large=${this.large}
-          .stepper=${false}
-          .tone=${lit ? this.tone(view) : 'neutral'}
-          .min=${0}
-          .max=${100}
-          .step=${1}
-          .value=${positioned && position !== null ? this.said(position) : undefined}
-          .gauge=${!positioned}
-          .fill=${positioned ? undefined : lit ? 1 : 0}
-          .unit=${'%'}
-          .sub=${positioned ? this.dialWords(where) : ''}
-          .text=${unusable || (positioned && position === null) ? '—' : positioned ? undefined : shownStateText(this.hass, view, motion.shown)}
-          .name=${`${name} · ${where}`}
-          min-label=${positioned ? this.percent(0) : ''}
-          max-label=${positioned ? this.percent(100) : ''}
-          ?disabled=${unusable || (positioned && position === null)}
-          .format=${(value: number) => this.percent(value)}
-          @fluvy-change=${(event: CustomEvent<DialChangeDetail>) =>
-            this.moveTo(view, this.said(event.detail.value ?? 0))}
-        ></fluvy-dial>
-      </div>
-      ${keys(this.commands(view, motion, name, unusable), this.room, (key) =>
-        this.command(view, key),
-      )}
-      ${tilts ? this.renderTilt(view, name, unusable) : nothing}`;
+    // the card's favourites stand in the sheet that is the card across, never under the dial
+    const favorites =
+      this.dial || this.reads.show_favorites === false ? [] : favoritesFor(view, this.reads);
+    return html`${
+      this.dial
+        ? html`<div class="dt-hero">
+            <fluvy-dial
+              .radius=${this.ring}
+              .large=${this.large}
+              .stepper=${false}
+              .tone=${lit ? this.tone(view) : 'neutral'}
+              .min=${0}
+              .max=${100}
+              .step=${1}
+              .value=${positioned && position !== null ? this.said(position) : undefined}
+              .gauge=${!positioned}
+              .fill=${positioned ? undefined : lit ? 1 : 0}
+              .unit=${'%'}
+              .sub=${positioned ? this.dialWords(where) : ''}
+              .text=${unusable || (positioned && position === null) ? '—' : positioned ? undefined : shownStateText(this.hass, view, motion.shown)}
+              .name=${`${name} · ${where}`}
+              min-label=${positioned ? this.percent(0) : ''}
+              max-label=${positioned ? this.percent(100) : ''}
+              ?disabled=${unusable || (positioned && position === null)}
+              .format=${(value: number) => this.percent(value)}
+              @fluvy-change=${(event: CustomEvent<DialChangeDetail>) =>
+                this.moveTo(view, this.said(event.detail.value ?? 0))}
+            ></fluvy-dial>
+          </div>`
+        : positioned
+          ? this.renderAcross(view, name, position, lit, unusable)
+          : nothing
+    }
+    ${keys(this.commands(view, motion, name, unusable), this.room, (key) =>
+      this.command(view, key),
+    )}
+    ${tilts ? this.renderTilt(view, name, unusable) : nothing}
+    ${
+      favorites.length
+        ? html`${label(coverStrings(this.hass, 'favourites'))}${chipRow(
+            favoriteChips(
+              this.hass,
+              this.reads,
+              favorites,
+              position === null ? null : this.said(position),
+              this.tilted(view),
+              unusable,
+            ),
+            (key) => {
+              const favorite = favorites[Number(key)];
+              if (favorite && !unusable) this.goTo(view, favorite);
+            },
+            this.reads.favorites_style,
+            { ruler: this.ruler, width: this.room },
+          )}`
+        : nothing
+    }`;
   }
 }
 
