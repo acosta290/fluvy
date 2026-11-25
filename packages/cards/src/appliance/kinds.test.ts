@@ -580,6 +580,15 @@ describe('what an appliance is', () => {
     expect(byWords('Kaffebryggare')).toEqual({ kind: 'coffee', by: 'words' });
   });
 
+  it('reads a kitchen as an American names it: a stovetop or a range top is a hob, a range alone none (#267)', () => {
+    for (const name of ['Stovetop', 'Kitchen stovetop', 'Range top', 'Wolf rangetop', 'range_top'])
+      expect(byWords(name), name).toEqual({ kind: 'hob', by: 'words' });
+    expect(byWords('Range hood')).toEqual({ kind: 'hood', by: 'words' });
+    // a range alone is a car's, an orange top lamp no range top
+    expect(byWords('Range')).toBeUndefined();
+    expect(byWords('Orange top lamp')).toBeUndefined();
+  });
+
   it('never takes a vacuum, a charger, a hair dryer or what waits for 1.10 for an appliance', () => {
     for (const name of [
       'Saugroboter',
@@ -589,6 +598,7 @@ describe('what an appliance is', () => {
       'Wallbox',
       'Haartrockner',
       'Hair dryer',
+      'Blow dryer',
       'Suszarka do włosów',
       'Odkurzacz',
       'Wärmeschublade',

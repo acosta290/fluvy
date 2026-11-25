@@ -737,6 +737,9 @@ describe('custom:fluvy-home strategy — a house named in Japanese', () => {
       ['Světlo na verandě', true],
       ['Verandering lamp', false],
       ['Lampe verändert', false],
+      // an American's yard, front or back (#267)
+      ['Backyard lights', true],
+      ['Front yard lamp', true],
     ];
     const lamps = new HomeRegistry(
       house(outdoors.map(([name], at) => entity(`switch.p${at}`, 'off', { friendly_name: name }))),
@@ -839,6 +842,8 @@ describe('custom:fluvy-home strategy — a house named in Japanese', () => {
       'Ekoläge tvättmaskin',
       'Børnesikring vaskemaskine',
       'Tastelås tørretumbler',
+      // an American fridge's vacation, as a British one's holiday (#267)
+      'Refrigerator vacation',
     ];
     const plugs = new HomeRegistry(
       house(settings.map((name, at) => entity(`switch.s${at}`, 'off', { friendly_name: name }))),

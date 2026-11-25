@@ -1,6 +1,6 @@
 {
   "light": ["light", "lights", "lamp", "led", "leds", "strip", "spot"],
-  "outdoor": ["porch", "garden", "outdoor", "garage", "pool"],
+  "outdoor": ["porch", "garden", "outdoor", "garage", "pool", "yard"],
   "solar": ["solar", "inverter", "pv\\b", "photovolt"],
   "grid": ["power_meter", "grid", "meter", "import", "net_"],
   "grid_export": ["export", "feed_in", "feed-in", "feedin", "returned", "return_to_grid"],
@@ -22,6 +22,7 @@
     "force",
     "timer",
     "holiday",
+    "vacation",
     "boost",
     "child",
     "lock",
@@ -71,7 +72,8 @@
     "warming[ _-]drawer",
     "styler",
     "kimchi",
-    "hair[ _-]?dryer"
+    "hair[ _-]?dryer",
+    "blow[ _-]?dryer"
   ],
   "appliance_washer_dryer": ["washer[ _-]?dryer", "wash[ _-]?dry", "washcombo"],
   "appliance_dishwasher": ["dish[ _-]?washer"],
@@ -79,7 +81,13 @@
   "appliance_dryer": ["dryer", "tumble"],
   "appliance_microwave": ["microwave"],
   "appliance_oven": ["(^|[ _-])oven"],
-  "appliance_hob": ["(^|[ _-])hob([ _-]|$)", "cooktop", "induction"],
+  "appliance_hob": [
+    "(^|[ _-])hob([ _-]|$)",
+    "cooktop",
+    "stovetop",
+    "(^|[ _-])range[ _-]?top",
+    "induction"
+  ],
   "appliance_hood": ["(^|[ _-])hood([ _-]|$)", "extractor"],
   "appliance_wine": ["wine"],
   "appliance_fridge": ["fridge", "refrigerator"],
