@@ -305,7 +305,9 @@ export class FluvyHeatingSheet extends LitElement {
       .hs-name {
         margin: 0 0 8px 56px;
       }
+      /* the base's select keeps its 144 beside a title in lines, as fieldFit counted it: the title gives way */
       .hs-base fluvy-select {
+        flex: 0 0 144px;
         width: 144px;
       }
       .ss-footer {
