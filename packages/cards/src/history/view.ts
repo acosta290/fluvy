@@ -53,6 +53,7 @@ import { chartStyles, ScrubController } from '../chart/engine/index.js';
 import { FontsSettled } from '../shared/fonts.js';
 import { Layers } from '../shared/layers.js';
 import { downloadCsv } from '../shared/csv.js';
+import { dateLanguage } from '../shared/dates.js';
 import { dayMonth } from '../shared/period.js';
 import { sameRange, type ActivityRange } from '../shared/range.js';
 import '../shared/date-picker.js';
@@ -193,6 +194,11 @@ export class FluvyHistory extends LitElement {
     return languageOf(this.hass);
   }
 
+  /** The language its dates are written in: Home Assistant's, or the one the person chose for Fluvy. */
+  get dateLanguage(): string {
+    return dateLanguage(this.hass);
+  }
+
   readonly t = (key: HistoryString, values?: Record<string, string | number>): string =>
     s({ language: this.language }, key, values);
 
@@ -203,7 +209,7 @@ export class FluvyHistory extends LitElement {
 
   /** The weekday alone ("Sat"), for an axis end that would otherwise repeat the other one. */
   weekday(ms: number): string {
-    return dateFormat(this.language, { weekday: 'short' }).format(ms);
+    return dateFormat(this.dateLanguage, { weekday: 'short' }).format(ms);
   }
 
   /**
@@ -223,17 +229,17 @@ export class FluvyHistory extends LitElement {
    * both at once, `en` resolves to `en-US` and answers "15 Mon", which reads as a bug in an English house.
    */
   day(ms: number): string {
-    return `${this.weekday(ms)} ${dateFormat(this.language, { day: 'numeric' }).format(ms)}`;
+    return `${this.weekday(ms)} ${dateFormat(this.dateLanguage, { day: 'numeric' }).format(ms)}`;
   }
 
   /** A day as an axis says it through a month ("15 Sep"): past a week its weekday says nothing. */
   date(ms: number): string {
-    return dayMonth(this.language, ms, 'short', this.now);
+    return dayMonth(this.dateLanguage, ms, 'short', this.now);
   }
 
   /** A day with its year ("15 Sep 2026"), for the two ends of a window long enough to come back to itself. */
   dateYear(ms: number): string {
-    return dateFormat(this.language, {
+    return dateFormat(this.dateLanguage, {
       day: 'numeric',
       month: 'short',
       year: 'numeric',

@@ -67,7 +67,7 @@ export function describeRange(page: FluvyActivity): PeriodTitle {
   return describePeriod({
     range: page.range,
     now: page.now,
-    language: page.language,
+    language: page.dateLanguage,
     family: page.family,
     room: titleRoom(page),
     time: (ms) => page.time(ms),
@@ -284,7 +284,7 @@ export function renderPickerBody(page: FluvyActivity): TemplateResult {
     .hass=${page.hass}
     .range=${page.range}
     .now=${page.now}
-    .language=${page.language}
+    .language=${page.dateLanguage}
     .t=${page.t}
     @fluvy-dates=${page.onDates}
   ></fluvy-date-picker>`;

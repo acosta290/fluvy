@@ -63,6 +63,7 @@ import {
   shiftRange,
 } from './model.js';
 import type { DatesDetail } from '../shared/date-picker.js';
+import { dateLanguage } from '../shared/dates.js';
 import {
   glide,
   gliding,
@@ -619,6 +620,11 @@ export class FluvyActivity extends LitElement {
 
   get language(): string {
     return languageOf(this.hass);
+  }
+
+  /** The language its dates are written in: Home Assistant's, or the one the person chose for Fluvy. */
+  get dateLanguage(): string {
+    return dateLanguage(this.hass);
   }
 
   readonly t = (key: ActivityString, values?: Record<string, string | number>): string =>

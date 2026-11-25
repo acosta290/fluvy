@@ -14,7 +14,6 @@ import {
   chartDefaults,
   dateFormat,
   formatTime,
-  languageOf,
   localize,
   markLanguage,
   onWords,
@@ -74,6 +73,7 @@ import {
 import { HeadFit, type FittedHead } from '../energy/head.js';
 import { axisHolds } from '../shared/axis.js';
 import { fittedColumns } from '../shared/chips.js';
+import { dateLanguage } from '../shared/dates.js';
 import { spanText } from '../shared/duration.js';
 import { LaidWidth } from '../shared/laid.js';
 import { statsRow } from '../shared/readouts.js';
@@ -358,7 +358,7 @@ export class FluvyDetailsHistory extends LitElement {
   }
 
   private weekday(t: number): string {
-    return dateFormat(languageOf(this.hass), { weekday: 'short' }).format(t);
+    return dateFormat(dateLanguage(this.hass), { weekday: 'short' }).format(t);
   }
 
   /** An instant as the window can tell it apart: the clock through two days, its weekday with it beyond. */

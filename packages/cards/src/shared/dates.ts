@@ -1,4 +1,4 @@
-import { dateFormat, type HomeAssistant } from '@fluvy/core';
+import { dateFormat, ownLanguage, type HomeAssistant } from '@fluvy/core';
 
 /**
  * Local-date arithmetic. Every function reads and writes the LOCAL fields of a `Date` (year, month,
@@ -37,6 +37,17 @@ export function shortWeekday(language: string, date: Date, timeZone?: string): s
       .format(date)
       .startsWith(name);
   return whole ? name.slice(0, 3) : name;
+}
+
+/**
+ * The language a page of Fluvy's (Activity, History, the details dialog's history) writes its dates in: the one a
+ * person chose for Fluvy where it is not Home Assistant's, else Home Assistant's own locale, as the cards and its own
+ * pages write them ("25 Nov" in English (GB), "Nov 25" in its English). Fluvy's English is the United Kingdom's,
+ * which a bare `en` is not to the browser's formatter.
+ */
+export function dateLanguage(hass: HomeAssistant | undefined): string {
+  const own = ownLanguage(hass?.language);
+  return own === 'en' ? 'en-GB' : (own ?? hass?.locale?.language ?? hass?.language ?? 'en');
 }
 
 /** 20260917 — orders like the dates do, and keys a map without formatting anything. */

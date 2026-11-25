@@ -58,7 +58,7 @@ export function renderHead(page: FluvyHistory): TemplateResult {
   const { eyebrow, title } = describePeriod({
     range: page.range,
     now: page.now,
-    language: page.language,
+    language: page.dateLanguage,
     time: (ms) => page.time(ms),
     words: {
       today: page.t('today'),

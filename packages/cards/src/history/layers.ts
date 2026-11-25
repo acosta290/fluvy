@@ -21,7 +21,7 @@ function dates(page: FluvyHistory): TemplateResult {
     .hass=${page.hass}
     .range=${page.range}
     .now=${page.now}
-    .language=${page.language}
+    .language=${page.dateLanguage}
     .t=${page.t}
     @fluvy-dates=${page.onDates}
   ></fluvy-date-picker>`;

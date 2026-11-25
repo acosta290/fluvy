@@ -366,6 +366,16 @@ describe('the details dialog’s history drawn', () => {
       (next.shadowRoot as ShadowRoot).querySelector('.fv-chip.is-active')?.textContent?.trim(),
     ).toBe('7 d');
   });
+
+  it('names a day as Home Assistant writes it, as the cards do: Portugal’s qua. under Home Assistant’s pt', () => {
+    const weekday = (language: string): string =>
+      (FluvyDetailsHistory.prototype as unknown as { weekday(t: number): string }).weekday.call(
+        { hass: { language, locale: { language } } },
+        Date.UTC(2026, 8, 16, 12),
+      );
+    expect(weekday('pt')).toBe('qua.');
+    expect(weekday('en-GB')).toBe('Wed');
+  });
 });
 
 describe('our history in place of Home Assistant’s', () => {

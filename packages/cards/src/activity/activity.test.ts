@@ -485,6 +485,25 @@ describe('the Activity page', () => {
     expect(trigger?.getAttribute('title')).toBe('Trigger: time');
   });
 
+  it('writes its dates as Home Assistant does, as the cards do: 17 September in its English (GB)', async () => {
+    const { root, view, settle } = await mount();
+    const date = () => root.querySelector('.av-day__date .av-long')?.textContent?.trim();
+    expect(date()).toBe('September 17');
+    view.hass = {
+      ...view.hass,
+      language: 'en-GB',
+      locale: { ...view.hass.locale, language: 'en-GB' },
+    };
+    await settle();
+    expect(date()).toBe('17 September');
+    // and the dates it opens
+    root.querySelector<HTMLElement>('.av-day__titles')!.click();
+    await settle();
+    expect(
+      root.querySelector<HTMLElement & { language: string }>('fluvy-date-picker')?.language,
+    ).toBe('en-GB');
+  });
+
   it('filters, searches, and says so when nothing matches', async () => {
     const { root, names, chip, settle } = await mount();
     chip('Everything').click();

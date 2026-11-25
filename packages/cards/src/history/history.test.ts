@@ -245,6 +245,22 @@ describe('what the cursor calls an instant', () => {
   });
 });
 
+describe('the dates the page writes', () => {
+  /** The page's own words for a day, with its house's language (no person's choice). */
+  const said = (language: string) => {
+    const view = Object.create(FluvyHistory.prototype) as FluvyHistory;
+    Object.defineProperty(view, 'hass', { value: { language, locale: { language } } });
+    Object.defineProperty(view, 'now', { value: Date.UTC(2026, 10, 27, 12) });
+    const ms = Date.UTC(2026, 10, 25, 12);
+    return [view.date(ms), view.dateYear(ms)];
+  };
+
+  it('are Home Assistant’s, as the cards write them: 25 Nov in its English (GB), Nov 25 in its English', () => {
+    expect(said('en-GB')).toEqual(['25 Nov', '25 Nov 2026']);
+    expect(said('en')).toEqual(['Nov 25', 'Nov 25, 2026']);
+  });
+});
+
 describe('what a period is called', () => {
   const words = {
     today: 'Today',

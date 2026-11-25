@@ -148,7 +148,7 @@ export function renderEarlier(page: FluvyActivity, day: boolean): TemplateResult
   const previous = new Date(shiftRange(page.range, -1).start);
   const capital = (text: string): string => text.charAt(0).toUpperCase() + text.slice(1);
   const short = (): string =>
-    dateFormat(page.language, { weekday: 'short', day: 'numeric', month: 'short' }).format(
+    dateFormat(page.dateLanguage, { weekday: 'short', day: 'numeric', month: 'short' }).format(
       previous,
     );
   // the fullest wording the text column holds: the date, its short form, then the words alone

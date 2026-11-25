@@ -254,5 +254,5 @@ export function dayMonth(page: FluvyActivity, ms: number, month: 'long' | 'short
   const date = new Date(ms);
   const options: Intl.DateTimeFormatOptions = { day: 'numeric', month };
   if (date.getFullYear() !== new Date(page.now).getFullYear()) options.year = 'numeric';
-  return dateFormat(page.language, options).format(date);
+  return dateFormat(page.dateLanguage, options).format(date);
 }
