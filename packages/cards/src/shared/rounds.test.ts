@@ -176,7 +176,7 @@ describe('rounds across a line', () => {
     ).toEqual([false, true, true, true]);
   });
 
-  it('keys only where a round the line draws says its state: past the keys it holds, the rest stay rounds', () => {
+  it('keys only where a round the line draws says its state: past the keys it holds, the line is rounds', () => {
     const last = (width: number): HTMLElement => {
       const box = document.createElement('div');
       document.body.append(box);
@@ -189,10 +189,14 @@ describe('rounds across a line', () => {
     // 352 holds four keys: the fourth says its state, the line is keys
     expect(last(352).className).toBe('lt-bulbs lt-bulbs--keys');
     expect(widths(last(352))).toEqual(Array(4).fill('82px'));
-    // 226 holds three keys, none of which says anything: three rounds in their shares, no key with no word
+    // 226 holds three keys, none of which says anything: the line is rounds in their shares, the four it holds 8
+    // apart, no key with no word, and the fourth's state is still a reader's
     expect(last(226).className).toBe('lt-bulbs lt-bulbs--across');
-    expect(widths(last(226))).toEqual(['', '', '']);
+    expect(widths(last(226))).toEqual(['', '', '', '']);
     expect(last(226).querySelector('.lt-bulb--said')).toBeNull();
+    expect(last(226).querySelectorAll('.lt-bulb')[3]?.getAttribute('aria-label')).toContain(', ');
+    // 140 holds two rounds of the four: those that do not hold give way from the end
+    expect(widths(last(140))).toEqual(['', '']);
   });
 
   it('pills beside their glyphs: 96 at the least, their words in their middle', () => {

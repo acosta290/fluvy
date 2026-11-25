@@ -766,10 +766,11 @@ export class FluvyVacuumMap extends LitElement {
     if (!drawn || !calibration) return;
     const [a, b] = drawn.map((corner) => this.onPlate(corner)) as [Point, Point];
     if (Math.abs(a[0] - b[0]) < DRAWN_LEAST || Math.abs(a[1] - b[1]) < DRAWN_LEAST) return;
+    // a calibration that sends a corner nowhere (a map seen at an angle, at its horizon) marks no zone
+    const zone = rectOf(calibration.toRobot(drawn[0]), calibration.toRobot(drawn[1]));
+    if (!zone.every(Number.isFinite)) return;
     this.mode_ = undefined;
-    this.pick(
-      withDrawn(this.chosen, rectOf(calibration.toRobot(drawn[0]), calibration.toRobot(drawn[1]))),
-    );
+    this.pick(withDrawn(this.chosen, zone));
   };
 
   private readonly onCancel = (): void => {

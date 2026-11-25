@@ -916,7 +916,8 @@ export function roundsIn(
  * share of the line, as a row of controls does; one asked, every cell is a key 8 from the next (a pill, its words
  * beside its glyph: `beside`), the first and the last flush with the line's ends, 64 wide at the least (a pill 96),
  * its words down the keys' ladder (`keyStates`). The keys are for a line that draws one that says its state: where
- * the first to ask stands past the keys the line holds, the rounds before it are rounds, never keys with no word.
+ * the first to ask stands past the keys the line holds, the line is rounds, as many as it holds, never keys with no
+ * word (a round among them that would say its state says it to a reader alone).
  */
 export function roundsAcross(
   host: RoundsHost,
@@ -929,7 +930,7 @@ export function roundsAcross(
   const first = items.findIndex((item) => item.show_state ?? host.look?.states ?? false);
   const cells = held(under ? KEY : KEY_BESIDE);
   const keys = first >= 0 && first < cells;
-  const count = keys ? cells : Math.min(held(ROUND), first < 0 ? items.length : first);
+  const count = keys ? cells : held(ROUND);
   const rounds = items.slice(0, count).map((item) => roundOf(host, item));
   if (!count) return nothing;
   wear(host.root);

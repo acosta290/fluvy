@@ -3954,7 +3954,7 @@ glyph; every addition is off until a config asks for it.
   its words down the keys' ladder (§ Rounds); `quick_state_position: beside` draws pills as tall as a round, 96 at
   the least, glyph and words in their middle. A round that says none among them is a key with its glyph alone, **in
   the key's middle** (never over an empty foot); and the keys are for a line that draws one that says its state: where
-  the first to ask stands past the keys the line holds, the rounds before it stay rounds in their shares. 16
+  the first to ask stands past the keys the line holds, the line is rounds in their shares, as many as it holds. 16
   under what they follow, in the whole card and the compact one; the line is declared by the config (44, 64 with
   states under), kept while none of them can be drawn.
 - **The picture at its own size** (`image_size`): a share of the card's width (`50%`, its plate 2:1 that wide,

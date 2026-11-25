@@ -27,7 +27,8 @@ without being asked is a fix:
   again (#263, reported by @thomaskoeppe).
 - The Remote card sends an Xbox's remote the console's own commands (its arrows, A, B, GoHome, Menu) where it sent
   Android TV Remote's names, which the console typed on screen as text, and draws a key the console has no command for
-  disabled (#255, reported by @jacobkaad01).
+  disabled; a card with the console's remote alone switches that remote with its power key (#255, reported by
+  @jacobkaad01).
 - The Remote card opens an app of its own list on an Xbox by the app's store id and lights the app the console runs,
   where such an app could not be opened (#255, reported by @jacobkaad01).
 - The Remote card shows a play or pause key at a grid pad's corner or as a custom key as pause while the player plays,
