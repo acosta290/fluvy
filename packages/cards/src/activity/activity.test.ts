@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 import { html, LitElement, type TemplateResult } from 'lit';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { ORIGINAL_ACTIVITY, resolveEntity, type HomeAssistant } from '@fluvy/core';
+import { ensureLanguage, ORIGINAL_ACTIVITY, resolveEntity, type HomeAssistant } from '@fluvy/core';
 import { eventKey, type ActivityEvent } from '@fluvy/core/activity';
 import type { FluvyTimeRail, TimeRailDetail } from '@fluvy/ui/time-rail';
 import { ActivityIndex, buildModel, dayRange, shiftRange } from './model.js';
@@ -756,6 +756,28 @@ describe('the Activity page, who did it (1.25)', () => {
     await folded();
     expect(facts().at(-1)).toEqual(['Who', 'Node-RED· Account']);
     expect(root.querySelector('.av-fact .av-link-row.is-plain')).not.toBeNull();
+  });
+
+  it('finds the one reading by "You" in Home Assistant’s language, read again when it changes', async () => {
+    const { view, root, settle } = await mount(true);
+    const shown = () =>
+      [...root.querySelectorAll('.av-row .av-time')].map((node) => node.textContent?.trim());
+    const search = async (text: string) => {
+      const input = root.querySelector<HTMLInputElement>('#av-search')!;
+      input.value = text;
+      input.dispatchEvent(new InputEvent('input'));
+      await settle();
+    };
+    await ensureLanguage('fr');
+    view.hass = { ...view.hass!, language: 'fr' };
+    await settle();
+    await search('vous');
+    expect(shown()).toEqual(['19:02']);
+    await search('you');
+    expect(shown()).toEqual([]);
+    view.hass = { ...view.hass, language: 'en' };
+    await settle();
+    expect(shown()).toEqual(['19:02']);
   });
 
   it('finds by who did it and narrows to one of them; "Show everything" lets go', async () => {

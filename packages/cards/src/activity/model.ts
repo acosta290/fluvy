@@ -36,12 +36,12 @@ export class ActivityIndex {
 
   /**
    * `who` names who did each entry while the house shows who (none: nobody is named, nor found); the search finds
-   * them by their name, and the one reading by `you` too.
+   * them by their name, and the one reading by `you` too (the page's word: an index in another language is read again).
    */
   constructor(
     private readonly hass: () => HomeAssistant,
     private readonly who?: (event: ActivityEvent) => ActivityWho | undefined,
-    private readonly you = '',
+    readonly you = '',
   ) {}
 
   of(event: ActivityEvent): Meta {

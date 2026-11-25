@@ -357,7 +357,13 @@ export class FluvyActivity extends LitElement {
       if (!this.who) this.person = '';
       this.readAccounts();
     }
-    if (changed.has('who') || changed.has('accounts')) this.reindex();
+    // "You" in the page's words: Home Assistant's language or the person's changed, every entry is read again
+    if (
+      changed.has('who') ||
+      changed.has('accounts') ||
+      (this.who && this.index.you !== this.t('you'))
+    )
+      this.reindex();
     markLanguage(this, this.hass?.language);
   }
 
