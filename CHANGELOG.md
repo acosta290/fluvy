@@ -5,6 +5,8 @@ and the versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.26.0] — 2026-11-26
+
 ### Visible on upgrade
 
 Two changes are choices: a house in the United States reads Fluvy in American English, and a ruler that is only read
