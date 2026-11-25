@@ -529,12 +529,13 @@ export class FluvySelect extends LitElement {
           @pointermove=${this.onRowMove}
           @click=${() => this.choose(index)}
         >
-          <span class="fv-menu__name">${option.label}</span>
-          ${
-            option.hint
-              ? html`<span id="hint-${index}" class="fv-menu__hint">${option.hint}</span>`
-              : nothing
-          }
+          <span class="fv-menu__words"
+            ><span class="fv-menu__name">${option.label}</span>${
+              option.hint
+                ? html`<span id="hint-${index}" class="fv-menu__hint">${option.hint}</span>`
+                : nothing
+            }</span
+          >
           ${selected ? glyph('check') : nothing}
         </div>`;
       })}
