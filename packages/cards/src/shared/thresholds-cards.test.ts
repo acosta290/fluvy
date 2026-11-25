@@ -375,9 +375,11 @@ describe('the editors (#204)', () => {
         });
         for (const field of Object.values(own)) expect(field.helper).toBeUndefined();
       }
-    // a round's gauge takes thresholds too (1.26, #257): the rounds' one form, on the cards that list them
+    // a round's gauge takes thresholds too (1.26, #257): the rounds' one form, on the cards that list them, the
+    // greeting among them (#260)
     expect(taken.sort()).toEqual([
       'fluvy-chart-card series',
+      'fluvy-hello-card quick_actions',
       'fluvy-readouts-card rows',
       'fluvy-room-card quick_actions',
       'fluvy-room-card tiles',

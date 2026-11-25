@@ -3,7 +3,7 @@ import { activateKey, clickPress, preventMenu, sheetStyles, startPress } from '@
 import { css, html, nothing, type LitElement, type TemplateResult } from 'lit';
 import { HeadFit } from '../energy/head.js';
 import type { ControlHost, Press } from '../shared/base.js';
-import { answered, roundsIn, roundsOf, type RoundsHost } from '../shared/rounds.js';
+import { answered, roundsIn, roundsOf, type GaugeCard, type RoundsHost } from '../shared/rounds.js';
 import type { HelloCardConfig } from './hello-card.js';
 
 /*
@@ -121,7 +121,7 @@ const rulers = new WeakMap<LitElement, HeadFit>();
  * what a person lists on purpose, a lock asking first, as a room's quick actions do.
  */
 export function quickRow(
-  card: LitElement & { hass?: HomeAssistant | undefined },
+  card: LitElement & GaugeCard & { hass?: HomeAssistant | undefined },
   config: HelloCardConfig | undefined,
   width: number,
   reach: QuickReach,
@@ -151,6 +151,8 @@ export function quickRow(
       toggles: TOGGLE_DOMAINS,
       ruler: fit.ruler,
       root,
+      // a round's gauge reads its range and its thresholds through the card (#257)
+      card,
     },
     roundsOf({ hass }, config?.quick_actions ?? []),
     width + 12,

@@ -224,6 +224,25 @@ describe('quick actions under the greeting (`quick_actions`)', () => {
     expect(door?.classList.contains('is-on')).toBe(false);
   });
 
+  it('draws a quick action’s gauge, its thresholds read through the card (#257)', async () => {
+    const { root } = await mount({
+      quick_actions: [
+        {
+          entity: 'sensor.room',
+          gauge: 'arc',
+          min: 10,
+          max: 30,
+          thresholds: [{ value: 21, tone: 'warning' }],
+        },
+      ],
+    });
+    const layer = (): HTMLElement | null => root.querySelector<HTMLElement>('.hm-quick .rg');
+    // the gauges and the thresholds' reader land after the greeting's own part: the card draws again as each does
+    for (let turn = 0; turn < 50 && layer()?.className !== 'rg rg--arc fv-tone--warning'; turn++)
+      await new Promise((resolve) => setTimeout(resolve));
+    expect(layer()?.className).toBe('rg rg--arc fv-tone--warning');
+  });
+
   it('says their states where asked, under their glyphs in a line 20 taller, or beside them', async () => {
     const restore = saidWidths();
     try {

@@ -19307,6 +19307,51 @@
               }
             },
             {
+              "key": "gauge",
+              "label": "Gauge",
+              "does": "Draws the round’s reading on it as a gauge: an arc round its edge, an arc from zero, a sector or a flood.",
+              "type": "choice",
+              "values": {
+                "arc": "Arc",
+                "zero": "From zero",
+                "sector": "Sector",
+                "fill": "Fill"
+              }
+            },
+            {
+              "key": "min",
+              "label": "Minimum",
+              "does": "The bottom of the row’s bar: a figure, an entity or a template.",
+              "helper": "A figure, an entity or a template",
+              "type": "text"
+            },
+            {
+              "key": "max",
+              "label": "Maximum",
+              "does": "The top of the row’s bar: a figure, an entity or a template.",
+              "helper": "A figure, an entity or a template",
+              "type": "text"
+            },
+            {
+              "key": "attribute",
+              "label": "Attribute",
+              "does": "The attribute that is compared, in place of the state.",
+              "type": "text"
+            },
+            {
+              "key": "decimals",
+              "label": "Decimals",
+              "does": "How many decimals the figure has.",
+              "type": "number",
+              "range": "0 to 3"
+            },
+            {
+              "key": "thresholds",
+              "label": "Thresholds",
+              "does": "Thresholds of the item’s own: values past which its reading takes a colour.",
+              "type": "object"
+            },
+            {
               "key": "tap_action",
               "label": "Tap action",
               "does": "What a tap on the item does.",

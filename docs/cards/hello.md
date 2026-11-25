@@ -117,6 +117,12 @@ An item is an entity id, or a map with `entity` and any of these fields.
 | `tone` | The item’s colour from the palette’s tones. `accent` · `light` · `heat` · `cool` · `dry` · `fan` · `water` · `solar` · `grid` · `media` · `presence` · `armed` · `battery` · `house` · `gas` · `vehicle` (Car) · `neutral` · `ok` (Good) · `warning` · `danger`. |
 | `color` | The item’s colour, in place of the one the card gives it. |
 | `show_state` | Shows this quick action’s state in its round, or hides it, whatever the card says. `true` (On) · `false` (Off). |
+| `gauge` | Draws the round’s reading on it as a gauge: an arc round its edge, an arc from zero, a sector or a flood. `arc` · `zero` (From zero) · `sector` · `fill`. |
+| `min` | The bottom of the row’s bar: a figure, an entity or a template. |
+| `max` | The top of the row’s bar: a figure, an entity or a template. |
+| `attribute` | The attribute that is compared, in place of the state. |
+| `decimals` | How many decimals the figure has. 0 to 3. |
+| `thresholds` | Thresholds of the item’s own: values past which its reading takes a colour. |
 | **Interactions** |  |
 | `tap_action` | What a tap on the item does. |
 | `hold_action` | What a long press on the item does. |
