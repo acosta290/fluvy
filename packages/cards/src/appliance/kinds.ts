@@ -98,7 +98,10 @@ export interface KindSignals {
   readonly programs: readonly string[];
   /** The words its status can say (LG ThinQ's current status lists them: a washer spins, an oven preheats). */
   readonly states?: readonly string[];
-  /** Its setpoints' tops, in °C (Matter's compartments and cavities say what they are by their range). */
+  /**
+   * Its setpoints' tops, in °C (Matter's compartments and cavities say what they are by their range): its primary
+   * numbers in °C or °F only.
+   */
   readonly tops: readonly number[];
   /** A 3D printer, as the printer card finds them. */
   readonly printer?: boolean;
@@ -499,9 +502,13 @@ export function signalsOf(hass: House | undefined, device: string, printer = fal
       : [];
     if (PROGRAM_SELECTS.includes(candidate.key ?? '')) programs.push(...words);
     if (/^current_state(_for_location)?$/.test(candidate.key ?? '')) states.push(...words);
+    // a setpoint is a primary number in °C or °F: a light's start-up colour temperature (K) or a thermostat's offset
+    // (a config number) is none (#263)
     if (
       candidate.domain === 'number' &&
       candidate.max !== undefined &&
+      candidate.category === undefined &&
+      /^°[CF]$/.test(candidate.unit ?? '') &&
       /temperature|setpoint/.test(candidate.key ?? '')
     )
       tops.push(celsius(candidate.max, candidate.unit));

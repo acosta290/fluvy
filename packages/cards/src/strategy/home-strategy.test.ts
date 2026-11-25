@@ -21,6 +21,7 @@ import {
   lgDryer,
   lgFridge,
   lgWasher,
+  matterNotAppliances,
   mieleHob,
   petFixtures,
   plugWasher,
@@ -2363,6 +2364,13 @@ describe('custom:fluvy-home strategy — the appliances, as the reporter of #47 
         (card) => card.type === 'custom:fluvy-distribution-card',
       )?.['entities'],
     ).toEqual(['sensor.waschmaschine_keller_leistung', 'sensor.washing_machine_power']);
+  });
+
+  it('takes no Matter light or thermostat for an appliance by a number in kelvin or an offset: the thermostat’s readings stay its room’s (#263)', () => {
+    const home = new HomeRegistry(houseOf(matterNotAppliances(APPLIANCES_AT), APPLIANCES_AT));
+    expect(home.applianceDevices).toEqual([]);
+    expect(home.temperatures).toContain('sensor.thermostat_wohnzimmer_temperatur');
+    expect(home.humidities).toContain('sensor.thermostat_wohnzimmer_luftfeuchtigkeit');
   });
 
   it('opens every appliance on a subview of its own, back to Home, never a tab', async () => {

@@ -25,7 +25,13 @@ import {
   lgWashTower,
 } from './lg-thinq.js';
 import { localthingsDishwasher, localthingsOven, localthingsWasher } from './localthings.js';
-import { matterDishwasher, matterFridge, matterNotAppliances, matterWasher } from './matter.js';
+import {
+  matterDishwasher,
+  matterFridge,
+  matterNotAppliances,
+  matterOven,
+  matterWasher,
+} from './matter.js';
 import { mieleCoffee, mieleFridge, mieleHob, mieleNotAppliances, mieleWasher } from './miele.js';
 import { de1, de1Moments, hcpyDryer, hcpyWasher } from './mqtt.js';
 import { plainPlugs, plugWasher } from './plug.js';
@@ -82,6 +88,7 @@ export function allFixtures(now: number): readonly ApplianceFixture[] {
     matterDishwasher(now),
     matterWasher(now),
     matterFridge(now),
+    matterOven(now),
     ...matterNotAppliances(now),
     whirlpoolWasher(now),
     whirlpoolDryer(now),
