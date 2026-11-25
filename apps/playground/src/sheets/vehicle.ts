@@ -34,9 +34,10 @@ if (!customElements.get('fluvy-vehicle-card'))
  *
  * Then 1.26's (#256, #266): the tank and the battery as a liquid — a petrol car's, an electric one's charging to its
  * limit (its bubbles, the limit's hairline), a plug-in hybrid's two, a tank running low, the card's own colour, a car
- * out of reach, half a section; a mini map (Home Assistant's own, which the playground draws as a still plan:
- * `hui-card.ts`) at the foot with its address in its pill, in the picture's place, still, of two cars with a trail,
- * with no location, half a section; and the card's parts in an order of the person's own — the controls above the fuel
+ * out of reach, half a section; a mini map (Home Assistant's own, which the playground draws as a still plan with
+ * Home Assistant's keys: `hui-card.ts`) at the foot with its address in its pill, in the picture's place, still, of two
+ * cars with a trail, with no location, half a section, still and with no pill at its least height; and the card's parts
+ * in an order of the person's own — the controls above the fuel
  * and the tyres below, the map first with no head, a head with its battery and its small icons alone, the compact
  * card's, half a section — and the card the issue pointed at, redrawn.
  */
@@ -1423,6 +1424,28 @@ export const sheet: SheetSpec = {
       cards: [
         haval({ map: 'auto', show_rows: false, show_controls: false, cols: 6 }),
         card('d-model-y', { map: 'auto', show_rows: false, show_controls: false, cols: 6 }),
+      ],
+    },
+    // #266: Home Assistant's own keys on the plate at its least height: none on a still map but the tiles'
+    // attribution, which stands over the pill; with no pill, it keeps its corner
+    {
+      title: 'A still map, and a map with no pill · half a section',
+      width: 360,
+      cards: [
+        card('d-ioniq-5', {
+          map: 'auto',
+          map_interactive: false,
+          show_rows: false,
+          show_controls: false,
+          cols: 6,
+        }),
+        card('d-model-y', {
+          map: 'auto',
+          show_address: false,
+          show_rows: false,
+          show_controls: false,
+          cols: 6,
+        }),
       ],
     },
     // #266: the card's parts in an order of its own

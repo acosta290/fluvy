@@ -1613,6 +1613,37 @@ class MapStub extends HTMLElement {
 }
 if (!customElements.get('vehicle-map-stub')) customElements.define('vehicle-map-stub', MapStub);
 
+/**
+ * Home Assistant's map card in its own shape (`hui-map-card`): a root of its own, drawn a moment after it is connected
+ * (as Lit draws, settling `updateComplete` then), holding `#root` with its `ha-map` (a root of its own again: the zoom
+ * keys, the tiles' attribution) and its own keys (`#buttons`).
+ */
+class ShapedMap extends MapStub {
+  readonly updateComplete: Promise<void>;
+  private connected = (): void => undefined;
+  constructor() {
+    super();
+    this.attachShadow({ mode: 'open' });
+    this.updateComplete = new Promise<void>((resolve) => {
+      this.connected = resolve;
+    }).then(() => this.draw());
+  }
+  connectedCallback(): void {
+    this.connected();
+  }
+  /** Its map drawn again: a new `ha-map`, whose root holds nothing of anyone else's. */
+  draw(): void {
+    const root = this.shadowRoot as ShadowRoot;
+    root.innerHTML = '<ha-card id="card"><div id="root"><div id="buttons"></div></div></ha-card>';
+    const map = document.createElement('ha-map');
+    map.attachShadow({ mode: 'open' }).innerHTML =
+      '<div id="map"><div class="maplibregl-ctrl-group"></div><details class="maplibregl-ctrl-attrib"></details></div>';
+    root.querySelector('#root')?.prepend(map);
+  }
+}
+if (!customElements.get('vehicle-shaped-map'))
+  customElements.define('vehicle-shaped-map', ShapedMap);
+
 describe('the mini map (#266)', () => {
   /** A car's tracker saying where it is. */
   const placed = (id: string, state = 'home'): Record<string, Partial<HassEntity>> => ({
@@ -1836,6 +1867,144 @@ describe('the mini map (#266)', () => {
     const live = await mount({ device: TESLA.device, map: 'auto' }, house(placed(TRACKER)));
     expect(plate(live).classList.contains('is-still')).toBe(false);
     expect(root(live).querySelector('.vh-map > .fv-tile__tap')).toBeNull();
+  });
+
+  describe('Home Assistant’s own keys on its plate', () => {
+    /** Home Assistant's map card in its own shape, as its helpers make it (`ShapedMap`). */
+    const shaped = (): void => {
+      window.loadCardHelpers = () =>
+        Promise.resolve({
+          createCardElement: (config: LovelaceCardConfig) => {
+            const element = document.createElement('vehicle-shaped-map') as ShapedMap;
+            element.setConfig(config);
+            return element;
+          },
+        });
+    };
+    /** The map card's root and its map's, as Home Assistant's map card holds them now. */
+    const roots = (): Array<ShadowRoot | null | undefined> => {
+      const card = MapStub.made[0]?.shadowRoot;
+      return [card, card?.querySelector('ha-map')?.shadowRoot];
+    };
+    /** What a root wears of sheets: each one's rules as one text. */
+    const worn = (at: ShadowRoot | null | undefined): string[] =>
+      [...(at?.adoptedStyleSheets ?? [])].map((sheet) =>
+        [...sheet.cssRules].map((rule) => rule.cssText).join(' '),
+      );
+    const settled = async (card: Mounted): Promise<void> => {
+      for (let i = 0; i < 3; i++) {
+        await new Promise((resolve) => setTimeout(resolve, 0));
+        await card.updateComplete;
+      }
+    };
+    const still = (card: Mounted, interactive: boolean): void =>
+      card.setConfig({
+        type: 'custom:fluvy-vehicle-card',
+        _now: NOW,
+        device: TESLA.device,
+        map: 'auto',
+        ...(interactive ? {} : { map_interactive: false }),
+      } as LovelaceCardConfig);
+
+    it('hides its fit key where a finger moves the map, its zoom keys too where it stands still, and never the attribution', async () => {
+      shaped();
+      const card = await mount({ device: TESLA.device, map: 'auto' }, house(placed(TRACKER)));
+      await laidOut(card);
+      // both roots wear one sheet, the same: the fit key, its zoom keys kept
+      const [own, map] = roots();
+      expect(map).toBeDefined();
+      for (const at of [own, map]) {
+        expect(worn(at)).toHaveLength(1);
+        expect(worn(at)[0]).toContain('#root > #buttons');
+        expect(worn(at)[0]).not.toContain('maplibregl');
+      }
+      expect(own?.adoptedStyleSheets[0]).toBe(map?.adoptedStyleSheets[0]);
+      // a still map: its zoom keys go too, in MapLibre's shape and Leaflet's; the other sheet leaves
+      still(card, false);
+      await card.updateComplete;
+      for (const at of roots()) {
+        expect(worn(at)).toHaveLength(1);
+        for (const key of ['#root > #buttons', '.maplibregl-ctrl-group', '.leaflet-control-zoom'])
+          expect(worn(at)[0]).toContain(key);
+      }
+      // moving again: its zoom keys come back
+      still(card, true);
+      await card.updateComplete;
+      for (const at of roots()) expect(worn(at)[0]).not.toContain('maplibregl');
+      // the tiles' attribution is in no sheet of ours, ever
+      expect(roots().flatMap(worn).join(' ')).not.toMatch(/attrib/);
+    });
+
+    it('reaches a root drawn late: as the map card has drawn, and a map drawn again on the card’s next update', async () => {
+      shaped();
+      const card = await mount(
+        { device: TESLA.device, map: 'auto', map_interactive: false },
+        house(placed(TRACKER)),
+      );
+      await laidOut(card);
+      const made = MapStub.made[0] as ShapedMap;
+      // drawn after it landed on the plate: its map's root wears the sheet all the same
+      expect(worn(roots()[1])).toHaveLength(1);
+      // its map drawn again (an error shown and gone): bare until the card's next update, which reaches it
+      made.draw();
+      expect(worn(roots()[1])).toHaveLength(0);
+      card.hass = house(placed(TRACKER, 'not_home'));
+      await card.updateComplete;
+      expect(worn(roots()[1])).toHaveLength(1);
+      expect(worn(roots()[0])).toHaveLength(1);
+    });
+
+    it('reaches a map card defined late, as Home Assistant’s helpers make one before its chunk lands', async () => {
+      window.loadCardHelpers = () =>
+        Promise.resolve({
+          createCardElement: (config: LovelaceCardConfig) => {
+            const element = document.createElement('vehicle-late-map') as ShapedMap;
+            (element as unknown as { config: LovelaceCardConfig }).config = config;
+            return element;
+          },
+        });
+      const card = await mount(
+        { device: TESLA.device, map: 'auto', map_interactive: false },
+        house(placed(TRACKER)),
+      );
+      await laidOut(card);
+      const element = plate(card).querySelector('vehicle-late-map') as ShapedMap;
+      expect(element.shadowRoot).toBeNull();
+      customElements.define('vehicle-late-map', class extends ShapedMap {});
+      await settled(card);
+      const [own, map] = [
+        element.shadowRoot,
+        element.shadowRoot?.querySelector('ha-map')?.shadowRoot,
+      ];
+      expect(worn(own)).toHaveLength(1);
+      expect(worn(map)).toHaveLength(1);
+    });
+
+    it('throws nothing where Home Assistant draws its map otherwise: no roots of its own, or its map with none', async () => {
+      // no root at all (the stub the other tests make): nothing to wear a sheet, nothing thrown
+      const bare = await mount(
+        { device: TESLA.device, map: 'auto', map_interactive: false },
+        house(placed(TRACKER)),
+      );
+      await laidOut(bare);
+      expect(MapStub.made).toHaveLength(1);
+      expect(plate(bare).classList.contains('is-empty')).toBe(false);
+      document.body.replaceChildren();
+      MapStub.made = [];
+      // a root, and a map in it with none of its own: the card's root wears it, the map is left as it is
+      shaped();
+      const card = await mount(
+        { device: TESLA.device, map: 'auto', map_interactive: false },
+        house(placed(TRACKER)),
+      );
+      await laidOut(card);
+      const own = MapStub.made[0]?.shadowRoot as ShadowRoot;
+      own.querySelector('ha-map')?.replaceWith(document.createElement('ha-map'));
+      card.hass = house(placed(TRACKER, 'not_home'));
+      await card.updateComplete;
+      expect(worn(own)).toHaveLength(1);
+      expect(roots()[1]).toBeNull();
+    });
   });
 
   it('keeps its plate, empty, where no map can be drawn: no coordinates, out of reach, no tracker, no card helpers', async () => {

@@ -715,6 +715,10 @@ export class FluvyVehicleCard extends Card<VehicleCardConfig> {
         z-index: 1;
         border-radius: inherit;
       }
+      /* the tiles' attribution, Home Assistant's at the map's foot, over the pill's 44 (its own room for an overlay) */
+      .vh-map:has(> .vh-map__where) {
+        --ha-map-bottom-inset: 44px;
+      }
       /* where it is: a pill on the card's fill (solid on a see-through card too: it lies over the map) at the plate's
          foot, 8 from its edges — a button 44 tall */
       .vh-map__where {
@@ -2747,7 +2751,13 @@ export class FluvyVehicleCard extends Card<VehicleCardConfig> {
     if (this.mapAsked || !this.renderRoot.querySelector('.vh-map')) return;
     this.mapAsked = true;
     void import('../shared/ha-map.js').then(({ HaMap }) => {
-      this.map = new HaMap(this, '.vh-map', () => this.mapConfig());
+      // it fits itself to its trackers: Home Assistant's fit key goes, and on a still map its zoom keys too
+      this.map = new HaMap(
+        this,
+        '.vh-map',
+        () => this.mapConfig(),
+        () => (this.config?.map_interactive === false ? 'keys' : 'fit'),
+      );
       this.requestUpdate();
     });
   }

@@ -10,9 +10,10 @@
  * rounds do, a tyre under its threshold is said, a badge of the person's own is drawn, and the picture alone is the
  * card's button (#248, #251, #254); the battery and the tank as a liquid in the ruler's room, its bubbles while it
  * charges and its limit's hairline (#256); the mini map on its plate, its pill and what it opens, a still one as one
- * button, its plate kept where there is no location, and the card's parts in an order of its own, each 16 under the one
- * before (#266); and in every language no round's word runs past its cell, nor the line or the head's line past their
- * column, nor the map's pill past its plate.
+ * button, Home Assistant's own keys on it (its zoom keys where a finger moves it, never its fit key, its attribution
+ * over the pill), its plate kept where there is no location, and the card's parts in an order of its own, each 16 under
+ * the one before (#266); and in every language no round's word runs past its cell, nor the line or the head's line past
+ * their column, nor the map's pill past its plate.
  * Real cards on the playground's simulated hass. Exit code 1 on any failure.
  *   PLAYGROUND=http://127.0.0.1:5196/ node interactions-vehicle.mjs
  */
@@ -571,6 +572,23 @@ const handed = () => page.evaluate(() => window.__handed.splice(0));
       const drawn = own?.shadowRoot.querySelector('ha-map');
       const pill = plate.querySelector('.vh-map__pill')?.getBoundingClientRect();
       const where = plate.querySelector('.vh-map__where');
+      // Home Assistant's keys where it draws them: its zoom keys and its tiles' attribution in its map's root, fitting
+      // and grouping in its card's (`#buttons`); each shown or not, and the pill's 44 clear of every one shown
+      const inside = drawn?.shadowRoot;
+      const shown = (key) => Boolean(key?.checkVisibility());
+      const zoom = inside?.querySelector('.maplibregl-ctrl-group');
+      const attribution = inside?.querySelector('.maplibregl-ctrl-attrib');
+      const keys = [...(own?.shadowRoot.querySelectorAll('#buttons > ha-icon-button') ?? [])];
+      const target = where?.getBoundingClientRect();
+      const apart = (key) => {
+        const b = key.getBoundingClientRect();
+        return (
+          b.right <= target.left ||
+          b.left >= target.right ||
+          b.bottom <= target.top ||
+          b.top >= target.bottom
+        );
+      };
       return {
         width: Math.round(box.width),
         height: Math.round(box.height),
@@ -582,9 +600,17 @@ const handed = () => page.evaluate(() => window.__handed.splice(0));
           own !== undefined &&
           Math.round(own.getBoundingClientRect().width) === Math.round(box.width) &&
           Math.round(own.getBoundingClientRect().height) === Math.round(box.height),
-        dark: drawn?.classList.contains('dark') ?? null,
-        markers: [...(drawn?.querySelectorAll('.marker') ?? [])].map((m) => m.textContent),
-        trail: drawn?.querySelectorAll('.trail').length ?? 0,
+        dark: inside?.querySelector('#map')?.classList.contains('dark') ?? null,
+        markers: [...(inside?.querySelectorAll('.marker') ?? [])].map((m) => m.textContent),
+        trail: inside?.querySelectorAll('.trail').length ?? 0,
+        zoom: shown(zoom),
+        attribution: shown(attribution),
+        keys: keys.filter(shown).length,
+        clear: !target || [zoom, attribution, ...keys].filter(shown).every(apart),
+        // the attribution's foot over the plate's: 10 in, over the pill's 44
+        lifted: shown(attribution)
+          ? Math.round(box.bottom - attribution.getBoundingClientRect().bottom)
+          : null,
         glyph: Boolean(plate.querySelector('.vh-map__view > svg')),
         said: (plate.querySelector('.vh-map__pill')?.textContent ?? '').trim(),
         label: where?.getAttribute('aria-label') ?? null,
@@ -658,6 +684,38 @@ const handed = () => page.evaluate(() => window.__handed.splice(0));
     'two cars on one map, the card’s own first; its own height, its trail, always dark',
     two.markers.length === 2 && two.height === 200 && two.trail > 0 && two.dark === true,
     JSON.stringify(two),
+  );
+  // Home Assistant's own keys (#266, seen on a real one): its map fits itself to its trackers, so its card's fit key
+  // goes (and its grouping key, with two cars); a finger keeps the zoom keys, a still map loses them; the tiles'
+  // attribution always stays, over the pill's 44 (10 in)
+  check(
+    'a map a finger moves keeps Home Assistant’s zoom keys and loses its fit key; its attribution stands over the pill',
+    [foot, home, two].every(
+      (m) => m.zoom && m.keys === 0 && m.attribution && m.lifted === 54 && m.clear,
+    ),
+    JSON.stringify(
+      [foot, home, two].map(({ zoom, keys, attribution, lifted, clear }) => ({
+        zoom,
+        keys,
+        attribution,
+        lifted,
+        clear,
+      })),
+    ),
+  );
+  const least = await map('A still map, and a map with no pill · half a section', 0);
+  const bare = await map('A still map, and a map with no pill · half a section', 1);
+  check(
+    'a still map has none of Home Assistant’s keys but the attribution, clear of its pill at its least height',
+    [still, least].every(
+      (m) => !m.zoom && m.keys === 0 && m.attribution && m.lifted === 54 && m.clear,
+    ) && least.height === 128,
+    JSON.stringify({ still, least }),
+  );
+  check(
+    'with no pill, the attribution keeps its corner',
+    bare.zoom && bare.keys === 0 && bare.lifted === 10 && bare.label === null,
+    JSON.stringify(bare),
   );
   const lost = await map('A map with no location · its plate kept', 0);
   const unplaced = await map('A map with no location · its plate kept', 1);
@@ -747,6 +805,7 @@ await page.close();
       el.shadowRoot
         .querySelector('.vh-map__view > pg-own-card')
         ?.shadowRoot.querySelector('ha-map')
+        ?.shadowRoot.querySelector('#map')
         ?.classList.contains('dark'),
     );
   check(

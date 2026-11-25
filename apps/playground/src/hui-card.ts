@@ -1,3 +1,4 @@
+import { mdiGoogleCirclesCommunities, mdiImageFilterCenterFocus } from '@mdi/js';
 import {
   domainOf,
   type HomeAssistant,
@@ -66,24 +67,89 @@ const PLATE = `
   img { display: block; width: 100%; height: 180px; object-fit: cover; }
   .error { color: var(--fluvy-text-secondary); }
   .error__title { font-weight: 600; color: var(--fluvy-danger); }
-  .card:has(> ha-map) { position: relative; height: 100%; overflow: hidden; }
-  ha-map { position: absolute; inset: 0; display: block; overflow: hidden; background: var(--land); --land: #ece8e1; --road: #fbfaf7; --park: #dce4cf; --water: #cfdde6; }
-  ha-map.dark { --land: #1d1c1a; --road: #35332f; --park: #222b20; --water: #17252d; }
-  ha-map > svg { position: absolute; inset: 0; width: 100%; height: 100%; }
-  ha-map .park { fill: var(--park); }
-  ha-map .water, ha-map .road { fill: none; stroke: var(--road); stroke-linecap: round; }
-  ha-map .water { stroke: var(--water); stroke-width: 26; }
-  ha-map .road { stroke-width: 2.5; }
-  ha-map .road.is-main { stroke-width: 5.5; }
-  ha-map .trail { fill: var(--fluvy-accent); }
-  .marker { position: absolute; display: grid; place-items: center; width: 48px; height: 48px; margin: -24px 0 0 -24px; box-sizing: border-box; border: 1px solid var(--fluvy-accent); border-radius: 50%; background: var(--fluvy-card); font-size: 20px; line-height: 24px; font-weight: 400; }
+  .card:has(> #root) { position: relative; height: 100%; overflow: hidden; }
+  #root { position: relative; height: 100%; }
+  ha-map { position: absolute; inset: 0; z-index: 0; display: block; overflow: hidden; }
+  #buttons { position: absolute; top: 75px; left: 3px; display: flex; flex-direction: column; }
+  ha-icon-button { display: grid; place-items: center; width: 48px; height: 48px; cursor: pointer; }
+  ha-icon-button > svg { width: 24px; height: 24px; fill: currentColor; }
 `;
+
+/**
+ * Inside Home Assistant's map (`ha-map`'s own root): the plan in a map's quiet colours, its markers, and MapLibre's
+ * keys at their size and place (`maplibre-gl.css` 6.16, which Home Assistant 2026.11 links into this root) as Home
+ * Assistant wears them (`ha-map.ts`): the zoom keys, a group of two 29 keys ringed by 2, 10 in from the top left; the
+ * tiles' attribution folded to its 24 "i", 10 in from the bottom right and over what a card keeps clear
+ * (`--ha-map-bottom-inset`); dark where the map is.
+ */
+const MAP = `
+  #map { position: relative; height: 100%; overflow: hidden; background: var(--land); font: 12px/20px "Helvetica Neue", Arial, Helvetica, sans-serif; --land: #ece8e1; --road: #fbfaf7; --park: #dce4cf; --water: #cfdde6; }
+  #map.dark { --land: #1d1c1a; --road: #35332f; --park: #222b20; --water: #17252d; }
+  #map > svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .park { fill: var(--park); }
+  .water, .road { fill: none; stroke: var(--road); stroke-linecap: round; }
+  .water { stroke: var(--water); stroke-width: 26; }
+  .road { stroke-width: 2.5; }
+  .road.is-main { stroke-width: 5.5; }
+  .trail { fill: var(--fluvy-accent); }
+  .marker { position: absolute; display: grid; place-items: center; width: 48px; height: 48px; margin: -24px 0 0 -24px; box-sizing: border-box; border: 1px solid var(--fluvy-accent); border-radius: 50%; background: var(--fluvy-card); color: var(--fluvy-text); font: 400 20px/24px Inter, system-ui, sans-serif; }
+  .maplibregl-ctrl-top-left, .maplibregl-ctrl-bottom-right { position: absolute; z-index: 2; pointer-events: none; }
+  .maplibregl-ctrl-top-left { top: 0; left: 0; margin-left: var(--ha-map-left-inset, 0); }
+  .maplibregl-ctrl-bottom-right { right: 0; bottom: 0; margin-right: var(--ha-map-right-inset, 0); margin-bottom: var(--ha-map-bottom-inset, 0); }
+  .maplibregl-ctrl { clear: both; pointer-events: auto; }
+  .maplibregl-ctrl-top-left .maplibregl-ctrl { float: left; margin: 10px 0 0 10px; }
+  .maplibregl-ctrl-group { border-radius: 4px; background: #fff; box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.1); }
+  .maplibregl-ctrl-group button { display: block; width: 29px; height: 29px; padding: 0; border: 0; box-sizing: border-box; background: transparent; cursor: pointer; }
+  .maplibregl-ctrl-group button + button { border-top: 1px solid #ddd; }
+  .maplibregl-ctrl-icon { display: block; width: 100%; height: 100%; fill: #333; }
+  .maplibregl-ctrl-attrib.maplibregl-compact { position: relative; float: right; min-height: 20px; margin: 10px; padding: 2px 24px 2px 0; box-sizing: content-box; border-radius: 12px; background: #fff; color: #000; }
+  .maplibregl-compact .maplibregl-ctrl-attrib-inner { display: none; }
+  .maplibregl-ctrl-attrib-button { position: absolute; top: 0; right: 0; display: block; width: 24px; height: 24px; box-sizing: border-box; border-radius: 12px; background: hsla(0, 0%, 100%, 0.5); list-style: none; cursor: pointer; }
+  .maplibregl-ctrl-attrib-button::-webkit-details-marker { display: none; }
+  .maplibregl-ctrl-attrib-button > svg { display: block; }
+  .dark .maplibregl-ctrl-group { background-color: #1c1c1c; }
+  .dark .maplibregl-ctrl-group button + button { border-top-color: #313131; }
+  .dark .maplibregl-ctrl-icon, .dark .maplibregl-ctrl-attrib-button { filter: invert(1); }
+  .dark .maplibregl-ctrl-attrib.maplibregl-compact { background-color: #1c1c1c; }
+`;
+
+/**
+ * MapLibre's keys in the shape its controls take in the map (`maplibre-gl` 6.16): the zoom keys in the top left
+ * corner's group, the attribution folded to its key in the bottom right's (Home Assistant folds it after a moment).
+ * Words and pills of ours keep clear of each (`data-keep-clear`, which the measurer reads inside what it skips).
+ */
+const CONTROLS = `<div class="maplibregl-control-container">
+  <div class="maplibregl-ctrl-top-left">
+    <div class="maplibregl-ctrl maplibregl-ctrl-group" data-keep-clear>
+      <button class="maplibregl-ctrl-zoom-in" type="button" aria-label="Zoom in"><svg class="maplibregl-ctrl-icon" viewBox="0 0 29 29" aria-hidden="true"><path d="M14.5 8.5c-.75 0-1.5.75-1.5 1.5v3h-3c-.75 0-1.5.75-1.5 1.5S9.25 16 10 16h3v3c0 .75.75 1.5 1.5 1.5S16 19.75 16 19v-3h3c.75 0 1.5-.75 1.5-1.5S19.75 13 19 13h-3v-3c0-.75-.75-1.5-1.5-1.5" /></svg></button>
+      <button class="maplibregl-ctrl-zoom-out" type="button" aria-label="Zoom out"><svg class="maplibregl-ctrl-icon" viewBox="0 0 29 29" aria-hidden="true"><path d="M10 13c-.75 0-1.5.75-1.5 1.5S9.25 16 10 16h9c.75 0 1.5-.75 1.5-1.5S19.75 13 19 13z" /></svg></button>
+    </div>
+  </div>
+  <div class="maplibregl-ctrl-bottom-right">
+    <details class="maplibregl-ctrl maplibregl-ctrl-attrib maplibregl-compact" open data-keep-clear>
+      <summary class="maplibregl-ctrl-attrib-button" aria-label="Toggle attribution"><svg width="24" height="24" viewBox="0 0 20 20" fill-rule="evenodd" aria-hidden="true"><path d="M4 10a6 6 0 1 0 12 0 6 6 0 1 0-12 0m5-3a1 1 0 1 0 2 0 1 1 0 1 0-2 0m0 3a1 1 0 1 1 2 0v3a1 1 0 1 1-2 0" /></svg></summary>
+      <div class="maplibregl-ctrl-attrib-inner">© OpenStreetMap</div>
+    </details>
+  </div>
+</div>`;
+
+/** One of the map card's own keys (`ha-icon-button`: 48, its glyph 24), black or white as its map is. */
+const key = (label: string, path: string, dark: boolean): HTMLElement => {
+  const button = document.createElement('ha-icon-button');
+  button.setAttribute('role', 'button');
+  button.setAttribute('aria-label', label);
+  button.tabIndex = 0;
+  button.style.color = dark ? '#ffffff' : '#000000';
+  button.dataset['keepClear'] = '';
+  button.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="${path}" /></svg>`;
+  return button;
+};
 
 /**
  * Home Assistant's map as the playground draws it: a still plan of a few streets, a park and a river in a map's own
  * quiet colours, light or dark as the config says (`theme_mode`), nearer or further by its zoom (14 where it names
- * none), a trail's last points where it asks for hours of one — nothing of Home Assistant's cartography, its tiles,
- * its zoom buttons or its gestures.
+ * none), a trail's last points where it asks for hours of one — nothing of Home Assistant's cartography, its tiles or
+ * its gestures; its keys are drawn (`CONTROLS`, and the card's own in `OWN.map`).
  */
 const PLAN = `<svg viewBox="0 0 320 160" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
   <g class="plan">
@@ -186,16 +252,23 @@ const OWN: Readonly<
     image.alt = '';
     return [image];
   },
-  // a map: the plan, and each tracker that says where it is as Home Assistant marks one with no picture, by the
-  // initials of its name, the first in the middle
+  // a map, in the shape Home Assistant's map card draws (`hui-map-card`): its `#root` holding its `ha-map`, whose own
+  // root holds the plan, each tracker that says where it is (marked as Home Assistant marks one with no picture, by
+  // the initials of its name, the first in the middle) and MapLibre's keys; and the card's own keys under the zoom
+  // keys (`#buttons`, 75 from the top and 3 in): grouping where it shows more than one entity, then fitting
   map: (config, hass) => {
+    const mode = config['theme_mode'];
+    const dark = mode === 'dark' || (mode !== 'light' && Boolean(hass?.themes?.darkMode));
+    const root = document.createElement('div');
+    root.id = 'root';
     const map = document.createElement('ha-map');
-    map.className = config['theme_mode'] === 'dark' ? 'dark' : '';
     // Home Assistant's own drawing: none of it is held to Fluvy's grid
     map.dataset['measure'] = 'skip';
-    map.innerHTML = PLAN;
+    const inside = map.attachShadow({ mode: 'open' });
+    inside.innerHTML = `<style>${MAP}</style><div id="map" class="maplibregl-map${dark ? ' dark' : ''}">${PLAN}</div>`;
+    const drawn = inside.getElementById('map') as HTMLElement;
     const zoom = Number(config['default_zoom'] ?? 14);
-    const plan = map.querySelector<SVGGElement>('.plan');
+    const plan = drawn.querySelector<SVGGElement>('.plan');
     plan?.setAttribute(
       'transform',
       `translate(160 80) scale(${Math.min(4, Math.max(0.4, 2 ** ((zoom - 14) / 2)))}) translate(-160 -80)`,
@@ -208,7 +281,7 @@ const OWN: Readonly<
         dot.setAttribute('cy', String(y));
         dot.setAttribute('r', '3');
         dot.setAttribute('opacity', String(0.25 + index * 0.15));
-        map.querySelector('svg')?.append(dot);
+        drawn.querySelector('svg')?.append(dot);
       });
     const placed = trackersOf(config)
       .map((id) => hass?.states[id])
@@ -223,9 +296,17 @@ const OWN: Readonly<
         .map((part) => part[0])
         .join('')
         .slice(0, 3);
-      map.append(marker);
+      drawn.append(marker);
     });
-    return [map];
+    drawn.insertAdjacentHTML('beforeend', CONTROLS);
+    const buttons = document.createElement('div');
+    buttons.id = 'buttons';
+    buttons.dataset['measure'] = 'skip';
+    if (trackersOf(config).length > 1)
+      buttons.append(key('Toggle grouping', mdiGoogleCirclesCommunities, dark));
+    buttons.append(key('Reset focus', mdiImageFilterCenterFocus, dark));
+    root.append(map, buttons);
+    return [root];
   },
   // what Home Assistant draws in the place of a card it cannot build: that it is a configuration error, and why
   error: (config) => {

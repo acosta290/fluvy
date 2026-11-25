@@ -1,5 +1,5 @@
 import type { HomeAssistant, LovelaceCardConfig } from '@fluvy/core';
-import type { ReactiveController, ReactiveControllerHost } from 'lit';
+import { css, type CSSResult, type ReactiveController, type ReactiveControllerHost } from 'lit';
 
 /**
  * Home Assistant's own map card on a plate of ours (the Map card's `map`, the Vehicle card's mini map, #266), a chunk
@@ -10,12 +10,17 @@ import type { ReactiveController, ReactiveControllerHost } from 'lit';
  * (#220). One observer of the plate, never a timer: the map is made once the plate has a size (folded in an Expander,
  * or on a Swipe's hidden page, it has none), and fitted again each time its size settles otherwise. It is told the
  * house as the card hears of it, and its config again when what the card asks of it changes (the page turning dark).
+ * Home Assistant draws keys of its own on it: the card that owns the plate may ask some of them not drawn (`MapKeys`),
+ * by a sheet of ours in the map card's root and its map's, and nothing else of Home Assistant's is touched; the Map
+ * card asks none.
  */
 
 type MapElement = HTMLElement & {
   hass?: HomeAssistant;
   layout?: string;
   setConfig?: (config: LovelaceCardConfig) => void;
+  /** Lit's, once its element is defined: settled as it has drawn. */
+  updateComplete?: Promise<unknown>;
 };
 
 /** Home Assistant's map inside its card: what fits it to the people again (`fitMap`, a method of its own). */
@@ -26,6 +31,40 @@ export interface MapHost extends ReactiveControllerHost {
   readonly renderRoot: HTMLElement | DocumentFragment;
   readonly rawHass: HomeAssistant | undefined;
 }
+
+/**
+ * What of Home Assistant's own keys a card asks its map not to draw (#266): `fit` its card's fit key, and the grouping
+ * key above it where it shows more than one entity (the map fits itself to what it shows); `keys` its zoom keys too (a
+ * still map, whose plate is one button: a key there is dead). The tiles' attribution is never one of them.
+ */
+export type MapKeys = 'fit' | 'keys';
+
+/**
+ * Each word's sheet, adopted whole in the map card's root and in its map's, each reading what it holds of it: the
+ * card's keys under its `#root` (`hui-map-card`), the zoom keys in the map (MapLibre's group, or Leaflet's where the
+ * map falls back to it: `ha-map`).
+ */
+const SHEETS: Readonly<Record<MapKeys, CSSResult>> = {
+  fit: css`
+    #root > #buttons {
+      display: none;
+    }
+  `,
+  keys: css`
+    #root > #buttons,
+    .maplibregl-ctrl-group,
+    .leaflet-control-zoom {
+      display: none;
+    }
+  `,
+};
+
+/** Whether a root's sheet is one of ours. */
+const ours = (sheet: CSSStyleSheet): boolean =>
+  Object.values(SHEETS).some((one) => one.styleSheet === sheet);
+
+/** A root of Home Assistant's refused our sheet: its map keeps its keys from then on, said once. */
+let refused = false;
 
 /** A plate's laid-out size, as the map was fitted at it. */
 const sizeOf = (plate: HTMLElement): string => `${plate.clientWidth}×${plate.clientHeight}`;
@@ -49,11 +88,14 @@ export class HaMap implements ReactiveController {
   /**
    * @param plate the plate's selector in the card's own root
    * @param config Home Assistant's map card's config as the card asks for it now; none while it has nothing to show
+   * @param hidden what of Home Assistant's own keys the card asks the map not to draw now; where it asks nothing,
+   *   nothing of ours goes into the map's roots
    */
   constructor(
     private readonly host: MapHost,
     private readonly plate: string,
     private readonly config: () => LovelaceCardConfig | undefined,
+    private readonly hidden?: () => MapKeys,
   ) {
     host.addController(this);
   }
@@ -72,6 +114,7 @@ export class HaMap implements ReactiveController {
       this.element = element;
       // it fits itself to the people as it loads, at the plate's size now
       this.fitted = this.observed ? sizeOf(this.observed) : '';
+      this.whenDrawn(element);
     } catch {
       this.failed = true;
     } finally {
@@ -87,10 +130,47 @@ export class HaMap implements ReactiveController {
   }
 
   /**
+   * What the card asks hidden, once Home Assistant's map card has drawn: it is defined late (its card helpers fetch
+   * it), draws once it lands on the plate, and its map is in its root by then.
+   */
+  private whenDrawn(element: MapElement): void {
+    void customElements
+      .whenDefined(element.localName)
+      .then(() => element.updateComplete)
+      .then(
+        () => this.hide(),
+        () => undefined,
+      );
+  }
+
+  /**
+   * The keys the card asks hidden: the word's sheet in the map card's root and in its map's, each once that root is
+   * there (the card draws late and its map later still: so after the card's update, as the map card has drawn, and as
+   * the plate is laid out anew), the other word's taken off. A Home Assistant whose map is drawn otherwise keeps its
+   * keys.
+   */
+  private hide(): void {
+    const sheet = this.hidden && !refused ? SHEETS[this.hidden()].styleSheet : undefined;
+    const card = this.element?.shadowRoot;
+    if (!sheet || !card) return;
+    try {
+      for (const root of [card, card.querySelector('ha-map')?.shadowRoot]) {
+        const worn = root?.adoptedStyleSheets;
+        if (!root || !worn || worn.at(-1) === sheet) continue;
+        root.adoptedStyleSheets = [...worn.filter((one) => !ours(one)), sheet];
+      }
+    } catch (error) {
+      refused = true;
+      console.warn(`[fluvy] Home Assistant's map keeps its keys: ${error}`);
+    }
+  }
+
+  /**
    * The plate laid out anew: the map is made once it has a box, and fitted again where its size settled otherwise than
    * it was fitted at.
    */
   private onPlate(): void {
+    this.hide();
     const plate = this.observed;
     if (!plate?.clientWidth || !plate.clientHeight) return;
     if (!this.element) {
@@ -116,12 +196,15 @@ export class HaMap implements ReactiveController {
       return;
     }
     const config = plate && this.config();
-    if (!config) return;
-    this.tell(this.element);
-    const asked = JSON.stringify(config);
-    if (asked === this.told) return;
-    this.told = asked;
-    this.element.setConfig?.(config);
+    if (config) {
+      this.tell(this.element);
+      const asked = JSON.stringify(config);
+      if (asked !== this.told) {
+        this.told = asked;
+        this.element.setConfig?.(config);
+      }
+    }
+    this.hide();
   }
 
   hostConnected(): void {

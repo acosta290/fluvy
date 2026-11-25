@@ -14,12 +14,15 @@
  * Exit code 1 when anything is off. Opt a subtree out with `data-measure="skip"`;
  * force an element in with any other `data-measure` value. `data-measure="drawn"` is the one for a drawing (a
  * chart's paths, a timeline's stretches): its subtree keeps every rule but the grid and the whole pixel, whose
- * widths the data decides. Two more declarations the page can make:
+ * widths the data decides. Three more declarations the page can make:
  *   `data-scroll-row`  a row that scrolls sideways: what it clips at its padding edge is not an overflow, and its
  *                      selected item (`aria-selected`, `.is-active`) must lie in full view, clear of 24 px fades;
  *   `data-fill-row`    a row whose equal cells share its width: their widths are the row's (not the 4 grid's), and
  *                      the row is checked instead — equal cells on whole pixels, one gap between them, spanning its
- *                      content box but for a tail under a pixel per cell (what a whole-pixel division leaves over).
+ *                      content box but for a tail under a pixel per cell (what a whole-pixel division leaves over);
+ *   `data-keep-clear`  inside a skipped subtree, a key of someone else's drawing (Home Assistant's own on its map):
+ *                      no rule reads it, but words of ours laid over it are an `overlap` as over a control, and so is
+ *                      a pill of ours (`[data-fit]`) laid over it, words or none.
  * A card in a column off the grid (the 211 floor, a third of a section) is held to the grid and the whole pixel at the
  * widths where its column is on them: what its width decides falls off by the width's own remainder.
  * A box is placed by its parent (a flex or grid's justify, text-align for an inline-level box), never by its own
@@ -845,6 +848,8 @@ function audit(opts) {
     const baselines = new Map(); // data-baseline value → [{ path, y }]
     const runs = []; // every text node shown: { node, el, boxes, shown, out, surface, words, card, sideways }
     const pressed = []; // every [data-control] shown: { el, box (what it paints), out, surface }
+    const kept = []; // every [data-keep-clear] shown inside a skipped subtree: { el, box }
+    const pills = []; // every [data-fit] pill shown: { el, box }
 
     const add = (rule, el, rect, detail) => {
       violations.push({
@@ -863,10 +868,30 @@ function audit(opts) {
     });
     const quote = (node) => `"${node.textContent.trim().slice(0, 40)}"`;
 
+    /**
+     * The keys of a skipped subtree ours must keep clear of (`data-keep-clear`), across its shadow roots: each shown is
+     * read as a control is, where it is painted.
+     */
+    const keepClear = (skipped) => {
+      const within = [skipped];
+      while (within.length) {
+        const node = within.shift();
+        within.push(...kids(node));
+        if (!node.hasAttribute('data-keep-clear') || !seen(node)) continue;
+        const [box] = shownBoxes([node.getBoundingClientRect()], up(node), frame);
+        if (!box) continue;
+        kept.push({ el: node, box });
+        pressed.push({ el: node, box, out: false, surface: surfaceOf(node, frame) });
+      }
+    };
+
     const queue = kids(frame);
     while (queue.length) {
       const el = queue.shift();
-      if (el.getAttribute('data-measure') === 'skip') continue;
+      if (el.getAttribute('data-measure') === 'skip') {
+        keepClear(el);
+        continue;
+      }
       // read out, not shown: the language's 1×1 clipped box for a screen reader is not a layout box at all
       if (el.classList?.contains('fv-sr')) continue;
       // A drawing: its boxes come from data (a curve's samples, a stretch's minutes), so no grid and no whole
@@ -1319,6 +1344,7 @@ function audit(opts) {
 
       // a content-sized pill holds its content: what clips inside it (a chip's name) or, with nothing clipping, the pill
       if (sized && el.hasAttribute('data-fit') && seen(el)) {
+        pills.push({ el, box });
         const inner = Array.from(el.querySelectorAll('*')).filter(
           (node) =>
             clips(globalThis.getComputedStyle(node)) && node.getBoundingClientRect().width > 0,
@@ -1374,6 +1400,16 @@ function audit(opts) {
             `${quote(run.node)} under ${shortPath(control.el, frame)}`,
           );
       }
+    // a pill of ours over a key of someone else's drawing (`data-keep-clear`), whether it says words or not
+    for (const pill of pills)
+      for (const key of kept)
+        if (overlaps(pill.box, key.box))
+          add(
+            'overlap',
+            pill.el,
+            relative(pill.box),
+            `${shortPath(pill.el, frame)} over ${shortPath(key.el, frame)}`,
+          );
     const worded = laid.filter((run) => run.words);
     for (let i = 0; i < worded.length; i += 1)
       for (let j = i + 1; j < worded.length; j += 1) {

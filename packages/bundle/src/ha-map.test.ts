@@ -1,9 +1,9 @@
 /**
  * Home Assistant's own map on a plate of ours (1.26, #266) is a chunk of its own: what makes it through Home
- * Assistant's card helpers, fits it again as its plate's size settles and tells it the house and the page's mode is
- * fetched by the first Map card drawn as a map and the first Vehicle card asked for one — and each reaches it by a
- * dynamic import alone, or the bundler would fold it back into the chunk that asks (the Map card's is core, which
- * every page loads).
+ * Assistant's card helpers, fits it again as its plate's size settles, tells it the house and the page's mode, and
+ * hides the keys of Home Assistant's a card asks it to (the Vehicle card's word) is fetched by the first Map card drawn
+ * as a map and the first Vehicle card asked for one — and each reaches it by a dynamic import alone, or the bundler
+ * would fold it back into the chunk that asks (the Map card's is core, which every page loads).
  */
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -27,8 +27,18 @@ describe('the map’s chunk', () => {
     expect(chunkOf(at('cards/src/shared/ha-map.ts'))).toBe('ha-map');
     expect(chunkOf(at('cards/src/map/map-card.ts'))).toBe('core');
     expect(chunkOf(at('cards/src/vehicle/vehicle-card.ts'))).toBe('vehicle');
-    // it draws nothing of its own: no module of ours travels with it
-    expect(statics('cards/src/shared/ha-map.ts')).toEqual([]);
+    // it draws nothing of its own: no module of ours travels with it, Lit's `css` (core's) its one import
+    expect(statics('cards/src/shared/ha-map.ts')).toEqual(['lit']);
+  });
+
+  it('holds Home Assistant’s keys by their selectors: a card that asks hands it a word alone', () => {
+    const map = readFileSync(at('cards/src/shared/ha-map.ts'), 'utf8');
+    for (const key of ['#root > #buttons', '.maplibregl-ctrl-group', '.leaflet-control-zoom'])
+      expect(map).toContain(key);
+    // never the tiles' attribution
+    expect(map).not.toMatch(/ctrl-attrib|control-attribution/);
+    for (const path of ASKING)
+      expect(readFileSync(at(path), 'utf8'), path).not.toMatch(/maplibregl|leaflet-|#buttons/);
   });
 
   it('is reached by a dynamic import alone', () => {

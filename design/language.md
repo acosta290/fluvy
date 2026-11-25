@@ -4002,6 +4002,12 @@ Asked by @SentinelXS. Three looks on one card, each off until a config asks: the
     longer says where the car is while the pill does. `show_address: false` hides the pill.
   - **Still** (`map_interactive: false`): no finger moves the map, and the plate is one button that opens the tracker
     (the way out of a map that holds a phone's scroll), the pill raised over it.
+  - **Home Assistant's own keys** on the plate, as its map card draws them (2026.11: MapLibre's zoom keys 10 in from
+    the top left, its card's fit key under them, the tiles' attribution folded to its "i" 10 in from the bottom right):
+    the fit key is never drawn (the map fits itself to its trackers; with it goes the grouping key two trackers bring),
+    the zoom keys only where a finger moves the map, and the attribution always, over the pill's 44 where the pill is
+    drawn (Home Assistant's own room for an overlay, `--ha-map-bottom-inset`), in its corner where it is not. One sheet
+    of ours in the map card's root and its map's, nothing else of Home Assistant's touched; the Map card asks none.
   - **Nothing to draw** (no tracker, out of reach, no coordinates, no card helpers): the plate keeps its size with the
     set's map glyph at 32 in the secondary ink, the pill saying the state.
   - It stands after the tyres and before the small icons; `sections` puts it anywhere, the picture's place among them.

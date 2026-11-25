@@ -41,7 +41,10 @@ const sized = (element: Element, width: number, height: number): void => {
   Object.defineProperty(element, 'clientHeight', { value: height, configurable: true });
 };
 
-/** Home Assistant's map card as its helpers make it: its map inside, counting the fits it is asked for. */
+/**
+ * Home Assistant's map card as its helpers make it: its map inside, with a root of its own (where its zoom keys are),
+ * counting the fits it is asked for.
+ */
 class MapStub extends HTMLElement {
   static made: MapStub[] = [];
   config: LovelaceCardConfig | undefined;
@@ -54,6 +57,7 @@ class MapStub extends HTMLElement {
     map.fitMap = () => {
       this.fits += 1;
     };
+    map.attachShadow({ mode: 'open' });
     this.attachShadow({ mode: 'open' }).append(map);
     MapStub.made.push(this);
   }
@@ -165,6 +169,20 @@ describe('Home Assistant’s map on the plate (#220)', () => {
     Sizes.change(plate()!);
     expect(map.fits).toBe(1);
     expect(MapStub.made).toHaveLength(1);
+  });
+
+  it('leaves Home Assistant’s keys as it draws them, as in 1.25: nothing of ours in its card’s root or its map’s', async () => {
+    const { card, plate } = await mounted();
+    sized(plate()!, 320, 200);
+    Sizes.change(plate()!);
+    await settle(card);
+    card.hass = { ...HOUSE };
+    sized(plate()!, 480, 300);
+    Sizes.change(plate()!);
+    await settle(card);
+    const own = MapStub.made[0]!.shadowRoot!;
+    expect(own.adoptedStyleSheets).toHaveLength(0);
+    expect(own.querySelector('ha-map')?.shadowRoot?.adoptedStyleSheets).toHaveLength(0);
   });
 
   it('watches its plate again when it comes back to the page', async () => {
