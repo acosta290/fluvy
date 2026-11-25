@@ -226,9 +226,11 @@ export function strings<const N extends readonly [Namespace, ...Namespace[]]>(
 }
 
 /**
- * A count: `${key}_${category}` when the catalogue has the CLDR category (`_one`, `_other`, a language's `_few`
- * and `_many`), else the key itself; `{n}` is always at hand in the template. Every count is said here: a card that
- * picked its words by `n === 1` would give Slovak's 3 the words of 5.
+ * A count: `${key}_${category}` when the language or English behind it has the CLDR category (`_one`, `_other`, a
+ * language's `_few` and `_many`), else the key itself; `{n}` is always at hand in the template. Every count is said
+ * here: a card that picked its words by `n === 1` would give Slovak's 3 the words of 5. The form is looked up key by
+ * key, so a catalogue that holds a namespace but not this count still says English's "Yesterday" for one day, never
+ * "Last 1 days".
  */
 export function plural(
   hass: Pick<HomeAssistant, 'language'> | undefined,
@@ -244,8 +246,11 @@ export function plural(
   } catch {
     // an engine without the rules for this language: the plain form
   }
-  const table = catalogues[code]?.[namespace] ?? englishTables[namespace];
-  const chosen = table?.[`${name}_${category}`] !== undefined ? `${name}_${category}` : name;
+  const form = `${name}_${category}`;
+  const chosen =
+    (catalogues[code]?.[namespace]?.[form] ?? englishTables[namespace]?.[form]) === undefined
+      ? name
+      : form;
   return fill(word(code, [namespace], chosen), { n, ...values });
 }
 

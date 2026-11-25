@@ -17,6 +17,7 @@ import {
   type CountKey,
   type MessageKey,
 } from '../i18n/index.js';
+import historyPart from '../i18n/locales/en/history.json';
 import {
   LANGUAGE_CODES,
   LANGUAGES,
@@ -176,6 +177,20 @@ describe('the words', () => {
     expect(plural({ language: 'en' }, 'history.sources_count', 3)).toBe('3 sources');
     expect(plural({ language: 'es' }, 'page.days', 5)).toBe('5 días');
     expect(plural({ language: 'en' }, 'common.events', 3, { count: 3 })).toBe('3 events');
+  });
+
+  it('take a count’s form from English where a catalogue holds its namespace and not the count: one day is "Yesterday", never "Last 1 days"', () => {
+    // Spanish holds the History page's words, not a count English has just been given
+    const history = historyPart.history;
+    addEnglish({
+      history: { ...history, count_test_one: 'Yesterday', count_test: 'Last {n} days' },
+    });
+    const said = (n: number) => plural({ language: 'es' }, 'history.count_test' as CountKey, n);
+    try {
+      expect([said(1), said(2)]).toEqual(['Yesterday', 'Last 2 days']);
+    } finally {
+      addEnglish({ history });
+    }
   });
 
   it('count what is out of reach in its own plural: one, then two', () => {
