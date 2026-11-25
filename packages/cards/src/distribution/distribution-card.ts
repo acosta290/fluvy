@@ -288,25 +288,17 @@ export class FluvyDistributionCard extends Card<DistributionCardConfig> {
     // soft: each part of the stack a pill, its ink deepening along it
     const soft = softIn(this.config) ? 'is-soft' : '';
 
-    return html`<article
-      class="fv-card so-card ${dead ? 'is-unavailable is-off' : ''}"
-      data-card
-      aria-label=${this.headless ? title : nothing}
-    >
-      ${
-        this.headless
-          ? nothing
-          : head({
-              icon: fitted.icon ? (this.config?.icon ?? 'plug') : null,
-              tone,
-              title,
-              sub: fitted.sub,
-              trailing: fitted.badge,
-              name: Boolean(this.config?.title),
-              cut: fitted.cut,
-              ...this.headActions(),
-            })
-      }
+    return html`<article class="fv-card so-card ${dead ? 'is-unavailable is-off' : ''}" data-card>
+      ${head({
+        icon: fitted.icon ? (this.config?.icon ?? 'plug') : null,
+        tone,
+        title,
+        sub: fitted.sub,
+        trailing: fitted.badge,
+        name: Boolean(this.config?.title),
+        cut: fitted.cut,
+        ...this.headActions(),
+      })}
       ${
         asRows
           ? html`<div class="so-rows">

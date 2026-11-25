@@ -856,25 +856,17 @@ export class FluvyItemsCard extends Card<ItemsCardConfig> {
     const tall = panel ? this.panelHeight(config?.empty_text ?? localize(this.hass, emptyKey)) : 0;
     const short = panel !== undefined && min < tall;
     const inset = panel && !short ? Math.floor((min - tall) / 8) * 4 : 0;
-    return html`<article
-      class="fv-card ${dead ? 'is-unavailable' : ''}"
-      data-card
-      aria-label=${this.headless ? title : nothing}
-    >
-      ${
-        this.headless
-          ? nothing
-          : head({
-              icon: fitted.icon ? this.glyph(listing.preset) : null,
-              small: fitted.small,
-              tone: dead ? 'off' : toneOf(config, 'accent'),
-              title,
-              name: config?.title !== undefined || !listing.preset,
-              sub: fitted.sub,
-              cut: fitted.cut,
-              ...this.headActions(),
-            })
-      }
+    return html`<article class="fv-card ${dead ? 'is-unavailable' : ''}" data-card>
+      ${head({
+        icon: fitted.icon ? this.glyph(listing.preset) : null,
+        small: fitted.small,
+        tone: dead ? 'off' : toneOf(config, 'accent'),
+        title,
+        name: config?.title !== undefined || !listing.preset,
+        sub: fitted.sub,
+        cut: fitted.cut,
+        ...this.headActions(),
+      })}
       <div
         class="it-list ${tiles && !panel ? 'it-tiles' : ''} ${panel ? 'is-empty' : ''} ${short ? 'is-short' : ''}"
         style="--it-min:${min}px;--it-inset:${inset}px;--it-cols:${this.tileColumns}"

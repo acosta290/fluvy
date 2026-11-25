@@ -197,6 +197,11 @@ export interface HeadOptions {
   readonly onIconHold?: (() => void) | undefined;
   /** What a reader hears for the circle's button, of the head's title ("Desk lamp icon"). */
   readonly iconLabel?: ((name: string) => string) | undefined;
+  /**
+   * The head is left with nothing in it (#259: no circle, its name hidden, nothing in its line or after it): none is
+   * drawn, its title read aloud alone, its tap and hold gone with it.
+   */
+  readonly hidden?: boolean | undefined;
 }
 
 /** The click of a pressed head, seen before its button's own: a hold, or a mouse's drag, never also taps. */
@@ -224,6 +229,7 @@ export function headTap(
 }
 
 export function head(o: HeadOptions): TemplateResult {
+  if (o.hidden) return html`<h3 class="fv-sr">${o.title}</h3>`;
   const press = Boolean(o.onTap ?? o.onHold);
   const titleClass = `fv-card__title ${o.wrap ? 'fv-card__title--wrap' : ''}`;
   const title = o.onTap ? headTap(o.title, { ...o, onTap: o.onTap }) : o.title;

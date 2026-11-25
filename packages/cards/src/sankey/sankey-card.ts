@@ -519,24 +519,16 @@ export class FluvyEnergySankeyCard extends Card<EnergySankeyCardConfig> {
       ></div>`;
     else if (empty) body = emptyState('bolt', s(this.hass, 'nothing_yet'));
     else body = this.renderDiagram(scene, w);
-    return html`<article
-      class="fv-card en-card"
-      data-card
-      aria-label=${this.headless ? title : nothing}
-    >
-      ${
-        this.headless
-          ? nothing
-          : head({
-              icon: fitted.icon ? (this.config?.icon ?? 'swap') : null,
-              tone: toneOf(this.config, 'accent'),
-              title,
-              sub: fitted.sub,
-              name: Boolean(this.config?.title),
-              cut: fitted.cut,
-              ...this.headActions(),
-            })
-      }
+    return html`<article class="fv-card en-card" data-card>
+      ${head({
+        icon: fitted.icon ? (this.config?.icon ?? 'swap') : null,
+        tone: toneOf(this.config, 'accent'),
+        title,
+        sub: fitted.sub,
+        name: Boolean(this.config?.title),
+        cut: fitted.cut,
+        ...this.headActions(),
+      })}
       ${
         configured && this.config?.show_period !== false && !this.follower.following
           ? html`<div class="en-period">

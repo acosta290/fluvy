@@ -220,7 +220,9 @@ export class FluvyRoundsCard extends Card<RoundsCardConfig> {
     const items = this.items();
     const w = this.contentWidth;
     const host = this.host();
-    const title = roundsHeaded(this.config) ? this.config?.title : undefined;
+    const title = this.config?.title;
+    // a head left with nothing in it is none, its title read aloud alone (#259)
+    const titled = roundsHeaded(this.config);
     const ids = items.map((item) => item.entity ?? '');
     const on = ids.filter((id) => isActive(this.entity(id))).length;
     const count = this.config?.show_count !== false;
@@ -233,11 +235,7 @@ export class FluvyRoundsCard extends Card<RoundsCardConfig> {
           shorter: count && on ? onOfShort(this.hass, on, ids.length) : [],
         })
       : undefined;
-    return html`<article
-      class="fv-card rd-card"
-      data-card
-      aria-label=${title ? nothing : (this.config?.title ?? nothing)}
-    >
+    return html`<article class="fv-card rd-card" data-card>
       ${
         title && fitted
           ? head({
@@ -249,6 +247,7 @@ export class FluvyRoundsCard extends Card<RoundsCardConfig> {
               cut: fitted.cut,
               // a card of many: its head answers only what its config says
               ...this.headActions(undefined),
+              hidden: !titled,
             })
           : nothing
       }
@@ -256,7 +255,7 @@ export class FluvyRoundsCard extends Card<RoundsCardConfig> {
         !items.length
           ? this.head.empty('grid', this.t('rounds.empty'), this.t('rounds.empty_hint'), w)
           : this.variant === 'row'
-            ? this.renderRows(host, items, w, Boolean(title))
+            ? this.renderRows(host, items, w, titled)
             : this.renderRounds(host, items, w)
       }
     </article>`;

@@ -615,25 +615,20 @@ export class FluvyGaugeCard extends Card<GaugeCardConfig> {
     return html`<article
       class="fv-card so-card ${tinted.cls} ${unusable ? 'is-unavailable is-off' : ''}"
       data-card
-      aria-label=${this.headless ? name : nothing}
       data-accent=${band?.accent ?? nothing}
       data-surface=${tinted.surface}
       data-edge=${tinted.edge}
     >
-      ${
-        this.headless
-          ? nothing
-          : head({
-              icon: fitted.icon ? iconOf(view, band?.icon ?? this.config?.icon) : null,
-              tone: headTone,
-              title: name,
-              sub: fitted.sub,
-              trailing: fitted.badge,
-              cut: fitted.cut,
-              ...this.headActions(view.id),
-              name: true,
-            })
-      }
+      ${head({
+        icon: fitted.icon ? iconOf(view, band?.icon ?? this.config?.icon) : null,
+        tone: headTone,
+        title: name,
+        sub: fitted.sub,
+        trailing: fitted.badge,
+        cut: fitted.cut,
+        ...this.headActions(view.id),
+        name: true,
+      })}
       ${
         this.bar
           ? html`<div class="so-top fv-value-row">
@@ -934,25 +929,20 @@ export class FluvyGaugeCard extends Card<GaugeCardConfig> {
     return html`<article
       class="fv-card so-card ${tinted.cls} ${unusable ? 'is-unavailable is-off' : ''}"
       data-card
-      aria-label=${this.headless ? name : nothing}
       data-accent=${band?.accent ?? nothing}
       data-surface=${tinted.surface}
       data-edge=${tinted.edge}
     >
-      ${
-        this.headless
-          ? nothing
-          : head({
-              icon: fitted.icon ? iconOf(view, band?.icon ?? this.config?.icon) : null,
-              tone: headTone,
-              title: name,
-              sub: fitted.sub,
-              trailing: fitted.badge,
-              cut: fitted.cut,
-              ...this.headActions(view.id),
-              name: true,
-            })
-      }
+      ${head({
+        icon: fitted.icon ? iconOf(view, band?.icon ?? this.config?.icon) : null,
+        tone: headTone,
+        title: name,
+        sub: fitted.sub,
+        trailing: fitted.badge,
+        cut: fitted.cut,
+        ...this.headActions(view.id),
+        name: true,
+      })}
       <div class="en-gauge fv-tone--${tone}" style="height:${g.height}px">
         <svg
           width=${width}

@@ -1025,22 +1025,18 @@ export class FluvyAutomationsCard extends Card<AutomationsCardConfig> {
       compact,
     );
 
-    return html`<article class="fv-card" data-card aria-label=${this.headless ? title : nothing}>
-      ${
-        this.headless
-          ? nothing
-          : head({
-              icon: fitted.icon ? (this.config?.icon ?? 'automation') : null,
-              small: fitted.small,
-              tone: onCount > 0 ? tone : 'neutral',
-              title,
-              name: this.config?.title !== undefined,
-              sub: fitted.sub,
-              trailing,
-              cut: fitted.cut,
-              ...this.headActions(),
-            })
-      }
+    return html`<article class="fv-card" data-card>
+      ${head({
+        icon: fitted.icon ? (this.config?.icon ?? 'automation') : null,
+        small: fitted.small,
+        tone: onCount > 0 ? tone : 'neutral',
+        title,
+        name: this.config?.title !== undefined,
+        sub: fitted.sub,
+        trailing,
+        cut: fitted.cut,
+        ...this.headActions(),
+      })}
       ${this.config?.show_filters ? this.renderFilters() : nothing}
       ${
         waiting

@@ -1279,26 +1279,18 @@ export class FluvyEnergyUsageCard extends Card<EnergyUsageCardConfig> {
     }
     const chips =
       variant === 'full' && this.config?.show_period !== false && !this.follower.following;
-    return html`<article
-      class="fv-card en-card eu-card eu-card--${this.kind}"
-      data-card
-      aria-label=${this.headless ? titleWord : nothing}
-    >
-      ${
-        this.headless
-          ? nothing
-          : head({
-              icon: fitted.icon ? (this.config?.icon ?? GLYPH[this.kind]) : null,
-              small: fitted.small,
-              tone,
-              title: titleWord,
-              sub: fitted.sub,
-              trailing: fitted.badge,
-              name: Boolean(this.config?.title),
-              cut: fitted.cut,
-              ...this.headActions(),
-            })
-      }
+    return html`<article class="fv-card en-card eu-card eu-card--${this.kind}" data-card>
+      ${head({
+        icon: fitted.icon ? (this.config?.icon ?? GLYPH[this.kind]) : null,
+        small: fitted.small,
+        tone,
+        title: titleWord,
+        sub: fitted.sub,
+        trailing: fitted.badge,
+        name: Boolean(this.config?.title),
+        cut: fitted.cut,
+        ...this.headActions(),
+      })}
       ${
         chips
           ? html`<div class="en-period">

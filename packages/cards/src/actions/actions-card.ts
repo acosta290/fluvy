@@ -359,20 +359,16 @@ export class FluvyActionsCard extends Card<ActionsCardConfig> {
       sub: this.config?.subtitle ?? s(this.hass, 'subtitle'),
     });
 
-    return html`<article class="fv-card" data-card aria-label=${this.headless ? title : nothing}>
-      ${
-        this.headless
-          ? nothing
-          : head({
-              icon: fitted.icon ? (this.config?.icon ?? 'bolt') : null,
-              tone: toneOf(this.config, 'accent'),
-              title,
-              sub: fitted.sub,
-              cut: fitted.cut,
-              // the head is the card's button where its tap has somewhere to go: a card of many has no details of its own
-              ...this.headActions(),
-            })
-      }
+    return html`<article class="fv-card" data-card>
+      ${head({
+        icon: fitted.icon ? (this.config?.icon ?? 'bolt') : null,
+        tone: toneOf(this.config, 'accent'),
+        title,
+        sub: fitted.sub,
+        cut: fitted.cut,
+        // the head is the card's button where its tap has somewhere to go: a card of many has no details of its own
+        ...this.headActions(),
+      })}
       <div
         class="in-actions ${layout.play ? '' : 'in-actions--still'} ${layout.glyph ? '' : 'in-actions--bare'}"
         style="--in-columns:${columns};--in-gap:${gap}px"

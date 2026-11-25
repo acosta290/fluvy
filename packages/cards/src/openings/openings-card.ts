@@ -573,25 +573,17 @@ export class FluvyOpeningsCard extends Card<OpeningsCardConfig> {
             .map(({ view }) => view)
         : [];
     const hidden = { count: hiddenAlerts.length, kind: alertKind(hiddenAlerts) };
-    return html`<article
-      class="fv-card am-card"
-      data-card
-      aria-label=${this.headless ? title : nothing}
-    >
-      ${
-        this.headless
-          ? nothing
-          : head({
-              icon: fitted.icon ? (this.config?.icon ?? 'door') : null,
-              tone: alerts.length > 0 ? tone : 'neutral',
-              title,
-              name: true, // a typed title, or the card's own: a name, as the list rows' are
-              sub: fitted.sub,
-              trailing: fitted.badge,
-              cut: fitted.cut,
-              ...this.headActions(),
-            })
-      }
+    return html`<article class="fv-card am-card" data-card>
+      ${head({
+        icon: fitted.icon ? (this.config?.icon ?? 'door') : null,
+        tone: alerts.length > 0 ? tone : 'neutral',
+        title,
+        name: true, // a typed title, or the card's own: a name, as the list rows' are
+        sub: fitted.sub,
+        trailing: fitted.badge,
+        cut: fitted.cut,
+        ...this.headActions(),
+      })}
       ${variant === 'tiles' && !panel ? this.renderTiles(shown, tone, timed, now) : nothing}
       ${
         panel || variant !== 'tiles' || collapsible

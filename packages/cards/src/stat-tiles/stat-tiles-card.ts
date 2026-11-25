@@ -416,22 +416,17 @@ export class FluvyStatTilesCard extends Card<StatTilesCardConfig> {
     return html`<article
       class="fv-card so-card ${unusable ? 'is-unavailable is-off' : ''}"
       data-card
-      aria-label=${this.headless ? title : nothing}
     >
-      ${
-        this.headless
-          ? nothing
-          : head({
-              icon: fitted.icon ? (this.config?.icon ?? (lead ? iconOf(lead) : 'grid')) : null,
-              tone: headTone,
-              title,
-              sub: fitted.sub,
-              trailing: fitted.badge,
-              ...this.headActions(lead?.id),
-              name: Boolean(this.config?.title),
-              cut: fitted.cut,
-            })
-      }
+      ${head({
+        icon: fitted.icon ? (this.config?.icon ?? (lead ? iconOf(lead) : 'grid')) : null,
+        tone: headTone,
+        title,
+        sub: fitted.sub,
+        trailing: fitted.badge,
+        ...this.headActions(lead?.id),
+        name: Boolean(this.config?.title),
+        cut: fitted.cut,
+      })}
       ${lead && leadParts ? html`<div class="so-top fv-value-row">${readout({ label: this.nameFor(lead, this.config?.name), value: leadParts.value, unit: leadParts.unit, size: 'l' })}</div>` : nothing}
       ${
         // the rows alone sit where the tiles would; nothing at all, the panel does

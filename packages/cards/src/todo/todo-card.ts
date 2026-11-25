@@ -491,35 +491,27 @@ export class FluvyTodoCard extends Card<TodoCardConfig> {
       ...(adds ? { trailing: 44 } : {}),
     });
 
-    return html`<article
-      class="fv-card ${unusable ? 'is-unavailable is-off' : ''}"
-      data-card
-      aria-label=${this.headless ? name : nothing}
-    >
-      ${
-        this.headless
-          ? nothing
-          : head({
-              icon: fitted.icon ? (this.config?.icon ?? 'list') : null,
-              small: fitted.small,
-              tone: unusable ? 'off' : toneOf(this.config, 'accent'),
-              title: name,
-              name: true,
-              sub: fitted.sub,
-              cut: fitted.cut,
-              trailing: adds
-                ? round(
-                    'plus',
-                    'accent',
-                    adding ? s(this.hass, 'close') : this.t('todo.add'),
-                    () => this.setAdding(!this.adding_),
-                    !canCreate,
-                    `in-add ${adding ? 'is-open' : ''}`,
-                  )
-                : nothing,
-              ...this.headActions(view.id),
-            })
-      }
+    return html`<article class="fv-card ${unusable ? 'is-unavailable is-off' : ''}" data-card>
+      ${head({
+        icon: fitted.icon ? (this.config?.icon ?? 'list') : null,
+        small: fitted.small,
+        tone: unusable ? 'off' : toneOf(this.config, 'accent'),
+        title: name,
+        name: true,
+        sub: fitted.sub,
+        cut: fitted.cut,
+        trailing: adds
+          ? round(
+              'plus',
+              'accent',
+              adding ? s(this.hass, 'close') : this.t('todo.add'),
+              () => this.setAdding(!this.adding_),
+              !canCreate,
+              `in-add ${adding ? 'is-open' : ''}`,
+            )
+          : nothing,
+        ...this.headActions(view.id),
+      })}
       ${
         adding
           ? html`<div class="fv-swap">

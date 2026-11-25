@@ -2,14 +2,7 @@ import { plural, sliderStyleOf, strings } from '@fluvy/core';
 import type { EntityView, FluvyCardConfig, LovelaceGridOptions } from '@fluvy/core';
 import { head, sheetStyles } from '@fluvy/ui';
 
-import {
-  css,
-  html,
-  nothing,
-  type CSSResultGroup,
-  type PropertyValues,
-  type TemplateResult,
-} from 'lit';
+import { css, html, type CSSResultGroup, type PropertyValues, type TemplateResult } from 'lit';
 
 import { Card, type CardEditor } from '../shared/base.js';
 
@@ -411,20 +404,16 @@ export class FluvyHelpersCard extends Card<HelpersCardConfig> {
         this.config?.subtitle ??
         [areas.size === 1 ? [...areas][0] : '', count].filter(Boolean).join(' · '),
     });
-    return html`<article class="fv-card" data-card aria-label=${this.headless ? title : nothing}>
-      ${
-        this.headless
-          ? nothing
-          : head({
-              icon: fitted.icon ? (this.config?.icon ?? 'sliders') : null,
-              tone: toneOf(this.config, 'accent'),
-              title,
-              sub: fitted.sub,
-              cut: fitted.cut,
-              // the head is the card's button where its tap has somewhere to go: a card of many has no details of its own
-              ...this.headActions(),
-            })
-      }
+    return html`<article class="fv-card" data-card>
+      ${head({
+        icon: fitted.icon ? (this.config?.icon ?? 'sliders') : null,
+        tone: toneOf(this.config, 'accent'),
+        title,
+        sub: fitted.sub,
+        cut: fitted.cut,
+        // the head is the card's button where its tap has somewhere to go: a card of many has no details of its own
+        ...this.headActions(),
+      })}
       ${panel ? html`<div class="in-rows">${panel}</div>` : blocks}
     </article>`;
   }

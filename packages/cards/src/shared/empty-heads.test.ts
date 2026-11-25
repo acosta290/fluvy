@@ -8,9 +8,9 @@ import { headless } from './head-lines.js';
 
 /*
  * A head with nothing in it (#259): a card whose config asks its circle away (`show_icon: never`), hides its name
- * (`name_lines: 0`) and switches off its line, its badge and whatever trails its head draws no head at all; its
- * article says its title, and what it declares drops the head and the gap under it — the same card with any one of
- * those back on keeps its head. Every card is drawn from its own stub in a house of every kind of thing; that what each
+ * (`name_lines: 0`) and switches off its line, its badge and whatever trails its head draws no head at all, its title
+ * read aloud alone, and what it declares drops the head and the gap under it — the same card with any one of those
+ * back on keeps its head. Every card is drawn from its own stub in a house of every kind of thing; that what each
  * declares is what it draws, the browser measures (`heights.mjs` on the `empty-heads` sheet).
  */
 
@@ -127,11 +127,11 @@ function stubbed(card: string, layout: Record<string, unknown>): LovelaceCardCon
   };
 }
 
-/** The card drawn from `config` 360 wide: its head, the words its head said, what its article is called. */
+/** The card drawn from `config` 360 wide: its head, the words its head said, the title read aloud with none. */
 async function drawn(config: LovelaceCardConfig): Promise<{
   readonly head: boolean;
   readonly title: string | undefined;
-  readonly label: string | null | undefined;
+  readonly said: string | undefined;
   readonly marked: boolean;
   readonly empty: boolean;
 }> {
@@ -148,7 +148,7 @@ async function drawn(config: LovelaceCardConfig): Promise<{
   const seen = {
     head: head !== null,
     title: root.querySelector('.fv-card__title')?.textContent?.trim(),
-    label: root.querySelector('article')?.getAttribute('aria-label'),
+    said: root.querySelector('article > h3.fv-sr')?.textContent?.trim(),
     marked: element.hasAttribute('headless'),
     // a head that holds nothing: no circle or picture, no line, nothing after its words, its name hidden
     empty:
@@ -174,10 +174,10 @@ describe('a head with nothing in it (#259)', () => {
 
       const headed = await drawn(twin);
       expect(headed.head).toBe(true);
-      expect(headed.label ?? null, 'a head says the title').toBeNull();
+      expect(headed.said, 'a head says the title').toBeUndefined();
       const bare = await drawn(emptied);
       expect(bare.head).toBe(false);
-      expect(bare.label).toBe(headed.title);
+      expect(bare.said).toBe(headed.title);
 
       expect(houseHeightOf(twin, -1) - houseHeightOf(emptied, -1)).toBe(drop);
 

@@ -1737,30 +1737,22 @@ export class FluvyEnergyCard extends Card<EnergyCardConfig> {
             ),
           ]
         : [];
-    return html`<article
-      class="fv-card ef-card"
-      data-card
-      aria-label=${this.headless ? title : nothing}
-    >
-      ${
-        this.headless
-          ? nothing
-          : head({
-              icon: fitted.icon ? (this.config?.icon ?? 'home') : null,
-              small: fitted.small,
-              tone,
-              title,
-              sub: fitted.sub,
-              trailing: view
-                ? round('dots', 'quiet', this.t('common.more'), () =>
-                    this.tap(view.id, { action: 'more-info' }),
-                  )
-                : nothing,
-              cut: fitted.cut,
-              ...this.headActions(id),
-              name: Boolean(this.config?.name),
-            })
-      }
+    return html`<article class="fv-card ef-card" data-card>
+      ${head({
+        icon: fitted.icon ? (this.config?.icon ?? 'home') : null,
+        small: fitted.small,
+        tone,
+        title,
+        sub: fitted.sub,
+        trailing: view
+          ? round('dots', 'quiet', this.t('common.more'), () =>
+              this.tap(view.id, { action: 'more-info' }),
+            )
+          : nothing,
+        cut: fitted.cut,
+        ...this.headActions(id),
+        name: Boolean(this.config?.name),
+      })}
       <div class="ef-top fv-value-row">
         ${readout({ label: reading.label, value: reading.value, unit: reading.unit, size: 'l' })}
       </div>
@@ -2084,30 +2076,22 @@ export class FluvyEnergyCard extends Card<EnergyCardConfig> {
       }
     }
     const own = stacking ? '' : 'is-own';
-    return html`<article
-      class="fv-card ef-card ef-card--overview"
-      data-card
-      aria-label=${this.headless ? title : nothing}
-    >
-      ${
-        this.headless
-          ? nothing
-          : head({
-              icon: fitted.icon ? (this.config?.icon ?? 'home') : null,
-              small: fitted.small,
-              tone,
-              title,
-              sub: fitted.sub,
-              trailing: view
-                ? round('dots', 'quiet', this.t('common.more'), () =>
-                    this.tap(view.id, { action: 'more-info' }),
-                  )
-                : nothing,
-              cut: fitted.cut,
-              ...this.headActions(id),
-              name: Boolean(this.config?.name),
-            })
-      }
+    return html`<article class="fv-card ef-card ef-card--overview" data-card>
+      ${head({
+        icon: fitted.icon ? (this.config?.icon ?? 'home') : null,
+        small: fitted.small,
+        tone,
+        title,
+        sub: fitted.sub,
+        trailing: view
+          ? round('dots', 'quiet', this.t('common.more'), () =>
+              this.tap(view.id, { action: 'more-info' }),
+            )
+          : nothing,
+        cut: fitted.cut,
+        ...this.headActions(id),
+        name: Boolean(this.config?.name),
+      })}
       <div class="ef-top fv-value-row ${stacked ? 'is-stacked' : ''}">
         <div class="ef-key ${showHouse && shape ? 'ef-key--house' : ''}">
           ${readout({ label: reading.label, value: reading.value, unit: reading.unit, size: 'l' })}

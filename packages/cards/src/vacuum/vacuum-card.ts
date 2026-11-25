@@ -198,7 +198,7 @@ export class FluvyVacuumCard extends Card<VacuumCardConfig> {
         flex-direction: column;
       }
       /* a head left with nothing in it (#259): the body's first part at the card's 20 */
-      :host([headless]) .fv-card > .vc-body:first-child > :first-child {
+      :host([headless]) .fv-card > .fv-sr:first-child + .vc-body > :first-child {
         margin-top: 0;
       }
       .vc-body.is-driving > .vc-part {
@@ -619,25 +619,20 @@ export class FluvyVacuumCard extends Card<VacuumCardConfig> {
       class="fv-card dv-card ${unusable ? 'is-unavailable is-off' : ''} ${tinted.cls}"
       style="--dv-action-gap:${gap}px"
       data-card
-      aria-label=${this.headless ? name : nothing}
       data-accent=${colour.accent ?? nothing}
       data-surface=${tinted.surface}
       data-edge=${tinted.edge}
     >
-      ${
-        this.headless
-          ? nothing
-          : head({
-              icon: fitted.icon ? iconOf(view, this.config?.icon) : null,
-              tone,
-              title: name,
-              name: true,
-              sub: fitted.line,
-              trailing: fitted.badge,
-              cut: fitted.cut,
-              ...this.headActions(view.id),
-            })
-      }
+      ${head({
+        icon: fitted.icon ? iconOf(view, this.config?.icon) : null,
+        tone,
+        title: name,
+        name: true,
+        sub: fitted.line,
+        trailing: fitted.badge,
+        cut: fitted.cut,
+        ...this.headActions(view.id),
+      })}
       ${columns.length && !compact ? this.renderColumns(columns, w) : nothing}
       <div class="vc-body ${inCard ? 'is-driving' : ''}">
         ${

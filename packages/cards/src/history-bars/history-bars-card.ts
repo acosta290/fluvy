@@ -1462,7 +1462,7 @@ export class FluvyHistoryBarsCard extends Card<HistoryBarsCardConfig> {
     // gives way, where a badge in a narrow head would
     const period = this.config?.subtitle ?? this.periodLine();
     const sub = unusable ? `${stateText(this.hass, view)} · ${period}` : period;
-    const showHead = this.shows('show_head') && !this.headless;
+    const showHead = this.shows('show_head');
     // the readouts sit beside the title only on a wide card where nothing of the head gives way for them
     const tryHead =
       showHead && variant !== 'mini' && readouts.length > 0 && width >= READOUTS_IN_HEAD;
@@ -1496,11 +1496,7 @@ export class FluvyHistoryBarsCard extends Card<HistoryBarsCardConfig> {
             ? html`<div class="hb-empty">${this.renderNone(view, failed, width)}</div>`
             : this.renderChart(buckets, values, unit, tone, unusable, { hovered, running }, name);
 
-    return html`<article
-      class="fv-card ${unusable ? 'is-unavailable is-off' : ''}"
-      data-card
-      aria-label=${this.headless ? name : nothing}
-    >
+    return html`<article class="fv-card ${unusable ? 'is-unavailable is-off' : ''}" data-card>
       ${
         showHead
           ? head({

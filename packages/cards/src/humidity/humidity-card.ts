@@ -404,22 +404,17 @@ export class FluvyHumidityCard extends Card<HumidityCardConfig> {
     return html`<article
       class="fv-card so-card ${unusable ? 'is-unavailable is-off' : ''}"
       data-card
-      aria-label=${this.headless ? name : nothing}
     >
-      ${
-        this.headless
-          ? nothing
-          : head({
-              icon: fitted.icon ? iconOf(view, this.config?.icon) : null,
-              tone,
-              title: name,
-              sub: fitted.sub,
-              trailing: fitted.badge,
-              cut: fitted.cut,
-              ...this.headActions(view.id),
-              name: true,
-            })
-      }
+      ${head({
+        icon: fitted.icon ? iconOf(view, this.config?.icon) : null,
+        tone,
+        title: name,
+        sub: fitted.sub,
+        trailing: fitted.badge,
+        cut: fitted.cut,
+        ...this.headActions(view.id),
+        name: true,
+      })}
       <div class="so-top fv-value-row ${stacked ? 'is-stacked' : ''}">
         ${readout({ label: relative, value: parts.value, unit: value === null ? '' : parts.unit || '%', size: 'l' })}
         ${side ? html`<div class="so-top__side">${readout({ label: side.label, value: side.value, unit: side.unit, size: 's' })}</div>` : nothing}

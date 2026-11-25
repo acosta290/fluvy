@@ -113,9 +113,13 @@ export interface IconActions {
   readonly iconLabel: (name: string) => string;
 }
 
-/** A head's actions (`head()`'s): the card's tap and hold, its circle's, each where it can run, and `label`. */
+/**
+ * A head's actions (`head()`'s): the card's tap and hold, its circle's, each where it can run, and `label`; and whether
+ * the head is left with nothing in it (`hidden`, #259: `Card.headless`), none drawn.
+ */
 export interface HeadActions extends Press, Partial<IconActions> {
   readonly label?: string | undefined;
+  readonly hidden?: boolean;
 }
 
 /** What a tap and a hold run where nothing else is said: the details. */
@@ -474,7 +478,7 @@ export abstract class Card<C extends FluvyCardConfig = FluvyCardConfig> extends 
 
   /**
    * Whether the card's head is left with nothing in it (#259, `headless`): its circle and its name asked away, and the
-   * card `quiet`. None is drawn; the card says its title aloud.
+   * card `quiet`. None is drawn (`headActions` tells `head()`); its title is read aloud alone.
    */
   get headless(): boolean {
     return headless(this.config, this.quiet);
@@ -535,13 +539,19 @@ export abstract class Card<C extends FluvyCardConfig = FluvyCardConfig> extends 
    * The head's tap, hold and double tap (the head is the card's button) from the card's actions, and its circle's
    * (`icon_*_action`, #179), run for `entityId` — the card's entity by default (`pressOf`). One that cannot run is left
    * out (`none`; more-info or a toggle with no entity to act on, as a card of many has none), so a head is never a
-   * button that does nothing. `label`: what a reader hears for the head's button where its title says less.
+   * button that does nothing. `label`: what a reader hears for the head's button where its title says less. A head left
+   * with nothing in it (`headless`) is drawn as none, its actions with it.
    */
   protected headActions(
     entityId: string | undefined = this.config?.entity,
     label?: string,
   ): HeadActions {
-    return { ...this.pressOf(this.config, entityId), ...this.iconActions(entityId), label };
+    return {
+      ...this.pressOf(this.config, entityId),
+      ...this.iconActions(entityId),
+      label,
+      hidden: this.headless,
+    };
   }
 
   /** What the head's circle answers of its own (`icon_*_action`, #179), run for `entityId`: nothing until set. */

@@ -165,8 +165,9 @@
 }
 
 /* a head left with nothing in it is not drawn (#259: its circle, its name, its line, its badge and what trails it all
-   asked away; the card marks its host): the first part sits at the card's 20 all round */
-:host([headless]) .fv-card > :first-child {
+   asked away; the card marks its host), its title read aloud alone where the head stood: the first part sits at the
+   card's 20 all round */
+:host([headless]) .fv-card > .fv-sr:first-child + * {
   margin-top: 0;
 }
 

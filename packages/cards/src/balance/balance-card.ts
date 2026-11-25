@@ -615,25 +615,17 @@ export class FluvyEnergyBalanceCard extends Card<EnergyBalanceCardConfig> {
               this.contentWidth,
             )
           : html`${this.blocks(m, w)} ${this.renderPhases(m, w)} ${this.renderMoney(m, w)}`;
-    return html`<article
-      class="fv-card ef-card en-card"
-      data-card
-      aria-label=${this.headless ? title : nothing}
-    >
-      ${
-        this.headless
-          ? nothing
-          : head({
-              icon: fitted.icon ? (this.config?.icon ?? 'swap') : null,
-              tone: toneOf(this.config, 'accent'),
-              title,
-              sub: fitted.sub,
-              trailing: fitted.badge,
-              name: true,
-              cut: fitted.cut,
-              ...this.headActions(),
-            })
-      }
+    return html`<article class="fv-card ef-card en-card" data-card>
+      ${head({
+        icon: fitted.icon ? (this.config?.icon ?? 'swap') : null,
+        tone: toneOf(this.config, 'accent'),
+        title,
+        sub: fitted.sub,
+        trailing: fitted.badge,
+        name: true,
+        cut: fitted.cut,
+        ...this.headActions(),
+      })}
       ${
         period && this.config?.show_period !== false && !this.follower.following
           ? html`<div class="en-period">

@@ -579,25 +579,20 @@ export class FluvyAlarmCard extends RowsCard<AlarmCardConfig> {
     return html`<article
         class="fv-card dv-card ${unusable ? 'is-unavailable is-off' : ''} ${narrow ? 'is-compact' : ''} ${tinted.cls}"
         data-card
-        aria-label=${this.headless ? name : nothing}
         data-accent=${colour.accent ?? nothing}
         data-surface=${tinted.surface}
         data-edge=${tinted.edge}
       >
-        ${
-          this.headless
-            ? nothing
-            : head({
-                icon: fitted.icon ? iconOf(view, this.config?.icon) : null,
-                tone,
-                title: name,
-                name: true,
-                sub: fitted.line,
-                trailing: fitted.badge,
-                cut: fitted.cut,
-                ...this.headActions(view.id),
-              })
-        }
+        ${head({
+          icon: fitted.icon ? iconOf(view, this.config?.icon) : null,
+          tone,
+          title: name,
+          name: true,
+          sub: fitted.line,
+          trailing: fitted.badge,
+          cut: fitted.cut,
+          ...this.headActions(view.id),
+        })}
         ${
           compact
             ? html`<div class="dv-alarm__row">

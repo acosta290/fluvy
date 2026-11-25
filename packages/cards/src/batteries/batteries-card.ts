@@ -360,25 +360,17 @@ export class FluvyBatteriesCard extends Card<BatteriesCardConfig> {
     const fitted = this.head.fit({ width: w, title, sub: this.sub(all, net, scale), badge });
     const first = all[0]?.entity;
     const waiting = !this.own().length && this.prefs === undefined;
-    return html`<article
-      class="fv-card ef-card en-card"
-      data-card
-      aria-label=${this.headless ? title : nothing}
-    >
-      ${
-        this.headless
-          ? nothing
-          : head({
-              icon: fitted.icon ? (this.config?.icon ?? 'battery') : null,
-              tone: active ? tone : 'neutral',
-              title,
-              sub: fitted.sub,
-              trailing: fitted.badge,
-              name: Boolean(this.config?.title),
-              cut: fitted.cut,
-              ...this.headActions(first),
-            })
-      }
+    return html`<article class="fv-card ef-card en-card" data-card>
+      ${head({
+        icon: fitted.icon ? (this.config?.icon ?? 'battery') : null,
+        tone: active ? tone : 'neutral',
+        title,
+        sub: fitted.sub,
+        trailing: fitted.badge,
+        name: Boolean(this.config?.title),
+        cut: fitted.cut,
+        ...this.headActions(first),
+      })}
       ${
         all.length
           ? this.renderBody(all, net, scale, tone, title, w)

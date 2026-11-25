@@ -396,7 +396,9 @@ export class FluvyEntitiesCard extends Card<EntitiesCardConfig> {
     const active = views.filter((v) => isActive(v)).length;
     const tone = toneOf(this.config, 'accent');
     const compact = this.config?.variant === 'compact';
-    const title = headed(this.config) ? this.config?.title : undefined;
+    const title = this.config?.title;
+    // a head left with nothing in it is none, its title read aloud alone (#259)
+    const titled = headed(this.config);
     // a lit light's row may wear its bulb's colour (`light_colors`, the house's where the card says none)
     const glows = this.config?.light_colors ?? lightDefaults().colors;
     const more = moreOf(this.config);
@@ -430,6 +432,7 @@ export class FluvyEntitiesCard extends Card<EntitiesCardConfig> {
             trailing: fitted.badge,
             // a card of many: its head answers only what its config says (a page to open, #179)
             ...this.headActions(),
+            hidden: !titled,
           })
         : nothing;
 
@@ -552,13 +555,9 @@ export class FluvyEntitiesCard extends Card<EntitiesCardConfig> {
       return at < 3 ? lines.forms[at]! : lines.name ? lines.forms[0] : '';
     };
 
-    return html`<article
-      class="fv-card"
-      data-card
-      aria-label=${title ? nothing : (this.config?.title ?? nothing)}
-    >
+    return html`<article class="fv-card" data-card>
       ${header}
-      <div class="fv-rows ${title ? '' : 'fv-rows--bare'}">
+      <div class="fv-rows ${titled ? '' : 'fv-rows--bare'}">
         ${panel}
         ${withSections(drawn, (row, i) => {
           const { view, usable, trailing, title, value, number, glyph } = laid[i]!;

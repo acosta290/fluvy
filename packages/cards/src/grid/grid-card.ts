@@ -537,25 +537,17 @@ export class FluvyGridCard extends Card<GridCardConfig> {
     });
     const first = m.source ? sourceIds(m.source)[0] : undefined;
     const empty = !m.source && (!!this.own() || this.prefs !== undefined);
-    return html`<article
-      class="fv-card ef-card en-card"
-      data-card
-      aria-label=${this.headless ? title : nothing}
-    >
-      ${
-        this.headless
-          ? nothing
-          : head({
-              icon: fitted.icon ? (this.config?.icon ?? 'tower') : null,
-              tone: m.dead || !m.way ? 'neutral' : toneOf(this.config, 'grid'),
-              title,
-              sub: fitted.sub,
-              trailing: fitted.badge,
-              name: true,
-              cut: fitted.cut,
-              ...this.headActions(first),
-            })
-      }
+    return html`<article class="fv-card ef-card en-card" data-card>
+      ${head({
+        icon: fitted.icon ? (this.config?.icon ?? 'tower') : null,
+        tone: m.dead || !m.way ? 'neutral' : toneOf(this.config, 'grid'),
+        title,
+        sub: fitted.sub,
+        trailing: fitted.badge,
+        name: true,
+        cut: fitted.cut,
+        ...this.headActions(first),
+      })}
       ${
         empty
           ? this.head.empty(

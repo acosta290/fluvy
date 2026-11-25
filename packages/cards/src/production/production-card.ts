@@ -999,29 +999,24 @@ export class FluvyProductionCard extends Card<ProductionCardConfig> {
     return html`<article
       class="fv-card so-card ${unusable ? 'is-unavailable is-off' : ''}"
       data-card
-      aria-label=${this.headless ? name : nothing}
     >
-      ${
-        this.headless
-          ? nothing
-          : head({
-              icon: fitted.icon ? (this.config?.icon ?? 'sun') : null,
-              tone,
-              title: name,
-              sub: fitted.sub,
-              trailing:
-                heldWords && widestBadge
-                  ? html`<span
-                      class="pr-badge"
-                      style="min-width:${this.head.ruler.pill('fv-badge', widestBadge.text, BADGE_SIDES)}px"
-                      >${badge(heldWords.text, heldWords.tone)}</span
-                    >`
-                  : fitted.badge,
-              cut: fitted.cut,
-              ...this.headActions(view.id),
-              name: true,
-            })
-      }
+      ${head({
+        icon: fitted.icon ? (this.config?.icon ?? 'sun') : null,
+        tone,
+        title: name,
+        sub: fitted.sub,
+        trailing:
+          heldWords && widestBadge
+            ? html`<span
+                class="pr-badge"
+                style="min-width:${this.head.ruler.pill('fv-badge', widestBadge.text, BADGE_SIDES)}px"
+                >${badge(heldWords.text, heldWords.tone)}</span
+              >`
+            : fitted.badge,
+        cut: fitted.cut,
+        ...this.headActions(view.id),
+        name: true,
+      })}
       ${
         compact
           ? nothing
@@ -1189,24 +1184,18 @@ export class FluvyProductionCard extends Card<ProductionCardConfig> {
       // a compact card writes no figure under its head: the day's total, or the days', is its badge
       badge: compact && known ? { text: `${shown(total)} ${scale.unit}`, tone } : null,
     });
-    const chrome = this.headless
-      ? nothing
-      : head({
-          icon: fitted.icon ? (this.config?.icon ?? 'sun') : null,
-          tone,
-          title: name,
-          sub: fitted.sub,
-          trailing: fitted.badge,
-          cut: fitted.cut,
-          ...this.headActions(view.id),
-          name: true,
-        });
+    const chrome = head({
+      icon: fitted.icon ? (this.config?.icon ?? 'sun') : null,
+      tone,
+      title: name,
+      sub: fitted.sub,
+      trailing: fitted.badge,
+      cut: fitted.cut,
+      ...this.headActions(view.id),
+      name: true,
+    });
     if (!known && !loading)
-      return html`<article
-        class="fv-card so-card"
-        data-card
-        aria-label=${this.headless ? name : nothing}
-      >
+      return html`<article class="fv-card so-card" data-card>
         ${chrome}
         <div
           class="pr-none ${compact ? '' : 'pr-none--full'}"
@@ -1260,11 +1249,7 @@ export class FluvyProductionCard extends Card<ProductionCardConfig> {
     const best = values.indexOf(Math.max(...values));
     const ceiling = ceilingFor(Math.max(0, ...values));
     const step = stepOn(ceiling);
-    return html`<article
-      class="fv-card so-card"
-      data-card
-      aria-label=${this.headless ? name : nothing}
-    >
+    return html`<article class="fv-card so-card" data-card>
       ${chrome}
       ${
         compact

@@ -13,7 +13,7 @@ import {
 
 import { barRow, head, listRow, sheetStyles, type Tone } from '@fluvy/ui';
 
-import { html, nothing, type CSSResultGroup, type TemplateResult } from 'lit';
+import { html, type CSSResultGroup, type TemplateResult } from 'lit';
 
 import type { Segment } from '../shared/fit.js';
 import { HeadFit } from '../energy/head.js';
@@ -446,25 +446,17 @@ export class FluvyBarsCard extends Card<BarsCardConfig> {
             },
     });
 
-    return html`<article
-      class="fv-card so-card"
-      data-card
-      aria-label=${this.headless ? title : nothing}
-    >
-      ${
-        this.headless
-          ? nothing
-          : head({
-              icon: fitted.icon ? (this.config?.icon ?? 'sliders') : null,
-              tone,
-              title,
-              sub: fitted.sub,
-              trailing: fitted.badge,
-              name: Boolean(this.config?.title),
-              cut: fitted.cut,
-              ...this.headActions(),
-            })
-      }
+    return html`<article class="fv-card so-card" data-card>
+      ${head({
+        icon: fitted.icon ? (this.config?.icon ?? 'sliders') : null,
+        tone,
+        title,
+        sub: fitted.sub,
+        trailing: fitted.badge,
+        name: Boolean(this.config?.title),
+        cut: fitted.cut,
+        ...this.headActions(),
+      })}
       <div class=${list}>${panel ?? body}</div>
     </article>`;
   }

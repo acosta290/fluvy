@@ -455,14 +455,12 @@ export class FluvyThermostatsCard extends Card<ThermostatsCardConfig> {
       running[0];
     const title = config.title || this.t('thermostats.title');
     const line = this.headLine(units);
-    const fitted = hasHead(config)
-      ? this.head.fit({ width: w, title, sub: line.sub, shorter: line.shorter })
-      : undefined;
-    return html`<article
-      class="fv-card ts-card"
-      data-card
-      aria-label=${config.title && !fitted ? config.title : nothing}
-    >
+    // a head left with nothing in it is none, its title read aloud alone (#259)
+    const fitted =
+      config.title || hasHead(config)
+        ? this.head.fit({ width: w, title, sub: line.sub, shorter: line.shorter })
+        : undefined;
+    return html`<article class="fv-card ts-card" data-card>
       ${
         fitted
           ? head({
@@ -474,6 +472,7 @@ export class FluvyThermostatsCard extends Card<ThermostatsCardConfig> {
               cut: fitted.cut,
               // a card of many: its head answers only what its config says
               ...this.headActions(undefined),
+              hidden: !hasHead(config),
             })
           : nothing
       }

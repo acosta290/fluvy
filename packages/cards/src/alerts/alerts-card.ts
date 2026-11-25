@@ -1042,7 +1042,7 @@ export class FluvyAlertsCard extends Card<AlertsCardConfig> {
     const values = bare ? counts.map(() => '') : counts;
     const chevron = bare ? nothing : html`<span class="fv-row__chevron">${icon('chevron')}</span>`;
     const label = s(this.hass, 'more', { n: more });
-    return html`<article class="fv-card" data-card aria-label=${this.spoken}>
+    return html`<article class="fv-card" data-card>
       ${this.renderHead(
         top,
         this.config?.show_count === false
@@ -1096,21 +1096,15 @@ export class FluvyAlertsCard extends Card<AlertsCardConfig> {
     </article>`;
   }
 
-  /** What the rows' card is called where its head is not drawn (#259): its title, which the head said. */
-  private get spoken(): string | typeof nothing {
-    return this.headless ? (this.config?.title ?? s(this.hass, 'title')) : nothing;
-  }
-
   /**
    * The head (rows): the title (the card's own, a name, or "Needs attention") and its line, how many alerts in the
    * gravest one's tone; what gives way does so in the head's order — the badge, the line's tail, the circle. None
-   * where it is left with nothing in it (#259).
+   * where it is left with nothing in it (#259), its title read aloud alone.
    */
   private renderHead(
     tone: Tone,
     badge: { readonly text: string; readonly tone: Tone } | null,
-  ): TemplateResult | typeof nothing {
-    if (this.headless) return nothing;
+  ): TemplateResult {
     const fit = (title: string): FittedHead =>
       this.headFit.fit({
         width: this.contentWidth,
@@ -1136,6 +1130,7 @@ export class FluvyAlertsCard extends Card<AlertsCardConfig> {
       trailing: fitted.badge,
       cut: fitted.cut,
       ...this.headPress(),
+      hidden: this.headless,
     });
   }
 
@@ -1224,7 +1219,7 @@ export class FluvyAlertsCard extends Card<AlertsCardConfig> {
         : s(this.hass, 'nothing');
     const open = (): void => void this.openSheet();
     if (variant === 'rows')
-      return html`<article class="fv-card" data-card aria-label=${this.spoken}>
+      return html`<article class="fv-card" data-card>
         ${this.renderHead('neutral', null)}
         <div class="al-empty">${this.headFit.empty('check', text, hint, this.contentWidth)}</div>
       </article>`;

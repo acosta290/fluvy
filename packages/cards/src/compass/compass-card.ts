@@ -1126,25 +1126,20 @@ export class FluvyCompassCard extends Card<CompassCardConfig> {
     return html`<article
       class="fv-card so-card ${tinted.cls} ${unusable ? 'is-unavailable is-off' : ''}"
       data-card
-      aria-label=${this.headless ? name : nothing}
       data-accent=${band?.accent ?? nothing}
       data-surface=${tinted.surface}
       data-edge=${tinted.edge}
     >
-      ${
-        this.headless
-          ? nothing
-          : head({
-              icon: fitted.icon ? this.headIcon(main, band) : null,
-              tone: headTone,
-              title: name,
-              sub: fitted.sub,
-              trailing: fitted.badge,
-              cut: fitted.cut,
-              ...this.headActions(main.id),
-              name: true,
-            })
-      }
+      ${head({
+        icon: fitted.icon ? this.headIcon(main, band) : null,
+        tone: headTone,
+        title: name,
+        sub: fitted.sub,
+        trailing: fitted.badge,
+        cut: fitted.cut,
+        ...this.headActions(main.id),
+        name: true,
+      })}
       <div class="so-gauge ${where === 'beside' ? 'cp-beside' : ''}">
         ${this.renderDial({
           r,

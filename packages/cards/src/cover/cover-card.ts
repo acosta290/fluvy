@@ -972,25 +972,20 @@ export class FluvyCoverCard extends Card<CoverCardConfig> {
       class="fv-card dv-card ${unusable ? 'is-unavailable is-off' : ''} ${this.horizontal ? 'cv-card--across' : ''} ${tinted.cls}"
       style="--dv-action-gap:${cells.gap}px"
       data-card
-      aria-label=${this.headless ? name : nothing}
       data-accent=${colour.accent ?? nothing}
       data-surface=${tinted.surface}
       data-edge=${tinted.edge}
     >
-      ${
-        this.headless
-          ? nothing
-          : head({
-              icon: fitted.icon ? iconOf(view, this.config?.icon) : null,
-              tone,
-              title: name,
-              name: true,
-              sub: fitted.line,
-              trailing: fitted.badge,
-              cut: fitted.cut,
-              ...this.headActions(view.id),
-            })
-      }
+      ${head({
+        icon: fitted.icon ? iconOf(view, this.config?.icon) : null,
+        tone,
+        title: name,
+        name: true,
+        sub: fitted.line,
+        trailing: fitted.badge,
+        cut: fitted.cut,
+        ...this.headActions(view.id),
+      })}
       ${
         side
           ? html` <div

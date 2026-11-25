@@ -339,20 +339,16 @@ export class FluvyUpdatesCard extends Card<UpdatesCardConfig> {
       sub: narrow ? count : (this.config?.subtitle ?? checked),
       badge: narrow ? null : { text: count, tone: waiting.length ? 'accent' : 'neutral' },
     });
-    return html`<article class="fv-card" data-card aria-label=${this.headless ? title : nothing}>
-      ${
-        this.headless
-          ? nothing
-          : head({
-              icon: fitted.icon ? (this.config?.icon ?? 'update') : null,
-              tone: toneOf(this.config, 'accent'),
-              title,
-              sub: fitted.sub,
-              trailing: fitted.badge,
-              cut: fitted.cut,
-              ...this.headActions(),
-            })
-      }
+    return html`<article class="fv-card" data-card>
+      ${head({
+        icon: fitted.icon ? (this.config?.icon ?? 'update') : null,
+        tone: toneOf(this.config, 'accent'),
+        title,
+        sub: fitted.sub,
+        trailing: fitted.badge,
+        cut: fitted.cut,
+        ...this.headActions(),
+      })}
       ${
         shown.length
           ? html`<div class="in-rows">${shown.map((view) => this.row(view, narrow, bare))}</div>`

@@ -236,11 +236,12 @@ key hold.
   all round as a list with no head, and declares its height without the head and the gap under it (16 under most
   heads, 4 over bar rows, 20 over a block or rings, 24 over a cover's ruler). One rule decides it (`headless`, beside
   `hidesName`), from the config alone, never from what the house says: a count left empty while nothing runs keeps its
-  head while the count is asked for, as a card's height follows its config. The card's article says its title, the
-  name the head said; the head's own tap and hold go with it, each row keeping its own (an alert's row, as in the
-  layouts with no head, takes the card's where it has none). A card whose head is its
-  title's (the entities, the rounds, the thermostats) draws as with no title. The EV charger and the meters keep theirs:
-  what trails them (the car powering the house, the first meter's "…") the house decides.
+  head while the count is asked for, as a card's height follows its config. Its title is still read aloud where the
+  head stood, a heading drawn at no size as the hidden name was (`head()` draws it, told by the card's head actions);
+  the head's own tap and hold go with it, each row keeping its own (an alert's row, as in the layouts with no head,
+  takes the card's where it has none). A card whose head is its title's (the entities, the rounds, the thermostats)
+  draws as with no title. The EV charger and the meters keep theirs: what trails them (the car powering the house, the
+  first meter's "…") the house decides.
 - **A badge asked away (1.22, #203):** `show_badge: false` on every head card whose head carries a badge of the
   card's own (a state, what it is doing, a count, a total), honoured once in `HeadFit`, read through the card as
   `show_icon` is (`Card.showBadge`): no badge, and no word stepping down into the line either; its room is the name's

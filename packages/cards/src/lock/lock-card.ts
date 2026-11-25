@@ -586,25 +586,20 @@ export class FluvyLockCard extends RowsCard<LockCardConfig> {
     return html`<article
         class="fv-card dv-card ${unusable ? 'is-unavailable is-off' : ''} ${tinted.cls}"
         data-card
-        aria-label=${this.headless ? name : nothing}
         data-accent=${colour.accent ?? nothing}
         data-surface=${tinted.surface}
         data-edge=${tinted.edge}
       >
-        ${
-          this.headless
-            ? nothing
-            : head({
-                icon: fitted.icon ? (this.config?.icon ?? (atStart ? 'lock' : 'unlock')) : null,
-                tone,
-                title: name,
-                name: true,
-                sub: fitted.line,
-                trailing: fitted.badge,
-                cut: fitted.cut,
-                ...this.headActions(view.id),
-              })
-        }
+        ${head({
+          icon: fitted.icon ? (this.config?.icon ?? (atStart ? 'lock' : 'unlock')) : null,
+          tone,
+          title: name,
+          name: true,
+          sub: fitted.line,
+          trailing: fitted.badge,
+          cut: fitted.cut,
+          ...this.headActions(view.id),
+        })}
         <div
           class="dv-slide ${atStart ? '' : 'dv-slide--reverse'} ${state === 'jammed' && !tinted.shown ? 'dv-slide--warning' : ''} ${frozen ? 'is-inert' : ''} ${moving ? 'is-moving' : ''}"
           data-control
