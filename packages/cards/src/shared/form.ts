@@ -380,8 +380,9 @@ export const sheetDialField = (
  * none is chosen, nothing on a card of many (`many`: no entity of its own to open), each its own where the card says
  * (`tap`, `hold`) — then, added as Home Assistant's own editors add them, a double tap and, where it has a circle that
  * may answer on its own (`icon`), the circle's tap, hold and double tap: nothing until set (a tile's circle that is its
- * switch flips it: `iconTap`). Under them, on a card built round one control (`dial`: whether its entity has one to
- * set), whether the details sheet those open keeps its dial (`sheetDialField`).
+ * switch flips it: `iconTap`); then what other parts of the card answer of their own (`parts`: the greeting's weather
+ * and date, #260). Under them, on a card built round one control (`dial`: whether its entity has one to set), whether
+ * the details sheet those open keeps its dial (`sheetDialField`).
  */
 export const actionFields = ({
   icon = false,
@@ -390,6 +391,7 @@ export const actionFields = ({
   hold,
   iconTap = 'none',
   dial,
+  parts = [],
 }: {
   icon?: boolean;
   many?: boolean;
@@ -397,6 +399,7 @@ export const actionFields = ({
   hold?: Fallback;
   iconTap?: Fallback;
   dial?: NonNullable<HaFormSchemaItem['when']>;
+  parts?: readonly HaFormSchemaItem[];
 } = {}): HaFormSchemaItem => {
   const fallback = many ? 'none' : 'more-info';
   const said = (own: Fallback | undefined): ActionConfig['action'] | undefined =>
@@ -413,6 +416,7 @@ export const actionFields = ({
             doubleTapField('icon_double_tap_action'),
           ]
         : []),
+      ...parts,
     ),
     ...(dial ? [sheetDialField(dial)] : []),
   ]);

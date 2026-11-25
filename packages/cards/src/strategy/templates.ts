@@ -204,6 +204,13 @@ const GREETING_TABS = choice('greeting_tabs', 'dashboard.greeting_tabs', [
   { value: 'hide', label: 'dashboard.header_only' },
   { value: 'show', label: 'dashboard.under_greeting' },
 ]);
+/** The greeting's avatar (#260): a wall's greeting has one too. */
+const GREETING_AVATAR = panelChoice('greeting_avatar', 'dashboard.greeting_avatar', [
+  { value: 'show', label: 'dashboard.avatar_shown' },
+  { value: 'hide', label: 'dashboard.avatar_hidden' },
+]);
+/** What a dashboard that opens its views with the greeting says of it: its avatar, the tabs under it. */
+const GREETINGS: readonly TemplateOption[] = [GREETING_AVATAR, GREETING_TABS];
 /** What lies behind the cards: the house's, or the dashboard's own (a wall's shows on a wall that lets it through). */
 const BACKGROUND: TemplateOption = {
   key: 'background',
@@ -254,7 +261,7 @@ export const TEMPLATES: readonly Template[] = [
       ...ROOMS,
       NAMES,
       NAME_LINES,
-      GREETING_TABS,
+      ...GREETINGS,
       BACKGROUND,
       CAPS,
       EXCLUDE,
@@ -286,7 +293,7 @@ export const TEMPLATES: readonly Template[] = [
       NAMES,
       NAME_LINES,
       ROOMS_AS,
-      GREETING_TABS,
+      ...GREETINGS,
       BACKGROUND,
       CAPS,
       EXCLUDE,
@@ -302,7 +309,7 @@ export const TEMPLATES: readonly Template[] = [
     columns: 3,
     header: 'hello',
     views: ENERGY_VIEWS,
-    options: [HIDE, FLOW, NAME_LINES, GREETING_TABS, BACKGROUND, CAPS, EXCLUDE],
+    options: [HIDE, FLOW, NAME_LINES, ...GREETINGS, BACKGROUND, CAPS, EXCLUDE],
   },
   {
     id: 'security',
@@ -319,7 +326,7 @@ export const TEMPLATES: readonly Template[] = [
       choice('camera_refresh', 'dashboard.refresh', counts([5, 10, 30], 'dashboard.seconds')),
       NAMES,
       NAME_LINES,
-      GREETING_TABS,
+      ...GREETINGS,
       BACKGROUND,
       CAPS,
       EXCLUDE,
@@ -347,6 +354,7 @@ export const TEMPLATES: readonly Template[] = [
       choice('scenes_max', 'dashboard.scenes', counts([4, 6, 8], 'dashboard.count')),
       NAMES,
       NAME_LINES,
+      GREETING_AVATAR,
       BACKGROUND,
       CAPS,
       EXCLUDE,
@@ -370,7 +378,7 @@ export const TEMPLATES: readonly Template[] = [
       SWITCHES,
       LIGHTS,
       SCENES,
-      GREETING_TABS,
+      ...GREETINGS,
       NAMES,
       NAME_LINES,
       BACKGROUND,
@@ -394,7 +402,7 @@ export const TEMPLATES: readonly Template[] = [
     options: [
       THERMOSTAT,
       THERMOSTAT_STATE,
-      GREETING_TABS,
+      ...GREETINGS,
       NAMES,
       NAME_LINES,
       BACKGROUND,

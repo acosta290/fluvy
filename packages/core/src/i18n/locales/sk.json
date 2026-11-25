@@ -3134,6 +3134,9 @@
     "scope.activity_who_sub": "Každý záznam v Aktivite uvádza osobu, ktorá zaň stojí, s jej fotkou; filter podľa osoby",
     "dashboard.lights_variant": "Svetlá miestnosti",
     "dashboard.rounds": "Okrúhle tlačidlá",
+    "dashboard.greeting_avatar": "Profilový obrázok v pozdrave",
+    "dashboard.avatar_shown": "Zobrazený",
+    "dashboard.avatar_hidden": "Skrytý",
     "cards.sheets_dial": "Podrobnosti s ciferníkom"
   },
   "customise": {

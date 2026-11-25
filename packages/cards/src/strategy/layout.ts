@@ -455,10 +455,17 @@ export function lightRows(
 }
 
 /** The header every view opens with (the greeting and the tabs), so it reads as fixed while the content changes. */
-/** The greeting: whoever looks at the dashboard (it names no person, so a saved copy still greets each viewer). */
-export const helloCard = (weather: string | undefined): Card => ({
+/**
+ * The greeting: whoever looks at the dashboard (it names no person, so a saved copy still greets each viewer), without
+ * its avatar where the dashboard asks (`greeting_avatar: hide`, #260).
+ */
+export const helloCard = ({
+  weather,
+  style,
+}: Pick<StrategyContext, 'weather' | 'style'>): Card => ({
   type: 'custom:fluvy-hello-card',
   ...(weather ? { weather } : {}),
+  ...(style.bareGreeting ? { show_avatar: false } : {}),
 });
 export const tabsCard = (base: string, views: readonly View[]): Card => ({
   type: 'custom:fluvy-chips-card',

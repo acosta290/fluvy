@@ -3212,6 +3212,9 @@
     "scope.activity_who_sub": "Varje post i Aktivitet visar personen bakom den, med bild; ett filter per person",
     "dashboard.lights_variant": "Rummets lampor",
     "dashboard.rounds": "Runda knappar",
+    "dashboard.greeting_avatar": "Avatar i hälsningen",
+    "dashboard.avatar_shown": "Visas",
+    "dashboard.avatar_hidden": "Dold",
     "cards.sheets_dial": "Ark med ratt"
   },
   "remote": {

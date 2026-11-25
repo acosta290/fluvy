@@ -3150,6 +3150,9 @@
     "scope.activity_who_sub": "A Tevékenység minden bejegyzése megnevezi a mögötte álló személyt, a képével; szűrés személy szerint",
     "dashboard.lights_variant": "Szoba fényei",
     "dashboard.rounds": "Kerek gombok",
+    "dashboard.greeting_avatar": "Avatár az üdvözlésben",
+    "dashboard.avatar_shown": "Látható",
+    "dashboard.avatar_hidden": "Rejtett",
     "cards.sheets_dial": "Részletek tárcsával"
   },
   "customise": {

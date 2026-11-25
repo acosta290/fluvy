@@ -398,6 +398,14 @@ const LIGHTS_COLOUR = /\/packages\/cards\/src\/lights\/sheet\//;
 const LIGHTS_ROWS = /\/packages\/cards\/src\/lights\/rows\.ts/;
 
 /**
+ * What the greeting draws beyond its words (1.26, #260: its date and its weather as buttons of their own, a line of
+ * quick actions under it, and their sheet): fetched by the first greeting whose config asks for any of it. The
+ * greeting itself is core's, the first thing a dashboard paints, and never waits for it; its rounds are the quick
+ * actions'.
+ */
+const HELLO_MORE = /\/packages\/cards\/src\/hello\/more\.ts/;
+
+/**
  * The rounds (their sets, levels, taps, holds and states, #113, #205) and the list row that ends in them (1.23): a
  * room's quick actions, the Rounds card's and a row's. Fetched as the bundle starts, with the families, so a room card
  * draws them from its first render (`room-card.ts` asks for them itself where it is drawn first).
@@ -551,7 +559,7 @@ const FORMS =
  * Expander card (its editor on its own, before the forms, with the Swipe card's), the Swipe card, a dashboard's own
  * sidebar, the Slider card, the ring, the Cover card, the drive pad, the Vacuum card, the Thermostat card, the platforms' logos, the
  * remote card, the Vehicle card, the Heating schedule card (its sheet on its own), Fluvy's own details, the items card (its sheet on its own), the light card's colours,
- * the Room lights card's rows, colours worn as they are named, a room's quick actions, the cards' editor, the fields every editor is built of, the view icons, what a see-through
+ * the Room lights card's rows, what the greeting draws beyond its words, colours worn as they are named, a room's quick actions, the cards' editor, the fields every editor is built of, the view icons, what a see-through
  * card wears, what a quiet one wears, what reads a card's thresholds, what sets a number in place, the slider styles,
  * the switch styles, the page's background, this device's sidebar beside the page, a list in groups, the icon set's
  * other part, what only the chunks fetched later share, and everything else (Fluvy's packages and Lit) in `core`. The
@@ -615,6 +623,7 @@ export const GROUPS = [
   { name: 'items', test: ITEMS },
   { name: 'lights-colour', test: LIGHTS_COLOUR },
   { name: 'lights-rows', test: LIGHTS_ROWS },
+  { name: 'hello-more', test: HELLO_MORE },
   { name: 'light-colour', test: LIGHT_COLOUR },
   { name: 'exact', test: EXACT },
   { name: 'quick-actions', test: QUICK_ACTIONS },

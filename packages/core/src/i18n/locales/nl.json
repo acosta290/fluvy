@@ -1701,6 +1701,9 @@
     "scope.activity_who_sub": "Elke regel in Activiteit noemt de persoon erachter, met foto; een filter per persoon",
     "dashboard.lights_variant": "Kamerverlichting",
     "dashboard.rounds": "Ronde knoppen",
+    "dashboard.greeting_avatar": "Avatar in de begroeting",
+    "dashboard.avatar_shown": "Zichtbaar",
+    "dashboard.avatar_hidden": "Verborgen",
     "cards.sheets_dial": "Details met draaiknop"
   },
   "customise": {

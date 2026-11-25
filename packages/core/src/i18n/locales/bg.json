@@ -3233,6 +3233,9 @@
     "scope.activity_who_sub": "Всеки запис в „Дейност“ назовава човека зад него, със снимката му; филтър по лице",
     "dashboard.lights_variant": "Светлини в стаята",
     "dashboard.rounds": "Кръгли бутони",
+    "dashboard.greeting_avatar": "Аватар в поздрава",
+    "dashboard.avatar_shown": "Показан",
+    "dashboard.avatar_hidden": "Скрит",
     "cards.sheets_dial": "Подробности с циферблат"
   },
   "remote": {

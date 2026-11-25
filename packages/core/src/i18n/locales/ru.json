@@ -3201,6 +3201,9 @@
     "scope.activity_who_sub": "Каждая запись «Активности» называет человека, который за ней стоит, с его фото; фильтр по человеку",
     "dashboard.lights_variant": "Свет в комнате",
     "dashboard.rounds": "Круглые кнопки",
+    "dashboard.greeting_avatar": "Аватар в приветствии",
+    "dashboard.avatar_shown": "Показан",
+    "dashboard.avatar_hidden": "Скрыт",
     "cards.sheets_dial": "Подробности с циферблатом"
   },
   "customise": {

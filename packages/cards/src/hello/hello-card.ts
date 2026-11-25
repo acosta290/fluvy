@@ -1,11 +1,15 @@
 import {
   formatNumber,
+  idsOf,
   languageOf,
   LANGUAGES,
+  listOf,
   personOf,
   stateText,
   strings,
   textName,
+  wornFrom,
+  type ActionConfig,
   type DayParts,
   type EntityView,
   type FluvyCardConfig,
@@ -41,6 +45,10 @@ import { FontsSettled } from '../shared/fonts.js';
 
 import { overflows } from './fit.js';
 
+import { statesUnder, type QuickStatePosition } from '../room/room-card.js';
+
+import type { RoundSpec } from '../shared/rounds.js';
+
 import { conditionGlyph, isCondition, isNight } from '../shared/weather.js';
 
 const weatherWord = strings('weather');
@@ -59,9 +67,51 @@ export interface HelloCardConfig extends FluvyCardConfig {
   show_weather?: boolean;
   show_date?: boolean;
   show_avatar?: boolean;
+  /** The name after the greeting (default); hidden, "Good evening" alone (#260). */
+  show_name?: boolean;
+  /** What the weather answers of its own (#260), run for the weather entity: nothing until one is set. */
+  weather_tap_action?: ActionConfig;
+  weather_hold_action?: ActionConfig;
+  weather_double_tap_action?: ActionConfig;
+  /** What the date answers of its own (#260: a calendar's view, an address, an action): nothing until one is set. */
+  date_tap_action?: ActionConfig;
+  date_hold_action?: ActionConfig;
+  date_double_tap_action?: ActionConfig;
+  /**
+   * Quick actions under the greeting (#260), in order, as many as the width holds: entities, each a round as a room's
+   * and a car's are (its own name, icon, colour, actions and state). None by default.
+   */
+  quick_actions?: readonly (string | RoundSpec)[];
+  /** Every quick action's state in the pill its round grows into; a quick action may say its own (`show_state`). */
+  show_quick_states?: boolean;
+  /** Where their states stand: `under` their glyphs (default, the line 20 taller), or `beside` them. */
+  quick_state_position?: QuickStatePosition;
   /** Test hook — freezes "now" at this ISO instant. Not part of the documented config. */
   _now?: string;
 }
+
+/**
+ * The quick actions' line (#260), where the config lists any: 44 tall, 64 where their states stand under their glyphs
+ * (`statesUnder`, as a room's), 16 under the greeting.
+ */
+const quickLine = (config: HelloCardConfig | undefined): number =>
+  config?.quick_actions?.length ? (statesUnder(config) ? 64 : 44) : 0;
+
+/** The keys the greeting's other chunk answers, among a config's: a part's own action, the quick actions'. */
+const MORE = /\b(weather|date|quick)_/;
+
+/**
+ * What the greeting draws beyond its words (`more.ts`, a chunk of its own, #260: its date and its weather as buttons,
+ * its quick actions), once the first greeting whose config asks for any of it has fetched it; the greeting itself never
+ * waits for it.
+ */
+let more: typeof import('./more.js') | undefined;
+const moreChunk = wornFrom(
+  () => import('./more.js'),
+  (module) => {
+    more = module;
+  },
+);
 
 /**
  * When the day's parts begin is the language's (the registry's `dayParts`): English greets the evening until 22:00
@@ -100,9 +150,10 @@ const sentence = (text: string): string => text.charAt(0).toLocaleUpperCase() + 
  * degrees, then away, then the date too. Nothing is ever cut.
  */
 export class FluvyHelloCard extends Card<HelloCardConfig> {
-  /** The card's height at a 360 column, for the automatic dashboard's columns. */
-  static override layoutHeight(): number {
-    return 60;
+  /** The card's height at a 360 column, for the automatic dashboard's columns: its quick actions' line under it. */
+  static override layoutHeight(config: HelloCardConfig): number {
+    const quick = quickLine(config);
+    return 60 + (quick && 16 + quick);
   }
 
   static override still = true;
@@ -255,6 +306,11 @@ export class FluvyHelloCard extends Card<HelloCardConfig> {
     return { type: 'custom:fluvy-hello-card', ...(weather ? { weather } : {}) };
   }
 
+  protected override prepare(config: HelloCardConfig): HelloCardConfig {
+    listOf(config, 'quick_actions');
+    return config;
+  }
+
   override getCardSize(): number {
     return 2;
   }
@@ -263,7 +319,7 @@ export class FluvyHelloCard extends Card<HelloCardConfig> {
   }
 
   protected override watched(): readonly string[] {
-    const ids = ['sun.sun'];
+    const ids = ['sun.sun', ...idsOf(this.config?.quick_actions)];
     if (this.config?.weather) ids.push(this.config.weather);
     const person = this.personId();
     if (person) ids.push(person);
@@ -372,17 +428,15 @@ export class FluvyHelloCard extends Card<HelloCardConfig> {
   }
 
   /**
-   * Condition glyph + "18° Clear". An unreachable weather entity says so (beside the ban glyph, or quiet the sky's own);
-   * it never shows a number it does not have.
+   * What the weather says: condition glyph + "18° Clear". An unreachable weather entity says so (beside the ban glyph,
+   * or quiet the sky's own); it never shows a number it does not have.
    */
   private weather(view: EntityView): TemplateResult {
     if (view.status !== 'ok') {
-      return html`<span class="hm-hello__weather"
-        >${glyph(this.looksQuiet ? conditionGlyph('', isNight(this.hass)) : 'ban')}<span
+      return html`${glyph(this.looksQuiet ? conditionGlyph('', isNight(this.hass)) : 'ban')}<span
           class="hm-hello__condition"
           >${stateText(this.hass, view)}</span
-        ></span
-      >`;
+        >`;
     }
     const night = isNight(this.hass, view.state);
     const known = isCondition(view.state) ? view.state : null;
@@ -396,11 +450,9 @@ export class FluvyHelloCard extends Card<HelloCardConfig> {
       typeof temperature === 'number' && Number.isFinite(temperature)
         ? `${formatNumber(this.hass, temperature, { digits: 0 })}°`
         : '';
-    return html`<span class="hm-hello__weather"
-      >${glyph(icon)}<span class="hm-hello__condition"
+    return html`${glyph(icon)}<span class="hm-hello__condition"
         >${degrees}<span class="hm-hello__word">${degrees ? ' ' : ''}${word}</span></span
-      ></span
-    >`;
+      >`;
   }
 
   private avatar(name: string): TemplateResult {
@@ -460,17 +512,29 @@ export class FluvyHelloCard extends Card<HelloCardConfig> {
   }
 
   protected renderCard(): TemplateResult {
+    const config = this.config;
     const now = this.now();
-    const name = this.who();
+    const who = this.who();
+    // the avatar still says who where the greeting does not (`show_name`)
+    const name = config?.show_name === false ? '' : who;
     const greeting = this.t(greetingKey(now.getHours(), LANGUAGES[languageOf(this.hass)].dayParts));
-    const weatherId = this.config?.show_weather === false ? undefined : this.config?.weather;
-    const showDate = this.config?.show_date !== false;
+    const weatherId = config?.show_weather === false ? undefined : config?.weather;
+    const showDate = config?.show_date !== false;
+    // what the config asks beyond its words (#260), drawn once its chunk is here: the greeting never waits for it
+    if (!moreChunk.settled && config && MORE.test(Object.keys(config).join()))
+      void moreChunk.fetch().then(() => this.requestUpdate());
+    const root = this.renderRoot as ShadowRoot;
+    /** A part of the line in its class: a button of its own where it names an action (`of`: its keys' part). */
+    const part = (cls: string, of: string, body: unknown, entity?: string): TemplateResult =>
+      more?.part(root, cls, this.pressOf(config, entity, null, null, of), body) ??
+      html`<span class=${cls}>${body}</span>`;
+    const quick = quickLine(config);
 
     // "Good morning" and ", Marta" as two spans: the name (with what joins it) is what leaves a narrow column first
     const said = name ? s(this.hass, 'greeting', { greeting, name }) : greeting;
     const at = name ? said.indexOf(name) : -1;
     const greet = at > 0 ? said.slice(0, at).replace(/[\s,]+$/, '') : said;
-    return html`<section class="hm-hello">
+    const greeted = html`<section class="hm-hello">
       <div class="hm-hello__text">
         ${this.greetingTap(said)}
         <h1 class="hm-hello__title">
@@ -483,18 +547,44 @@ export class FluvyHelloCard extends Card<HelloCardConfig> {
         <p class="hm-hello__meta">
           ${
             showDate
-              ? html`<span class="hm-hello__date hm-hello__date--full"
-                    >${sentence(dateLine(this.hass, now, 'full'))}</span
-                  >
-                  <span class="hm-hello__date hm-hello__date--short"
-                    >${sentence(dateLine(this.hass, now, 'short'))}</span
-                  >`
+              ? (['full', 'short'] as const).map((form) =>
+                  part(
+                    `hm-hello__date hm-hello__date--${form}`,
+                    'date_',
+                    sentence(dateLine(this.hass, now, form)),
+                  ),
+                )
               : nothing
           }
-          ${weatherId ? this.weather(this.entity(weatherId)) : nothing}
+          ${
+            weatherId
+              ? part(
+                  'hm-hello__weather',
+                  'weather_',
+                  this.weather(this.entity(weatherId)),
+                  weatherId,
+                )
+              : nothing
+          }
         </p>
       </div>
-      ${this.config?.show_avatar === false ? nothing : this.avatar(name)}
+      ${config?.show_avatar === false ? nothing : this.avatar(who)}
     </section>`;
+    // the quick actions' line under it keeps its room from the first frame; its rounds are the other chunk's
+    return quick
+      ? html`<div>
+          ${greeted}
+          <div class="hm-quick" style="height:${quick}px;margin-top:16px">
+            ${
+              more?.quickRow(this, config, this.width, {
+                ...this.controlHost,
+                accents: this.accents,
+                run: (action, entity) => this.tap(entity, action),
+                tapper: (of, at, tap, double) => this.tapper(of, at, tap, double),
+              }) ?? nothing
+            }
+          </div>
+        </div>`
+      : greeted;
   }
 }

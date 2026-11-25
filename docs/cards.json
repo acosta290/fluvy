@@ -18895,13 +18895,22 @@
         "light": "images/cards/hello-light.webp",
         "dark": "images/cards/hello-dark.webp",
         "width": 784,
-        "height": 184
+        "height": 304
       },
       "example": {
         "type": "custom:fluvy-hello-card",
         "name": "Marta",
         "person": "person.marta",
-        "weather": "weather.flat"
+        "weather": "weather.flat",
+        "quick_actions": [
+          "light.gr_hall",
+          "cover.gr_blinds",
+          "lock.gr_front_door",
+          {
+            "entity": "scene.gr_evening",
+            "icon": "fluvy:moon"
+          }
+        ]
       },
       "keys": [
         {
@@ -18945,6 +18954,13 @@
           "default": true
         },
         {
+          "key": "show_name",
+          "label": "Show the name",
+          "does": "Shows the name after the greeting; hidden, the greeting alone.",
+          "type": "boolean",
+          "default": true
+        },
+        {
           "key": "color",
           "label": "Colour",
           "does": "The card’s colour: its circle, its accents and its tints wear it. Left out, the colour of what it shows.",
@@ -18957,6 +18973,25 @@
           "helper": "Names as Home Assistant draws them, a hex as typed. Untouched: every card’s, from Fluvy’s settings",
           "type": "boolean",
           "default": false
+        },
+        {
+          "key": "show_quick_states",
+          "label": "Show their states",
+          "does": "Shows every quick action’s state in its round, unless the action says otherwise.",
+          "helper": "Under or beside each icon: a reading with its unit, a door open or closed, a light’s brightness.",
+          "type": "boolean",
+          "default": false
+        },
+        {
+          "key": "quick_state_position",
+          "label": "Their states",
+          "does": "Where the quick actions’ states stand: under their icons, their line taller, or beside them, the rounds wider.",
+          "type": "choice",
+          "default": "under",
+          "values": {
+            "under": "Under the icon",
+            "beside": "Beside the icon"
+          }
         },
         {
           "key": "tap_action",
@@ -18979,6 +19014,147 @@
           "helper": "A tap waits a moment to tell it from a double tap",
           "type": "action",
           "default": "none"
+        },
+        {
+          "key": "weather_tap_action",
+          "label": "Weather · Tap action",
+          "does": "What a tap on the weather does, for the weather entity; nothing until one is set.",
+          "type": "action",
+          "default": "none"
+        },
+        {
+          "key": "weather_hold_action",
+          "label": "Weather · Hold action",
+          "does": "What a long press on the weather does.",
+          "type": "action",
+          "default": "none"
+        },
+        {
+          "key": "weather_double_tap_action",
+          "label": "Weather · Double tap action",
+          "does": "What two taps on the weather do.",
+          "helper": "A tap waits a moment to tell it from a double tap",
+          "type": "action",
+          "default": "none"
+        },
+        {
+          "key": "date_tap_action",
+          "label": "The date · Tap action",
+          "does": "What a tap on the date does, such as opening a calendar’s view; nothing until one is set.",
+          "type": "action",
+          "default": "none"
+        },
+        {
+          "key": "date_hold_action",
+          "label": "The date · Hold action",
+          "does": "What a long press on the date does.",
+          "type": "action",
+          "default": "none"
+        },
+        {
+          "key": "date_double_tap_action",
+          "label": "The date · Double tap action",
+          "does": "What two taps on the date do.",
+          "helper": "A tap waits a moment to tell it from a double tap",
+          "type": "action",
+          "default": "none"
+        }
+      ],
+      "lists": [
+        {
+          "key": "quick_actions",
+          "label": "Quick actions",
+          "does": "Small rounds under the greeting, each an entity with its own icon, colour and actions: a lamp, a door, a scene.",
+          "id": "entity",
+          "item": [
+            {
+              "key": "entity",
+              "label": "Entity",
+              "does": "The entity the item shows.",
+              "type": "entity"
+            },
+            {
+              "key": "name",
+              "label": "Name",
+              "does": "The item’s own name, in place of the one the card would give it.",
+              "type": "name"
+            },
+            {
+              "key": "icon",
+              "label": "Icon",
+              "does": "The item’s own icon, in place of the one the card would give it.",
+              "type": "icon"
+            },
+            {
+              "key": "tone",
+              "label": "Tone",
+              "does": "The item’s colour from the palette’s tones.",
+              "type": "choice",
+              "default_in_words": "the card’s own",
+              "values": {
+                "accent": "Accent",
+                "light": "Light",
+                "heat": "Heat",
+                "cool": "Cool",
+                "dry": "Dry",
+                "fan": "Fan",
+                "water": "Water",
+                "solar": "Solar",
+                "grid": "Grid",
+                "media": "Media",
+                "presence": "Presence",
+                "armed": "Armed",
+                "battery": "Battery",
+                "house": "House",
+                "gas": "Gas",
+                "vehicle": "Car",
+                "neutral": "Neutral",
+                "ok": "Good",
+                "warning": "Warning",
+                "danger": "Danger"
+              }
+            },
+            {
+              "key": "color",
+              "label": "Colour",
+              "does": "The item’s colour, in place of the one the card gives it.",
+              "helper": "Empty: the light’s bulb colour where the card shows bulbs’ colours, else the card’s",
+              "type": "colour"
+            },
+            {
+              "key": "show_state",
+              "label": "Show its state",
+              "does": "Shows this quick action’s state in its round, or hides it, whatever the card says.",
+              "helper": "Empty: the card’s",
+              "type": "choice",
+              "values": {
+                "true": "On",
+                "false": "Off"
+              }
+            },
+            {
+              "key": "tap_action",
+              "label": "Tap action",
+              "does": "What a tap on the item does.",
+              "type": "action",
+              "default_in_words": "the card’s own"
+            },
+            {
+              "key": "hold_action",
+              "label": "Hold action",
+              "does": "What a long press on the item does.",
+              "type": "action",
+              "default": "more-info"
+            },
+            {
+              "key": "double_tap_action",
+              "label": "Double tap action",
+              "does": "What two taps on the item do.",
+              "helper": "A tap waits a moment to tell it from a double tap",
+              "type": "action",
+              "default": "none"
+            }
+          ]
         }
       ],
       "older_names": [

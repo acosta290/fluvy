@@ -15,6 +15,12 @@ type: custom:fluvy-hello-card
 name: Marta
 person: person.marta
 weather: weather.flat
+quick_actions:
+  - light.gr_hall
+  - cover.gr_blinds
+  - lock.gr_front_door
+  - entity: scene.gr_evening
+    icon: fluvy:moon
 ```
 
 The picture above, on the demo house: put your own entities in place of its.
@@ -29,13 +35,33 @@ weather: weather.flat
 show_weather: true
 show_date: true
 show_avatar: true
+show_name: true
 # color:
 # exact_colors: false
+quick_actions:
+  - light.gr_hall
+  - cover.gr_blinds
+  - lock.gr_front_door
+  - entity: scene.gr_evening
+    icon: fluvy:moon
+show_quick_states: false
 # tap_action:
 #   action: more-info
 # hold_action:
 #   action: more-info
 # double_tap_action:
+#   action: none
+# weather_tap_action:
+#   action: none
+# weather_hold_action:
+#   action: none
+# weather_double_tap_action:
+#   action: none
+# date_tap_action:
+#   action: none
+# date_hold_action:
+#   action: none
+# date_double_tap_action:
 #   action: none
 ```
 
@@ -49,6 +75,17 @@ show_avatar: true
 | `show_weather` | `true` | Shows the weather beside the date. |
 | `show_date` | `true` | Shows the date. |
 | `show_avatar` | `true` | Shows the person’s picture. |
+| `show_name` | `true` | Shows the name after the greeting; hidden, the greeting alone. |
+| `show_quick_states` | `false` | Shows every quick action’s state in its round, unless the action says otherwise. |
+| `quick_state_position` | `under` | Where the quick actions’ states stand: under their icons, their line taller, or beside them, the rounds wider. `under` · `beside`. |
+| [`quick_actions`](#quick_actions) |  | Small rounds under the greeting, each an entity with its own icon, colour and actions: a lamp, a door, a scene. A list: [its items](#quick_actions). |
+| **Interactions** |  |  |
+| `weather_tap_action` | `none` | What a tap on the weather does, for the weather entity; nothing until one is set. |
+| `weather_hold_action` | `none` | What a long press on the weather does. |
+| `weather_double_tap_action` | `none` | What two taps on the weather do. |
+| `date_tap_action` | `none` | What a tap on the date does, such as opening a calendar’s view; nothing until one is set. |
+| `date_hold_action` | `none` | What a long press on the date does. |
+| `date_double_tap_action` | `none` | What two taps on the date do. |
 
 <details>
 <summary>Its look and its actions, as on every card</summary>
@@ -65,6 +102,25 @@ show_avatar: true
 More about them in [Options every card takes](../customising.md#options-every-card-takes).
 
 </details>
+
+## Lists
+
+### `quick_actions`
+
+An item is an entity id, or a map with `entity` and any of these fields.
+
+| Field | What it does |
+| --- | --- |
+| `entity` | The entity the item shows. |
+| `name` | The item’s own name, in place of the one the card would give it. |
+| `icon` | The item’s own icon, in place of the one the card would give it. |
+| `tone` | The item’s colour from the palette’s tones. `accent` · `light` · `heat` · `cool` · `dry` · `fan` · `water` · `solar` · `grid` · `media` · `presence` · `armed` · `battery` · `house` · `gas` · `vehicle` (Car) · `neutral` · `ok` (Good) · `warning` · `danger`. |
+| `color` | The item’s colour, in place of the one the card gives it. |
+| `show_state` | Shows this quick action’s state in its round, or hides it, whatever the card says. `true` (On) · `false` (Off). |
+| **Interactions** |  |
+| `tap_action` | What a tap on the item does. |
+| `hold_action` | What a long press on the item does. |
+| `double_tap_action` | What two taps on the item do. |
 
 <details>
 <summary>Older names the card still reads</summary>

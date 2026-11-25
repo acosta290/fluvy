@@ -60,7 +60,11 @@ export const MEANINGS: Readonly<Record<string, string>> = {
   cost_entity: 'A price or cost sensor shown beside the main figure.',
   current_color: 'Paints the bar still in progress in a colour of its own.',
   curve: 'How the line joins its readings: smooth, straight, or in steps.',
+  date_double_tap_action: 'What two taps on the date do.',
   date_format: 'How each bar’s date is written under it.',
+  date_hold_action: 'What a long press on the date does.',
+  date_tap_action:
+    'What a tap on the date does, such as opening a calendar’s view; nothing until one is set.',
   day: 'The day the card shows: today’s production, tomorrow’s forecast, or the days ahead.',
   decimals: 'How many decimals the figures have; automatic decides by their size.',
   default_zoom: 'How close the map is drawn while it fits nobody in particular.',
@@ -392,6 +396,10 @@ export const MEANINGS: Readonly<Record<string, string>> = {
   volume: 'How the volume is set: a ruler, keys, or − and +.',
   volume_entity: 'Sends the volume to another device than the player.',
   weather: 'The weather entity whose condition and temperature the card shows.',
+  weather_double_tap_action: 'What two taps on the weather do.',
+  weather_hold_action: 'What a long press on the weather does.',
+  weather_tap_action:
+    'What a tap on the weather does, for the weather entity; nothing until one is set.',
   when_off: 'What the card shows while the device is off: everything, or only what turns it on.',
   window_entity: 'The window sensor the card reads.',
   workday: 'The house’s workday sensor, for schedules that run on working days.',
@@ -492,6 +500,11 @@ export const MEANINGS: Readonly<Record<string, string>> = {
   'heading.entities': 'Entities whose state the heading shows at its end.',
   'heading.path': 'Where a tap on the heading goes.',
   'heading.title': 'The heading’s words.',
+  'hello.quick_state_position':
+    'Where the quick actions’ states stand: under their icons, their line taller, or beside them, the rounds wider.',
+  'hello.show_name': 'Shows the name after the greeting; hidden, the greeting alone.',
+  'hello.show_quick_states':
+    'Shows every quick action’s state in its round, unless the action says otherwise.',
   'history-bars.chart': 'The bars’ style.',
   'history-bars.days': 'How many bars the card draws.',
   'history-bars.entity': 'The sensor whose history the bars show: a meter, or any reading.',
@@ -737,6 +750,8 @@ export const MEANINGS: Readonly<Record<string, string>> = {
   'energy-flow.consumers[]': 'Where the house’s power goes: devices drawn under the house.',
   'energy-sankey.devices[]': 'The devices drawn by name; left out, the Energy dashboard’s.',
   'energy-usage.meters[]': 'The water or gas meters charted; left out, the Energy dashboard’s.',
+  'hello.quick_actions[]':
+    'Small rounds under the greeting, each an entity with its own icon, colour and actions: a lamp, a door, a scene.',
   'helpers.number_entry': 'Makes a number’s value a button that opens the keypad to type one.',
   'helpers.rows[]': 'The helpers the card sets, a row each.',
   'history-bars.entities[]': 'Sensors added up bar by bar, such as several arrays.',
@@ -946,6 +961,8 @@ export const MEANINGS: Readonly<Record<string, string>> = {
   'light.colors[].color': 'The quick colour: a named one, or any colour of your own.',
   'light.colors[].name': 'What the round says.',
   'lights.colors[].color': 'The quick colour: a named one, or any colour of your own.',
+  'hello.quick_actions[].show_state':
+    'Shows this quick action’s state in its round, or hides it, whatever the card says.',
   'lights.colors[].name': 'What the round says.',
   'meters.meters[].kind': 'What the meter measures: water, or gas.',
   'openings.rows[].alert':

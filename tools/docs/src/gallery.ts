@@ -425,11 +425,18 @@ export const GALLERY: Readonly<Record<string, Example>> = {
     variants: { map: {}, rows: {} },
   },
   'fluvy-hello-card': {
+    // with a line of quick actions under it (#260): the hall's lamp, the blinds, the front door and a scene
     config: {
       type: 'custom:fluvy-hello-card',
       name: 'Marta',
       person: 'person.marta',
       weather: 'weather.flat',
+      quick_actions: [
+        'light.gr_hall',
+        'cover.gr_blinds',
+        'lock.gr_front_door',
+        { entity: 'scene.gr_evening', icon: 'fluvy:moon' },
+      ],
     },
   },
   'fluvy-chips-card': {

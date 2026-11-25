@@ -3075,6 +3075,9 @@
     "scope.activity_who_sub": "活动中的每条记录都显示操作人及其照片；可按人员筛选",
     "dashboard.lights_variant": "房间灯光",
     "dashboard.rounds": "圆形按钮",
+    "dashboard.greeting_avatar": "问候语中的头像",
+    "dashboard.avatar_shown": "显示",
+    "dashboard.avatar_hidden": "隐藏",
     "cards.sheets_dial": "带表盘的详情面板"
   },
   "customise": {

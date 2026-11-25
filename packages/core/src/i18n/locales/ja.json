@@ -3034,6 +3034,9 @@
     "scope.activity_who_sub": "アクティビティの各項目に操作した人を写真付きで表示（人で絞り込むことも可能）",
     "dashboard.lights_variant": "部屋の照明",
     "dashboard.rounds": "丸ボタン",
+    "dashboard.greeting_avatar": "あいさつのアバター",
+    "dashboard.avatar_shown": "表示",
+    "dashboard.avatar_hidden": "非表示",
     "cards.sheets_dial": "ダイヤルを表示するシート"
   },
   "customise": {

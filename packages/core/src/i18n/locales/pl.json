@@ -2808,6 +2808,9 @@
     "scope.activity_who_sub": "Każdy wpis w Aktywności wskazuje osobę, która za nim stoi, z jej zdjęciem; filtr według osoby",
     "dashboard.lights_variant": "Światła pomieszczenia",
     "dashboard.rounds": "Okrągłe przyciski",
+    "dashboard.greeting_avatar": "Awatar w powitaniu",
+    "dashboard.avatar_shown": "Widoczny",
+    "dashboard.avatar_hidden": "Ukryty",
     "cards.sheets_dial": "Szczegóły z tarczą"
   },
   "customise": {

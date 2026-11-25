@@ -1701,6 +1701,9 @@
     "scope.activity_who_sub": "Cada entrada de Actividad nombra a la persona que la hizo, con su foto; un filtro por persona",
     "dashboard.lights_variant": "Luces de la estancia",
     "dashboard.rounds": "Botones redondos",
+    "dashboard.greeting_avatar": "Avatar del saludo",
+    "dashboard.avatar_shown": "Visible",
+    "dashboard.avatar_hidden": "Oculto",
     "cards.sheets_dial": "Detalles con dial"
   },
   "customise": {

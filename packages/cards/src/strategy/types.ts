@@ -152,6 +152,8 @@ export interface FluvyStrategyConfig {
    * header's tabs wear the look: 1.5).
    */
   greeting_tabs?: 'show' | 'hide';
+  /** The greeting's avatar (1.26, #260): shown (the default) or hidden, the greeting then the card's button. */
+  greeting_avatar?: 'show' | 'hide';
   /**
    * The Room lights cards' style (1.26, #261): rounds beside the room's name (`row`, the card's own), `chips`, `tiles`
    * or a list's `rows`. Unsaid, the card as it always was.
@@ -336,6 +338,8 @@ export interface CardStyle {
   readonly scenes?: ScenesMax;
   /** The Room lights cards' style (`lights_variant`, #261); none: the card's own. */
   readonly lights?: LightsVariant;
+  /** The greeting draws no avatar (`greeting_avatar: hide`, #260). */
+  readonly bareGreeting?: boolean;
 }
 
 export interface StrategyContext {

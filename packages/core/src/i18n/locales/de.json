@@ -1701,6 +1701,9 @@
     "scope.activity_who_sub": "Jeder Eintrag in Aktivität nennt die Person dahinter, mit ihrem Bild; ein Filter nach Person",
     "dashboard.lights_variant": "Raumbeleuchtung",
     "dashboard.rounds": "Runde Tasten",
+    "dashboard.greeting_avatar": "Avatar in der Begrüßung",
+    "dashboard.avatar_shown": "Angezeigt",
+    "dashboard.avatar_hidden": "Ausgeblendet",
     "cards.sheets_dial": "Ansichten mit Drehregler"
   },
   "customise": {

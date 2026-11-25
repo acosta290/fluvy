@@ -109,8 +109,26 @@ tap_action:
 A row's switch (the Entities and Water & gas cards) and a round of the [Rounds](cards/rounds.md) card, where it names
 no tap, flip only what a second tap undoes: lights, switches, fans, blinds, valves, humidifiers, sirens, automations,
 remotes, groups (and a lock, as above). A vacuum, a player, a scene, a script and a button open their details there; a
-room's quick action, and an entity among a [Vehicle](cards/vehicle.md) card's controls or quick actions, runs what it
-stands for (a scene, a vacuum, a player, a script).
+room's quick action, a [greeting](cards/hello.md)'s, and an entity among a [Vehicle](cards/vehicle.md) card's controls
+or quick actions, runs what it stands for (a scene, a vacuum, a player, a script).
+
+**The greeting's parts** answer on their own once an action is set: `weather_tap_action`, `weather_hold_action` and
+`weather_double_tap_action` run for its weather entity, `date_tap_action` and its kin for what needs none (a calendar's
+view, an address). The avatar keeps the card's own actions:
+
+```yaml
+type: custom:fluvy-hello-card
+weather: weather.home
+weather_tap_action:
+  action: more-info
+date_tap_action:
+  action: navigate
+  navigation_path: /calendar
+quick_actions:
+  - light.hall
+  - lock.front_door
+  - scene.good_night
+```
 
 ## Details sheets
 

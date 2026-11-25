@@ -41,7 +41,7 @@ export function framed(
   const header =
     template.header === 'hello'
       ? [
-          helloCard(ctx.weather),
+          helloCard(ctx),
           ...(ctx.greetingTabs && tabs.length > 1 ? [tabsCard(ctx.base, views)] : []),
         ]
       : [];
@@ -121,6 +121,7 @@ export async function buildContext(
       ...(config.camera_refresh ? { refresh: config.camera_refresh } : {}),
       ...(config.scenes_max ? { scenes: config.scenes_max } : {}),
       ...(config.lights_variant ? { lights: config.lights_variant } : {}),
+      ...(config.greeting_avatar === 'hide' ? { bareGreeting: true } : {}),
     },
     areas: config.areas,
     greetingTabs: config.greeting_tabs === 'show',

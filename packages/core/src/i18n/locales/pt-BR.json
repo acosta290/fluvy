@@ -1701,6 +1701,9 @@
     "scope.activity_who_sub": "Cada registro da Atividade mostra a pessoa por trás dele, com a foto dela; um filtro por pessoa",
     "dashboard.lights_variant": "Luzes do cômodo",
     "dashboard.rounds": "Botões redondos",
+    "dashboard.greeting_avatar": "Avatar na saudação",
+    "dashboard.avatar_shown": "Visível",
+    "dashboard.avatar_hidden": "Oculto",
     "cards.sheets_dial": "Detalhes com mostrador"
   },
   "customise": {

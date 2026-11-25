@@ -1701,6 +1701,9 @@
     "scope.activity_who_sub": "Etkinlik’teki her kayıt, arkasındaki kişiyi fotoğrafıyla gösterir; kişiye göre filtre",
     "dashboard.lights_variant": "Oda ışıkları",
     "dashboard.rounds": "Yuvarlak düğmeler",
+    "dashboard.greeting_avatar": "Selamlamadaki avatar",
+    "dashboard.avatar_shown": "Görünür",
+    "dashboard.avatar_hidden": "Gizli",
     "cards.sheets_dial": "Kadranlı ayrıntılar"
   },
   "customise": {

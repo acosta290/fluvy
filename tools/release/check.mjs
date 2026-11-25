@@ -261,6 +261,9 @@ const BUDGETS = {
   // what 1.26 gave the Room lights card (#261): each light a list's row, what ends its head as it says; fetched by
   // the first card asked for either. Measured at 0.9 KB
   'lights-rows': 2048,
+  // what the greeting draws beyond its words (1.26, #260): its date and its weather as buttons, its quick actions'
+  // line and their sheet; fetched by the first greeting that asks for any of it. Measured at 1.2 KB
+  'hello-more': 2048,
   // the controls that set a number in place (1.23, #218): a row's value between − and +, a figure typed, their sheet;
   // fetched by the first card that asks for one
   'number-controls': 4096,

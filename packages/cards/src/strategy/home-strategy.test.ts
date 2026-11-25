@@ -1736,6 +1736,22 @@ describe('custom:fluvy-home strategy', () => {
     ).toBe(true);
   });
 
+  it('draws the greeting without its avatar where asked, on a wall too, and writes nothing unless asked (#260)', async () => {
+    const hellos = async (config: Record<string, unknown>) =>
+      (await generate(config as never, house(DEMO_ROOMS))).views
+        .flatMap((v) => v.sections.flatMap((s) => s.cards))
+        .filter((c) => c.type === 'custom:fluvy-hello-card');
+    for (const type of ['custom:fluvy-home', 'custom:fluvy-wall']) {
+      const plain = await hellos({ type });
+      expect(plain.length, type).toBeGreaterThan(0);
+      // the greeting as it always was: its type and the house's weather, nothing else
+      for (const card of plain) expect(Object.keys(card).sort(), type).toEqual(['type', 'weather']);
+      expect(await hellos({ type, greeting_avatar: 'show' }), type).toEqual(plain);
+      const bare = await hellos({ type, greeting_avatar: 'hide' });
+      expect(bare, type).toEqual(plain.map((card) => ({ ...card, show_avatar: false })));
+    }
+  });
+
   it('draws the Room lights cards in the style asked, and writes none unless asked (#261)', async () => {
     const lights = async (config: Record<string, unknown>) =>
       (await generate({ type: 'custom:fluvy-lights', ...config } as never, house(DEMO_ROOMS))).views

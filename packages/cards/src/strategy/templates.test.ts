@@ -621,6 +621,21 @@ describe('the dashboard templates', () => {
     });
     expect(strategyOptions({ lights_variant: 'grid' }, HOME_TEMPLATE)).toEqual({});
     expect(strategyOptions({ lights_variant: 'rows' }, templateById('wall'))).toEqual({});
+    // …the greeting's avatar, on those that open their views with it and on a wall (#260)
+    expect(offers('greeting_avatar')).toEqual([
+      'home',
+      'rooms',
+      'energy',
+      'security',
+      'wall',
+      'lights',
+      'climate',
+    ]);
+    for (const option of asked('greeting_avatar')) expect(option).toEqual([true, 'show']);
+    expect(strategyOptions({ greeting_avatar: 'hide' }, templateById('wall'))).toEqual({
+      greeting_avatar: 'hide',
+    });
+    expect(strategyOptions({ greeting_avatar: false }, HOME_TEMPLATE)).toEqual({});
     expect(strategyOptions('nonsense', HOME_TEMPLATE)).toEqual({});
     // the caps: every list whole, up to a number, or a list's own number or `none`, the lists every template knows
     for (const template of TEMPLATES) {

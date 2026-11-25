@@ -1243,6 +1243,28 @@ control the house already has, read.
   sizes), the language's short hello ("Hello", "Hallo", "Ciao"). The date and the weather give way under it as before.
 - **Whose greeting**: without a `person`, the signed-in user's person (name, picture, more-info); a `person` pins one.
 
+### Its parts and its quick actions (1.26, #260)
+
+Each is off until asked: a greeting that asks for none draws as it always did, and none changes its 60.
+
+- **Without its name** (`show_name: false`): "Good evening" alone at 28; the avatar still says who.
+- **A part that answers** (`weather_*_action`, `date_*_action`): its weather (run for the weather entity) and its date
+  (what needs no entity: a view, an address, an action) are buttons of their own once one is set. The part stays its
+  line of words: the keyboard's ring closes round the words alone (2 off them, radius 8), clear of the greeting over
+  it, and a finger has a 44 target laid over the line (12 over and under it, at least 44 wide from the edge the part
+  stands on); it dims under the finger as a row does. The avatar keeps the card's own actions; an action that cannot
+  run makes no button.
+- **Quick actions** (`quick_actions`, as a room's and a car's): one line of 44 rounds 8 apart, 16 under the greeting,
+  from the reading edge, as many as the column holds, the rest giving way from the end. The card is then 120 tall;
+  140 where their states stand under their glyphs (`show_quick_states`), 120 beside them.
+- **A round on the page.** The greeting has no surface, so a round stands on the page's own ground, where the neutral
+  circle's fill (the page's) would be lost. It is drawn as a small surface, as the tabs under the greeting are: at rest
+  a disc of the card's fill inside the surfaces' edge (the hairline, or the edge a palette read by its edges gives);
+  lit, its tone's fill inside the hairline a lit tile closes with, since a pastel fill alone is one step from the
+  page's grey; out of reach, the dashed ring on the page, as a tab out of reach. Its glyph and its words keep the
+  look's own inks whatever ink the page's background asks of the greeting's words, so a disc reads on the page's
+  grey in either mode, on a deep colour and over a picture.
+
 ## Tabs on the page (1.25, #241)
 
 The chips card's tabs (§ Controls: tab rows) stand on the page beside the greeting; a wall's header holds four or five.

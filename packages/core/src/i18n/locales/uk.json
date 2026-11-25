@@ -3201,6 +3201,9 @@
     "scope.activity_who_sub": "Кожен запис «Активності» називає людину, яка за ним стоїть, з її фото; фільтр за особою",
     "dashboard.lights_variant": "Світло в кімнаті",
     "dashboard.rounds": "Круглі кнопки",
+    "dashboard.greeting_avatar": "Аватар у привітанні",
+    "dashboard.avatar_shown": "Показано",
+    "dashboard.avatar_hidden": "Сховано",
     "cards.sheets_dial": "Подробиці з циферблатом"
   },
   "customise": {

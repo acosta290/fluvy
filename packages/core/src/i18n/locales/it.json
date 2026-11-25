@@ -1701,6 +1701,9 @@
     "scope.activity_who_sub": "Ogni voce di Attività indica la persona che l’ha fatta, con la sua foto; un filtro per persona",
     "dashboard.lights_variant": "Luci della stanza",
     "dashboard.rounds": "Pulsanti tondi",
+    "dashboard.greeting_avatar": "Avatar nel saluto",
+    "dashboard.avatar_shown": "Visibile",
+    "dashboard.avatar_hidden": "Nascosto",
     "cards.sheets_dial": "Dettagli con manopola"
   },
   "customise": {

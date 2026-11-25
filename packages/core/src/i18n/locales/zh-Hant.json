@@ -3232,6 +3232,9 @@
     "scope.activity_who_sub": "活動中的每筆紀錄都顯示操作者及其照片；可依人員篩選",
     "dashboard.lights_variant": "房間燈光",
     "dashboard.rounds": "圓形按鈕",
+    "dashboard.greeting_avatar": "問候語中的頭像",
+    "dashboard.avatar_shown": "顯示",
+    "dashboard.avatar_hidden": "隱藏",
     "cards.sheets_dial": "有圓盤的彈出視窗"
   },
   "remote": {

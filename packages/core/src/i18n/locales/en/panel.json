@@ -505,6 +505,9 @@
     "scope.activity_who_sub": "Each Activity entry names the person behind it, with their picture; a filter by person",
     "dashboard.lights_variant": "Room lights",
     "dashboard.rounds": "Rounds",
+    "dashboard.greeting_avatar": "Avatar in the greeting",
+    "dashboard.avatar_shown": "Shown",
+    "dashboard.avatar_hidden": "Hidden",
     "cards.sheets_dial": "Sheets with a dial"
   }
 }

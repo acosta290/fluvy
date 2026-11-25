@@ -92,13 +92,31 @@ const holdsThermostat = (form: Readonly<Record<string, unknown>>, hass?: HomeAss
 const drawsQuick = ({ show_quick_actions: shown }: Readonly<Record<string, unknown>>): boolean =>
   shown !== false;
 
-/** …their states (#205): every one's, or one's of its own. */
-const saysStates = (form: Readonly<Record<string, unknown>>): boolean =>
-  drawsQuick(form) &&
-  (form['show_quick_states'] === true ||
-    listed(form, 'quick_actions').some(
-      (item) => (item as { show_state?: unknown } | null)?.show_state === true,
-    ));
+/**
+ * What a card's quick actions say of their state, and where (#205), on every card that draws them: every one's
+ * (`show_quick_states`) while the card draws them (`draws`), and where the states stand (`quick_state_position`) once
+ * one of them says its own — every one's, or one's of its own (`show_state`).
+ */
+export const quickStateFields = (
+  draws: (form: Readonly<Record<string, unknown>>) => boolean,
+): HaFormSchemaItem[] => [
+  onlyWhen(draws, {
+    ...boolField('show_quick_states'),
+    helper: 'room-editor.quick_states_help',
+  }),
+  onlyWhen(
+    (form) =>
+      draws(form) &&
+      (form['show_quick_states'] === true ||
+        listed(form, 'quick_actions').some(
+          (item) => (item as { show_state?: unknown } | null)?.show_state === true,
+        )),
+    choiceField('quick_state_position', [
+      ['under', 'room-editor.under'],
+      ['beside', 'room-editor.beside'],
+    ]),
+  ),
+];
 
 /** The arrows stand on a tile's head and on the category rows: a card of neither has none to hide. */
 const drawsArrows = (form: Readonly<Record<string, unknown>>): boolean =>
@@ -435,17 +453,7 @@ export function getConfigForm(): LovelaceConfigForm {
       ),
       fieldRow(boolField('show_quick_actions'), onlyWhen(drawsArrows, boolField('show_arrow'))),
       // what the quick actions say of their state, and where (#205)
-      onlyWhen(drawsQuick, {
-        ...boolField('show_quick_states'),
-        helper: 'room-editor.quick_states_help',
-      }),
-      onlyWhen(
-        saysStates,
-        choiceField('quick_state_position', [
-          ['under', 'room-editor.under'],
-          ['beside', 'room-editor.beside'],
-        ]),
-      ),
+      ...quickStateFields(drawsQuick),
       // its climate row and its thermostats' tiles say what they are doing, where they said their mode
       onlyWhen(holdsThermostat, showActionField()),
       // the list is edited item by item (the rows editor takes the field out of the form)

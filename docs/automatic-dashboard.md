@@ -118,9 +118,9 @@ strategy:
   Customise names them as it names them on the Rooms dashboard. A room hidden in Customise is gone from the
   dashboard: no card leads to it there.
 - **Options**: Lights takes `tile_size`, `tile_switch`, `lights_variant` and `scenes_style`; Climate
-  `thermostat_variant` and `thermostat_state`; both take `greeting_tabs`, `background`, `caps` and `exclude`
-  ([Options](#options)). Home Assistant's pencil offers the first of them on its *Edit dashboard*, as on every
-  automatic dashboard; 1.26's are the panel's.
+  `thermostat_variant` and `thermostat_state`; both take `greeting_avatar`, `greeting_tabs`, `background`, `caps` and
+  `exclude` ([Options](#options)). Home Assistant's pencil offers the first of them on its *Edit dashboard*, as on
+  every automatic dashboard; 1.26's are the panel's.
 
 ## Capped lists
 
@@ -256,6 +256,7 @@ goes past an option, one card hidden, moved or tuned, is [Customise](#customise)
 | `camera_refresh` | `5`, `10` (default), `30` | security | seconds between the cameras' stills |
 | `scenes_max` | `4`, `6` (default), `8` | wall | how many scenes the wall offers as chips |
 | `name_lines` | `1` (default), `2` | all | the names of the cards it names after the house's entities (a light, a thermostat, a lock, a camera, an energy reading) in two lines where one would cut them, their heads a line taller (each card's `name_lines`, [Options every card takes](customising.md#options-every-card-takes)); a tile's name stays on its line. Nothing is written until it is chosen |
+| `greeting_avatar` | `show` (default), `hide` | all | the greeting without its avatar (1.26, the greeting card's `show_avatar`); the greeting itself then answers the card's tap. Nothing is written until it is chosen |
 | `greeting_tabs` | `hide` (default), `show` | home, rooms, energy, security, lights, climate | the views as chips under the greeting too, besides the header's tabs (until 1.4 they always were): the way between them on a kiosk with no header |
 | `rooms_as` | `pages` (default), `tabs` | rooms | each room a page behind its card, or a tab of its own after *All rooms*, in the house's order of its rooms (1.22, [Rooms as tabs](#rooms-as-tabs)) |
 | `background` | `type`: `plain`, `gradient`, `color` or `image`, and that type's own keys: `colors` (one hex, or two from the top to the bottom), `image` (a path of Home Assistant's such as `/local/backgrounds/garden.jpg`, or a web address), `dim` (0 to 80 in steps of 5, default 40), `blur` (default `false`) | all | what lies behind this dashboard's cards in place of the house's (default: the house's, the panel's *Appearance › Background*; below); `type: plain` keeps this dashboard plain whatever the house chooses |

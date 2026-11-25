@@ -47,7 +47,7 @@ function wallView(ctx: StrategyContext): Section[] {
     (ids) => byArea(ctx, ids, t('strategy.security'), (title, own) => [rows(title, own)]),
   );
   const left: Card[] = [
-    ...part(ctx, 'hello', [helloCard(weather)]),
+    ...part(ctx, 'hello', [helloCard(ctx)]),
     ...part(ctx, 'clock', [full('clock', { variant: 'side', ...(weather ? { weather } : {}) })]),
     ...part(ctx, 'readings', [
       ...readoutsCards(home, readings.shown, { variant: 'row' }),

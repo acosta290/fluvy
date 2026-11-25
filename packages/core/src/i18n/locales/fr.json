@@ -1701,6 +1701,9 @@
     "scope.activity_who_sub": "Chaque entrée de l’Activité nomme la personne derrière elle, avec sa photo ; un filtre par personne",
     "dashboard.lights_variant": "Lumières de pièce",
     "dashboard.rounds": "Boutons ronds",
+    "dashboard.greeting_avatar": "Avatar de l'accueil",
+    "dashboard.avatar_shown": "Affiché",
+    "dashboard.avatar_hidden": "Masqué",
     "cards.sheets_dial": "Détails avec cadran"
   },
   "customise": {
