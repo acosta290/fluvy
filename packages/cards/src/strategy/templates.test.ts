@@ -506,6 +506,11 @@ describe('the dashboard templates', () => {
     }
     // the thermostats, the lights, the locks, the cameras, the energy's readings this house has
     expect(lines).toBeGreaterThan(10);
+    // a dashboard's YAML that writes the figure as text asks the same
+    const home = templateById('home');
+    expect(
+      cardsOf((await generate({ type: home.type, name_lines: '2' as never }, everything())).views),
+    ).toEqual(cardsOf((await generate({ type: home.type, name_lines: 2 }, everything())).views));
   });
 
   it('offer what is a room’s photo’s alone on the dashboards of rooms, while their rooms may be photos (#159)', () => {

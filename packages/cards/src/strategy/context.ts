@@ -117,7 +117,7 @@ export async function buildContext(
       ...(config.flow_style ? { flow: config.flow_style } : {}),
       ...(config.room_variant ? { room: config.room_variant } : {}),
       roomLook: roomLook(config, 'room_'),
-      ...(config.name_lines === 2 ? { twoLines: true } : {}),
+      ...(Number(config.name_lines) === 2 ? { twoLines: true } : {}),
       ...(config.camera_refresh ? { refresh: config.camera_refresh } : {}),
       ...(config.scenes_max ? { scenes: config.scenes_max } : {}),
     },
