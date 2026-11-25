@@ -8964,6 +8964,13 @@
           }
         },
         {
+          "key": "show_rows",
+          "label": "Show the rows",
+          "does": "Shows the rows under the main control.",
+          "type": "boolean",
+          "default": true
+        },
+        {
           "key": "show_drive",
           "label": "Drive command",
           "does": "Shows the drive pad that moves the robot by hand.",
@@ -9278,6 +9285,123 @@
               "helper": "Empty: it is shown on the map",
               "type": "action",
               "default_in_words": "the card’s own"
+            },
+            {
+              "key": "double_tap_action",
+              "label": "Double tap action",
+              "does": "What two taps on the item do.",
+              "helper": "A tap waits a moment to tell it from a double tap",
+              "type": "action",
+              "default": "none"
+            }
+          ]
+        },
+        {
+          "key": "rows",
+          "label": "Rows",
+          "does": "Rows of other entities, such as the select that picks a floor’s map: under the map, or at the card’s foot where it has none.",
+          "id": "entity",
+          "item": [
+            {
+              "key": "entity",
+              "label": "Entity",
+              "does": "The entity the item shows.",
+              "type": "entity",
+              "required": true
+            },
+            {
+              "key": "name",
+              "label": "Name",
+              "does": "The item’s own name, in place of the one the card would give it.",
+              "type": "name"
+            },
+            {
+              "key": "icon",
+              "label": "Icon",
+              "does": "The item’s own icon, in place of the one the card would give it.",
+              "type": "icon"
+            },
+            {
+              "key": "secondary",
+              "label": "Secondary text",
+              "does": "The line under the item’s name.",
+              "helper": "A keyword, or a template such as {{ states('sensor.x') }}",
+              "type": "choice or text",
+              "values": {
+                "area": "Area",
+                "last-changed": "Last changed",
+                "state": "State",
+                "none": "None"
+              }
+            },
+            {
+              "key": "since",
+              "label": "Last change from",
+              "does": "Where the time of the last change is read from.",
+              "helper": "A timestamp sensor, or attribute:name",
+              "type": "choice or text"
+            },
+            {
+              "key": "options",
+              "label": "Options",
+              "does": "The select’s options offered, in this order.",
+              "type": "choices"
+            },
+            {
+              "key": "labels",
+              "label": "Option names",
+              "does": "Names of your own for the options.",
+              "type": "object"
+            },
+            {
+              "key": "tone",
+              "label": "Tone",
+              "does": "The item’s colour from the palette’s tones.",
+              "type": "choice",
+              "default_in_words": "the card’s own",
+              "values": {
+                "accent": "Accent",
+                "light": "Light",
+                "heat": "Heat",
+                "cool": "Cool",
+                "dry": "Dry",
+                "fan": "Fan",
+                "water": "Water",
+                "solar": "Solar",
+                "grid": "Grid",
+                "media": "Media",
+                "presence": "Presence",
+                "armed": "Armed",
+                "battery": "Battery",
+                "house": "House",
+                "gas": "Gas",
+                "vehicle": "Car",
+                "neutral": "Neutral",
+                "ok": "Good",
+                "warning": "Warning",
+                "danger": "Danger"
+              }
+            },
+            {
+              "key": "color",
+              "label": "Colour",
+              "does": "The item’s colour, in place of the one the card gives it.",
+              "helper": "Empty: the card’s colour",
+              "type": "colour"
+            },
+            {
+              "key": "tap_action",
+              "label": "Tap action",
+              "does": "What a tap on the item does.",
+              "type": "action",
+              "default": "more-info"
+            },
+            {
+              "key": "hold_action",
+              "label": "Hold action",
+              "does": "What a long press on the item does.",
+              "type": "action",
+              "default": "more-info"
             },
             {
               "key": "double_tap_action",

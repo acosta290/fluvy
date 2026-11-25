@@ -20,6 +20,7 @@ import {
   editorLabels,
   editorLanguage,
   editorWord,
+  entitiesField,
   entityField,
   fieldRow,
   iconField,
@@ -28,6 +29,7 @@ import {
   onlyWhen,
   orderedField,
   ownTextField,
+  rowItems,
   sectionField,
   selectField,
   headFields,
@@ -62,13 +64,13 @@ const drivable = (data: Data, hass?: HomeAssistant): boolean =>
 const driven = (data: Data, hass?: HomeAssistant): boolean =>
   data['show_drive'] === true && drivable(data, hass);
 
-/** The full card draws the map, the presets and the suction; the compact one none of them. */
+/** The full card draws the map, the presets, the rows and the suction; the compact one none of them. */
 const full = (data: Data): boolean => data['variant'] !== 'compact';
 const isBag = (value: unknown): value is Data =>
   typeof value === 'object' && value !== null && !Array.isArray(value);
 /** The card's map, as far as the form holds one. */
 const mapOf = (data: Data): Data => (isBag(data['map']) ? data['map'] : {});
-/** The card draws a map: what `show_map` acts on. */
+/** The card draws a map: what `show_map` and the rows' place act on. */
 const mapped = (data: Data): boolean => full(data) && typeof mapOf(data)['image'] === 'string';
 /** The config lists presets, or asks for the house's areas. */
 const preset = (data: Data): boolean =>
@@ -97,6 +99,8 @@ export const keys = configKeys<VacuumCardConfig>()([
   'presets',
   'show_presets',
   'presets_style',
+  'rows',
+  'show_rows',
   'show_drive',
   'drive_speed',
   'drive_style',
@@ -114,6 +118,7 @@ export const defaults: EditorDefaults = () => ({
   show_map: true,
   show_presets: true,
   presets_style: 'full',
+  show_rows: true,
   show_drive: false,
   drive_speed: 'normal',
   drive_style: 'card',
@@ -243,7 +248,8 @@ const PRESET_HELPERS: Readonly<Partial<Record<string, Word>>> = {
 
 /**
  * The card's lists, edited item by item: its presets (a list of them; `presets: areas` is YAML's word) by their
- * names, each one's zone as one rectangle or as several, as its config writes it.
+ * names, each one's zone as one rectangle or as several, as its config writes it; and its extra rows (#262), the
+ * Lock card's own.
  */
 export const lists: readonly RowsListSpec[] = [
   {
@@ -278,6 +284,7 @@ export const lists: readonly RowsListSpec[] = [
     },
     when: (data) => full(data) && data['presets'] !== 'areas',
   },
+  { key: 'rows', title: 'editor.rows', ...rowItems(), when: full },
 ];
 
 export function getConfigForm(): LovelaceConfigForm {
@@ -303,6 +310,8 @@ export function getConfigForm(): LovelaceConfigForm {
         preset,
         fieldRow(boolField('show_presets'), selectField('presets_style', ['full', 'chips'])),
       ),
+      onlyWhen(full, boolField('show_rows')),
+      entitiesField('rows'),
       driveFields(),
       ...colourFields(),
       ...stateTintFields(STATES),

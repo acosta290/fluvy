@@ -2,7 +2,15 @@ import type { LovelaceCardConfig } from '@fluvy/core';
 import { cameraRatio, plateHeight } from './devices-family.js';
 import type { FamilyEntry } from './energy-family.js';
 import { headlessOf, muted } from './shared/head-lines.js';
-import { CHIP_GLYPH, chipBlock, chipRows, COLUMN, COMPACT } from './shared/heights.js';
+import {
+  CHIP_GLYPH,
+  chipBlock,
+  chipRows,
+  COLUMN,
+  COMPACT,
+  listLength,
+  ROW,
+} from './shared/heights.js';
 import { pretty } from './shared/mode-words.js';
 
 /**
@@ -95,20 +103,25 @@ export const presetsBlock = (rows: number, style?: unknown): number =>
   rows ? 16 + rows * 44 + (style === 'chips' ? (rows - 1) * 8 : 0) : 0;
 
 /**
- * What a card's map and its presets add to it (#265): the map's plate 16 under the head, the presets' chips; from the
- * config alone, whatever the map shows.
+ * What a card's map, its extra rows and its presets add to it (#265, #262): the map's plate 16 under the head, the
+ * rows (`rows`, unless hidden: 16 and 60 each), the presets' chips; from the config alone, whatever the map shows.
  */
 function extrasHeight(config: LovelaceCardConfig): number {
   const map = mapOf(config);
-  return (map ? 16 + mapPlate(map) : 0) + presetsBlock(presetRows(config), config['presets_style']);
+  const rows = config['show_rows'] === false ? 0 : listLength(config, ['rows']);
+  return (
+    (map ? 16 + mapPlate(map) : 0) +
+    (rows ? 16 + ROW * rows : 0) +
+    presetsBlock(presetRows(config), config['presets_style'])
+  );
 }
 
 /**
  * The card's height at a 360 column, for the automatic dashboard's columns: the head; the readouts' row (16 + 44)
  * where the config names a sensor; the battery (a label, the gauge and its marks: 112) where the robot has one; the
  * commands (16 + 44) it takes; its suction as a row of chips under a label — what it does as the house describes it
- * (`house-heights.ts`); where the house is not there to say, every part, and two rows of suction chips. Its map and
- * its presets where its config asks for them (`extrasHeight`), its suction unless it hides it
+ * (`house-heights.ts`); where the house is not there to say, every part, and two rows of suction chips. Its map, its
+ * rows and its presets where its config asks for them (`extrasHeight`), its suction unless it hides it
  * (`show_suction`); the compact card draws none of them. A head left with nothing in it goes, with the 16 under it
  * (#259).
  */

@@ -100,6 +100,21 @@ presets:
 - `presets: areas` is one chip for each area the robot has mapped in Home Assistant (its entity's settings).
 - `show_presets`, `show_map` and `show_suction` hide a part; `presets_style: chips` sizes the chips by their words.
 
+### Rows
+
+`rows` adds other entities as rows, such as the select that picks a floor's map: under the map, before the presets,
+or at the card's foot where it has no map.
+
+```yaml
+type: custom:fluvy-vacuum-card
+entity: vacuum.robot
+map:
+  image: camera.robot_map
+rows:
+  - entity: select.robot_floor
+    secondary: none
+```
+
 ### The drive pad
 
 ![A robot vacuum with its battery and suction, then its drive pad in the card's place](../images/1.20/vacuum.webp)

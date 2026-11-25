@@ -238,7 +238,7 @@ const card = (extra: Record<string, unknown> = {}) => ({
 /**
  * The Vacuum card's map (#265): the robot's map under the head with its rooms and three presets; two rooms picked,
  * with what to do at the map's foot; a zone waited for, under the finger and marked, a point waited for and picked,
- * the map enlarged; the robot at work; the presets alone,
+ * the map enlarged; the robot at work; a floor's select between the map and the presets (#262); the presets alone,
  * and the house's areas as presets; the rooms as the map's own entity says them; a Roborock's image with its points
  * and a Valetudo robot's topic; a plain floor plan with an action of the person's own; a square map; no picture, and
  * the robot out of reach; then a 266 column and a 211 one, the least the full card is drawn in (half a section draws
@@ -292,6 +292,11 @@ export const sheet: SheetSpec = {
       { friendly_name: 'Roborock S8 Ground floor', entity_picture: DOCKED },
     ],
     ['camera.mp_gone_map', 'unavailable', { friendly_name: 'Robot map' }],
+    [
+      'select.mp_floor',
+      'Ground floor',
+      { friendly_name: 'Floor', options: ['Ground floor', 'Upstairs'], icon: 'mdi:stairs' },
+    ],
     ['sensor.mp_area', '38', { friendly_name: 'Cleaned area', unit_of_measurement: 'm²' }],
     ['sensor.mp_time', '46', { friendly_name: 'Cleaning time', unit_of_measurement: 'min' }],
   ],
@@ -393,6 +398,12 @@ export const sheet: SheetSpec = {
           show_suction: false,
         }),
       ],
+    },
+    // #262: a select between the map and the presets, to choose the floor's map
+    {
+      title: 'Map · a floor’s select',
+      hass: withServices,
+      cards: [card({ rows: [{ entity: 'select.mp_floor', secondary: 'none' }] })],
     },
     {
       title: 'Map · a preset shown',

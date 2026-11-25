@@ -4088,16 +4088,18 @@ compact card draws none of it.
   where `confirmation` says so, in Home Assistant's own dialog); a long press shows it on the map as a pick, ready
   for Clean; a double tap is its `double_tap_action`. A preset that names nothing starts the robot. `presets: areas`
   is one chip for each area the robot has mapped in Home Assistant.
-- **The order**: head, map, presets, readouts, battery, commands, suction (`show_suction: false` hides the last
-  where the presets say enough).
+- **Rows** (`rows`, #262) stand 16 under the map and before the presets, so a floor's select sits beside the map it
+  changes; on a card with no map they close the card, as on Lock and Camera.
+- **The order**: head, map, rows, presets, readouts, battery, commands, suction (`show_suction: false` hides the
+  last where the presets say enough).
 - **At work** the map's camera is read every 5 seconds, at rest every 60; an image entity when its state changes; a
   plain picture once.
 - **No picture** (the entity gone, the address refused, the robot unavailable): the plate at its size in the
   unavailable skin (the page's ground, a dashed hairline), the map's glyph and "No map" in the secondary ink. The
   presets keep their rows: they still run where only the picture is missing, and stand disabled while the robot is
   out of reach. A map with no calibration shows its picture and its presets and offers nothing to pick on it.
-- **Heights** from the config alone: 16 and the plate; 16 and 44 a row for the chips (content-sized ones 8
-  apart). The chips' rows are counted from their names as written, so the automatic
+- **Heights** from the config alone: 16 and the plate; 16 and 60 a row for the rows; 16 and 44 a row for the chips
+  (content-sized ones 8 apart). The chips' rows are counted from their names as written, so the automatic
   dashboard's columns know the card before it draws.
 - **Widths.** The full card's floor is a 211 column (its `min_columns`); there the rounds are one (the first
   `controls` lists: a zone, unless it says otherwise) and the bar keeps its cross and its action: the names give way

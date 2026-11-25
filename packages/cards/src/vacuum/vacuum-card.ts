@@ -8,7 +8,6 @@ import {
   strings,
   valueParts,
   type EntityView,
-  type FluvyCardConfig,
   type LovelaceGridOptions,
 } from '@fluvy/core';
 
@@ -35,7 +34,8 @@ import {
 } from 'lit';
 
 import { batteryOf } from '../shared/battery.js';
-import { Card, type CardEditor } from '../shared/base.js';
+import type { CardEditor } from '../shared/base.js';
+import { RowsCard, type RowsCardConfig } from '../lock/rows.js';
 
 import { iconOf } from '../shared/domain.js';
 import {
@@ -51,9 +51,10 @@ import type { RowStyle } from '../shared/config.js';
 import { chipRow, inForce } from '../shared/chips.js';
 import { muted } from '../shared/head-lines.js';
 import { modeWord } from '../shared/mode-words.js';
-import { HeadFit } from '../energy/head.js';
+import type { HeadFit } from '../energy/head.js';
 import { drawnAs } from '../shared/heights.js';
 import { statsRow, type StatText } from '../shared/readouts.js';
+import { rowEndStyles } from '../shared/row-end.js';
 import { stateLook, tintOf, type StateTintConfig } from '../shared/state-tint.js';
 import {
   mapOf,
@@ -118,7 +119,7 @@ const FAILED_MS = 3000;
 /** `full` (default): the readouts, the battery, the commands and the suction. `compact`: the head and the commands. */
 export type VacuumVariant = 'full' | 'compact';
 
-export interface VacuumCardConfig extends FluvyCardConfig, StateTintConfig {
+export interface VacuumCardConfig extends RowsCardConfig, StateTintConfig {
   subtitle?: string;
   variant?: VacuumVariant;
   show_battery?: boolean;
@@ -211,15 +212,16 @@ const GAUGE: ReadonlyArray<readonly [number, number]> = [
  * hand gains a Drive command: the battery and the suction give their room to the drive pad, the card as tall as it
  * was, until Done (#178); a card with no room for the ring opens it in a sheet.
  */
-export class FluvyVacuumCard extends Card<VacuumCardConfig> {
+export class FluvyVacuumCard extends RowsCard<VacuumCardConfig> {
   /** The card's height at a 360 column from its config alone: every part (`vacuumHeight`). */
   static override layoutHeight(config: VacuumCardConfig): number {
     return vacuumHeight(config);
   }
 
   static override styles: CSSResultGroup = [
-    ...(Card.styles as CSSResultGroup[]),
+    ...(RowsCard.styles as CSSResultGroup[]),
     sheetStyles.devices,
+    rowEndStyles,
     motionStyles,
     css`
       /* the sheet's 3 × 96 + 2 × 16 at 320, fluid: as many columns as hold every label and figure (\`statsRow\`), a
@@ -269,7 +271,7 @@ export class FluvyVacuumCard extends Card<VacuumCardConfig> {
   ];
 
   static override properties = {
-    ...Card.properties,
+    ...RowsCard.properties,
     chosen_: { state: true },
     driving_: { state: true },
     sheet_: { state: true },
@@ -288,7 +290,10 @@ export class FluvyVacuumCard extends Card<VacuumCardConfig> {
   declare failed_: boolean;
 
   private readonly suctionHold = new Hold<string | null>(this);
-  private readonly head = new HeadFit(this);
+  /** The head's fitting is the rows' (`RowsCard`): one ruler for the card. */
+  private get head(): HeadFit {
+    return this.headFit;
+  }
   /** The config's map and presets, read once their chunk is here (`map/config.ts`); none where it names neither. */
   private setup: Setup | undefined;
   private failedTimer = 0;
@@ -320,7 +325,7 @@ export class FluvyVacuumCard extends Card<VacuumCardConfig> {
     if (typeof drive === 'string') throw new Error(`fluvy-vacuum-card: ${drive}`);
     this.chosen_ = config._map?.chosen;
     this.setup = undefined;
-    if (config.map === undefined && config.presets === undefined) return config;
+    if (config.map === undefined && config.presets === undefined) return super.prepare(config);
     // read at once where the map's chunk is here; else once it lands, a fault said then as every card's is: built
     // again in its place (Home Assistant's `ll-rebuild`), it throws
     if (maps) this.setup = this.read(config);
@@ -334,7 +339,7 @@ export class FluvyVacuumCard extends Card<VacuumCardConfig> {
           fireEvent(this, 'll-rebuild');
         }
       });
-    return config;
+    return super.prepare(config);
   }
 
   /** The config's map and presets as their chunk reads them, what is wrong with them thrown in words. */
@@ -367,7 +372,7 @@ export class FluvyVacuumCard extends Card<VacuumCardConfig> {
     // the map's picture, and what holds its calibration where that is another entity
     const map = c ? mapOf(c) : undefined;
     return [
-      c?.entity,
+      ...super.watched(),
       c?.area_entity,
       c?.duration_entity,
       c?.remaining_entity,
@@ -784,6 +789,9 @@ export class FluvyVacuumCard extends Card<VacuumCardConfig> {
         ? maps.sceneOf(this.hass, view.id, this.setup, () => this.requestUpdate())
         : undefined;
     if (scene) for (const named of maps?.coloursOf(scene) ?? []) this.accents.item(named);
+    // the card's extra rows (#262): under the map where there is one, before its presets; else they close the card
+    const mapped = !compact && this.config !== undefined && mapOf(this.config) !== undefined;
+    const extra = compact ? nothing : this.renderRows();
 
     const card = html`<article
       class="fv-card dv-card ${unusable ? 'is-unavailable is-off' : ''} ${tinted.cls}"
@@ -803,7 +811,7 @@ export class FluvyVacuumCard extends Card<VacuumCardConfig> {
         cut: fitted.cut,
         ...this.headActions(view.id),
       })}
-      ${compact ? nothing : this.renderMap(scene, name, unusable, busy)}
+      ${compact ? nothing : this.renderMap(scene, name, unusable, busy)} ${mapped ? extra : nothing}
       ${compact ? nothing : this.renderPresets(scene, unusable)}
       ${columns.length && !compact ? this.renderColumns(columns, w) : nothing}
       <div class="vc-body ${inCard ? 'is-driving' : ''}">
@@ -859,6 +867,7 @@ export class FluvyVacuumCard extends Card<VacuumCardConfig> {
             : nothing
         }
       </div>
+      ${mapped ? nothing : extra}
     </article>`;
     // a card with no room for the ring, or asked for it, is driven from its sheet
     return driving && !inCard && !held ? html`${card}${this.renderSheet(false)}` : card;

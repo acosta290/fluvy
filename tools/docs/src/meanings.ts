@@ -792,6 +792,8 @@ export const MEANINGS: Readonly<Record<string, string>> = {
   'tile.readouts[]': 'Sensors shown as readouts on the tile, in this order.',
   'vacuum.presets[]':
     'Cleaning presets as chips, under the map where there is one: each cleans what it names, and one that names nothing is a full clean. `presets: areas` is one for each area the robot has mapped in Home Assistant.',
+  'vacuum.rows[]':
+    'Rows of other entities, such as the select that picks a floor’s map: under the map, or at the card’s foot where it has none.',
   'vehicle.controls[]':
     'The car’s controls, each a round that acts on it, and entities of your own among them.',
   'vehicle.quick_actions[]':

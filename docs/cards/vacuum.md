@@ -80,6 +80,8 @@ map:
 show_map: true
 show_presets: true
 presets_style: full
+show_rows: true
+# rows:
 # drive_entity:
 # drive:
 # tone:
@@ -145,10 +147,12 @@ presets:
 | `show_map` | `true` | Shows the map; off, it is hidden and stays written. |
 | `show_presets` | `true` | Shows the presets. |
 | `presets_style` | `full` | Draws the presets as chips that fill their row, or as content-sized ones. `full` · `chips`. |
+| `show_rows` | `true` | Shows the rows under the main control. |
 | `tint` | `off` | When the card shows its colour beyond its circle: never, while it is on or active, or at rest too. `off` (Never) · `on` (When active) · `always`. |
 | `tint_style` | `wash` | How the colour is shown: a wash over the card, the card’s edge, or the control alone. `wash` · `edge` · `control`. |
 | `state_colors` |  | A colour for each of the device’s states, held under this key: a tone, none, or a colour of your own. Its keys: `cleaning` · `mowing` · `returning` · `paused` · `idle` · `docked` · `error`. |
 | [`presets`](#presets) |  | Cleaning presets as chips, under the map where there is one: each cleans what it names, and one that names nothing is a full clean. `presets: areas` is one for each area the robot has mapped in Home Assistant. A list: [its items](#presets). |
+| [`rows`](#rows) |  | Rows of other entities, such as the select that picks a floor’s map: under the map, or at the card’s foot where it has none. A list: [its items](#rows). |
 | **Drive pad** |  |  |
 | `show_drive` | `false` | Shows the drive pad that moves the robot by hand. |
 | `drive_speed` | `normal` | How far a press on the drive pad moves the robot. `slow` · `normal` · `fast`. |
@@ -206,6 +210,26 @@ An item is a map with `name` and any of these fields.
 | **Interactions** |  |
 | `tap_action` | What a tap does in the place of cleaning what it names; a call’s data may ask `[[selection]]`, `[[point_x]]`, `[[point_y]]` and `[[repeats]]`. |
 | `hold_action` | What a long press does in the place of showing the preset on the map. |
+| `double_tap_action` | What two taps on the item do. |
+
+### `rows`
+
+An item is an entity id, or a map with `entity` and any of these fields.
+
+| Field | What it does |
+| --- | --- |
+| `entity` | The entity the item shows. |
+| `name` | The item’s own name, in place of the one the card would give it. |
+| `icon` | The item’s own icon, in place of the one the card would give it. |
+| `secondary` | The line under the item’s name. `area` · `last-changed` · `state` · `none`, or your own. |
+| `since` | Where the time of the last change is read from. |
+| `options` | The select’s options offered, in this order. A list. |
+| `labels` | Names of your own for the options. |
+| `tone` | The item’s colour from the palette’s tones. `accent` · `light` · `heat` · `cool` · `dry` · `fan` · `water` · `solar` · `grid` · `media` · `presence` · `armed` · `battery` · `house` · `gas` · `vehicle` (Car) · `neutral` · `ok` (Good) · `warning` · `danger`. |
+| `color` | The item’s colour, in place of the one the card gives it. |
+| **Interactions** |  |
+| `tap_action` | What a tap on the item does. |
+| `hold_action` | What a long press on the item does. |
 | `double_tap_action` | What two taps on the item do. |
 
 ## Guide
@@ -311,6 +335,21 @@ presets:
   it computed and the card's own robot, nothing else.
 - `presets: areas` is one chip for each area the robot has mapped in Home Assistant (its entity's settings).
 - `show_presets`, `show_map` and `show_suction` hide a part; `presets_style: chips` sizes the chips by their words.
+
+### Rows
+
+`rows` adds other entities as rows, such as the select that picks a floor's map: under the map, before the presets,
+or at the card's foot where it has no map.
+
+```yaml
+type: custom:fluvy-vacuum-card
+entity: vacuum.robot
+map:
+  image: camera.robot_map
+rows:
+  - entity: select.robot_floor
+    secondary: none
+```
 
 ### The drive pad
 
