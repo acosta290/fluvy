@@ -5,6 +5,178 @@ and the versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Visible on upgrade
+
+One change is a choice: a house in the United States reads Fluvy in American English. Everything else that changes
+without being asked is a fix:
+
+- A house whose Home Assistant speaks its English and whose country is the United States, one of its territories or the
+  Philippines reads Fluvy in American English on Automatic (Trunk, Hood, Tires, Color, Customize, Favorites, Cooktop,
+  Range hood, Vacation, Turn on); Preferences › Language › English (United Kingdom) brings the British words back
+  (#267, requested by @Carl-Primitive).
+- Preferences › Language calls Fluvy's English "English (United Kingdom)", beside the new English (United States); a
+  person who chose English keeps it (#267).
+- A card whose config leaves its head with nothing in it (no circle with `show_icon: never`, the name hidden with
+  `name_lines: 0`, and its line, its badge and what trails its head switched off) no longer keeps a blank band: the
+  head is not drawn, the card starts at its 20 and its height drops the head and the gap under it, on the Appliances
+  card and every card that can reach it (#259, reported by @pascalpas, thanks to @Mittalnew, who offered the fix and
+  described the head's skip).
+- The automatic dashboards no longer take a Matter light that sets its colour temperature for an oven, nor a Matter
+  thermostat or air conditioner with a temperature offset for a fridge: they leave the Large appliances band, the
+  Appliances page and their room's appliance cards, and a thermostat's temperature and humidity are its room's readings
+  again (#263, reported by @thomaskoeppe).
+- The Remote card sends an Xbox's remote the console's own commands (its arrows, A, B, GoHome, Menu) where it sent
+  Android TV Remote's names, which the console typed on screen as text, and draws a key the console has no command for
+  disabled (#255, reported by @jacobkaad01).
+- The Remote card opens an app of its own list on an Xbox by the app's store id and lights the app the console runs,
+  where such an app could not be opened (#255, reported by @jacobkaad01).
+- The Remote card shows a play or pause key at a grid pad's corner or as a custom key as pause while the player plays,
+  as it does everywhere else (#255).
+- The Vehicle card's small icons fill the card's width: each stands in the middle of its share of the row, and where
+  they say their states each is a key as wide as its share, with no word against an edge; one that says no state among
+  them holds its icon in its key's middle.
+- A round that says its state under its icon (a room's quick actions, the Rooms card's tiles) is drawn as a key with
+  its words 12 px from its sides, so a reading such as 640 ppm no longer touches the edge; in a tight row a state takes
+  its shorter form, or is left out, a little sooner.
+- The Rounds card's keys hold a long state 8 px from their sides before giving up: a word that still does not fit ends
+  in an ellipsis, and a figure that does not fit leaves its key with its icon alone.
+- A screen reader hears a round's whole state, even where the round shows a shorter form or none, and a round no longer
+  shortens a rate such as 0.4 °C/h to 0.4°.
+- A details sheet opened from a Cover card reads the cover as that card does: a position the card turns round
+  (`invert_position`) or counts as the blind comes down (`direction: down`), and a tilt turned round or in degrees
+  (`invert_tilt`, `tilt_angle`), where a blind that reports 100 % closed read opposite on the card and in its sheet
+  (#258).
+- Activity, History, their period picker and the details dialog's history write dates as Home Assistant and the cards
+  do: 25 Nov under Home Assistant's English (GB), where they said Nov 25, and 25 de nov. under its Portuguese, where
+  they said 25/11 (#267).
+- The automatic dashboards read a yard as outdoors, a stovetop or a range top as a hob, a blow dryer as no clothes
+  dryer and a fridge's vacation switch as no appliance (#267).
+- A dropdown's row keeps its name whole: a hint that would squeeze it sits under it, where the name ended in "…"
+  (#267).
+- A state in many words on a Lock, Alarm or Camera card's row goes under its name in a narrow column, where it used to
+  squeeze the name to nothing (Home Assistant's Dutch "Niet gedetecteerd" at half a section), and a select's value
+  under its row's name breaks onto a second line where the column would cut it (discussion #262).
+- A tile, a head, a circle or a round whose toggle is on a thermostat or water heater that has neither its own off nor
+  an Off mode is no longer a button, where its tap sent `turn_off` for Home Assistant to refuse with an error.
+- A Chart with its value row off (`show_head: false`) takes its name in two lines or hides it as `name_lines` asks, and
+  its editor offers the field there.
+- The Calendar's head beside its badge, its upcoming days and a Room lights card with no lights draw no circle where
+  the card asks for none (`show_icon: never`).
+- The Activity page on a phone ends what set a run off in an ellipsis and says it whole in its title, where
+  "Disparador: estado de Marta" was cut mid-word in Spanish, Bulgarian, French, German and European Portuguese; it
+  keeps an entry's day number with its month, so a narrow column breaks after the weekday, where Bulgarian and Dutch
+  broke the month mid-word, and the Danish day summary stays inside its column.
+- The Activity page finds the one reading by "You" in the page's language after Home Assistant's language or the
+  person's changes.
+- The automatic dashboards take no air conditioning's or hot water's system for the grid, nor a home theatre for the
+  house's power, in Japanese and Chinese names.
+- Hungarian says what Reduce motion's switch does, whatever the device asks, where it said it followed the device.
+- An automatic dashboard whose YAML writes `name_lines: "2"` as text names its cards in two lines, as `2` does.
+- The Compass card's row declares no second name line left in its config from another layout, so a dashboard lays it
+  at its real height, and its editor no longer offers the option there.
+- The Heating schedule card's sheet keeps its base select on whole pixels in German and Hungarian on a phone.
+- A picture fetched once (the Printer card's preview) is fetched again when its entity says a new one by its state, not
+  only when its address changes (#265).
+- The editors' field picker keeps a group held under its own key, and no longer takes a group whose row lost a field
+  for one left whole.
+- The Map card's map follows a change of its people, its zoom or its trail while the card is being edited, where it
+  kept what it was first made with.
+
+### Added
+
+- English (United States): every card, page, dialog and editor in American English, chosen in Preferences or read on
+  Automatic in a house in the United States (#267, requested by @Carl-Primitive).
+- The Vehicle card reads `show_tires`, `tire_low`, `tire_decimals` and the roles `tire_fl`, `tire_fr`, `tire_rl` and
+  `tire_rr`, and the Appliance and Appliances cards read `kind: cooktop` and the quick mode `vacation` (#267).
+- A gauge on any round: `gauge: arc`, `zero`, `sector` or `fill` draws a reading on the round itself, with `min`,
+  `max`, `decimals`, `attribute` and `thresholds`, on the Rounds card, a room's quick actions, the Rooms card, a
+  thermostat's rounds, the greeting's quick actions and the Vehicle card's small icons (#257, requested by @zokmedov).
+- The Vehicle card can draw its battery or its tank as a liquid with `hero: liquid`, a plug-in hybrid's both: the
+  Gauge card's slow waves in the ruler's place, so the figure, its unit and the range read as before and the card
+  keeps its height; bubbles rise while the battery charges, as fast as it fills, the charge limit is a line across
+  the water, low fuel turns it to the warning's colour, and `animate: false` rests it (#256, requested by
+  @SentinelXS).
+- The Vehicle card can show where the car is on a mini map with `map: auto`, a tracker or a list of them: Home
+  Assistant's own map, with no key and nothing sent anywhere to look an address up, sized by `map_size`, with
+  `map_zoom`, `map_theme` and a trail by `hours_to_show`, and the car's address or its place's name in a pill over
+  the map that opens the tracker; `map_interactive: false` makes it a still picture (#266, requested by @SentinelXS).
+- The Vehicle card can draw its parts in an order of your own with `sections`: name the head, the picture, the map,
+  the battery, the controls, the rows, the tyres and the quick actions in the order you want, and a part you leave
+  out is not drawn; the visual editor has it as a list to drag (#266, requested by @SentinelXS).
+- The Vacuum card draws the robot's map: `map` puts it under the head, with rooms and saved zones to tap, Clean at the
+  map's foot, a zone marked by hand and a point to go to; two fingers enlarge and move it, one finger still scrolls the
+  page; off unless the card names a map (#265, requested by @SentinelXS).
+- Cleaning presets on the Vacuum card: `presets` are chips, each a zone, rooms, areas, a point or an action of your
+  own; a tap runs one, a long press shows it on the map, `confirmation: true` asks first, and `presets: areas` makes
+  one for each area the robot has mapped in Home Assistant; `show_suction: false` hides the suction chips (#265,
+  requested by @SentinelXS).
+- The Light, Fan, Cover, Thermostat, Media player, Humidity and Vacuum cards take extra rows under their own controls
+  (`rows`), as the Lock card does: any entity, a select as its dropdown (a Hue gradient scene, a robot's floor), a
+  switch, a sensor's value, a button pressed by the row's own tap action (discussion #262, asked by @frankchief123).
+- The details sheets can draw their control on a ruler across the sheet in place of the dial, shorter on a phone: the
+  house chooses the kinds that keep their dial (Fluvy's settings › Appearance › Cards, "Sheets with a dial", every kind
+  as before), the Cover, Thermostat, Light, Fan and Media cards say their own with `sheet_dial`, and an action with
+  `dial: false` or `true`, as does `__fluvy.openDetails` (#258, requested by @Gnomi2).
+- A cover's sheet on a ruler shows its card's end words and favourites; a thermostat's says what it measures over the
+  ruler, and a range is two rulers (#258).
+- The Chart card's series can have thresholds of their own, read in their own unit and used for that series in place
+  of the card's; a series can mark its lowest and highest points (`highlight: min | max | both`): dots on its line, its
+  columns lit with their figures, and the figures with their times in the value row; and the card can lay a readout
+  for each series over the chart in place of the legend (`readouts: true`), as the Sensor card does for several sensors
+  (#264, requested by @SentinelXS).
+- The Remote card has the keys A, B, X, Y, View and the Xbox button (`a`, `b`, `x`, `y`, `view`, `nexus`) for its pad,
+  its rows, a custom key and `commands`, and can draw a game controller's buttons (`gamepad` in `groups`): A, B, X and
+  Y in their diamond in the console's colours or plain (`gamepad_tint`), with View, the Xbox button and Menu beside
+  them (`gamepad_keys`) (#255, requested by @jacobkaad01).
+- The Remote card gives any key an icon of your own (`icons: { assistant: mdi:microsoft-xbox }`), opens an app by its
+  id on a player that takes one (`app_id`: an Xbox's store id, a Roku's channel id; on an Xbox Netflix, YouTube,
+  Disney+, Prime Video and the other platforms it knows open with `app` alone), and can draw its app circles without
+  their names (`apps_names: false`), which are still read out (#255, requested by @jacobkaad01).
+- The Room lights card can list its lights as rows (`variant: rows`): each light a row with its name over its state and
+  level, a tap switching it and a hold opening it, a badge in the head saying how many are on; `control` says what ends
+  its head over chips, tiles and rows: the room's switch, a badge of how many are on, or nothing; and the automatic
+  dashboards can draw their Room lights cards as rounds, chips, tiles or rows (`lights_variant`) (#261, requested by
+  @Gnomi2).
+- The greeting card can greet without the name (`show_name: false`), its weather and date answer a tap, a hold and a
+  double tap of their own (`weather_tap_action`, `date_tap_action` and their kin), and it takes quick actions under it
+  (`quick_actions`): rounds across its width, each a key as wide as its share where they say their states
+  (`show_quick_states`) (#260, requested by @Gnomi2 and @jacobkaad01).
+- The automatic dashboards can hide the greeting's avatar, on a wall too (`greeting_avatar: hide`), and show the
+  greeting on the first view only, or on none (`greeting: first` or `hide`) (#260, requested by @Gnomi2; discussion
+  #208, asked by @cs42, thanks @wesomitsu).
+- The Vacuum card's editor says why a robot asked for its drive pad has none, and the way round it: the same robot
+  through an integration that drives, picked in "Robot to drive" (a Roborock on Xiaomi Home: Xiaomi Miot Auto beside
+  it) (#178, thanks @maxhayim).
+
+### Development
+
+- A head left with nothing in it is one rule (`headless`, `headlessOf` in `shared/head-lines.ts`) each card answers
+  from its config alone; the `empty-heads` sheet draws each card whose config can empty its head beside its headed
+  twin, and a test walks the catalogue so no card draws a head with nothing in it.
+- American English is a catalogue of only the texts that differ, laid over English and fetched by the houses that read
+  it; a count says English's form where a catalogue leaves it to English; `pnpm i18n` checks American English by what
+  it holds and holds every British word English says to an American text; the playground takes `&country=US` (#267).
+- The row across is one module and one stylesheet the Cover card and the details sheets share (`shared/across.ts`,
+  `styles/across.css`), and a Cover card's reading of its cover is one module its sheet reads too (`cover/reads.ts`);
+  the settings are version 10 (the house's `sheetsDial`, every kind where a 9 stored none).
+- The extra rows are the Lock card's engine on every card that takes them (`Card.extraRows`, `rowsUnder` for the
+  heights), fetched by the first card that lists a row.
+- The gauges on a round, the Room lights card's rows, the greeting's parts and quick actions and the robot's map are
+  chunks of their own (`round-gauge`, `lights-rows`, `hello-more`, `vacuum-map`), fetched by the first card that asks;
+  `roundsAcross` lays rounds across a line for any card (the Vehicle card's foot, the greeting's quick actions).
+- Home Assistant's own map on a plate is a chunk of its own, `ha-map`, which the Map card and the Vehicle card fetch
+  as they first draw a map: every page is 0.4 KB lighter for it.
+- Every page's budget is 240 KB (measured at 239.5), and the panel's, the Chart card's, the rounds', the editors', the
+  shared chunk's and a language's each rose once, measured and dated in `tools/release/check.mjs`.
+- The docs list a block's keys whole where its fields stand side by side in a row of the form.
+- A config's own icon is checked by one shared rule (`shared/icon-name.ts`) that the dashboard sidebar and the Remote
+  card both read.
+- New Matter appliance fixtures (an oven, the reporter's light, a thermostat with an offset); the playground's
+  `remote-xbox`, `extra-rows`, `empty-heads`, `vacuum-map` and two-Englishes sheets; the suite
+  `interactions-vacuum-map.mjs` and the remote suite's Xbox checks; the measurer lets a round's state word end in an
+  ellipsis and still refuses a cut figure.
+- The look takes its dialogs' colour mark off `<html>` when it no longer says one.
+
 ## [1.25.0] — 2026-11-23
 
 ### Visible on upgrade
