@@ -1736,6 +1736,22 @@ describe('custom:fluvy-home strategy', () => {
     ).toBe(true);
   });
 
+  it('draws the Room lights cards in the style asked, and writes none unless asked (#261)', async () => {
+    const lights = async (config: Record<string, unknown>) =>
+      (await generate({ type: 'custom:fluvy-lights', ...config } as never, house(DEMO_ROOMS))).views
+        .flatMap((v) => v.sections.flatMap((s) => s.cards))
+        .filter((c) => c.type === 'custom:fluvy-lights-card');
+    const plain = await lights({});
+    expect(plain.length).toBeGreaterThan(0);
+    // the card as it always was: its lights, across its column
+    for (const card of plain)
+      expect(Object.keys(card).sort()).toEqual(['grid_options', 'lights', 'type']);
+    for (const variant of ['row', 'chips', 'tiles', 'rows']) {
+      const styled = await lights({ lights_variant: variant });
+      expect(styled, variant).toEqual(plain.map((card) => ({ ...card, variant })));
+    }
+  });
+
   it('adds a Rooms view when the house has two rooms with something in them, and a subview per room', async () => {
     const { views } = await FluvyHomeStrategy.generate(
       { type: 'custom:fluvy-home', greeting_tabs: 'show' },

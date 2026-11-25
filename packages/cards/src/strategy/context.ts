@@ -120,6 +120,7 @@ export async function buildContext(
       ...(Number(config.name_lines) === 2 ? { twoLines: true } : {}),
       ...(config.camera_refresh ? { refresh: config.camera_refresh } : {}),
       ...(config.scenes_max ? { scenes: config.scenes_max } : {}),
+      ...(config.lights_variant ? { lights: config.lights_variant } : {}),
     },
     areas: config.areas,
     greetingTabs: config.greeting_tabs === 'show',

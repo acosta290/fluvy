@@ -65,7 +65,9 @@
     "editor_show_brightness": "One brightness for the room",
     "editor_tint": "Show each tile’s colour",
     "no_colour_one": "{names} takes no colour",
-    "no_colour_other": "{names} take no colour"
+    "no_colour_other": "{names} take no colour",
+    "count_one": "1 light",
+    "count": "{n} lights"
   },
   "climate": {
     "mode": "Mode",

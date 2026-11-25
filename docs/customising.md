@@ -312,6 +312,10 @@ show_color: true
 colors: [warm, cool, red, orange, '#8e44ad', picker]
 ```
 
+`variant: rows` on the room lights card lists each light as a row, its name over its state and level: a tap on a row
+switches its light, a hold opens it. `control` says what ends the head over chips, tiles and rows: the room's `switch`,
+a `badge` that says how many are on (the rows' own), or `none`.
+
 `lamp_switches: true` on the room lights and room cards counts an area's lamps on plugs among its lights: a switch whose
 name says it is a lamp (Workbench lamp, 工作室 电灯), read in every language as the automatic dashboards read it. A
 kettle on its plug stays out. A list of your own `lights` wins.

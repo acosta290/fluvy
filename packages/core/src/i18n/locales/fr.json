@@ -65,7 +65,9 @@
     "editor_show_brightness": "Une luminosité pour toute la pièce",
     "editor_tint": "Afficher la couleur de chaque tuile",
     "no_colour_one": "{names} ne prend pas de couleur",
-    "no_colour_other": "{names} ne prennent pas de couleur"
+    "no_colour_other": "{names} ne prennent pas de couleur",
+    "count_one": "1 lumière",
+    "count": "{n} lumières"
   },
   "climate": {
     "mode": "Mode",
@@ -689,6 +691,9 @@
     "horizontal": "Horizontale",
     "exact_colors": "Couleurs exactes",
     "exact_colors_helper": "Les noms tels que Home Assistant les dessine, un code hex tel que saisi. Inchangé, celui de toutes les cartes dans les réglages de Fluvy",
+    "badge": "Badge",
+    "head_end": "L’en-tête se termine par",
+    "head_end_helper": "Automatique : l’interrupteur de la pièce ; avec des lignes, un badge qui indique combien sont allumées",
     "sheet_dial": "Cadran dans les détails",
     "sheet_dial_helper": "Inchangé, celui de tous les détails dans les réglages de Fluvy"
   },
@@ -1694,6 +1699,8 @@
     "cards.exact_sub": "Les noms de couleur tels que Home Assistant les dessine et un code hex tel que saisi, pas les teintes de la palette",
     "scope.activity_who": "Qui l’a fait",
     "scope.activity_who_sub": "Chaque entrée de l’Activité nomme la personne derrière elle, avec sa photo ; un filtre par personne",
+    "dashboard.lights_variant": "Lumières de pièce",
+    "dashboard.rounds": "Boutons ronds",
     "cards.sheets_dial": "Détails avec cadran"
   },
   "customise": {
@@ -2061,7 +2068,7 @@
     "tile": "Une lumière, un interrupteur, un volet, un ventilateur, un lecteur, un nombre ou un capteur en tuile : grande avec une règle de précision ou deux mesures, ligne compacte ou mini.",
     "tiles": "Un groupe de tuiles compactes ou mini, deux à quatre par ligne, espacées de 8 px.",
     "light": "Le variateur de précision : glissement relatif, éloignez le doigt pour ralentir, maintenez pour l’échelle à 1 %, température de couleur.",
-    "lights": "Les lumières d’une pièce sur une carte : un appui pour toute la pièce, un rond, une puce ou une tuile par lumière, dans sa couleur.",
+    "lights": "Les lumières d’une pièce sur une carte : un appui pour toute la pièce, un rond, une puce, une tuile ou une ligne par lumière, dans sa couleur.",
     "entities": "Des lignes d’entités : un interrupteur pour ce qui s’allume, la valeur pour ce qui se mesure.",
     "cover": "Stores, volets, portes de garage et vannes : règle de position verticale, inclinaison, ouvrir · arrêter · fermer, favoris.",
     "fan": "Règle de vitesse par paliers, oscillation, sens et préréglages.",

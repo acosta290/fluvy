@@ -65,7 +65,9 @@
     "editor_show_brightness": "Un brillo para toda la habitación",
     "editor_tint": "Mostrar el color de cada mosaico",
     "no_colour_one": "{names} no toma color",
-    "no_colour_other": "{names} no toman color"
+    "no_colour_other": "{names} no toman color",
+    "count_one": "1 luz",
+    "count": "{n} luces"
   },
   "climate": {
     "mode": "Modo",
@@ -689,6 +691,9 @@
     "horizontal": "Horizontal",
     "exact_colors": "Colores exactos",
     "exact_colors_helper": "Los nombres como los dibuja Home Assistant, un código hex tal como se escribe. Sin tocar, el de todas las tarjetas en los ajustes de Fluvy",
+    "badge": "Insignia",
+    "head_end": "La cabecera termina en",
+    "head_end_helper": "Automático: el interruptor de la estancia; con filas, una insignia con cuántas están encendidas",
     "sheet_dial": "Dial en los detalles",
     "sheet_dial_helper": "Sin tocar, el de todos los detalles en los ajustes de Fluvy"
   },
@@ -1694,6 +1699,8 @@
     "cards.exact_sub": "Los nombres de color como los dibuja Home Assistant y un código hex tal como se escribe, no los tonos de la paleta",
     "scope.activity_who": "Quién fue",
     "scope.activity_who_sub": "Cada entrada de Actividad nombra a la persona que la hizo, con su foto; un filtro por persona",
+    "dashboard.lights_variant": "Luces de la estancia",
+    "dashboard.rounds": "Botones redondos",
     "cards.sheets_dial": "Detalles con dial"
   },
   "customise": {
@@ -2061,7 +2068,7 @@
     "tile": "Una luz, un interruptor, una persiana, un ventilador, un reproductor, un número o un sensor como mosaico: grande con una regla de precisión o dos lecturas, fila compacta o mini.",
     "tiles": "Un grupo de mosaicos compactos o mini, de dos a cuatro por fila, a 8 px entre sí.",
     "light": "El regulador de precisión: arrastre relativo, aléjate para ir más despacio, mantén pulsado para la escala del 1 %, temperatura de color.",
-    "lights": "Las luces de una estancia en una tarjeta: un toque para toda la estancia, un círculo, chip o mosaico por luz, en su color.",
+    "lights": "Las luces de una estancia en una tarjeta: un toque para toda la estancia, un círculo, chip, mosaico o fila por luz, en su color.",
     "entities": "Filas de entidades: un interruptor para lo que se enciende, el valor para lo que se mide.",
     "cover": "Estores, persianas, puertas de garaje y válvulas: regla de posición vertical, inclinación, abrir · parar · cerrar, favoritos.",
     "fan": "Regla de velocidad por pasos, oscilación, dirección y preajustes.",

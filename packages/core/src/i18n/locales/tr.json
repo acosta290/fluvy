@@ -65,7 +65,9 @@
     "editor_show_brightness": "Oda için tek parlaklık",
     "editor_tint": "Her kutunun rengini göster",
     "no_colour_one": "{names} renk almaz",
-    "no_colour_other": "{names} renk almaz"
+    "no_colour_other": "{names} renk almaz",
+    "count_one": "1 ışık",
+    "count": "{n} ışık"
   },
   "climate": {
     "mode": "Mod",
@@ -689,6 +691,9 @@
     "horizontal": "Yatay",
     "exact_colors": "Tam renkler",
     "exact_colors_helper": "Adlar Home Assistant’ın çizdiği gibi, hex kodu yazıldığı gibi. Dokunulmazsa, Fluvy ayarlarındaki tüm kartlarınki",
+    "badge": "Rozet",
+    "head_end": "Başlığın sonunda",
+    "head_end_helper": "Otomatik: odanın anahtarı; satırlarda kaç tanesinin açık olduğunu söyleyen rozet",
     "sheet_dial": "Ayrıntılarda kadran",
     "sheet_dial_helper": "Dokunulmazsa, Fluvy ayarlarındaki tüm ayrıntılarınki"
   },
@@ -1694,6 +1699,8 @@
     "cards.exact_sub": "Renk adları Home Assistant’ın çizdiği gibi, hex kodu yazıldığı gibi; paletin tonları değil",
     "scope.activity_who": "Kimin yaptığı",
     "scope.activity_who_sub": "Etkinlik’teki her kayıt, arkasındaki kişiyi fotoğrafıyla gösterir; kişiye göre filtre",
+    "dashboard.lights_variant": "Oda ışıkları",
+    "dashboard.rounds": "Yuvarlak düğmeler",
     "cards.sheets_dial": "Kadranlı ayrıntılar"
   },
   "customise": {
@@ -2061,7 +2068,7 @@
     "tile": "Bir ışık, anahtar, panjur, fan, oynatıcı, sayı veya sensör kutu olarak: hassas cetvelli ya da iki okumalı büyük, kompakt satır veya mini.",
     "tiles": "Satır başına iki ila dört, aralarında 8 px olan kompakt veya mini kutulardan bir grup.",
     "light": "Hassas dimmer: göreli sürükleme, yavaşlatmak için parmağınızı uzaklaştırın, %1 ölçeği için basılı tutun, renk sıcaklığı.",
-    "lights": "Bir odanın ışıkları tek kartta: tüm oda için tek dokunuş, her ışık için kendi renginde bir yuvarlak, çip veya kutu.",
+    "lights": "Bir odanın ışıkları tek kartta: tüm oda için tek dokunuş, her ışık için kendi renginde bir yuvarlak, çip, kutu veya satır.",
     "entities": "Varlık satırları: açılıp kapanan için bir anahtar, ölçülen için değeri.",
     "cover": "Storlar, panjurlar, garaj kapıları ve vanalar: dikey konum cetveli, eğim, aç · durdur · kapat, favoriler.",
     "fan": "Kademeli hız cetveli, salınım, yön ve ön ayarlar.",

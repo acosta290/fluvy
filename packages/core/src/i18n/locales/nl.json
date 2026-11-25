@@ -65,7 +65,9 @@
     "editor_show_brightness": "Eén helderheid voor de ruimte",
     "editor_tint": "Kleur van elke tegel tonen",
     "no_colour_one": "{names} neemt geen kleur aan",
-    "no_colour_other": "{names} nemen geen kleur aan"
+    "no_colour_other": "{names} nemen geen kleur aan",
+    "count_one": "1 lamp",
+    "count": "{n} lampen"
   },
   "climate": {
     "mode": "Modus",
@@ -689,6 +691,9 @@
     "horizontal": "Horizontaal",
     "exact_colors": "Exacte kleuren",
     "exact_colors_helper": "Namen zoals Home Assistant ze tekent, een hexcode zoals getypt. Onaangeroerd: die van alle kaarten, uit de instellingen van Fluvy",
+    "badge": "Badge",
+    "head_end": "De kop eindigt met",
+    "head_end_helper": "Automatisch: de schakelaar van de kamer; bij rijen een badge met hoeveel er aan zijn",
     "sheet_dial": "Draaiknop in de details",
     "sheet_dial_helper": "Onaangeroerd: die van alle details, uit de instellingen van Fluvy"
   },
@@ -1694,6 +1699,8 @@
     "cards.exact_sub": "Kleurnamen zoals Home Assistant ze tekent en een hexcode zoals getypt, niet de tinten van het palet",
     "scope.activity_who": "Wie het deed",
     "scope.activity_who_sub": "Elke regel in Activiteit noemt de persoon erachter, met foto; een filter per persoon",
+    "dashboard.lights_variant": "Kamerverlichting",
+    "dashboard.rounds": "Ronde knoppen",
     "cards.sheets_dial": "Details met draaiknop"
   },
   "customise": {
@@ -2061,7 +2068,7 @@
     "tile": "Een lamp, schakelaar, raambekleding, ventilator, speler, getal of sensor als tegel: groot met een precisieliniaal of twee meetwaarden, als compacte rij of mini.",
     "tiles": "Een groep compacte of mini-tegels, twee tot vier per rij, 8 px uit elkaar.",
     "light": "De precisiedimmer: relatief slepen, wegschuiven om te vertragen, vasthouden voor de schaal van 1 %, kleurtemperatuur.",
-    "lights": "De lampen van een kamer op één kaart: één tik voor de hele kamer, een cirkel, chip of tegel per lamp, in zijn kleur.",
+    "lights": "De lampen van een kamer op één kaart: één tik voor de hele kamer, een cirkel, chip, tegel of rij per lamp, in zijn kleur.",
     "entities": "Rijen entiteiten: een schakelaar voor wat schakelt, de waarde voor wat meet.",
     "cover": "Jaloezieën, rolluiken, garagedeuren en kleppen: verticale positieliniaal, kanteling, openen · stoppen · sluiten, favorieten.",
     "fan": "Snelheidsliniaal met standen, oscillatie, richting en presets.",

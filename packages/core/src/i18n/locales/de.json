@@ -65,7 +65,9 @@
     "editor_show_brightness": "Gemeinsame Helligkeit für den Raum",
     "editor_tint": "Farbe jeder Kachel anzeigen",
     "no_colour_one": "{names} unterstützt keine Farben",
-    "no_colour_other": "{names} unterstützen keine Farben"
+    "no_colour_other": "{names} unterstützen keine Farben",
+    "count_one": "1 Licht",
+    "count": "{n} Lichter"
   },
   "climate": {
     "mode": "Modus",
@@ -689,6 +691,9 @@
     "horizontal": "Horizontal",
     "exact_colors": "Exakte Farben",
     "exact_colors_helper": "Namen wie in Home Assistant, Hex-Werte wie eingegeben. Unverändert: wie in den Fluvy-Einstellungen für alle Karten",
+    "badge": "Badge",
+    "head_end": "Der Kopfbereich endet mit",
+    "head_end_helper": "Automatisch: der Schalter des Raums; über Zeilen ein Badge mit der Anzahl eingeschalteter",
     "sheet_dial": "Drehregler in der Detailansicht",
     "sheet_dial_helper": "Unverändert: wie in den Fluvy-Einstellungen für alle Ansichten"
   },
@@ -1694,6 +1699,8 @@
     "cards.exact_sub": "Farbnamen wie in Home Assistant und Hex-Werte wie eingegeben, nicht die Töne der Palette",
     "scope.activity_who": "Wer es war",
     "scope.activity_who_sub": "Jeder Eintrag in Aktivität nennt die Person dahinter, mit ihrem Bild; ein Filter nach Person",
+    "dashboard.lights_variant": "Raumbeleuchtung",
+    "dashboard.rounds": "Runde Tasten",
     "cards.sheets_dial": "Ansichten mit Drehregler"
   },
   "customise": {
@@ -2061,7 +2068,7 @@
     "tile": "Eine Leuchte, ein Schalter, eine Abdeckung, ein Lüfter, ein Player, eine Zahl oder ein Sensor als Kachel: groß mit Präzisionsskala oder zwei Messwerten, als kompakte Zeile oder mini.",
     "tiles": "Eine Gruppe kompakter oder Mini-Kacheln, zwei bis vier pro Zeile, 8 px Abstand.",
     "light": "Der Präzisionsdimmer: relatives Ziehen, zum Verlangsamen wegziehen, halten für Schritte von 1 %, Farbtemperatur.",
-    "lights": "Die Leuchten eines Raums auf einer Karte: ein Tippen für den ganzen Raum, ein Kreis, Chip oder eine Kachel je Leuchte, in ihrer Farbe.",
+    "lights": "Die Leuchten eines Raums auf einer Karte: ein Tippen für den ganzen Raum, ein Kreis, Chip, eine Kachel oder eine Zeile je Leuchte, in ihrer Farbe.",
     "entities": "Zeilen mit Entitäten: ein Schalter für das, was schaltet, der Wert für das, was misst.",
     "cover": "Jalousien, Rollläden, Garagentore und Ventile: senkrechte Positionsskala, Neigung, Öffnen · Stopp · Schließen, Favoriten.",
     "fan": "Geschwindigkeitsskala mit Stufen, Oszillation, Richtung und Voreinstellungen.",

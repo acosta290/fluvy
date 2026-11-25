@@ -65,7 +65,9 @@
     "editor_show_brightness": "En ljusstyrka för hela rummet",
     "editor_tint": "Visa varje brickas färg",
     "no_colour_one": "{names} kan inte visa färg",
-    "no_colour_other": "{names} kan inte visa färg"
+    "no_colour_other": "{names} kan inte visa färg",
+    "count_one": "1 lampa",
+    "count": "{n} lampor"
   },
   "climate": {
     "mode": "Läge",
@@ -1507,7 +1509,7 @@
     "tile": "En lampa, brytare, fläkt, spelare, sensor, ett skydd eller nummer som bricka: stor med precisionslinjal eller två mätvärden, kompakt rad eller mini.",
     "tiles": "En grupp kompakta brickor eller minibrickor, två till fyra per rad, 8 px isär.",
     "light": "Precisionsdimmern: relativ dragning, dra bort för att sakta ner, håll in för 1 %-skalan, färgtemperatur.",
-    "lights": "Ett rums lampor på ett kort: ett tryck för hela rummet, en rund knapp, ett chip eller en bricka för varje lampa, i dess färg.",
+    "lights": "Ett rums lampor på ett kort: ett tryck för hela rummet, en rund knapp, ett chip, en bricka eller en rad för varje lampa, i dess färg.",
     "entities": "Rader med entiteter: en brytare för det som slås av och på, värdet för det som mäts.",
     "cover": "Persienner, luckor, garageportar och ventiler: lodrät positionslinjal, lutning, öppna · stoppa · stäng, favoriter.",
     "fan": "Hastighetslinjal med steg, oscillering, riktning och förinställningar.",
@@ -2153,6 +2155,9 @@
     "horizontal": "Horisontell",
     "exact_colors": "Exakta färger",
     "exact_colors_helper": "Namn som Home Assistant ritar dem, en hexkod som den skrivs. Orört: som alla kort, från Fluvys inställningar",
+    "badge": "Märke",
+    "head_end": "Huvudet slutar med",
+    "head_end_helper": "Automatiskt: rummets brytare; över rader ett märke med hur många som är på",
     "sheet_dial": "Ratt i detaljarket",
     "sheet_dial_helper": "Orört: som alla ark, från Fluvys inställningar"
   },
@@ -3205,6 +3210,8 @@
     "cards.exact_sub": "Färgnamn som Home Assistant ritar dem och en hexkod som den skrivs, inte palettens nyanser",
     "scope.activity_who": "Vem som gjorde det",
     "scope.activity_who_sub": "Varje post i Aktivitet visar personen bakom den, med bild; ett filter per person",
+    "dashboard.lights_variant": "Rummets lampor",
+    "dashboard.rounds": "Runda knappar",
     "cards.sheets_dial": "Ark med ratt"
   },
   "remote": {

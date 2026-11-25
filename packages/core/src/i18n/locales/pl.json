@@ -721,7 +721,7 @@
     "tile": "Światło, przełącznik, osłona, wentylator, odtwarzacz, liczba lub czujnik jako kafelek: duży z precyzyjną linijką lub dwoma odczytami, kompaktowy wiersz albo mini.",
     "tiles": "Grupa kompaktowych lub mini kafelków, od dwóch do czterech w wierszu, co 8 px.",
     "light": "Precyzyjny ściemniacz: przeciąganie względne, odsuń palec, by zwolnić, przytrzymaj, by uzyskać skalę co 1 %, temperatura barwowa.",
-    "lights": "Światła pomieszczenia na jednej karcie: jedno dotknięcie dla całego pomieszczenia, kółko, chip lub kafelek dla każdego światła, w jego kolorze.",
+    "lights": "Światła pomieszczenia na jednej karcie: jedno dotknięcie dla całego pomieszczenia, kółko, chip, kafelek lub wiersz dla każdego światła, w jego kolorze.",
     "entities": "Wiersze encji: przełącznik dla tego, co się włącza, wartość dla tego, co się mierzy.",
     "cover": "Żaluzje, rolety, bramy garażowe i zawory: pionowa linijka pozycji, nachylenie, otwórz · zatrzymaj · zamknij, ulubione.",
     "fan": "Linijka prędkości z biegami, oscylacja, kierunek i ustawienia.",
@@ -1390,6 +1390,9 @@
     "horizontal": "Poziomy",
     "exact_colors": "Dokładne kolory",
     "exact_colors_helper": "Nazwy tak, jak rysuje je Home Assistant, kod hex tak, jak wpisano. Nieustawione: wspólne dla wszystkich kart, z ustawień Fluvy",
+    "badge": "Plakietka",
+    "head_end": "Nagłówek kończy się",
+    "head_end_helper": "Automatycznie: przełącznik pomieszczenia; przy wierszach plakietka z liczbą włączonych",
     "sheet_dial": "Tarcza w szczegółach",
     "sheet_dial_helper": "Nieustawione: wspólne dla wszystkich szczegółów, z ustawień Fluvy"
   },
@@ -1967,7 +1970,11 @@
     "no_colour_one": "{names} nie przyjmuje koloru",
     "no_colour_few": "{names} nie przyjmują koloru",
     "no_colour_many": "{names} nie przyjmują koloru",
-    "no_colour_other": "{names} nie przyjmują koloru"
+    "no_colour_other": "{names} nie przyjmują koloru",
+    "count_one": "1 światło",
+    "count_few": "{n} światła",
+    "count_many": "{n} świateł",
+    "count": "{n} świateł"
   },
   "lock": {
     "locked": "Zablokowane",
@@ -2799,6 +2806,8 @@
     "cards.exact_sub": "Nazwy kolorów tak, jak rysuje je Home Assistant, i kod hex tak, jak wpisano, nie odcienie palety",
     "scope.activity_who": "Kto to zrobił",
     "scope.activity_who_sub": "Każdy wpis w Aktywności wskazuje osobę, która za nim stoi, z jej zdjęciem; filtr według osoby",
+    "dashboard.lights_variant": "Światła pomieszczenia",
+    "dashboard.rounds": "Okrągłe przyciski",
     "cards.sheets_dial": "Szczegóły z tarczą"
   },
   "customise": {

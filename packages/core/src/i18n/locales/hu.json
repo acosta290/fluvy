@@ -65,7 +65,9 @@
     "editor_show_brightness": "Egy fényerő az egész szobának",
     "editor_tint": "Minden csempe színének megjelenítése",
     "no_colour_one": "{names} nem vesz fel színt",
-    "no_colour_other": "{names} nem vesznek fel színt"
+    "no_colour_other": "{names} nem vesznek fel színt",
+    "count_one": "1 lámpa",
+    "count": "{n} lámpa"
   },
   "climate": {
     "mode": "Üzemmód",
@@ -639,6 +641,9 @@
     "horizontal": "Vízszintes",
     "exact_colors": "Pontos színek",
     "exact_colors_helper": "A nevek úgy, ahogy a Home Assistant rajzolja őket, a hex kód úgy, ahogy beírták. Érintetlenül: az összes kártyáé, a Fluvy beállításaiból",
+    "badge": "Jelvény",
+    "head_end": "A fejléc végén",
+    "head_end_helper": "Automatikus: a szoba kapcsolója; soroknál jelvény a bekapcsoltak számával",
     "sheet_dial": "Tárcsa a részleteknél",
     "sheet_dial_helper": "Érintetlenül: az összes részleté, a Fluvy beállításaiból"
   },
@@ -1873,7 +1878,7 @@
     "tile": "Lámpa, kapcsoló, árnyékoló, ventilátor, lejátszó, szám vagy érzékelő csempeként: nagy, precíziós vonalzóval vagy két kijelzővel, kompakt sorként vagy mini.",
     "tiles": "Kompakt vagy mini csempék csoportja, soronként kettőtől négyig, 8 px távolságra.",
     "light": "A precíziós fényerőszabályzó: relatív húzás, lassításhoz húzd el oldalra, nyomva tartva 1 %-os skála, színhőmérséklet.",
-    "lights": "Egy szoba lámpái egy kártyán: egy koppintás az egész szobáért, kör, címke vagy csempe minden lámpának, a saját színében.",
+    "lights": "Egy szoba lámpái egy kártyán: egy koppintás az egész szobáért, kör, címke, csempe vagy sor minden lámpának, a saját színében.",
     "entities": "Entitások sorai: kapcsoló ahhoz, ami kapcsol, érték ahhoz, ami mér.",
     "cover": "Redőnyök, rolók, garázskapuk és szelepek: függőleges pozícióvonalzó, döntés, nyitás · leállítás · zárás, kedvencek.",
     "fan": "Sebességvonalzó fokozatokkal, oszcillálás, irány és előbeállítások.",
@@ -3143,6 +3148,8 @@
     "cards.exact_sub": "A színnevek úgy, ahogy a Home Assistant rajzolja őket, a hex kód úgy, ahogy beírták, nem a paletta árnyalatai",
     "scope.activity_who": "Ki csinálta",
     "scope.activity_who_sub": "A Tevékenység minden bejegyzése megnevezi a mögötte álló személyt, a képével; szűrés személy szerint",
+    "dashboard.lights_variant": "Szoba fényei",
+    "dashboard.rounds": "Kerek gombok",
     "cards.sheets_dial": "Részletek tárcsával"
   },
   "customise": {

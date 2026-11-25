@@ -48,6 +48,11 @@ export type TemplateOption =
       readonly values: readonly OptionValue[];
       /** Where it can act, by the dashboard's other options (a photo's own while the rooms may be photos): offered there alone. */
       readonly when?: (strategy: Readonly<Record<string, unknown>>) => boolean;
+      /**
+       * The panel's alone: never one of the few Home Assistant's pencil form offers (the first of the template's that
+       * can act), so an option that comes later moves none of them out of that form.
+       */
+      readonly panelOnly?: boolean;
     };
 
 /** A room a dashboard opens as a subview, and where its way back leads. */
@@ -82,7 +87,21 @@ const choice = (
   label: KeyOf<'panel'>,
   values: readonly OptionValue[],
   when?: (strategy: Readonly<Record<string, unknown>>) => boolean,
-): TemplateOption => ({ key, kind: 'choice', label, values, ...(when ? { when } : {}) });
+  panelOnly = false,
+): TemplateOption => ({
+  key,
+  kind: 'choice',
+  label,
+  values,
+  ...(when ? { when } : {}),
+  ...(panelOnly ? { panelOnly } : {}),
+});
+/** A choice of the panel's alone (`panelOnly`): 1.26's, which leave the pencil's form as it was. */
+const panelChoice = (
+  key: Parameters<typeof choice>[0],
+  label: KeyOf<'panel'>,
+  values: readonly OptionValue[],
+): TemplateOption => choice(key, label, values, undefined, true);
 const words = (values: readonly string[], prefix = 'dashboard'): OptionValue[] =>
   values.map((value) => ({ value, label: `${prefix}.${value}` as KeyOf<'panel'> }));
 const counts = (values: readonly number[], label: KeyOf<'panel'>): OptionValue[] =>
@@ -116,6 +135,16 @@ const SWITCHES = choice('tile_switch', 'dashboard.tile_switch', [
   { value: 'hide', label: 'dashboard.switch_hide' },
   { value: 'value', label: 'dashboard.switch_value' },
   { value: 'rocker', label: 'dashboard.switch_rocker' },
+]);
+/**
+ * The Room lights cards (#261): their rounds beside the room's name, as they always were, or chips, tiles, or a list's
+ * rows.
+ */
+const LIGHTS = panelChoice('lights_variant', 'dashboard.lights_variant', [
+  { value: 'row', label: 'dashboard.rounds' },
+  { value: 'chips', label: 'dashboard.scene_chips' },
+  { value: 'tiles', label: 'dashboard.scene_tiles' },
+  { value: 'rows', label: 'dashboard.rows' },
 ]);
 /** Which room a light or a scene belongs to (#189): each list as it stands, or by room under quiet labels. */
 const GROUPS = choice('group_by', 'dashboard.group_by', [
@@ -218,6 +247,7 @@ export const TEMPLATES: readonly Template[] = [
       THERMOSTAT_STATE,
       TILES,
       SWITCHES,
+      LIGHTS,
       GROUPS,
       SCENES,
       FLOW,
@@ -251,6 +281,7 @@ export const TEMPLATES: readonly Template[] = [
       THERMOSTAT_STATE,
       TILES,
       SWITCHES,
+      LIGHTS,
       SCENES,
       NAMES,
       NAME_LINES,
@@ -334,7 +365,18 @@ export const TEMPLATES: readonly Template[] = [
       { key: 'lights', icon: 'fluvy:bulb', title: 'strategy.all_lights', build: lightsView },
       ['scenes', 'lights'],
     ),
-    options: [TILES, SWITCHES, SCENES, GREETING_TABS, NAMES, NAME_LINES, BACKGROUND, CAPS, EXCLUDE],
+    options: [
+      TILES,
+      SWITCHES,
+      LIGHTS,
+      SCENES,
+      GREETING_TABS,
+      NAMES,
+      NAME_LINES,
+      BACKGROUND,
+      CAPS,
+      EXCLUDE,
+    ],
   },
   {
     id: 'climate',

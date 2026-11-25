@@ -3259,6 +3259,26 @@ they are lamps ("Workbench lamp", 工作室 电灯) are among its lights, by the
 (`shared/lamps.ts`, in the naming words' chunk, fetched by the first card that asks), drawn as lights that only switch
 and switched as switches; a kettle on its plug never; a list of the card's own wins. Off by default.
 
+### In rows, and what ends the head (1.26, #261)
+
+- **Rows** (`variant: rows`): the head as the chips and the tiles have it, then a list's row a light, drawn as the
+  Entities card draws one and on its grid (60 tall, the 44 circle, the words 12 after it, a hairline between two from
+  the words' edge): the light's glyph in a circle that wears its lamp's colour while it is on (the rule every light
+  follows), the neutral circle off, the dashed ring out of reach; its name over its state and level ("On · 70 %";
+  "On" for one that only switches, or with `show_level: false`). Nothing ends the row: a tap anywhere on it is its
+  light's switch, drawn at once, and a hold its details; out of reach it takes no tap, as a round does not. In a column
+  where a name would end before it had begun beside its circle, every circle gives its room to the names together
+  (the lists' rule), and a level goes before its state is cut. 92 and 60 a light tall, 80 more with the room's ruler,
+  which stands between the head and the rows; a light out of reach keeps its row.
+- **What ends the head** (`control`, for chips, tiles and rows; the rounds stand there themselves): `switch`, the
+  room's switch; `badge`, how many are on in the light's tone ("2 on"; "On" where the card counts none), "Off"
+  neutral; `none`; `auto` (the default) the switch over chips and tiles, as ever, and the badge over rows. Beside a
+  badge the line does not count again: it says the room's lights and their level ("3 lights · 63 %"), and never
+  leaves the head (a head whose line came and went would move its name as the lights turn). A badge gives way first
+  in a narrow column, and the line then counts as it does without one ("2 of 3 on"). Out of reach there is no badge:
+  the line says so. The head is the whole room by its tap whatever ends it; the colour round stands before the
+  switch or the badge, and steps to its row under the body where the name would lose its floor.
+
 ## Rounds (1.23, #224)
 
 Any entities as the room lights' rounds (§ Room lights), one engine for every card that draws them

@@ -456,6 +456,7 @@ describe('the Lights and the Climate dashboards (#202)', () => {
     expect(keys('lights')).toEqual([
       'tile_size',
       'tile_switch',
+      'lights_variant',
       'scenes_style',
       'greeting_tabs',
       'names',

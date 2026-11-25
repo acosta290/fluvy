@@ -117,9 +117,10 @@ strategy:
 - A room's tab is at its page's path (`room-<area id>`) and its parts keep the page's ids (`room-kitchen/lights`), so
   Customise names them as it names them on the Rooms dashboard. A room hidden in Customise is gone from the
   dashboard: no card leads to it there.
-- **Options**: Lights takes `tile_size`, `tile_switch` and `scenes_style`; Climate `thermostat_variant` and
-  `thermostat_state`; both take `greeting_tabs`, `background`, `caps` and `exclude` ([Options](#options)). Home
-  Assistant's pencil offers the first of them on its *Edit dashboard*, as on every automatic dashboard.
+- **Options**: Lights takes `tile_size`, `tile_switch`, `lights_variant` and `scenes_style`; Climate
+  `thermostat_variant` and `thermostat_state`; both take `greeting_tabs`, `background`, `caps` and `exclude`
+  ([Options](#options)). Home Assistant's pencil offers the first of them on its *Edit dashboard*, as on every
+  automatic dashboard; 1.26's are the panel's.
 
 ## Capped lists
 
@@ -242,6 +243,7 @@ goes past an option, one card hidden, moved or tuned, is [Customise](#customise)
 | `thermostat_state` | `brief` (default), `detailed` | home, rooms, wall, climate | what the thermostats say of what they are doing: as each card does by itself, or (`detailed`) with how far its valve is open, an open window and a low battery, each found where there is one (the thermostat card's `show_valve`, `show_window` and `show_battery`), a room's climate row saying what its thermostat is doing and what it is set to (the room card's `show_action`). Nothing is written until it is chosen; see [Thermostat](cards/thermostat.md#guide) |
 | `tile_size` | `large` (default), `compact` | home, rooms, lights | the tiles' size on the Lights view, the Home view and a room's page |
 | `tile_switch` | `show` (default), `hide`, `value`, `rocker` | home, rooms, lights | the large tiles' switches, the lights' and the appliances': beside their icon circles, hidden (a tap on a tile's circle switches it, a tap on the tile opens its details), the level's figure in their place (the tile card's `show_switch`), or wall rockers (the tile card's `switch_style: rocker`: each tile then switches and nothing more, with no ruler, and a compact tile's rocker stands at its row's end) |
+| `lights_variant` | `row` (default), `chips`, `tiles`, `rows` | home, rooms, lights | the Room lights cards' style (1.26), the card a room of two lights or more opens with on the Lights view and behind a room's "N more": rounds beside the room's name, as ever, or a chip, a tile or a list's row a light (the card's `variant`, [Room lights](cards/lights.md)). Nothing is written until it is chosen |
 | `group_by` | `none` (default), `room` | home | which room a light or a scene belongs to (1.21): Home's lights under their rooms' quiet labels, and the scenes of Home and of the Lights view under theirs, the names short under each ([by room](#by-room)) |
 | `scenes_style` | `tiles` (default), `chips` | home, rooms, lights | the scenes as pills that fill their rows on one card, the last run one filled, by room on Home and on the Lights view; twelve before their "N more" row |
 | `flow_style` | `stream` (default; `ribbons` reads as it), `legs`, `rail` | home, energy | the energy flow's drawing |

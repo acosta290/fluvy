@@ -9,6 +9,7 @@ import type {
 import type { FlowStyle } from '../energy-flow/energy-flow-card.js';
 import type { ThermostatVariant } from '../thermostat/thermostat-card.js';
 import type { HomeRegistry } from './home-registry.js';
+import type { LightsVariant } from '../lights/lights-card.js';
 import { type RoomCardConfig, type RoomVariant } from '../room/room-card.js';
 
 /*
@@ -151,6 +152,11 @@ export interface FluvyStrategyConfig {
    * header's tabs wear the look: 1.5).
    */
   greeting_tabs?: 'show' | 'hide';
+  /**
+   * The Room lights cards' style (1.26, #261): rounds beside the room's name (`row`, the card's own), `chips`, `tiles`
+   * or a list's `rows`. Unsaid, the card as it always was.
+   */
+  lights_variant?: LightsVariant;
   /**
    * How many of a long list a view shows (default: the house's caps, each with its "N more" row; a number: every list
    * up to it).
@@ -328,6 +334,8 @@ export interface CardStyle {
   readonly twoLines?: boolean;
   readonly refresh?: CameraRefresh;
   readonly scenes?: ScenesMax;
+  /** The Room lights cards' style (`lights_variant`, #261); none: the card's own. */
+  readonly lights?: LightsVariant;
 }
 
 export interface StrategyContext {

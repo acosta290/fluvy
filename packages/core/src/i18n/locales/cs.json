@@ -668,7 +668,7 @@
     "tile": "Světlo, vypínač, kryt, ventilátor, přehrávač, číslo nebo senzor jako dlaždice: velká s přesným pravítkem nebo dvěma hodnotami, kompaktní řádek nebo mini.",
     "tiles": "Skupina kompaktních nebo mini dlaždic, dvě až čtyři v řádku, 8 px od sebe.",
     "light": "Přesný stmívač: relativní tažení, oddálením prstu zpomalit, podržením stupnice po 1 %, teplota barvy.",
-    "lights": "Světla místnosti na jedné kartě: jedno klepnutí pro celou místnost, kroužek, štítek nebo dlaždice pro každé světlo, v jeho barvě.",
+    "lights": "Světla místnosti na jedné kartě: jedno klepnutí pro celou místnost, kroužek, štítek, dlaždice nebo řádek pro každé světlo, v jeho barvě.",
     "entities": "Řádky entit: vypínač pro to, co se zapíná, hodnota pro to, co se měří.",
     "cover": "Žaluzie, rolety, garážová vrata a ventily: svislé pravítko polohy, naklopení, otevřít · zastavit · zavřít, oblíbené.",
     "fan": "Pravítko rychlosti se stupni, oscilace, směr a předvolby.",
@@ -867,7 +867,10 @@
     "editor_tint": "Obarvit dlaždice podle světla",
     "no_colour_one": "{names} nepřijímá barvu",
     "no_colour_few": "{names} nepřijímají barvu",
-    "no_colour_other": "{names} nepřijímají barvu"
+    "no_colour_other": "{names} nepřijímají barvu",
+    "count_one": "1 světlo",
+    "count_few": "{n} světla",
+    "count": "{n} světel"
   },
   "climate": {
     "mode": "Režim",
@@ -1451,6 +1454,9 @@
     "horizontal": "Vodorovná",
     "exact_colors": "Přesné barvy",
     "exact_colors_helper": "Názvy tak, jak je kreslí Home Assistant, hex kód tak, jak je zadán. Beze změny: podle nastavení Fluvy pro všechny karty",
+    "badge": "Odznak",
+    "head_end": "Záhlaví končí",
+    "head_end_helper": "Automaticky: přepínač místnosti; u řádků odznak s počtem zapnutých",
     "sheet_dial": "Číselník v panelu podrobností",
     "sheet_dial_helper": "Beze změny: podle nastavení Fluvy pro všechny panely"
   },
@@ -3126,6 +3132,8 @@
     "cards.exact_sub": "Názvy barev tak, jak je kreslí Home Assistant, a hex kód tak, jak je zadán, ne odstíny palety",
     "scope.activity_who": "Kdo to udělal",
     "scope.activity_who_sub": "Každý záznam v Aktivitě uvádí osobu, která za ním stojí, s její fotkou; filtr podle osoby",
+    "dashboard.lights_variant": "Světla místnosti",
+    "dashboard.rounds": "Kulatá tlačítka",
     "cards.sheets_dial": "Panely s číselníkem"
   },
   "customise": {

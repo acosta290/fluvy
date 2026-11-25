@@ -281,6 +281,9 @@
     "horizontal": "Horizontal",
     "exact_colors": "Exact colours",
     "exact_colors_helper": "Names as Home Assistant draws them, a hex as typed. Untouched: every card’s, from Fluvy’s settings",
+    "badge": "Badge",
+    "head_end": "The head ends in",
+    "head_end_helper": "Automatic: the room’s switch; over rows, a badge that says how many are on",
     "sheet_dial": "Dial in the details sheet",
     "sheet_dial_helper": "Untouched: every sheet’s, from Fluvy’s settings"
   }

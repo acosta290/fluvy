@@ -668,7 +668,7 @@
     "tile": "Svetlo, vypínač, tienenie, ventilátor, prehrávač, číslo alebo snímač ako dlaždica: veľká s presnou stupnicou alebo dvoma hodnotami, kompaktný riadok alebo mini.",
     "tiles": "Skupina kompaktných alebo mini dlaždíc, dve až štyri v riadku, 8 px od seba.",
     "light": "Presný stmievač: relatívne ťahanie, odtiahnutím spomaliť, podržaním stupnica po 1 %, teplota farby.",
-    "lights": "Svetlá miestnosti na jednej karte: jedno ťuknutie pre celú miestnosť, krúžok, štítok alebo dlaždica pre každé svetlo, v jeho farbe.",
+    "lights": "Svetlá miestnosti na jednej karte: jedno ťuknutie pre celú miestnosť, krúžok, štítok, dlaždica alebo riadok pre každé svetlo, v jeho farbe.",
     "entities": "Riadky entít: vypínač pre to, čo sa zapína, hodnota pre to, čo sa meria.",
     "cover": "Žalúzie, rolety, garážové brány a ventily: zvislá stupnica polohy, naklonenie, otvoriť · zastaviť · zatvoriť, obľúbené.",
     "fan": "Stupnica rýchlosti so stupňami, oscilácia, smer a predvoľby.",
@@ -867,7 +867,10 @@
     "editor_tint": "Zobraziť farbu každej dlaždice",
     "no_colour_one": "{names} neprijíma farbu",
     "no_colour_few": "{names} neprijímajú farbu",
-    "no_colour_other": "{names} neprijímajú farbu"
+    "no_colour_other": "{names} neprijímajú farbu",
+    "count_one": "1 svetlo",
+    "count_few": "{n} svetlá",
+    "count": "{n} svetiel"
   },
   "climate": {
     "mode": "Režim",
@@ -1451,6 +1454,9 @@
     "horizontal": "Vodorovné",
     "exact_colors": "Presné farby",
     "exact_colors_helper": "Názvy tak, ako ich kreslí Home Assistant, hex kód tak, ako je zadaný. Bez zmeny: ako pri všetkých kartách v nastaveniach Fluvy",
+    "badge": "Odznak",
+    "head_end": "Hlavička končí",
+    "head_end_helper": "Automaticky: prepínač miestnosti; pri riadkoch odznak s počtom zapnutých",
     "sheet_dial": "Ciferník v podrobnostiach",
     "sheet_dial_helper": "Bez zmeny: ako pri všetkých podrobnostiach v nastaveniach Fluvy"
   },
@@ -3126,6 +3132,8 @@
     "cards.exact_sub": "Názvy farieb tak, ako ich kreslí Home Assistant, a hex kód tak, ako je zadaný, nie odtiene palety",
     "scope.activity_who": "Kto to urobil",
     "scope.activity_who_sub": "Každý záznam v Aktivite uvádza osobu, ktorá zaň stojí, s jej fotkou; filter podľa osoby",
+    "dashboard.lights_variant": "Svetlá miestnosti",
+    "dashboard.rounds": "Okrúhle tlačidlá",
     "cards.sheets_dial": "Podrobnosti s ciferníkom"
   },
   "customise": {

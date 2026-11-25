@@ -2353,7 +2353,7 @@
     {
       "type": "custom:fluvy-lights-card",
       "name": "Room lights",
-      "description": "A room’s lights on one card: one tap for the whole room, a round, chip or tile for each light, in its colour.",
+      "description": "A room’s lights on one card: one tap for the whole room, a round, chip, tile or row for each light, in its colour.",
       "section": "Everyday",
       "page": "cards/lights.md",
       "demo": "https://acosta290.github.io/fluvy/?card=lights",
@@ -2377,7 +2377,8 @@
         "values": [
           "row",
           "chips",
-          "tiles"
+          "tiles",
+          "rows"
         ],
         "default": "row"
       },
@@ -2401,6 +2402,16 @@
             "light.lt_reading"
           ],
           "variant": "tiles"
+        },
+        "rows": {
+          "type": "custom:fluvy-lights-card",
+          "name": "Living room",
+          "lights": [
+            "light.lt_ceiling",
+            "light.lt_floor",
+            "light.lt_reading"
+          ],
+          "variant": "rows"
         }
       },
       "layout_pictures": {
@@ -2415,6 +2426,12 @@
           "dark": "images/cards/lights.tiles-dark.webp",
           "width": 784,
           "height": 616
+        },
+        "rows": {
+          "light": "images/cards/lights.rows-light.webp",
+          "dark": "images/cards/lights.rows-dark.webp",
+          "width": 784,
+          "height": 608
         }
       },
       "keys": [
@@ -2477,9 +2494,10 @@
           "type": "choice",
           "default": "row",
           "values": {
-            "row": "Row",
+            "row": "Rounds",
             "chips": "Chips",
-            "tiles": "Tiles"
+            "tiles": "Tiles",
+            "rows": "Rows"
           }
         },
         {
@@ -2488,6 +2506,20 @@
           "does": "Shows one brightness ruler for the whole room.",
           "type": "boolean",
           "default": false
+        },
+        {
+          "key": "control",
+          "label": "The head ends in",
+          "does": "What ends the head over chips, tiles and rows: the room’s switch, a badge that says how many are on, or nothing. Left out, the switch, and the badge over rows.",
+          "helper": "Automatic: the room’s switch; over rows, a badge that says how many are on",
+          "type": "choice",
+          "default": "auto",
+          "values": {
+            "auto": "Automatic",
+            "switch": "Switch",
+            "badge": "Badge",
+            "none": "None"
+          }
         },
         {
           "key": "show_count",

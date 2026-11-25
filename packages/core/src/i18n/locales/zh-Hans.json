@@ -650,7 +650,7 @@
     "tile": "灯、开关、窗帘、风扇、播放器、数值或传感器做成磁贴：大号带精确标尺或两个读数、紧凑行，或迷你。",
     "tiles": "一组紧凑或迷你磁贴，每行两到四个，间距 8 px。",
     "light": "精确调光：相对拖动、滑远减速、长按进入 1% 档，支持色温。",
-    "lights": "一个房间的灯放一张卡：整间一键，每盏用圆形、标签或磁贴，并取灯自身的颜色。",
+    "lights": "一个房间的灯放一张卡：整间一键，每盏用圆形、标签、磁贴或一行，并取灯自身的颜色。",
     "entities": "实体行：能开关的给开关，可测量的给数值。",
     "cover": "百叶、卷帘、车库门与阀门：垂直位置标尺、倾斜、开 · 停 · 关、收藏。",
     "fan": "带档位的风速标尺、摇头、方向与预设。",
@@ -846,7 +846,9 @@
     "editor_show_brightness": "整个房间统一亮度",
     "editor_tint": "显示每个磁贴的颜色",
     "no_colour_one": "{names}不接受颜色",
-    "no_colour_other": "{names}不接受颜色"
+    "no_colour_other": "{names}不接受颜色",
+    "count_one": "1 盏灯",
+    "count": "{n} 盏灯"
   },
   "climate": {
     "mode": "模式",
@@ -2049,6 +2051,9 @@
     "horizontal": "横向",
     "exact_colors": "精确颜色",
     "exact_colors_helper": "名称按 Home Assistant 的颜色，十六进制色值按输入。未设置：沿用 Fluvy 设置中所有卡片的值",
+    "badge": "徽章",
+    "head_end": "头部末尾显示",
+    "head_end_helper": "自动：房间的开关；多行样式下为显示开启数量的徽章",
     "sheet_dial": "详情面板中的表盘",
     "sheet_dial_helper": "未设置：沿用 Fluvy 设置中所有详情面板的设置"
   },
@@ -3068,6 +3073,8 @@
     "cards.exact_sub": "颜色名称按 Home Assistant 的颜色显示，十六进制色值按输入显示，而非配色的色调",
     "scope.activity_who": "谁操作的",
     "scope.activity_who_sub": "活动中的每条记录都显示操作人及其照片；可按人员筛选",
+    "dashboard.lights_variant": "房间灯光",
+    "dashboard.rounds": "圆形按钮",
     "cards.sheets_dial": "带表盘的详情面板"
   },
   "customise": {

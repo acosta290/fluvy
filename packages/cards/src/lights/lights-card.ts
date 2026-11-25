@@ -13,6 +13,7 @@ import {
   sliderWordsOf,
   strings,
   textName,
+  wornFrom,
   type EntityName,
   type EntityView,
   type FluvyCardConfig,
@@ -43,7 +44,7 @@ import {
   type PropertyValues,
   type TemplateResult,
 } from 'lit';
-import { HeadFit, SWITCH_SLOT } from '../energy/head.js';
+import { HeadFit, SWITCH_SLOT, type FittedHead } from '../energy/head.js';
 import type { CardEditor, Press } from '../shared/base.js';
 import { toneOf } from '../shared/colour.js';
 import { ITEM_ALIASES, type AliasSpec } from '../shared/config.js';
@@ -55,6 +56,7 @@ import {
   entryCount,
   HEAD,
   NAME_LINE,
+  ROW,
   rowsOf,
   twoLines,
   type NameOf,
@@ -78,8 +80,14 @@ import type { FluvyLightsColourSheet, LightsColourHost } from './sheet/lights-co
 
 const s = strings('lights');
 
-export type LightsVariant = 'row' | 'chips' | 'tiles';
-export const LIGHTS_VARIANTS: readonly LightsVariant[] = ['row', 'chips', 'tiles'];
+export type LightsVariant = 'row' | 'chips' | 'tiles' | 'rows';
+export const LIGHTS_VARIANTS: readonly LightsVariant[] = ['row', 'chips', 'tiles', 'rows'];
+
+/**
+ * What ends the head of the chips, the tiles and the rows (#261, the Slider card's word): the room's `switch`, a
+ * `badge` that says how many are on, or `none`; `auto` (the default) the switch, and the badge over the rows.
+ */
+export type LightsControl = 'auto' | 'switch' | 'badge' | 'none';
 
 /** One light of the room: its own name, icon and colour beside the entity's. */
 export interface LightItem {
@@ -100,8 +108,11 @@ export interface LightsCardConfig extends FluvyCardConfig, EmptyList, LampSwitch
   /**
    * `row` (default): the room on one line, each light a round beside its name — the card's tap is the whole room.
    * `chips`: the room's switch in the head, each light a chip with its name. `tiles`: each light a compact tile.
+   * `rows` (#261): each light a list's row, its name over its state, a badge of how many are on in the head.
    */
   variant?: LightsVariant;
+  /** What ends the head (chips, tiles and rows): the room's switch, a badge, nothing (`LightsControl`). */
+  control?: LightsControl;
   /** "2 of 3 on" in the second line (default). */
   show_count?: boolean;
   /** The lights' level: the average in the second line, each round's ring (default). */
@@ -189,6 +200,8 @@ export function lightsHeight(config: LightsCardConfig, house?: RoomLights): numb
   if (area && !area.length) return HEAD + (config.empty_text || !house?.admin ? EMPTY : EMPTY_HINT);
   const n = listed || area?.length || 3;
   const ruler = config.show_brightness ? RULER : 0;
+  // a list's rows, 8 under the head or the ruler (20 + 44 + 8 + … + 20)
+  if (config.variant === 'rows') return 92 + ruler + n * ROW;
   if (config.variant === 'tiles') {
     const inner = INNER + (twoLines(config) ? NAME_LINE.compact : 0);
     return 20 + 44 + ruler + 16 + rowsOf(n, 2) * (inner + 8) - 8 + 20;
@@ -211,7 +224,7 @@ export function lightsHeight(config: LightsCardConfig, house?: RoomLights): numb
 }
 
 /** One light as the card reads it. */
-interface Lamp {
+export interface Lamp {
   readonly item: LightItem;
   readonly view: EntityView;
   readonly name: string;
@@ -228,10 +241,30 @@ interface Lamp {
   readonly colours: boolean;
 }
 
+/** The average level of the lamps that are on and dim, or `null`. */
+export function levelOf(lamps: readonly Lamp[]): number | null {
+  const levels = lamps.map((lamp) => lamp.level).filter((v): v is number => v !== null);
+  return levels.length ? Math.round(levels.reduce((sum, v) => sum + v, 0) / levels.length) : null;
+}
+
+/**
+ * What 1.26 gave the card (`rows.ts`, a chunk of its own, #261: its lights as a list's rows, what ends its head as it
+ * says), once the first card that asks for either has fetched it; one that cannot be fetched leaves that card its
+ * chips and its switch.
+ */
+let more: typeof import('./rows.js') | undefined;
+const moreChunk = wornFrom(
+  () => import('./rows.js'),
+  (module) => {
+    more = module;
+  },
+);
+
 /**
  * A room's lights on one card: the whole room is one tap (on when every light is off, off when any is on), and each
- * light is its own control — a round on the room's line, a chip with its name, or a compact tile — that a tap turns
- * on and off and a hold opens. A light that is on wears its bulb's own colour, and its round a ring of its level.
+ * light is its own control — a round on the room's line, a chip with its name, a compact tile or a list's row — that
+ * a tap turns on and off and a hold opens. A light that is on wears its bulb's own colour, and its round a ring of
+ * its level.
  */
 export class FluvyLightsCard extends FluvyTileCard {
   /** The card's height at a 360 column from its config alone: a room of three lights (`lightsHeight`). */
@@ -331,6 +364,16 @@ export class FluvyLightsCard extends FluvyTileCard {
     return { columns: 12, rows: 'auto', min_columns: this.variant === 'row' ? 4 : 6 };
   }
 
+  /** A card in rows, or whose head ends as it says, draws its first frame once what draws them is here (#261). */
+  protected override wearing(): Promise<void> | undefined {
+    return (
+      super.wearing() ??
+      ((this.variant === 'rows' || this.room?.control) && !moreChunk.settled
+        ? moreChunk.fetch()
+        : undefined)
+    );
+  }
+
   /** Each light as drawn: on as the finger left it until Home Assistant agrees, its level, its colour. */
   private lamps(): Lamp[] {
     const colours = this.room?.light_colors !== false;
@@ -412,12 +455,6 @@ export class FluvyLightsCard extends FluvyTileCard {
     this.switchLamps(lit.length ? lit : lamps, value > 0, { brightness_pct: value });
   }
 
-  /** The average level of what is on and dims, or `null`. */
-  private levelOf(lamps: readonly Lamp[]): number | null {
-    const levels = lamps.map((lamp) => lamp.level).filter((v): v is number => v !== null);
-    return levels.length ? Math.round(levels.reduce((sum, v) => sum + v, 0) / levels.length) : null;
-  }
-
   /** The count's shorter forms ("2/3 on", "2/3") for a head too narrow for "2 of 3 on"; none without a count. */
   private short(lamps: readonly Lamp[]): string[] {
     const on = lamps.filter((lamp) => lamp.on).length;
@@ -431,7 +468,7 @@ export class FluvyLightsCard extends FluvyTileCard {
     if (!lamps.some((lamp) => lamp.usable)) return this.t('state.unavailable');
     const on = lamps.filter((lamp) => lamp.on).length;
     if (!on) return this.t('common.off');
-    const level = this.room?.show_level !== false ? this.levelOf(lamps) : null;
+    const level = this.room?.show_level !== false ? levelOf(lamps) : null;
     return [
       this.room?.show_count !== false
         ? this.t('common.on_of', { on, count: lamps.length })
@@ -469,30 +506,44 @@ export class FluvyLightsCard extends FluvyTileCard {
       </article>`;
     const any = lamps.some((lamp) => lamp.on);
     const dead = !lamps.some((lamp) => lamp.usable);
-    const tone: Tone = dead ? 'off' : any ? toneOf(this.config, 'light') : 'neutral';
+    const light = toneOf(this.config, 'light');
+    const tone: Tone = dead ? 'off' : any ? light : 'neutral';
     const sub = this.line(lamps);
     if (this.variant === 'row') return this.renderRow(lamps, name, glyph, tone, sub, w);
 
-    // the colour round before the switch, while the name keeps its floor beside them; else its row under the body
-    const colour = this.showsColour(lamps);
-    const roundInHead = colour && w - ROUND_SLOT - SWITCH_SLOT - 12 >= this.titleFloor(name);
-    // out of reach, the room keeps its switch where it stands, disabled (1.9)
-    const fitted = this.head.fit({
+    // what ends the head as the card says, and its lights as rows (#261: `rows.ts`, here where a card asked for
+    // either): a badge of how many are on, or nothing; else the room's switch, as ever
+    const drawn = more?.drawn({
+      hass: this.hass,
+      config: this.room,
+      lamps,
+      tone: light,
+      head: this.head,
       width: w,
-      title: name,
-      sub,
-      shorter: this.short(lamps),
-      trailing: SWITCH_SLOT + (roundInHead ? ROUND_SLOT : 0),
+      tap: (lamp) => this.flipLamp(lamp),
+      hold: (lamp) => this.openLamp(lamp),
     });
+    const end = drawn ? drawn.end : SWITCH_SLOT;
+    // the colour round before it, while the name keeps its floor beside them; else its row under the body
+    const colour = this.showsColour(lamps);
+    const roundInHead = colour && w - ROUND_SLOT - (end && end + 12) >= this.titleFloor(name);
+    // the head fitted in what the round leaves it; out of reach, the room keeps its switch where it stands, disabled (1.9)
+    const fit = (badge = drawn?.badge): FittedHead =>
+      this.head.fit({
+        width: w - (roundInHead ? ROUND_SLOT : 0),
+        title: name,
+        ...(badge
+          ? { sub: drawn?.sub, badge }
+          : { sub, shorter: this.short(lamps), trailing: end }),
+      });
+    const beside = fit();
+    // a badge that gave way (half a column) leaves its count to the line, as a head without one says it
+    const fitted = drawn?.badge && beside.badge === nothing ? fit(null) : beside;
     // where asked, a room some of whose lights are on says so: its switch neither on nor off
     const some = this.room?.show_mixed === true && lamps.some((lamp) => lamp.usable && !lamp.on);
-    const roomSwitch = toggle(
-      any && some ? 'mixed' : any,
-      toneOf(this.config, 'light'),
-      () => this.flipRoom(lamps),
-      name,
-      dead,
-    );
+    const ends = end
+      ? toggle(any && some ? 'mixed' : any, light, () => this.flipRoom(lamps), name, dead)
+      : fitted.badge;
     return html`<article class="fv-card lt-card ${dead ? 'is-unavailable is-off' : ''}" data-card>
       ${head({
         icon: fitted.icon ? glyph : null,
@@ -501,13 +552,13 @@ export class FluvyLightsCard extends FluvyTileCard {
         title: name,
         name: true,
         sub: fitted.sub,
-        trailing: roundInHead ? html`${this.colourRound(name, dead)}${roomSwitch}` : roomSwitch,
+        trailing: roundInHead ? html`${this.colourRound(name, dead)}${ends}` : ends,
         cut: fitted.cut,
         ...this.roomPress(lamps, dead),
         ...this.iconActions(undefined),
       })}
       ${this.room?.show_brightness ? this.renderRuler(lamps, name, w) : nothing}
-      ${this.variant === 'tiles' ? this.renderTiles(lamps) : this.renderChips(lamps, w)}
+      ${this.variant === 'tiles' ? this.renderTiles(lamps) : (drawn?.rows ?? this.renderChips(lamps, w))}
       ${colour && !roundInHead ? this.renderColourRow(name, w) : nothing} ${this.renderSheet()}
     </article>`;
   }
@@ -854,7 +905,7 @@ export class FluvyLightsCard extends FluvyTileCard {
 
   /** The room's brightness: the average of what is on; a change sets every light that is on (all, when none is). */
   private renderRuler(lamps: readonly Lamp[], name: string, w: number): TemplateResult {
-    const level = this.levelOf(lamps);
+    const level = levelOf(lamps);
     const any = level !== null;
     const dead = !lamps.some((lamp) => lamp.usable);
     const look = sliderStyleOf(this.config);

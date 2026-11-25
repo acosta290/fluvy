@@ -5,6 +5,7 @@ import {
   type HaFormSchemaItem,
   type HomeAssistant,
   type LovelaceConfigForm,
+  type MessageKey,
 } from '@fluvy/core';
 import { ACTIONS_BASE, ICON_ACTIONS_BASE, type BaseKey } from '../shared/base.js';
 import { configKeys } from '../shared/config.js';
@@ -27,7 +28,6 @@ import {
   namesField,
   listed,
   onlyWhen,
-  selectField,
   showIconField,
   sliderFields,
   switchStyleField,
@@ -39,7 +39,7 @@ import { EMPTY_KEYS } from '../shared/lists.js';
 import type { EditorDefaults, RowsListSpec } from '../shared/rows-editor.js';
 import { swatchList } from '../light/light-editor.js';
 import { defaultSwatches } from '../light/swatches.js';
-import { LIGHTS_VARIANTS, type LightItem, type LightsCardConfig } from './lights-card.js';
+import type { LightItem, LightsCardConfig, LightsVariant } from './lights-card.js';
 
 /** The lights card's editor: fetched by its `editor()` the first time the card is edited, never by a dashboard. */
 
@@ -71,6 +71,7 @@ export const keys = configKeys<LightsCardConfig>()([
   'lamp_switches',
   'lights',
   'variant',
+  'control',
   'switch_style',
   'show_count',
   'show_level',
@@ -115,6 +116,24 @@ const roomColours: When = (config, hass) => {
   );
 };
 
+/** The room's head as chips, tiles and rows have it: what ends it is theirs to say (the rounds stand in its place). */
+const headed = ({ variant }: Readonly<Record<string, unknown>>): boolean =>
+  variant === 'chips' || variant === 'tiles' || variant === 'rows';
+
+/** The head ends in the room's switch: asked for, or by itself over chips and tiles. */
+const switched = (form: Readonly<Record<string, unknown>>): boolean =>
+  headed(form) &&
+  (form['control'] === 'switch' ||
+    (form['variant'] !== 'rows' && (form['control'] ?? 'auto') === 'auto'));
+
+/** The styles by their words: the default (`row`) is the rounds, so "Row" never stands beside "Rows". */
+const VARIANTS: ReadonlyArray<readonly [LightsVariant, MessageKey]> = [
+  ['row', 'cards.rounds'],
+  ['chips', 'option.chips'],
+  ['tiles', 'option.tiles'],
+  ['rows', 'option.rows'],
+];
+
 /** The round is asked for. */
 const colourOn = (config: Readonly<Record<string, unknown>>): boolean =>
   config['show_color'] === true;
@@ -140,6 +159,7 @@ export const lists: readonly RowsListSpec[] = [
 export const defaults: EditorDefaults = (config, hass) => ({
   lamp_switches: false,
   variant: 'row',
+  control: 'auto',
   name_lines: '1',
   switch_style: 'toggle',
   show_count: true,
@@ -168,13 +188,20 @@ export function getConfigForm(): LovelaceConfigForm {
       onlyWhen(holdsDevice('lights', 'entities', 'light'), namesField()),
       fieldRow(textField('name'), iconField()),
       showIconField(),
-      fieldRow(selectField('variant', LIGHTS_VARIANTS), boolField('show_brightness')),
+      fieldRow(choiceField('variant', VARIANTS), boolField('show_brightness')),
+      // what ends the head (#261): the rounds stand at its end themselves
+      onlyWhen(headed, {
+        ...choiceField('control', [
+          ['auto', 'option.auto'],
+          ['switch', 'option.switch'],
+          ['badge', 'editor.badge'],
+          ['none', 'option.none'],
+        ]),
+        helper: 'editor.head_end_helper',
+      }),
       fieldRow(boolField('show_count'), boolField('show_level')),
-      // the room's switch says when only some are on: the switch is the head's, which the row has none of
-      onlyWhen(
-        ({ variant }) => variant === 'chips' || variant === 'tiles',
-        boolField('show_mixed'),
-      ),
+      // the room's switch says when only some are on, where the head ends in it
+      onlyWhen(switched, boolField('show_mixed')),
       // the colour round (#137), where a light of the room takes a colour; while it is on, what it opens — the
       // details only where the card is one light (a group counts as one) — and the sheet's control
       onlyWhen(
@@ -217,6 +244,7 @@ export function getConfigForm(): LovelaceConfigForm {
       show_level: 'lights.editor_show_level',
       show_brightness: 'lights.editor_show_brightness',
       show_mixed: 'editor.show_mixed',
+      control: 'editor.head_end',
       lamp_switches: 'editor.lamp_switches',
       show_color: 'editor.color_round',
       color_action: 'editor.color_action',

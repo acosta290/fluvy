@@ -65,7 +65,9 @@
     "editor_show_brightness": "Um brilho para o cômodo",
     "editor_tint": "Mostrar a cor de cada bloco",
     "no_colour_one": "{names} não aceita cor",
-    "no_colour_other": "{names} não aceitam cor"
+    "no_colour_other": "{names} não aceitam cor",
+    "count_one": "1 luz",
+    "count": "{n} luzes"
   },
   "climate": {
     "mode": "Modo",
@@ -689,6 +691,9 @@
     "horizontal": "Horizontal",
     "exact_colors": "Cores exatas",
     "exact_colors_helper": "Os nomes como o Home Assistant os desenha, um código hex como digitado. Sem mexer, a de todos os cartões nas configurações do Fluvy",
+    "badge": "Selo",
+    "head_end": "O cabeçalho termina com",
+    "head_end_helper": "Automático: o interruptor do cômodo; com linhas, um selo com quantas estão acesas",
     "sheet_dial": "Mostrador nos detalhes",
     "sheet_dial_helper": "Sem mexer, o de todos os detalhes nas configurações do Fluvy"
   },
@@ -1694,6 +1699,8 @@
     "cards.exact_sub": "Os nomes de cor como o Home Assistant os desenha e um código hex como digitado, não os tons da paleta",
     "scope.activity_who": "Quem fez",
     "scope.activity_who_sub": "Cada registro da Atividade mostra a pessoa por trás dele, com a foto dela; um filtro por pessoa",
+    "dashboard.lights_variant": "Luzes do cômodo",
+    "dashboard.rounds": "Botões redondos",
     "cards.sheets_dial": "Detalhes com mostrador"
   },
   "customise": {
@@ -2061,7 +2068,7 @@
     "tile": "Uma luz, interruptor, cortina, ventilador, player, número ou sensor como bloco: grande com uma régua de precisão ou duas leituras, linha compacta ou mini.",
     "tiles": "Um grupo de blocos compactos ou mini, de dois a quatro por linha, a 8 px um do outro.",
     "light": "O dimmer de precisão: arraste relativo, afaste o dedo para desacelerar, segure para a escala de 1 %, temperatura de cor.",
-    "lights": "As luzes de um cômodo em um cartão: um toque para o cômodo inteiro, um círculo, chip ou bloco para cada luz, na sua cor.",
+    "lights": "As luzes de um cômodo em um cartão: um toque para o cômodo inteiro, um círculo, chip, bloco ou linha para cada luz, na sua cor.",
     "entities": "Linhas de entidades: um interruptor para o que liga e desliga, o valor para o que é medido.",
     "cover": "Persianas, venezianas, portões de garagem e válvulas: régua de posição vertical, inclinação, abrir · parar · fechar, favoritos.",
     "fan": "Régua de velocidade com níveis, oscilação, direção e predefinições.",

@@ -138,7 +138,7 @@ export const GALLERY: Readonly<Record<string, Example>> = {
       name: 'Living room',
       lights: ['light.lt_ceiling', 'light.lt_floor', 'light.lt_reading'],
     },
-    variants: { chips: {}, tiles: {} },
+    variants: { chips: {}, tiles: {}, rows: {} },
   },
   'fluvy-thermostat-card': {
     config: { type: 'custom:fluvy-thermostat-card', entity: 'climate.living' },

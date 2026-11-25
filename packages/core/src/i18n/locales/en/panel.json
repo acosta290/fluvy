@@ -503,6 +503,8 @@
     "cards.exact_sub": "Colour names as Home Assistant draws them and a hex as typed, not the palette’s shades",
     "scope.activity_who": "Who did it",
     "scope.activity_who_sub": "Each Activity entry names the person behind it, with their picture; a filter by person",
+    "dashboard.lights_variant": "Room lights",
+    "dashboard.rounds": "Rounds",
     "cards.sheets_dial": "Sheets with a dial"
   }
 }

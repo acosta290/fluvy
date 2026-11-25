@@ -31,14 +31,16 @@ const VIEWS = 'views';
 
 /**
  * The options the form offers for a dashboard as it stands: the views it shows, where its template has views to
- * leave out, then the first choices its template has that can act (a photo's own while the rooms may be photos).
+ * leave out, then the first choices its template has that can act (a photo's own while the rooms may be photos) and
+ * are not the panel's alone.
  */
 function offered(template: Template, config: Config): (Views | Choice)[] {
   const views = optionalViews(template).length
     ? template.options.filter((option): option is Views => option.kind === 'views')
     : [];
   const choices = template.options.filter(
-    (option): option is Choice => option.kind === 'choice' && option.when?.(config) !== false,
+    (option): option is Choice =>
+      option.kind === 'choice' && !option.panelOnly && option.when?.(config) !== false,
   );
   return [...views, ...choices].slice(0, MOST);
 }

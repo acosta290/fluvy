@@ -94,6 +94,11 @@
     "width": 784,
     "height": 616
   },
+  "lights.rows": {
+    "example": "fc10d569a50f",
+    "width": 784,
+    "height": 608
+  },
   "thermostat": {
     "example": "62b36e77c2d8",
     "width": 784,

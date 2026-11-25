@@ -1,7 +1,8 @@
 // @vitest-environment happy-dom
 import type { HomeAssistant, LovelaceCardConfig } from '@fluvy/core';
-import { afterAll, afterEach, describe, expect, it } from 'vitest';
+import { afterAll, afterEach, describe, expect, it, vi } from 'vitest';
 import { familiesDefined } from '../index.js';
+import type { HeadFit } from '../energy/head.js';
 import { FluvyEntitiesCard } from '../entities/entities-card.js';
 import { FluvyLockCard } from '../lock/lock-card.js';
 import { FluvyRoomCard } from '../room/room-card.js';
@@ -403,6 +404,227 @@ describe('the room’s switch, where only some lights are on (1.23, #219)', () =
     expect(roomSwitch(all).getAttribute('aria-checked')).toBe('true');
     const none = await mount({ variant: 'tiles', show_mixed: true, lights: ['light.sconce'] });
     expect(roomSwitch(none).getAttribute('aria-checked')).toBe('false');
+  });
+});
+
+describe('the lights in rows, and what ends the head (1.26, #261)', () => {
+  const badge = (root: ShadowRoot): HTMLElement | null =>
+    root.querySelector<HTMLElement>('.fv-card__head .fv-badge');
+  const words = (el: Element | null | undefined): string => el?.textContent?.trim() ?? '';
+  const line = (root: ShadowRoot): string => words(root.querySelector('.fv-card__sub'));
+  const roomSwitch = (root: ShadowRoot): Element | null =>
+    root.querySelector('.fv-card__head [role="switch"]');
+  const rowsOf = (root: ShadowRoot): HTMLElement[] => [
+    ...root.querySelectorAll<HTMLElement>('.fv-rows > .fv-row'),
+  ];
+  /** Each row as it is drawn: its name, its line, its lamp's colour, its circle's tone, what ends it. */
+  const drawn = (root: ShadowRoot) =>
+    rowsOf(root).map((row) => ({
+      name: words(row.querySelector('.fv-row__title')),
+      line: words(row.querySelector('.fv-row__sub')),
+      accent: row.dataset['accent'] ?? '',
+      tone: /fv-ico--(\w+)/.exec(row.querySelector('.fv-ico')?.className ?? '')?.[1] ?? '',
+      // its circle and its words, and nothing after them
+      parts: row.childElementCount,
+    }));
+  /** A card whose calls are kept as Home Assistant hears them, on a house that says a state as it is drawn. */
+  async function calling(config: Record<string, unknown>) {
+    const calls: unknown[][] = [];
+    const card = document.createElement('fluvy-lights-card') as CardElement;
+    card.setConfig({ type: 'custom:fluvy-lights-card', lights: LIGHTS, ...config });
+    card.hass = {
+      ...house({ 'light.gone': state('light.gone', 'unavailable', { friendly_name: 'Garden' }) }),
+      formatEntityState: (entity: { state: string }, said = entity.state) => said,
+      callService: (...args: unknown[]) => {
+        calls.push(args.slice(0, 3));
+        return Promise.resolve();
+      },
+    } as unknown as HomeAssistant;
+    document.body.append(card);
+    await card.updateComplete;
+    return { card, root: card.shadowRoot!, calls };
+  }
+  const press = (el: Element | undefined | null, kind: 'fvTap' | 'fvHold' = 'fvTap'): void =>
+    (el as unknown as Record<string, (() => void) | undefined>)[kind]?.();
+
+  it('draws a row a light, as a list does: its name over its state and level, its circle in its lamp’s colour, nothing at its end', async () => {
+    const root = await mount({ variant: 'rows' });
+    expect(drawn(root)).toEqual([
+      { name: 'Desk', line: 'On · 24 %', accent: 'white #ffa757', tone: 'light', parts: 2 },
+      { name: 'Floor lamp', line: 'On · 100 %', accent: '#ff0000', tone: 'light', parts: 2 },
+      // one that only switches says no level, an off one wears no colour
+      { name: 'Shelf', line: 'On', accent: '', tone: 'light', parts: 2 },
+      { name: 'Sconce', line: 'Off', accent: '', tone: 'neutral', parts: 2 },
+    ]);
+    // no chips, no tiles, no rounds: the rows alone
+    expect(root.querySelector('.fv-chip, .fv-tile, .lt-bulb')).toBeNull();
+    const still = await mount({ variant: 'rows', show_level: false });
+    expect(drawn(still).map((row) => row.line)).toEqual(['On', 'On', 'On', 'Off']);
+  });
+
+  it('a tap on a row is its light’s switch, drawn at once; a hold its details; out of reach it takes no tap', async () => {
+    const { card, root, calls } = await calling({
+      variant: 'rows',
+      lights: ['light.desk', 'light.sconce', 'light.gone'],
+    });
+    const opened: unknown[] = [];
+    card.addEventListener('hass-more-info', (event) =>
+      opened.push((event as CustomEvent<{ entityId: string }>).detail.entityId),
+    );
+    const [desk, sconce, gone] = rowsOf(root);
+    press(sconce);
+    press(desk);
+    expect(calls).toEqual([
+      ['light', 'turn_on', { entity_id: ['light.sconce'] }],
+      ['light', 'turn_off', { entity_id: ['light.desk'] }],
+    ]);
+    // each is drawn as the finger left it until Home Assistant agrees
+    await card.updateComplete;
+    expect(drawn(root).map((row) => row.line)).toEqual(['Off', 'On', 'Unavailable']);
+    press(sconce, 'fvHold');
+    expect(opened).toEqual(['light.sconce']);
+    // out of reach: the dashed ring, no switch of its own, its details still a hold away
+    expect(gone?.classList.contains('is-unavailable')).toBe(true);
+    expect(drawn(root)[2]?.tone).toBe('off');
+    press(gone);
+    expect(calls).toHaveLength(2);
+    press(gone, 'fvHold');
+    expect(opened).toEqual(['light.sconce', 'light.gone']);
+  });
+
+  it('ends its head in a badge of how many are on, the line saying the rest; the head is still the whole room', async () => {
+    const { root, calls } = await calling({ variant: 'rows' });
+    expect(words(badge(root))).toBe('3 on');
+    expect(badge(root)?.classList.contains('fv-badge--light')).toBe(true);
+    expect(line(root)).toBe('4 lights · 62 %');
+    expect(roomSwitch(root)).toBeNull();
+    root.querySelector<HTMLElement>('.fv-card__tap')!.click();
+    expect(calls).toEqual([['light', 'turn_off', { entity_id: LIGHTS }]]);
+  });
+
+  it('says "On" where the card counts none, "Off" in the neutral tone, and nothing out of reach', async () => {
+    expect(words(badge(await mount({ variant: 'rows', show_count: false })))).toBe('On');
+    const off = await mount({ variant: 'rows', lights: ['light.sconce'] });
+    expect(words(badge(off))).toBe('Off');
+    expect(badge(off)?.classList.contains('fv-badge--neutral')).toBe(true);
+    expect(line(off)).toBe('1 light');
+    const gone = { 'light.gone': state('light.gone', 'unavailable', { friendly_name: 'Garden' }) };
+    const dead = await mount({ variant: 'rows', lights: ['light.gone'] }, gone);
+    expect(badge(dead)).toBeNull();
+    expect(line(dead)).toBe('Unavailable');
+    // …and keeps its anatomy: its row, its circle the dashed ring
+    expect(drawn(dead).map((row) => row.tone)).toEqual(['off']);
+  });
+
+  it('takes the room’s switch, or nothing, where asked; chips and tiles keep their switch, and take the badge', async () => {
+    const switched = await mount({ variant: 'rows', control: 'switch' });
+    expect(roomSwitch(switched)).not.toBeNull();
+    expect(badge(switched)).toBeNull();
+    expect(line(switched)).toBe('3 of 4 on · 62 %');
+    const bare = await mount({ variant: 'rows', control: 'none' });
+    expect(roomSwitch(bare) ?? badge(bare)).toBeNull();
+    expect(line(bare)).toBe('3 of 4 on · 62 %');
+    for (const variant of ['chips', 'tiles']) {
+      // a card that says nothing draws as it did
+      const untouched = await mount({ variant });
+      expect(roomSwitch(untouched), variant).not.toBeNull();
+      expect(badge(untouched), variant).toBeNull();
+      expect(line(untouched), variant).toBe('3 of 4 on · 62 %');
+      const badged = await mount({ variant, control: 'badge' });
+      expect(words(badge(badged)), variant).toBe('3 on');
+      expect(roomSwitch(badged), variant).toBeNull();
+    }
+    // the rounds stand at the head's end themselves: nothing to say
+    const rounds = await mount({ control: 'badge' });
+    expect(badge(rounds)).toBeNull();
+    expect(rounds.querySelectorAll('.lt-bulb')).toHaveLength(4);
+  });
+
+  it('in half a column gives every circle to the names together, and its badge’s count to the line', async () => {
+    const card = document.createElement('fluvy-lights-card') as CardElement & { width: number };
+    const { ruler } = (card as unknown as { head: HeadFit }).head;
+    vi.spyOn(ruler, 'width').mockImplementation((_cls, text) => text.length * 8);
+    vi.spyOn(ruler, 'pill').mockImplementation(
+      (_cls, text, pad) => Math.ceil((text.length * 8 + pad) / 4) * 4,
+    );
+    card.width = 172;
+    card.setConfig({ type: 'custom:fluvy-lights-card', variant: 'rows', lights: LIGHTS });
+    card.hass = house();
+    document.body.append(card);
+    await card.updateComplete;
+    const root = card.shadowRoot!;
+    // "Floor lamp" would end before it had begun beside a circle: none keeps one
+    expect(rowsOf(root).every((row) => row.classList.contains('fv-row--bare'))).toBe(true);
+    expect(drawn(root).map((row) => row.line)).toEqual(['On · 24 %', 'On · 100 %', 'On', 'Off']);
+    expect(badge(root)).toBeNull();
+    expect(line(root)).toBe('3 of 4 on');
+  });
+
+  it('declares its height from its config: 92 and 60 a light, 80 more with the room’s ruler', () => {
+    const config: LightsCardConfig = {
+      type: 'custom:fluvy-lights-card',
+      variant: 'rows',
+      lights: ['light.a', 'light.b'],
+    };
+    expect(FluvyLightsCard.layoutHeight(config)).toBe(92 + 2 * 60);
+    expect(FluvyLightsCard.layoutHeight({ ...config, show_brightness: true })).toBe(
+      92 + 80 + 2 * 60,
+    );
+    // what ends the head never changes it, nor the colour round, which stands in the head
+    for (const control of ['switch', 'badge', 'none'] as const)
+      expect(FluvyLightsCard.layoutHeight({ ...config, control, show_color: true })).toBe(
+        92 + 2 * 60,
+      );
+    // a room's lights as the house lists them, three where it is not there to say
+    const room: LightsCardConfig = {
+      type: 'custom:fluvy-lights-card',
+      variant: 'rows',
+      area: 'kitchen',
+    };
+    expect(FluvyLightsCard.layoutHeight(room)).toBe(92 + 3 * 60);
+    expect(
+      lightsHeight(room, {
+        area: ['light.a', 'light.b', 'light.c', 'light.d'],
+        nameOf: () => undefined,
+        admin: true,
+      }),
+    ).toBe(92 + 4 * 60);
+    // every other style keeps its height, whatever ends its head
+    for (const variant of ['row', 'chips', 'tiles'] as const)
+      expect(FluvyLightsCard.layoutHeight({ ...config, variant, control: 'badge' })).toBe(
+        FluvyLightsCard.layoutHeight({ ...config, variant }),
+      );
+  });
+
+  it('its editor offers what ends the head but beside the rounds, the switch’s options only where it ends the head', async () => {
+    const editor = await FluvyLightsCard.getConfigElement();
+    (editor as HTMLElement & { hass: HomeAssistant }).hass = house();
+    const form = async (config: Record<string, unknown>) =>
+      cardForm(
+        await drawEditor(editor, { type: 'custom:fluvy-lights-card', lights: LIGHTS, ...config }),
+      );
+    const shown = async (config: Record<string, unknown>): Promise<string[]> =>
+      shownNames((await form(config)).schema);
+    expect(await shown({})).not.toContain('control');
+    for (const variant of ['chips', 'tiles']) {
+      expect(await shown({ variant })).toEqual(expect.arrayContaining(['control', 'show_mixed']));
+      expect(await shown({ variant, control: 'badge' })).not.toContain('show_mixed');
+    }
+    const rows = await shown({ variant: 'rows' });
+    expect(rows).toContain('control');
+    // the rows have no tile to wash, to name in two lines or to end in a rocker, and their badge is no switch
+    for (const name of ['show_mixed', 'tint', 'name_lines', 'switch_style'])
+      expect(rows, name).not.toContain(name);
+    expect(await shown({ variant: 'rows', control: 'switch' })).toContain('show_mixed');
+    // the rounds are called rounds, so "Row" never stands beside "Rows"
+    const { schema } = await form({});
+    const variant = JSON.stringify(schema).match(/"name":"variant".*?"options":(\[.*?\])/)?.[1];
+    expect(JSON.parse(variant ?? '[]')).toEqual([
+      { value: 'row', label: 'Rounds' },
+      { value: 'chips', label: 'Chips' },
+      { value: 'tiles', label: 'Tiles' },
+      { value: 'rows', label: 'Rows' },
+    ]);
   });
 });
 

@@ -258,6 +258,9 @@ const BUDGETS = {
   // what reads a card's thresholds (1.22, #204): their values, the band a reading is in, the stretches a chart colours;
   // fetched by the first card that names one
   thresholds: 2048,
+  // what 1.26 gave the Room lights card (#261): each light a list's row, what ends its head as it says; fetched by
+  // the first card asked for either. Measured at 0.9 KB
+  'lights-rows': 2048,
   // the controls that set a number in place (1.23, #218): a row's value between − and +, a figure typed, their sheet;
   // fetched by the first card that asks for one
   'number-controls': 4096,

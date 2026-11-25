@@ -603,7 +603,16 @@ export function lightGroups(
     // a group's cards and tiles stand together under its heading: two alike are told apart
     const named = namesOf(home, group);
     return headed(heading(name, OUTDOOR.test(plain(name)) ? 'fluvy:moon' : 'fluvy:bulb', group), [
-      ...(group.length > 1 ? [[full('lights', { lights: group })]] : []),
+      ...(group.length > 1
+        ? [
+            [
+              full('lights', {
+                lights: group,
+                ...(ctx.style.lights ? { variant: ctx.style.lights } : {}),
+              }),
+            ],
+          ]
+        : []),
       ...group
         .filter((id) => home.dimmable(id))
         .map((id) => [full('light', { entity: id, ...named(id) })]),

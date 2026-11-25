@@ -65,7 +65,9 @@
     "editor_show_brightness": "Una luminosità per tutta la stanza",
     "editor_tint": "Mostra il colore di ogni riquadro",
     "no_colour_one": "{names} non prende colore",
-    "no_colour_other": "{names} non prendono colore"
+    "no_colour_other": "{names} non prendono colore",
+    "count_one": "1 luce",
+    "count": "{n} luci"
   },
   "climate": {
     "mode": "Modalità",
@@ -689,6 +691,9 @@
     "horizontal": "Orizzontale",
     "exact_colors": "Colori esatti",
     "exact_colors_helper": "I nomi come li disegna Home Assistant, un codice esadecimale come scritto. Invariato, quello di tutte le schede nelle impostazioni di Fluvy",
+    "badge": "Badge",
+    "head_end": "L’intestazione termina con",
+    "head_end_helper": "Automatico: l’interruttore della stanza; con le righe, un badge che dice quante sono accese",
     "sheet_dial": "Manopola nei dettagli",
     "sheet_dial_helper": "Invariato, quello di tutti i dettagli nelle impostazioni di Fluvy"
   },
@@ -1694,6 +1699,8 @@
     "cards.exact_sub": "I nomi dei colori come li disegna Home Assistant e un codice esadecimale come scritto, non le tinte della palette",
     "scope.activity_who": "Chi è stato",
     "scope.activity_who_sub": "Ogni voce di Attività indica la persona che l’ha fatta, con la sua foto; un filtro per persona",
+    "dashboard.lights_variant": "Luci della stanza",
+    "dashboard.rounds": "Pulsanti tondi",
     "cards.sheets_dial": "Dettagli con manopola"
   },
   "customise": {
@@ -2061,7 +2068,7 @@
     "tile": "Una luce, un interruttore, una copertura, una ventola, un lettore, un numero o un sensore come riquadro: grande con un righello di precisione o due letture, riga compatta o mini.",
     "tiles": "Un gruppo di riquadri compatti o mini, da due a quattro per riga, a 8 px l’uno dall’altro.",
     "light": "Il dimmer di precisione: trascinamento relativo, allontanati per rallentare, tieni premuto per la scala all’1 %, temperatura colore.",
-    "lights": "Le luci di una stanza su una scheda: un tocco per tutta la stanza, un tondo, un chip o un riquadro per ogni luce, nel suo colore.",
+    "lights": "Le luci di una stanza su una scheda: un tocco per tutta la stanza, un tondo, un chip, un riquadro o una riga per ogni luce, nel suo colore.",
     "entities": "Righe di entità: un interruttore per ciò che si accende, il valore per ciò che si misura.",
     "cover": "Tende, tapparelle, porte del garage e valvole: righello di posizione verticale, inclinazione, apri · ferma · chiudi, preferiti.",
     "fan": "Righello di velocità a scatti, oscillazione, direzione e preimpostazioni.",

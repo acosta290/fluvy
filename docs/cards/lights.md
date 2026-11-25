@@ -2,7 +2,7 @@
 
 # Room lights
 
-A room’s lights on one card: one tap for the whole room, a round, chip or tile for each light, in its colour.
+A room’s lights on one card: one tap for the whole room, a round, chip, tile or row for each light, in its colour.
 
 `custom:fluvy-lights-card` · [Try it live](https://acosta290.github.io/fluvy/?card=lights) · [All cards](../cards.md#everyday)
 
@@ -29,6 +29,10 @@ The picture above, on the demo house: put your own entities in place of its.
 <tbody><tr>
 <td align="center" valign="top" width="50%"><code>variant: chips</code><br><a href="https://acosta290.github.io/fluvy/?card=lights&amp;layout=chips"><picture><source media="(prefers-color-scheme: dark)" srcset="../images/cards/lights.chips-dark.webp"><img src="../images/cards/lights.chips-light.webp" width="392" alt="The Room lights card in its chips layout"></picture></a></td>
 <td align="center" valign="top" width="50%"><code>variant: tiles</code><br><a href="https://acosta290.github.io/fluvy/?card=lights&amp;layout=tiles"><picture><source media="(prefers-color-scheme: dark)" srcset="../images/cards/lights.tiles-dark.webp"><img src="../images/cards/lights.tiles-light.webp" width="392" alt="The Room lights card in its tiles layout"></picture></a></td>
+</tr></tbody>
+<tbody><tr>
+<td align="center" valign="top" width="50%"><code>variant: rows</code><br><a href="https://acosta290.github.io/fluvy/?card=lights&amp;layout=rows"><picture><source media="(prefers-color-scheme: dark)" srcset="../images/cards/lights.rows-dark.webp"><img src="../images/cards/lights.rows-light.webp" width="392" alt="The Room lights card in its rows layout"></picture></a></td>
+<td align="center" valign="top" width="50%"></td>
 </tr></tbody>
 </table>
 
@@ -83,8 +87,9 @@ lights:
 | `names` | `full` | How a row is named where it has no name of its own: the entity’s full name, its own, or its device’s. `full` · `entity` · `device`. |
 | `name` |  | The name the card shows, in place of the entity’s own. |
 | `icon` |  | The card’s icon, in place of the entity’s own. |
-| `variant` | `row` | The card’s layout. `row` · `chips` · `tiles`. |
+| `variant` | `row` | The card’s layout. `row` (Rounds) · `chips` · `tiles` · `rows`. |
 | `show_brightness` | `false` | Shows one brightness ruler for the whole room. |
+| `control` | `auto` | What ends the head over chips, tiles and rows: the room’s switch, a badge that says how many are on, or nothing. Left out, the switch, and the badge over rows. `auto` · `switch` · `badge` · `none`. |
 | `show_count` | `true` | Says on the head’s line how many lights are on. |
 | `show_level` | `true` | Shows the lights’ brightness: the average, and a ring round each round. |
 | `show_mixed` | `false` | Gives the room’s switch a look of its own while only some lights are on: its thumb in the middle. |

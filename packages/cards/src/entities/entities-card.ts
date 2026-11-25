@@ -31,6 +31,7 @@ import { currentTone, iconOf, toneFor } from '../shared/domain.js';
 import { chosenLabel, dropdown, dropdownEnd, SELECTS } from '../shared/dropdown.js';
 import type { RowConfig } from '../lock/rows.js';
 import { ITEM_ALIASES, type AliasSpec } from '../shared/config.js';
+import { onBadge } from '../shared/counted.js';
 import { statusToneOf, toneOf, type LightColours } from '../shared/colour.js';
 import { headless, noBadge, noLine } from '../shared/head-lines.js';
 import { lightLook, litColour, withMembers } from '../shared/light.js';
@@ -410,16 +411,7 @@ export class FluvyEntitiesCard extends Card<EntitiesCardConfig> {
           width: this.contentWidth,
           title,
           sub: this.config?.subtitle ?? '',
-          badge:
-            this.config?.show_count && !panel
-              ? {
-                  text:
-                    active > 0
-                      ? `${active} ${this.t('common.on').toLowerCase()}`
-                      : this.t('common.off'),
-                  tone: active > 0 ? tone : 'neutral',
-                }
-              : null,
+          badge: this.config?.show_count && !panel ? onBadge(this.hass, active, tone) : null,
         })
       : null;
     const header =

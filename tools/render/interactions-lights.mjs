@@ -11,7 +11,7 @@
  */
 import { Buffer } from 'node:buffer';
 import { contrastRatio } from './lib/colour.mjs';
-import { calls, frame, moreInfo, reset, settle, startSuite } from './lib/suite.mjs';
+import { calls, frame, moreInfo, reset, settle, startSuite, tapHead } from './lib/suite.mjs';
 
 const suite = await startSuite();
 const { check } = suite;
@@ -965,6 +965,186 @@ const ids = (call) => [].concat(call?.d?.entity_id ?? call?.t?.entity_id ?? []);
     reduced.every((f) => f.height === open.height && f.shows === 1) &&
       own.every((f) => f.height === open.height && f.shows === 1),
     JSON.stringify([reduced.slice(0, 3), own.slice(0, 3)]),
+  );
+  await page.close();
+}
+
+/* ---------- rows (1.26, #261) ---------- */
+{
+  const page = await suite.sheet('lights', { width: 360 });
+  /** A card's rows as drawn, each with where its circle and its words stand in the card, and its head's end. */
+  const rowsOf = (c) =>
+    c.evaluate((el) => {
+      const root = el.shadowRoot;
+      const t = (node) => (node?.textContent ?? '').replace(/\s+/g, ' ').trim();
+      const left = el.getBoundingClientRect().left;
+      const x = (node) => (node ? Math.round(node.getBoundingClientRect().left - left) : null);
+      return {
+        sub: t(root.querySelector('.fv-card__sub')),
+        badge: t(root.querySelector('.fv-card__head .fv-badge')),
+        switch: Boolean(root.querySelector('.fv-card__head [role="switch"]')),
+        height: Math.round(el.getBoundingClientRect().height),
+        rows: [...root.querySelectorAll('.fv-rows > .fv-row')].map((row) => ({
+          name: t(row.querySelector('.fv-row__title')),
+          line: t(row.querySelector('.fv-row__sub')),
+          accent: row.dataset.accent ?? null,
+          tone: /fv-ico--(\w+)/.exec(row.querySelector('.fv-ico')?.className ?? '')?.[1] ?? null,
+          end: row.children.length,
+          height: Math.round(row.getBoundingClientRect().height),
+          circle: x(row.querySelector('.fv-ico')),
+          words: x(row.querySelector('.fv-row__text')),
+        })),
+      };
+    });
+  const living = card(page, 'Rows (#261)');
+  const row = (n) => living.locator('.fv-rows > .fv-row').nth(n);
+  const drawn = await rowsOf(living);
+  check(
+    'in rows each light is a list’s row: its name over its state and level, its circle in its lamp’s colour, nothing at its end',
+    drawn.rows.map((r) => `${r.name}|${r.line}`).join(' / ') ===
+      'Ceiling|On · 70 % / Floor lamp|On · 55 % / TV strip|On · 40 % / Reading lamp|Off' &&
+      drawn.rows[0].accent === 'white #ffa757' &&
+      drawn.rows[1].accent === '#ff8c46' &&
+      drawn.rows[3].accent === null &&
+      drawn.rows[3].tone === 'neutral' &&
+      drawn.rows.every((r) => r.end === 2 && r.height === 60),
+    JSON.stringify(drawn.rows),
+  );
+  check(
+    'its head ends in a badge of how many are on, its line says the lights and their level, and it is 92 and 60 a light tall',
+    drawn.badge === '3 on' &&
+      drawn.sub === '4 lights · 55 %' &&
+      !drawn.switch &&
+      drawn.height === 92 + 4 * 60,
+    JSON.stringify([drawn.badge, drawn.sub, drawn.switch, drawn.height]),
+  );
+
+  // what ends the head is the card's to say
+  const switched = await rowsOf(card(page, 'Rows · the room’s switch'));
+  const ruled = await rowsOf(card(page, 'Rows · one brightness'));
+  check(
+    'asked, the room’s switch ends the head and the line counts as ever; the room’s ruler stands under the head, 80 taller',
+    switched.switch &&
+      !switched.badge &&
+      switched.sub === '2 of 3 on · 63 %' &&
+      ruled.height === 92 + 80 + 3 * 60,
+    JSON.stringify([switched.switch, switched.badge, switched.sub, ruled.height]),
+  );
+
+  // a row is its light alone: one call for it, the row lit at once and the badge counting it
+  await reset(page);
+  await row(3).click();
+  await settle(page, 200);
+  const one = await calls(page);
+  const lit = await rowsOf(living);
+  check(
+    'a tap on a row turns its light on, and only it: the row says On and the badge counts it',
+    one.length === 1 &&
+      one[0].s === 'light.turn_on' &&
+      ids(one[0]).join() === 'light.lt_reading' &&
+      lit.rows[3].line.startsWith('On') &&
+      lit.rows[3].tone === 'light' &&
+      lit.badge === '4 on',
+    JSON.stringify([one, lit.rows[3], lit.badge]),
+  );
+  await reset(page);
+  await row(3).click();
+  await settle(page, 200);
+  const off = await calls(page);
+  check(
+    'a second tap turns it off again',
+    off.length === 1 && off[0].s === 'light.turn_off' && ids(off[0]).join() === 'light.lt_reading',
+    JSON.stringify(off),
+  );
+
+  // a hold on a row opens its light, and neither turns it nor the room
+  await reset(page);
+  const held = await row(0).boundingBox();
+  await page.mouse.move(held.x + 120, held.y + 30);
+  await page.mouse.down();
+  await page.waitForTimeout(700);
+  await page.mouse.up();
+  await settle(page, 200);
+  check(
+    'a hold on a row opens its light’s details and calls nothing',
+    JSON.stringify(await moreInfo(page)) === JSON.stringify(['light.lt_ceiling']) &&
+      (await calls(page)).length === 0,
+    JSON.stringify([await moreInfo(page), await calls(page)]),
+  );
+
+  // the keyboard: a row is a button of its own
+  await reset(page);
+  await row(1).focus();
+  await page.keyboard.press('Enter');
+  await settle(page, 200);
+  const key = await calls(page);
+  check(
+    'Enter on a row turns its light',
+    key.length === 1 && key[0].s === 'light.turn_off' && ids(key[0]).join() === 'light.lt_floor',
+    JSON.stringify(key),
+  );
+
+  // the head is still the whole room
+  await reset(page);
+  await tapHead(living);
+  await settle(page, 200);
+  const room = await calls(page);
+  const dark = await rowsOf(living);
+  check(
+    'a tap on the head turns the whole room off in one call: every row goes off, and the badge says Off',
+    room.length === 1 &&
+      room[0].s === 'light.turn_off' &&
+      ids(room[0]).length === 4 &&
+      dark.rows.every((r) => r.line === 'Off') &&
+      dark.badge === 'Off',
+    JSON.stringify([room, dark.badge, dark.rows.map((r) => r.line)]),
+  );
+
+  // beside the Entities card: the same list, on the same grid
+  const [ours, theirs] = await Promise.all([
+    rowsOf(card(page, 'Rows · beside the Entities card')),
+    frame(page, 'Rows · beside the Entities card')
+      .locator('fluvy-entities-card')
+      .evaluate((el) => {
+        const left = el.getBoundingClientRect().left;
+        const x = (node) => Math.round(node.getBoundingClientRect().left - left);
+        return {
+          height: Math.round(el.getBoundingClientRect().height),
+          rows: [...el.shadowRoot.querySelectorAll('.fv-rows > .fv-row')].map((row) => ({
+            height: Math.round(row.getBoundingClientRect().height),
+            circle: x(row.querySelector('.fv-ico')),
+            words: x(row.querySelector('.fv-row__text')),
+          })),
+        };
+      }),
+  ]);
+  check(
+    'its rows stand on the Entities card’s grid: the same circles, the same words’ edge, the same height',
+    ours.height === theirs.height &&
+      ours.rows.length === theirs.rows.length &&
+      ours.rows.every(
+        (r, i) =>
+          r.height === theirs.rows[i].height &&
+          r.circle === theirs.rows[i].circle &&
+          r.words === theirs.rows[i].words,
+      ),
+    JSON.stringify([ours.height, theirs.height, ours.rows, theirs.rows]),
+  );
+
+  // a light out of reach keeps its row
+  const garden = card(page, 'Rows · all off, a light unavailable, nothing read', 1);
+  await reset(page);
+  await garden.locator('.fv-rows > .fv-row').nth(1).click({ force: true });
+  await settle(page, 200);
+  const gone = await rowsOf(garden);
+  check(
+    'a light that cannot be read keeps its row, a dashed ring that takes no tap; the others count as ever',
+    gone.rows[1].tone === 'off' &&
+      gone.rows[1].line === 'Unavailable' &&
+      gone.badge === '1 on' &&
+      gone.height === 92 + 2 * 60 &&
+      (await calls(page)).length === 0,
+    JSON.stringify([gone, await calls(page)]),
   );
   await page.close();
 }

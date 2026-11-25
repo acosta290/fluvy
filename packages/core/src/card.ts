@@ -317,7 +317,7 @@ const wearSurfaces = (): void => {
 /**
  * What cards wear from a chunk of their own: fetched once, by the first card (or the house) that asks, what it holds
  * handed to `landed`; `settled` once the fetch is over, landed or failed, so a first frame never waits on one that
- * cannot land.
+ * cannot land. A card's own too (a variant drawn by a module of its own: the Room lights card's rows).
  */
 export function wornFrom<T>(load: () => Promise<T>, landed: (module: T) => void) {
   let fetching: Promise<void> | undefined;

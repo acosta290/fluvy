@@ -601,6 +601,26 @@ describe('the dashboard templates', () => {
       expect(strategyOptions({ names: 'device' }, templateById(id))).toEqual({});
     }
     expect(strategyOptions({ names: 'entity' }, templateById('energy'))).toEqual({});
+    // 1.26's, each the panel's alone and a word it knows, its first value the dashboard as it always was (Home
+    // Assistant's pencil form keeps the few options it offered): the Room lights' style, on the dashboards that draw
+    // that card (#261)
+    const offers = (key: string): string[] =>
+      TEMPLATES.filter((template) => template.options.some((option) => option.key === key)).map(
+        (template) => template.id,
+      );
+    const asked = (key: string): unknown[][] =>
+      TEMPLATES.flatMap((template) => template.options).flatMap((option) =>
+        option.kind === 'choice' && option.key === key
+          ? [[option.panelOnly, option.values[0]?.value]]
+          : [],
+      );
+    expect(offers('lights_variant')).toEqual(['home', 'rooms', 'lights']);
+    for (const option of asked('lights_variant')) expect(option).toEqual([true, 'row']);
+    expect(strategyOptions({ lights_variant: 'rows' }, HOME_TEMPLATE)).toEqual({
+      lights_variant: 'rows',
+    });
+    expect(strategyOptions({ lights_variant: 'grid' }, HOME_TEMPLATE)).toEqual({});
+    expect(strategyOptions({ lights_variant: 'rows' }, templateById('wall'))).toEqual({});
     expect(strategyOptions('nonsense', HOME_TEMPLATE)).toEqual({});
     // the caps: every list whole, up to a number, or a list's own number or `none`, the lists every template knows
     for (const template of TEMPLATES) {

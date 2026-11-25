@@ -510,6 +510,8 @@ export const MEANINGS: Readonly<Record<string, string>> = {
   'items.show_image': 'Shows each item’s picture in its circle.',
   'items.sort': 'Sorts the items by one of their fields.',
   'items.subtitle': 'The line under the title.',
+  'lights.control':
+    'What ends the head over chips, tiles and rows: the room’s switch, a badge that says how many are on, or nothing. Left out, the switch, and the badge over rows.',
   'lights.name_lines':
     'Lets each light tile’s name take two lines where one would cut it, every tile a line taller.',
   'lights.show_brightness': 'Shows one brightness ruler for the whole room.',

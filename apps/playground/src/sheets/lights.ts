@@ -62,6 +62,8 @@ const lights = (config: Record<string, unknown>) => ({
 });
 
 const LIVING = ['light.lt_ceiling', 'light.lt_floor', 'light.lt_reading'];
+/** A room in rows: a white and a colour that are on, a lamp that only switches, one off. */
+const ROWS = ['light.lt_ceiling', 'light.lt_floor', 'light.lt_strip', 'light.lt_reading'];
 /** A warm white, a cool one, a group of two colours and a lamp that only dims: each in its own colour, or none (#58). */
 const WHITES = ['light.lt_ceiling', 'light.lt_cool', 'light.lt_group', 'light.lt_dimmer'];
 const LADDER = [2200, 2700, 3000, 4000, 5000, 6500, 8000].map((kelvin) => `light.lt_k${kelvin}`);
@@ -503,6 +505,143 @@ export const sheet: SheetSpec = {
         }),
         lights({ name: 'Study', variant: 'chips', lights: ['light.lt_floor', 'switch.lt_lamp'] }),
         lights({ name: 'Study', variant: 'tiles', lights: ['light.lt_floor', 'switch.lt_lamp'] }),
+      ],
+    },
+    // #261: each light a list's row, as the Entities card draws one — its circle in its lamp's colour while it is on,
+    // its name over its state and level, nothing at its end: a tap is its switch, a hold its details; a badge in the
+    // head says how many are on, the head itself still the whole room
+    {
+      title: 'Rows (#261)',
+      cards: [lights({ name: 'Living room', variant: 'rows', lights: ROWS })],
+    },
+    // the same lights on the Entities card: the circles, the names and the hairlines stand on one line
+    {
+      title: 'Rows · beside the Entities card',
+      cards: [
+        lights({ name: 'Living room', variant: 'rows', lights: LIVING }),
+        {
+          type: 'custom:fluvy-entities-card',
+          title: 'Living room',
+          show_count: true,
+          light_colors: true,
+          rows: LIVING,
+        },
+      ],
+    },
+    {
+      title: 'Rows · the room’s switch',
+      cards: [
+        lights({ name: 'Living room', variant: 'rows', control: 'switch', lights: LIVING }),
+        lights({
+          name: 'Living room',
+          variant: 'rows',
+          control: 'switch',
+          show_mixed: true,
+          lights: LIVING,
+        }),
+      ],
+    },
+    {
+      title: 'Rows · one brightness',
+      cards: [
+        lights({ name: 'Living room', variant: 'rows', show_brightness: true, lights: LIVING }),
+      ],
+    },
+    // the colour round before the badge, each lamp in its own colour, one in a colour and an icon of its own
+    {
+      title: 'Rows · colours and the colour round',
+      cards: [
+        lights({
+          name: 'Living room',
+          variant: 'rows',
+          show_color: true,
+          lights: [
+            'light.lt_ceiling',
+            'light.lt_floor',
+            'light.lt_strip',
+            { entity: 'light.lt_shelf', icon: 'fluvy:sparkle', color: 'teal' },
+          ],
+        }),
+      ],
+    },
+    {
+      title: 'Rows · all off, a light unavailable, nothing read',
+      cards: [
+        lights({
+          name: 'Bedroom',
+          variant: 'rows',
+          lights: ['light.lt_off_one', 'light.lt_off_two'],
+        }),
+        lights({ name: 'Garden', variant: 'rows', lights: ['light.lt_porch', 'light.lt_gone'] }),
+        lights({ name: 'Shed', variant: 'rows', lights: ['light.lt_gone'] }),
+      ],
+    },
+    {
+      title: 'Rows · from the area, an area with no lights',
+      cards: [
+        lights({ area: 'lt_kitchen', variant: 'rows' }),
+        lights({ area: 'lt_attic', variant: 'rows' }),
+      ],
+    },
+    // what ends the head is the card's to say: nothing, no count ("On"), no level; a long name ends in its ellipsis
+    {
+      title: 'Rows · no badge, no count, long names',
+      cards: [
+        lights({ name: 'Living room', variant: 'rows', control: 'none', lights: LIVING }),
+        lights({
+          name: 'Living room',
+          variant: 'rows',
+          show_count: false,
+          show_level: false,
+          lights: LIVING,
+        }),
+        lights({
+          name: 'The living room with the long window on the garden side',
+          variant: 'rows',
+          lights: ['light.lt_long', 'light.lt_reading'],
+        }),
+      ],
+    },
+    // the badge is the chips' and the tiles' to ask for too
+    {
+      title: 'A badge over chips and tiles',
+      cards: [
+        lights({ name: 'Living room', variant: 'chips', control: 'badge', lights: LIVING }),
+        lights({ name: 'Living room', variant: 'tiles', control: 'badge', lights: LIVING }),
+        lights({
+          name: 'Living room',
+          variant: 'chips',
+          control: 'badge',
+          show_color: true,
+          lights: LIVING,
+        }),
+      ],
+    },
+    {
+      title: 'Rows · half a column',
+      heights: [152, 172, 211, 266],
+      cards: [
+        lights({ name: 'Bedroom', variant: 'rows', lights: LIVING.slice(0, 2), cols: 6 }),
+        lights({
+          name: 'Garden',
+          variant: 'rows',
+          lights: ['light.lt_porch', 'light.lt_gone'],
+          cols: 6,
+        }),
+        lights({
+          name: 'Living',
+          variant: 'rows',
+          show_color: true,
+          lights: LIVING.slice(0, 2),
+          cols: 6,
+        }),
+        lights({
+          name: 'Kitchen',
+          variant: 'rows',
+          control: 'switch',
+          area: 'lt_kitchen',
+          cols: 6,
+        }),
       ],
     },
   ],
