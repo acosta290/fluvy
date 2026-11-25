@@ -25,11 +25,11 @@ const release = args.includes('--release') || args.includes('--tag');
 /** Each chunk's gzip budget in bytes (`core` is what every page loads; the rest come on demand). */
 const BUDGETS = {
   'fluvy.js': 2048,
-  // 238 KB since 2026-11-23 (1.25: a toggle decided as Home Assistant's, the cards' exact colours asked for, a card's
-  // own figures from an entity or a template, the chips' plain style, the sheets' kinds, the dialogs' plain base,
-  // settings 9: measured at 237.4 KB). 236 KB since 1.9 (the head as the card's button, the grey ladder, the value row, empty lists, the room's contents,
+  // 236 KB since 1.9 (the head as the card's button, the grey ladder, the value row, empty lists, the room's contents,
   // the appliances' announcement and icons, heights read from the house, the judges' fixes; the lazy families'
-  // English left core first, about 9 KB): 224 in 1.8, 222 in 1.7, 220 before
+  // English left core first, about 9 KB): 224 in 1.8, 222 in 1.7, 220 before. 238 KB since 2026-11-23 (1.25: a toggle
+  // decided as Home Assistant's, the cards' exact colours asked for, a card's own figures from an entity or a
+  // template, the chips' plain style, the sheets' kinds, the dialogs' plain base, settings 9: measured at 237.4 KB)
   core: 243_712,
   // the settings panel and its English. 44 KB since 2026-11-14 (1.21, 3.3 KB: the form Home Assistant's pencil opens on
   // an automatic dashboard, #188, 1.2 KB; the house's order of its rooms and the dashboards' groups by room and chips,
