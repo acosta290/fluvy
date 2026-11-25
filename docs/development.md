@@ -79,14 +79,14 @@ names its English part, or core keeps it, and every module no group names lands 
 (`vite.config.ts`) where core holds one that only the chunks fetched later reach. Lit is bundled, pinned to Home
 Assistant's version. `finish.mjs` writes
 `manifest.json` with every file's size and hash and a **build stamp**, and fails the build when the initial set goes
-over **238 KB gzip** or carries a family's English; `tools/release/check.mjs --release` holds every chunk to its own
+over **240 KB gzip** or carries a family's English; `tools/release/check.mjs --release` holds every chunk to its own
 budget (`BUDGETS`; the facts guard in `tools/docs` holds this table to it):
 
 | Script | Budget (gzip) | What it is |
 | --- | --- | --- |
 | `fluvy.js` | 2 KB | the entry |
-| `core` | 238 KB | what every page loads |
-| `panel` | 44 KB | the settings panel and its English |
+| `core` | 240 KB | what every page loads |
+| `panel` | 45 KB | the settings panel and its English |
 | `customise` | 14 KB | Customise, the Dashboards tab's section that edits an automatic dashboard's views and cards, and its English: fetched the first time a dashboard is customised |
 | `sidebar-editor` | 6 KB | a dashboard's sidebar in the panel (1.21, #187), the Dashboards tab's section that writes `fluvy_sidebar:` without YAML, and its English: fetched the first time a dashboard's sidebar is opened |
 | `words` | 13 KB | the naming words: every language's, what the automatic dashboards read a house's names by, and the rule that reads a switch's name as a lamp's (1.23, #219), fetched with the strategy and by the first card asked for `lamp_switches` |
@@ -94,7 +94,7 @@ budget (`BUDGETS`; the facts guard in `tools/docs` holds this table to it):
 | `house-heights` | 4 KB | the cards' heights counted with the house, for the automatic dashboards |
 | `wall` | 16 KB | wall mode |
 | `chart` | 25 KB | the chart engine: the scales, paths, bars, axes, rings and gauges every chart is drawn with, the gauges that move, the styles, their sheet, a house's series colours fitted to each mode |
-| `chart-card` | 20 KB | the Chart card: the readers of its series (history, statistics, a list, a forecast), its editor, its English |
+| `chart-card` | 21 KB | the Chart card: the readers of its series (history, statistics, a list, a forecast), its editor, its English |
 | `energy-period` | 17 KB | the Energy period card (the strip, its picker and its sheet) and the Energy usage card, their English |
 | `energy` | 88 KB | the energy family and its sheet, the history bars with it |
 | `history-bars-readings` | 8 KB | a counter read by its readings, the recorder's history |
@@ -134,12 +134,12 @@ budget (`BUDGETS`; the facts guard in `tools/docs` holds this table to it):
 | `items-sheet` | 8 KB | an item's sheet |
 | `lights-colour` | 8 KB | the Room lights card's colour sheet and its hue wheel (#137), opened by the card's colour round |
 | `light-colour` | 8 KB | the light card's quick colours and hue ruler, and the quick colours' grammar its editor shares |
-| `quick-actions` | 5 KB | the rounds: a room's quick actions, the engine every card draws rounds with (their sets, levels, taps, holds and states) and the list row that ends in them (5 KB since 1.23: a card's control at its end, its chevrons, its rounds in columns) |
+| `quick-actions` | 6 KB | the rounds: a room's quick actions, the engine every card draws rounds with (their sets, levels, taps, holds and states) and the list row that ends in them (5 KB since 1.23: a card's control at its end, its chevrons, its rounds in columns; 6 KB since 1.26: the key a state stands in, rounds across a line, a round's gauge asked for) |
 | `weather` | 14 KB | the weather card |
 | `calendar` | 16 KB | the calendar card: its views, what reads its events, its sheet |
 | `editor` | 8 KB | the cards' visual editor |
 | `fields` | 10 KB | the fields every card's editor is built of: the schema's helpers, a list's row form, the editors' English |
-| `forms` | 22 KB | the editors of the cards every page carries and of the template, Slider, Cover, Vacuum, Thermostat, remote and Heating schedule cards: their forms, lists and defaults |
+| `forms` | 26 KB | the editors of the cards every page carries and of the template, Slider, Cover, Vacuum, Thermostat, remote and Heating schedule cards: their forms, lists and defaults |
 | `view-icons` | 6 KB | a view's icon from its name |
 | `glass` | 4 KB | what a see-through card wears: its sheet's writer (every fill at its opacity) and its rules (its solid overlays, its blur) |
 | `quiet` | 4 KB | what a card quiet out of reach wears: the rules that give the unavailable skin's paint back, one sheet every such card adopts |
@@ -168,12 +168,12 @@ budget (`BUDGETS`; the facts guard in `tools/docs` holds this table to it):
 | `icons-rooms` | 4 KB | the icon set's rooms (1.23, #226): the kitchen, the bedroom, the bathroom and the others |
 | `glyphs-rooms` | 4 KB | the rooms' glyphs as strokes (1.23, #226), which the Rooms and Thermostats cards draw (#225, #230) |
 | `levels` | 2 KB | the levels in Fluvy's icons (1.23, #226): what picks a battery's charge, a signal's bars, a valve open or shut, and their glyphs; fetched as the house turns them on |
-| `shared` | 4 KB | what only the chunks fetched later share (1.20: it left core): the local dates and the month grid, the ticker, a sheet's laid width, where a modal sheet stands on a phone (1.21, #190), a name's plain letters, a person's own picture in a head's circle |
+| `shared` | 5 KB | what only the chunks fetched later share (1.20: it left core): the local dates and the month grid, the ticker, a sheet's laid width, where a modal sheet stands on a phone (1.21, #190), a name's plain letters, a person's own picture in a head's circle |
 | `pages` | 12 KB | what the pages share: the date picker, the time field, the dropdown, the period, the sources, the layers, the CSV, their chrome's sheet, where their menu button shows |
 | `activity` | 32 KB | the Activity page |
 | `history` | 16 KB | the History page |
 | `details-history` | 10 KB | our history in Home Assistant's details dialog (1.20, #162): the block, its readers of the recorder and its English; fetched the first time a dialog shows it |
-| `lang` | 52 KB | a language's catalogue (`lang-de`, `lang-fr`, …) |
+| `lang` | 54 KB | a language's catalogue (`lang-de`, `lang-fr`, …) |
 | `rolldown-runtime` | 2 KB | the bundler's runtime |
 | `loader.js` | 4 KB | the loader the integration puts on every page |
 

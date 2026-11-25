@@ -29,13 +29,20 @@ const BUDGETS = {
   // the appliances' announcement and icons, heights read from the house, the judges' fixes; the lazy families'
   // English left core first, about 9 KB): 224 in 1.8, 222 in 1.7, 220 before. 238 KB since 2026-11-23 (1.25: a toggle
   // decided as Home Assistant's, the cards' exact colours asked for, a card's own figures from an entity or a
-  // template, the chips' plain style, the sheets' kinds, the dialogs' plain base, settings 9: measured at 237.4 KB)
-  core: 243_712,
+  // template, the chips' plain style, the sheets' kinds, the dialogs' plain base, settings 9: measured at 237.4 KB).
+  // 240 KB since 2026-11-25 (1.26: a head with nothing in it left out and its heights on every card, #259, the rows
+  // under six cards and their heights, the Room lights card's rows and the greeting's line, #260 #261, which sheets
+  // keep their dial, #258, American English chosen by the house's country, #267, the robot's map and presets and the
+  // car's parts in their heights, settings 10; Home Assistant's map on a plate left for a chunk of its own, 0.4 KB:
+  // measured at 239.5 KB with the entry)
+  core: 245_760,
   // the settings panel and its English. 44 KB since 2026-11-14 (1.21, 3.3 KB: the form Home Assistant's pencil opens on
   // an automatic dashboard, #188, 1.2 KB; the house's order of its rooms and the dashboards' groups by room and chips,
   // #189, 1.0 KB; a dashboard's Sidebar row, its route and its saves beside the strategy, #187, 0.9 KB; what a
-  // thermostat says and the screensaver at the device's size, #185, #190): measured at 42.1 KB; 40 before
-  panel: 45_056,
+  // thermostat says and the screensaver at the device's size, #185, #190): measured at 42.1 KB; 40 before. 45 KB since
+  // 2026-11-25 (1.26: the sheets that keep their dial, #258, the two Englishes in Preferences, #267, the dashboards'
+  // greeting, its avatar and their Room lights cards' style, #260 #261: measured at 44.1 KB)
+  panel: 46_080,
   // Customise (1.20, #170): the Dashboards tab's section that edits an automatic dashboard's views and cards (what it
   // reads of the dashboard, what it changes of its `edit`, its rows, its sheet, its English), fetched the first time a
   // dashboard is customised. 14 KB since 2026-11-14 (1.21, #188, 3.1 KB: rows dragged to their places and sent to
@@ -72,8 +79,10 @@ const BUDGETS = {
   // the Chart card (1.11, #68): the card, the readers of its series (history, statistics, a list, a forecast), its
   // editor and its English. 17 KB since 2026-11-13 (1.20: following an Energy date picker, `collection_key`, #181, and
   // the round's double tap on its rows and head, #179): measured at 16.6 KB; 16 before. 20 KB since 2026-11-19 (1.23:
-  // states as strips under the chart with their colours by state, a history's `stat`, #228): measured at 18.7 KB
-  'chart-card': 20_480,
+  // states as strips under the chart with their colours by state, a history's `stat`, #228): measured at 18.7 KB.
+  // 21 KB since 2026-11-25 (1.26, #264: a series' own thresholds, its lowest and highest points, a readout a series
+  // over the chart): measured at 20.6 KB
+  'chart-card': 21_504,
   // the energy family: every energy card, the flow's drawing and motion, the model they share, its sheet. 88 KB since
   // 2026-11-15 (1.22, #202, 0.6 KB: the flow's names on three lines and its last-resort lane, Production's badge by the
   // hour, Where it went's words said to a screen reader): measured at 87.0 KB; 87 KB since 2026-11-14 (1.21, #190,
@@ -220,8 +229,9 @@ const BUDGETS = {
   // the rounds (1.13, #113; 1.23, #224): a room's quick actions, the engine every card draws rounds with (their sets,
   // levels, taps, holds and states) and the list row that ends in them, fetched as the bundle starts. 5 KB since
   // 2026-11-20, measured at 4.3 KB: the list row took a card's control at its end (#230), its chevrons, a row's own
-  // room and its rounds in columns (#225); 4 before
-  'quick-actions': 5120,
+  // room and its rounds in columns (#225); 4 before. 6 KB since 2026-11-25 (1.26: the key a state stands in and the
+  // ladder its words go down, rounds across a line, a round's gauge asked for, #257): measured at 5.4 KB
+  'quick-actions': 6144,
   // the weather card, and the Compass card since 1.23 (#209: the card and its English; its editor goes with the forms)
   // 14 KB since 2026-11-23 (1.25: the Compass card's classic face, its letters' fit and its chevron, #247: measured at
   // 13.0 KB)
@@ -247,8 +257,11 @@ const BUDGETS = {
   // schedule's, the Thermostats card's and the Rooms card's editors, the numbers set in place): measured at 19.3 KB
   // 22 KB since 2026-11-23 (1.25: the chips' style and names, #241, the Rooms card's quick actions' taps, #239, the
   // Bars card's limits as text, #253, the Vehicle card's lists of its own controls and small icons, #248 #251): measured at
-  // 21.4 KB
-  forms: 22_528,
+  // 21.4 KB. 26 KB since 2026-11-25 (1.26: the rows under six cards, discussion #262, the sheets' dial, #258, the
+  // Remote card's controller, icons and apps by id, #255, the robot's map and presets, #265, the car's map, parts and
+  // liquid, #256 #266, the Room lights card's rows and the greeting's parts, #260 #261, a round's gauge, #257):
+  // measured at 25.4 KB
+  forms: 26_624,
   // 6 KB since 2026-11-13 (1.20: Ukrainian's words for a view's icon, #176, about 400 B; measured at 5.0 KB); 5 since
   // 2026-11-11 (1.19: Russian's, #167, about 800 B); 4 before
   'view-icons': 6144,
@@ -318,8 +331,9 @@ const BUDGETS = {
   // what only the chunks fetched later share (1.20: it left core, 1.9 KB of what every page loads): the local dates
   // and the month grid, the ticker, a sheet's laid width, a name's plain letters, and since 1.21 a person's own
   // picture in a head's circle (the Thermostat card left core, and nothing every page runs reads one); measured at
-  // 2.9 KB
-  shared: 4096,
+  // 2.9 KB. 5 KB since 2026-11-25 (1.26: the row across that the Cover card and the details sheets share, #258, and
+  // a config's own icon checked once, #255): measured at 4.6 KB
+  shared: 5120,
   // what the pages share: the date picker, the time field, the dropdown; the Activity and History pages' period,
   // sources, layers, CSV and chrome's sheet. 12 KB since 1.10 (those left core, 2.3 KB; the sources in 1.13): 8 before
   pages: 12_288,
@@ -342,8 +356,10 @@ const BUDGETS = {
   // 24); 24 since 1.9 (the appliances' and the alerts' words), 20 in 1.8, 16 before. 52 KB since 2026-11-19 (1.23: the
   // Compass, Rounds, Rooms, Thermostats and Heating schedule cards' words and their editors', a card's own blur, the
   // thermostat's room first, a chart's states, the icons' levels: Russian, the longest, went 672 B over 48 with half of
-  // them)
-  lang: 53_248,
+  // them). 54 KB since 2026-11-25 (1.26: the robot's map and presets, the sheets' dial, the Remote card's controller,
+  // a round's gauge, the Room lights card's rows, the greeting's parts, the car's map, parts and liquid: Russian, the
+  // longest, measured at 53.3 KB)
+  lang: 55_296,
   'rolldown-runtime': 2048,
   'loader.js': 4096,
 };

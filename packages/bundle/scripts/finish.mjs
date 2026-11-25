@@ -124,8 +124,13 @@ for (const name of initial) {
 // the appliances' announcement and icons, heights read from the house, the judges' fixes; the lazy families' English
 // left core first, about 9 KB): 224 KB in 1.8, 222 KB in 1.7, 220 before. 238 KB since 2026-11-23 (1.25: a toggle
 // decided as Home Assistant's, the cards' exact colours asked for, a card's own figures from an entity or a template,
-// the chips' plain style, the sheets' kinds, the dialogs' plain base, settings 9: measured at 237.4 KB)
-const BUDGET = 238 * 1024;
+// the chips' plain style, the sheets' kinds, the dialogs' plain base, settings 9: measured at 237.4 KB). 240 KB since
+// 2026-11-25 (1.26: a head with nothing in it left out and its heights on every card, #259, the rows under six cards
+// and their heights, the Room lights card's rows and the greeting's line, #260 #261, which sheets keep their dial,
+// #258, American English chosen by the house's country, #267, the robot's map and presets and the car's parts in
+// their heights, settings 10; Home Assistant's map on a plate left for a chunk of its own, 0.4 KB: measured at
+// 239.5 KB)
+const BUDGET = 240 * 1024;
 const kb = (n) => `${(n / 1024).toFixed(1)} KB`;
 console.log(
   `Fluvy v${version} · build ${build} · every page ${kb(gzip(initial))} gzip (budget ${BUDGET / 1024} KB: ${[...initial].join(' + ')})`,
