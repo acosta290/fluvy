@@ -35,7 +35,8 @@ export function setFallbackTokens(css: string): void {
  * The sheets of the cards' families. One that only a family or a page fetched on demand adopts is a module of its own,
  * which travels in that chunk: the energy family's (`@fluvy/ui/styles/energy`), the player's (`@fluvy/ui/styles/media`),
  * the calendar's (`@fluvy/ui/styles/calendar`), the thermostat's (`@fluvy/ui/styles/climate`), the cover's
- * (`@fluvy/ui/styles/cover`) and the Activity and History pages' chrome (`@fluvy/ui/styles/page`).
+ * (`@fluvy/ui/styles/cover`), a level across (`@fluvy/ui/styles/across`: the cover's and the details sheets') and the
+ * Activity and History pages' chrome (`@fluvy/ui/styles/page`).
  */
 export const sheetStyles = {
   home: sheet(homeCss),

@@ -29,6 +29,7 @@
     "./time-field": "./src/controls/time-field.ts",
     "./select": "./src/controls/select.ts",
     "./switch-styles": "./src/controls/switch-styles.ts",
+    "./styles/across": "./src/styles/across.ts",
     "./styles/calendar": "./src/styles/calendar.ts",
     "./styles/climate": "./src/styles/climate.ts",
     "./styles/cover": "./src/styles/cover.ts",
