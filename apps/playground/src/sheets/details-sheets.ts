@@ -137,6 +137,7 @@ const pair = (
   title: `${title} · its dial, and a ruler in its place (#258)`,
   width: 736,
   measure: false,
+  dashboard: false,
   cards: [
     { ...sheetOf(tag, entity), cols: 6 },
     { ...sheetOf(tag, entity), show_dial: false, ...more, cols: 6 },

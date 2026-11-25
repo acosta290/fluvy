@@ -31,6 +31,12 @@ export interface FrameSpec {
   /** false = a stress frame (deliberate overflow, scrolling rows): rendered for the eye, not audited by the measurer. */
   readonly measure?: boolean;
   /**
+   * false = a picture of the sheet alone (two things side by side for the eye, each half of a wide frame): left out
+   * of the dashboard a page draws of the sheet (`?dashboard=<sheet>`), where a phone's column would halve its halves
+   * (a details sheet a third of a phone wide, which no screen ever shows).
+   */
+  readonly dashboard?: boolean;
+  /**
    * Card widths at which its half cards (`cols: 6`) draw what they declare too — half a section (152, 172) or a narrow
    * column's (211, 266, half a wider one): `heights.mjs` draws the frame again at each, in every language, and holds
    * every card to its height there.

@@ -490,6 +490,8 @@ const framed = params.get('frames') !== 'none' && !automatic;
 for (const column of columns)
   for (const [name, sheet] of selected)
     for (const frame of framed ? sheet.frames : []) {
+      // a picture of the sheet alone is not the dashboard's
+      if (dashboard && frame.dashboard === false) continue;
       const mounted = mountFrame(name, frame, mock.hass(), {
         width,
         wearStatuses: (el, own) => wearStatuses(el, own, column),

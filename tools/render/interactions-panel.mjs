@@ -258,7 +258,7 @@ const keysSeen = (page) => page.evaluate(() => window.__keys.splice(0));
   const next = await focused(page);
   check(
     'Tab chooses the row and moves on to the next control',
-    (await barText(page)) === 'Language · English' &&
+    (await barText(page)) === 'Language · English (United Kingdom)' &&
       next?.role === 'switch' &&
       next?.label === 'Reduce motion',
     JSON.stringify(next),
