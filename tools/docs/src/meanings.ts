@@ -537,8 +537,15 @@ export const MEANINGS: Readonly<Record<string, string>> = {
   'production.days': 'How many days ahead the forecast shows.',
   'production.entity':
     'A sensor of what the panels made today: its state is the day’s total so far.',
+  'remote.apps_names': 'Writes each app’s name under its round, or leaves the rounds alone.',
   'remote.controls': 'The rounds of the row layout, in this order.',
   'remote.entity': 'The media player the remote controls.',
+  'remote.gamepad_keys':
+    'The keys beside the controller’s A, B, X and Y, three at most, in this order.',
+  'remote.gamepad_tint':
+    'Letters the controller’s buttons in the console’s colours, or in the card’s ink.',
+  'remote.icons':
+    'An icon of your own for a key, by the key’s name (assistant: mdi:microsoft-xbox).',
   'room.controls': 'Draws the room’s controls as rows, as tiles, or not at all.',
   'room.picture': 'A picture of the room, as an address; left out, the area’s own.',
   'room.name_lines':
@@ -936,6 +943,8 @@ export const MEANINGS: Readonly<Record<string, string>> = {
     'Makes the sensor’s on an alert whatever its class, or never one, before the card’s classes.',
   'openings.rows[].since': 'Where the time of the last change is read from.',
   'printer.roles[].role': 'What the entity is to the printer.',
+  'remote.apps[].app_id':
+    'What the player opens the app by: an Xbox’s store id, a Roku’s channel id. Left out, an Xbox opens the platforms Fluvy knows.',
   'remote.apps[].key': 'A key that opens the app.',
   'remote.apps[].source': 'The player’s source the app is.',
   'remote.custom[].key': 'The key it stands in for.',

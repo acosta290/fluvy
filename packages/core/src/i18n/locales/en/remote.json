@@ -81,6 +81,21 @@
     "editor.activity": "Android TV link",
     "editor.activity_helper": "What Android TV Remote opens the app by: a deep link such as netflix:// (the reliable way) or an application ID",
     "editor.commands": "Commands of this device",
-    "editor.commands_helper": "A key and the command the device takes for it, over the table’s (back: KEY_RETURN)"
+    "editor.commands_helper": "A key and the command the device takes for it, over the table’s (back: KEY_RETURN)",
+    "key.a": "A button",
+    "key.b": "B button",
+    "key.x": "X button",
+    "key.y": "Y button",
+    "key.view": "View",
+    "key.nexus": "Xbox button",
+    "group.gamepad": "Controller buttons",
+    "option.console": "The console’s",
+    "editor.gamepad_keys": "Keys beside the controller buttons",
+    "editor.gamepad_tint": "Colours of the buttons",
+    "editor.apps_names": "Names under the apps",
+    "editor.app_id": "App ID",
+    "editor.app_id_helper": "What the player opens the app by: an Xbox store ID such as 9WZDNCRFJ3TJ, a Roku channel ID; left empty, an Xbox opens the platforms Fluvy knows",
+    "editor.icons": "Icons of the keys",
+    "editor.icons_helper": "A key and the icon it wears, over its own (assistant: mdi:microsoft-xbox)"
   }
 }

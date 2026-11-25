@@ -3547,7 +3547,22 @@
     "editor.activity": "Android TV-hivatkozás",
     "editor.activity_helper": "Amivel az Android TV Remote megnyitja az alkalmazást: mélyhivatkozás, például netflix:// (a megbízható mód), vagy alkalmazásazonosító",
     "editor.commands": "Az eszköz parancsai",
-    "editor.commands_helper": "Egy gomb és a parancs, amit az eszköz érte elfogad, a táblázat felett (back: KEY_RETURN)"
+    "editor.commands_helper": "Egy gomb és a parancs, amit az eszköz érte elfogad, a táblázat felett (back: KEY_RETURN)",
+    "key.a": "A gomb",
+    "key.b": "B gomb",
+    "key.x": "X gomb",
+    "key.y": "Y gomb",
+    "key.view": "Nézet",
+    "key.nexus": "Xbox gomb",
+    "group.gamepad": "A kontroller gombjai",
+    "option.console": "A konzol színei",
+    "editor.gamepad_keys": "Gombok a kontroller gombjai mellett",
+    "editor.gamepad_tint": "A gombok színei",
+    "editor.apps_names": "Nevek az alkalmazások alatt",
+    "editor.app_id": "Alkalmazásazonosító",
+    "editor.app_id_helper": "Amivel a lejátszó megnyitja az alkalmazást: Xbox áruházbeli azonosító, például 9WZDNCRFJ3TJ, vagy Roku-csatornaazonosító; üresen az Xbox a Fluvy által ismert platformokat nyitja meg",
+    "editor.icons": "A gombok ikonjai",
+    "editor.icons_helper": "Egy gomb és az ikon, amelyet a sajátja helyett visel (assistant: mdi:microsoft-xbox)"
   },
   "details": {
     "title": "Előzmények",

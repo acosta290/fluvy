@@ -3547,7 +3547,22 @@
     "editor.activity": "Android TV 链接",
     "editor.activity_helper": "Android TV Remote 打开该应用的方式:netflix:// 这样的深层链接（可靠的方式）或应用 ID",
     "editor.commands": "此设备的命令",
-    "editor.commands_helper": "按键及设备为其接受的命令，优先于表格（back: KEY_RETURN）"
+    "editor.commands_helper": "按键及设备为其接受的命令，优先于表格（back: KEY_RETURN）",
+    "key.a": "A 按钮",
+    "key.b": "B 按钮",
+    "key.x": "X 按钮",
+    "key.y": "Y 按钮",
+    "key.view": "视图",
+    "key.nexus": "Xbox 按钮",
+    "group.gamepad": "控制器按钮",
+    "option.console": "主机配色",
+    "editor.gamepad_keys": "控制器按钮旁的按键",
+    "editor.gamepad_tint": "按钮颜色",
+    "editor.apps_names": "应用下方显示名称",
+    "editor.app_id": "应用 ID",
+    "editor.app_id_helper": "播放器打开该应用的方式:9WZDNCRFJ3TJ 这样的 Xbox 商店 ID、Roku 频道 ID；留空时，Xbox 打开 Fluvy 已知的平台",
+    "editor.icons": "按键图标",
+    "editor.icons_helper": "按键及其显示的图标，替代原本的图标（assistant: mdi:microsoft-xbox）"
   },
   "details": {
     "title": "历史",

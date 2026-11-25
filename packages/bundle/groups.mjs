@@ -501,10 +501,11 @@ const GLYPH_SETS = /\/packages\/ui\/src\/glyph-sets\/([\w-]+)\.ts/;
  * card), and the width a sheet's pair of buttons share (`pair`, 1.23). Nothing every page runs reaches them: in core
  * every page waited on them, here they come with the first chunk that needs them — as the bundle starts, beside the
  * editors' fields the families fetch too. And the dashboard sidebar's glyph (1.21, #187), which the sidebar and the
- * settings panel both draw.
+ * settings panel both draw, and what checks a config's own icon (1.26), which the sidebar and the remote card both
+ * read.
  */
 const SHARED =
-  /\/packages\/(cards\/src\/shared\/(dates|days|ticker|laid|sheet-insets|picture|side-glyph|pair)|core\/src\/plain)\.ts/;
+  /\/packages\/(cards\/src\/shared\/(dates|days|ticker|laid|sheet-insets|picture|side-glyph|pair|icon-name)|core\/src\/plain)\.ts/;
 
 /** The cards' visual editor (the rows editor every card's `getConfigElement` builds): fetched the first time a card is edited. */
 const EDITOR = /\/packages\/cards\/src\/shared\/rows-editor\.ts/;

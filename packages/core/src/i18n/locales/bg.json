@@ -3302,7 +3302,22 @@
     "editor.activity": "Връзка за Android TV",
     "editor.activity_helper": "С какво Android TV Remote отваря приложението: дълбока връзка като netflix:// (надеждният начин) или идентификатор на приложение",
     "editor.commands": "Команди на това устройство",
-    "editor.commands_helper": "Бутон и командата, която устройството приема за него, вместо тази от таблицата (back: KEY_RETURN)"
+    "editor.commands_helper": "Бутон и командата, която устройството приема за него, вместо тази от таблицата (back: KEY_RETURN)",
+    "key.a": "Бутон A",
+    "key.b": "Бутон B",
+    "key.x": "Бутон X",
+    "key.y": "Бутон Y",
+    "key.view": "Изглед",
+    "key.nexus": "Бутон Xbox",
+    "group.gamepad": "Бутони на контролера",
+    "option.console": "Като на конзолата",
+    "editor.gamepad_keys": "Бутони до бутоните на контролера",
+    "editor.gamepad_tint": "Цветове на бутоните",
+    "editor.apps_names": "Имена под приложенията",
+    "editor.app_id": "Идентификатор на приложението",
+    "editor.app_id_helper": "С какво плейърът отваря приложението: идентификатор от магазина на Xbox, например 9WZDNCRFJ3TJ, идентификатор на канал в Roku; ако е празно, Xbox отваря платформите, които Fluvy познава",
+    "editor.icons": "Икони на бутоните",
+    "editor.icons_helper": "Бутон и иконата, която носи вместо своята (assistant: mdi:microsoft-xbox)"
   },
   "room-editor": {
     "show_quick_actions": "Показване на бързите действия",

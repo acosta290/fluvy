@@ -20,10 +20,11 @@ custom: # keys of your own
 ### Where a key goes
 
 1. The player's own service (power, volume, play, a source).
-2. Else the remote, as its integration takes it: Android TV Remote, Apple TV, Roku, LG webOS, Samsung, Fire TV.
+2. Else the remote, as its integration takes it: Android TV Remote, Apple TV, Roku, LG webOS, Samsung, Fire TV, Xbox.
 3. Else your own `commands`.
 
-A key nothing takes is drawn disabled. The D-pad and the channel need a `remote` (or an LG television).
+A key nothing takes is drawn disabled. The D-pad, the channel and the controller buttons need a `remote` (or an LG
+television). `icons` gives any key an icon of your own: `icons: { assistant: mdi:microsoft-xbox }`.
 
 ```yaml
 # a Samsung television whose back key has another name
@@ -45,7 +46,8 @@ commands:
 | `pad` | The head and the D-pad | 276 |
 | `row` | A mini row with its `controls` | 76 |
 
-`groups` picks and orders the parts: `source`, `dpad`, `transport`, `volume`, `apps`, `channel`, `custom`.
+`groups` picks and orders the parts: `source`, `dpad`, `transport`, `volume`, `apps`, `channel`, `custom`, and
+`gamepad` (the controller's A, B, X and Y with View, Xbox and Menu beside them, never there unless you list it).
 
 ### Apps
 
@@ -56,3 +58,20 @@ with its logo. Your own take `app`, or a `source`, `key` or `tap_action`, with a
 
 On Android TV Remote, an app opens best by a deep link: `activity: netflix://`. Opening by application ID goes through
 the Play Store, which has not opened many apps since August 2026.
+
+`apps_names: false` keeps the circles alone; their names are still read out.
+
+### Xbox
+
+An Xbox takes the arrows, A, B, X, Y, View, Menu and the Xbox button (`nexus`), and opens an app by its Microsoft
+Store id: Netflix, YouTube, Disney+, Prime Video and about twenty more open with `app` alone. Give any other app its id
+from the console's media browser as `app_id`.
+
+```yaml
+type: custom:fluvy-remote-card
+entity: media_player.living_room_xbox
+remote: remote.living_room_xbox
+groups: [apps, dpad, gamepad, transport, volume]
+apps: [{ app: netflix }, { app: appletv }, { app: disneyplus }, { app: jellyfin }, { app: plutotv }]
+apps_names: false
+```

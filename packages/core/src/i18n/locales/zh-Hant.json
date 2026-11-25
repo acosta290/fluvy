@@ -3301,7 +3301,22 @@
     "editor.activity": "Android TV 連結",
     "editor.activity_helper": "Android TV Remote 開啟此應用程式的方式：netflix:// 這類深層連結（較可靠）或應用程式 ID",
     "editor.commands": "此裝置的命令",
-    "editor.commands_helper": "按鍵及裝置對應的命令，優先於內建對照表（back: KEY_RETURN）"
+    "editor.commands_helper": "按鍵及裝置對應的命令，優先於內建對照表（back: KEY_RETURN）",
+    "key.a": "A 按鈕",
+    "key.b": "B 按鈕",
+    "key.x": "X 按鈕",
+    "key.y": "Y 按鈕",
+    "key.view": "檢視",
+    "key.nexus": "Xbox 按鈕",
+    "group.gamepad": "控制器按鈕",
+    "option.console": "主機配色",
+    "editor.gamepad_keys": "控制器按鈕旁的按鍵",
+    "editor.gamepad_tint": "按鈕顏色",
+    "editor.apps_names": "應用程式下方顯示名稱",
+    "editor.app_id": "應用程式 ID",
+    "editor.app_id_helper": "播放器開啟此應用程式的方式：9WZDNCRFJ3TJ 這類 Xbox 商店 ID、Roku 頻道 ID；留空時，Xbox 會開啟 Fluvy 已知的平台",
+    "editor.icons": "按鍵圖示",
+    "editor.icons_helper": "按鍵及其顯示的圖示，取代原本的圖示（assistant: mdi:microsoft-xbox）"
   },
   "room-editor": {
     "show_quick_actions": "顯示快速操作",

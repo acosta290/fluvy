@@ -11,7 +11,6 @@ import {
   DESKTOP_FROM,
   deviceOf,
   isAddress,
-  isIcon,
   isViewPath,
   parseSidebar,
   presentationOf,
@@ -19,6 +18,7 @@ import {
   type Presentation,
   type SidebarSpec,
 } from './config.js';
+import { isIcon } from '../shared/icon-name.js';
 import { TAG, type FluvySidebar, type MenuEntry } from './sidebar.js';
 import { rootCss, SIDE_ATTRIBUTE } from './styles.js';
 

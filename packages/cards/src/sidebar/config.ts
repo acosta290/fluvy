@@ -1,4 +1,5 @@
 import type { ActionConfig, LovelaceCardConfig } from '@fluvy/core';
+import { isIcon } from '../shared/icon-name.js';
 
 /*
  * A dashboard's own sidebar as its configuration asks for it (1.21, #187): `fluvy_sidebar:` beside `views:`, or beside
@@ -139,10 +140,6 @@ const parseCards = (raw: unknown): LovelaceCardConfig[] =>
   ).filter(
     (card): card is LovelaceCardConfig => isRecord(card) && typeof card['type'] === 'string',
   );
-
-/** An icon as Home Assistant names them (`mdi:home`, `fluvy:sun`). */
-export const isIcon = (value: unknown): value is string =>
-  typeof value === 'string' && /^[a-z0-9_-]+:[a-z0-9_-]+$/i.test(value);
 
 /** A view's path as Home Assistant writes them: letters, digits, `-` and `_`. */
 export const isViewPath = (value: unknown): value is string =>

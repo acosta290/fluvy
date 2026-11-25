@@ -3605,7 +3605,22 @@
     "editor.activity": "Odkaz pro Android TV",
     "editor.activity_helper": "Čím Android TV Remote aplikaci otevře: hlubokým odkazem jako netflix:// (spolehlivější způsob) nebo ID aplikace",
     "editor.commands": "Příkazy tohoto zařízení",
-    "editor.commands_helper": "Tlačítko a příkaz, který pro něj zařízení přijímá, nad rámec tabulky (back: KEY_RETURN)"
+    "editor.commands_helper": "Tlačítko a příkaz, který pro něj zařízení přijímá, nad rámec tabulky (back: KEY_RETURN)",
+    "key.a": "Tlačítko A",
+    "key.b": "Tlačítko B",
+    "key.x": "Tlačítko X",
+    "key.y": "Tlačítko Y",
+    "key.view": "Zobrazit",
+    "key.nexus": "Tlačítko Xbox",
+    "group.gamepad": "Tlačítka ovladače",
+    "option.console": "Jako na konzoli",
+    "editor.gamepad_keys": "Tlačítka vedle tlačítek ovladače",
+    "editor.gamepad_tint": "Barvy tlačítek",
+    "editor.apps_names": "Názvy pod aplikacemi",
+    "editor.app_id": "ID aplikace",
+    "editor.app_id_helper": "Čím přehrávač aplikaci otevře: ID z obchodu Xbox jako 9WZDNCRFJ3TJ, ID kanálu Roku; prázdné: Xbox otevře platformy, které Fluvy zná",
+    "editor.icons": "Ikony tlačítek",
+    "editor.icons_helper": "Tlačítko a ikona, kterou nese místo vlastní (assistant: mdi:microsoft-xbox)"
   },
   "details": {
     "title": "Historie",

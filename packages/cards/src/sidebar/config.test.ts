@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
+import { isIcon } from '../shared/icon-name.js';
 import {
   deviceOf,
   isAddress,
-  isIcon,
   isViewPath,
   parseSidebar,
   parseWidth,

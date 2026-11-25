@@ -3547,7 +3547,22 @@
     "editor.activity": "Android TV bağlantısı",
     "editor.activity_helper": "Android TV Remote’un uygulamayı neyle açtığı: netflix:// gibi bir derin bağlantı (güvenilir yol) ya da bir uygulama kimliği",
     "editor.commands": "Bu cihazın komutları",
-    "editor.commands_helper": "Bir tuş ve cihazın onun için kabul ettiği komut, tablonun üstünde (back: KEY_RETURN)"
+    "editor.commands_helper": "Bir tuş ve cihazın onun için kabul ettiği komut, tablonun üstünde (back: KEY_RETURN)",
+    "key.a": "A düğmesi",
+    "key.b": "B düğmesi",
+    "key.x": "X düğmesi",
+    "key.y": "Y düğmesi",
+    "key.view": "Görünüm",
+    "key.nexus": "Xbox düğmesi",
+    "group.gamepad": "Oyun kumandası düğmeleri",
+    "option.console": "Konsolun renkleri",
+    "editor.gamepad_keys": "Kumanda düğmelerinin yanındaki tuşlar",
+    "editor.gamepad_tint": "Düğme renkleri",
+    "editor.apps_names": "Uygulamaların altında adlar",
+    "editor.app_id": "Uygulama kimliği",
+    "editor.app_id_helper": "Oynatıcının uygulamayı neyle açtığı: 9WZDNCRFJ3TJ gibi bir Xbox mağaza kimliği, bir Roku kanal kimliği; boş bırakılırsa Xbox, Fluvy’nin bildiği platformları açar",
+    "editor.icons": "Tuşların simgeleri",
+    "editor.icons_helper": "Bir tuş ve kendi simgesi yerine taşıdığı simge (assistant: mdi:microsoft-xbox)"
   },
   "details": {
     "title": "Geçmiş",

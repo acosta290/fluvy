@@ -1,9 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { buttonService, commandFor, isKey, KEY_GLYPHS, KEYS } from './keys.js';
+import { buttonService, commandFor, isKey, isLetter, KEY_GLYPHS, KEYS } from './keys.js';
 
 describe('the remote’s keys and the integrations’ commands (#143)', () => {
-  it('every key has a glyph, and only the table’s names are keys', () => {
-    for (const key of KEYS) expect(KEY_GLYPHS[key], key).toBeTruthy();
+  it('every key has a glyph or its letter, and only the table’s names are keys', () => {
+    for (const key of KEYS) expect(isLetter(key) || Boolean(KEY_GLYPHS[key]), key).toBe(true);
+    expect(KEYS.filter(isLetter)).toEqual(['a', 'b', 'x', 'y']);
+    // the Xbox button wears the console's mark, from the logos' chunk
+    expect(KEY_GLYPHS.nexus).toBe('app:xbox');
     expect(isKey('home')).toBe(true);
     expect(isKey('HOME')).toBe(false);
     expect(isKey(3)).toBe(false);
@@ -54,6 +57,18 @@ describe('the remote’s keys and the integrations’ commands (#143)', () => {
     // any other word the console types as text: a key it has no command for is none
     for (const key of ['captions', 'power', 'mute', 'rewind', 'channel_up', 'assistant'] as const)
       expect(commandFor('xbox', key), key).toBeUndefined();
+    expect(
+      ['a', 'b', 'x', 'y', 'view', 'nexus'].map((key) => commandFor('xbox', key as never)),
+    ).toEqual(['A', 'B', 'X', 'Y', 'View', 'Nexus']);
+  });
+
+  it('a game controller’s keys on Android TV Remote are Android’s gamepad codes; Apple TV has none', () => {
+    expect(commandFor('androidtv_remote', 'a')).toBe('BUTTON_A');
+    expect(commandFor('androidtv_remote', 'y')).toBe('BUTTON_Y');
+    expect(commandFor('androidtv_remote', 'view')).toBe('BUTTON_SELECT');
+    expect(commandFor('androidtv_remote', 'nexus')).toBe('BUTTON_MODE');
+    expect(commandFor('apple_tv', 'a')).toBeUndefined();
+    expect(commandFor('roku', 'nexus')).toBeUndefined();
   });
 
   it('an integration the table does not know is sent Android TV Remote’s names', () => {

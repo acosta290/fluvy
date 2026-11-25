@@ -7,8 +7,10 @@
  * mute to the receiver the volume is routed to (`media_player.volume_mute`), an app to the player's source
  * (`media_player.select_source`), one the player does not list to an Android TV Remote's remote by its deep link
  * (`remote.turn_on`), the app running read by its package and said by its platform's name, never the package; a
- * grid's OK is its middle cell; out of reach nothing answers; the apps' logos land from their chunk. Real cards on the playground's simulated hass. Exit code 1 on any
- * failure.
+ * grid's OK is its middle cell; out of reach nothing answers; the apps' logos land from their chunk. On the
+ * `remote-xbox` sheet (#255): an Xbox's OK and its A button go to its remote as the console's own `A`, a key it has no
+ * command for is disabled, an app opens by its store id (`media_player.play_media` as an `app`), the face buttons'
+ * card is as tall as it declares. Real cards on the playground's simulated hass. Exit code 1 on any failure.
  *   PLAYGROUND=http://127.0.0.1:5193/ node interactions-remote.mjs
  */
 import { calls, frame, reset, settle, startSuite } from './lib/suite.mjs';
@@ -174,6 +176,48 @@ const services = async () =>
     names.includes('Netflix') && names.includes('Disney+') && names.includes('Prime'),
     names.join(', '),
   );
+}
+
+/* ---------- an Xbox (#255) ---------- */
+{
+  const xbox = await suite.sheet('remote-xbox');
+  const of = (title) => frame(xbox, title).locator('fluvy-remote-card').first();
+  await reset(xbox);
+  await key(of('Xbox'), 'OK').click();
+  await key(of('Xbox · face buttons'), 'A button').click();
+  await key(of('Xbox · face buttons'), 'Xbox button').click();
+  await settle(xbox, 300);
+  let c = await calls(xbox);
+  check(
+    'an Xbox’s OK, its A button and its Xbox button: remote.send_command A, A, Nexus',
+    c.map((call) => `${call.s}:${call.d?.command}`).join() ===
+      'remote.send_command:A,remote.send_command:A,remote.send_command:Nexus',
+    JSON.stringify(c),
+  );
+  check(
+    'a key the console has no command for is drawn disabled, never typed',
+    await key(of('Xbox'), 'Subtitles').isDisabled(),
+  );
+  await reset(xbox);
+  await of('Xbox · apps').locator('.rm-app__circle').first().click();
+  await settle(xbox, 300);
+  c = await calls(xbox);
+  check(
+    'Netflix on an Xbox opens by its store id: media_player.play_media 9WZDNCRFJ3TJ as an app',
+    c.length === 1 &&
+      c[0].s === 'media_player.play_media' &&
+      c[0].d.media_content_id === '9WZDNCRFJ3TJ' &&
+      c[0].d.media_content_type === 'app' &&
+      c[0].t?.entity_id === 'media_player.rx_xbox',
+    JSON.stringify(c),
+  );
+  const drawn = [await height(of('Xbox · face buttons')), await height(of('Xbox · controller'))];
+  check(
+    'the face buttons’ card 232 at a 360 column (head, 16, the diamond 132, 20), the controller 548',
+    drawn.join(' ') === '232 548',
+    drawn.join(' '),
+  );
+  await xbox.close();
 }
 
 await suite.finish();

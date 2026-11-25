@@ -17,6 +17,7 @@ export const REMOTE_GROUPS = [
   'channel',
   'apps',
   'custom',
+  'gamepad',
 ] as const;
 export type RemoteGroup = (typeof REMOTE_GROUPS)[number];
 /** The groups drawn where the config names none. */
@@ -60,18 +61,21 @@ export interface AppsLayout {
 
 /**
  * The apps' cells across `width`: as many as hold 50 while every name holds its cell (4 inside it), fewer a row down to
- * three where that keeps the names, else the most with the circles alone — the names all or none, as option tiles.
- * The card measures its names in their class (`measure`); the heights estimate them letter by letter. The same rows
- * share the apps evenly, so none is left alone on the last (six at five a row: 3 + 3).
+ * three where that keeps the names, else the most with the circles alone — the names all or none, as option tiles, and
+ * none where the config hides them (`apps_names: false`). The card measures its names in their class (`measure`); the
+ * heights estimate them letter by letter. The same rows share the apps evenly, so none is left alone on the last (six
+ * at five a row: 3 + 3).
  */
 export function appsLayout(
   names: readonly string[],
   width: number,
   measure: (text: string) => number = (text) => textWidth(text, 'name'),
+  named = true,
 ): AppsLayout {
   const count = Math.max(1, names.length);
   const shared = (perRow: number): number => Math.ceil(count / rowsOf(count, perRow));
   const most = Math.min(count, appsPerRow(width));
+  if (!named) return { perRow: shared(most), names: false };
   const widest = Math.max(0, ...names.map(measure));
   for (let n = most; n >= Math.min(3, most); n--) {
     const perRow = shared(n);
@@ -116,6 +120,16 @@ export function ringFit(width: number, asked: unknown): { sides: boolean; size: 
 /** `count` rows of 44 action cells, 16 apart. */
 const keyRows = (count: number): number => (count ? count * 44 + (count - 1) * 16 : 0);
 
+/**
+ * The face buttons' diamond (`gamepad`, 1.26, #255): three rows of 44, Y over X and B over A, 132 square; in a column
+ * narrower than that, closer on the 4 grid down to 112, its buttons still 4 apart.
+ */
+const DIAMOND = 132;
+export const diamondOf = (width: number): number =>
+  Math.max(112, Math.min(DIAMOND, Math.floor(width / 4) * 4));
+/** Its keys stand beside it, in its rows, where the column holds the two and 16 between; else in a row under it. */
+export const gamepadBeside = (width: number): boolean => width >= 2 * DIAMOND + 16;
+
 /** The D-pad: the reference's grid (three rows of cells), or the ring, with a row of its four keys where they leave its sides. */
 function padHeight(config: LovelaceCardConfig, width: number): number {
   if (config['dpad'] === 'grid') return keyRows(3);
@@ -145,7 +159,8 @@ const appNames = (apps: readonly unknown[]): string[] =>
  * counts their rows, none where the player takes no source), the pad (176 between its keys, 60 more for its row of
  * keys under it where `side_keys` asks, 164 as the grid), the transport 48, the volume and the channel each a label
  * over a 44 row (88 with their 16), the apps a row of 68 and 76 for each more (as many a row as keep their names, six
- * at most; one row of five by default) or as chips, the custom keys their rows of 44 — and the card's 20 below.
+ * at most; one row of five by default) or as chips, the custom keys their rows of 44, the face buttons' diamond (and
+ * a row of their keys under it where the column does not hold them beside it) — and the card's 20 below.
  * Compact: the head and its keys (144 with five in one row); pad: the head and the pad (276); row: 76. Unavailable,
  * off or never read, the same.
  */
@@ -190,12 +205,26 @@ export function remoteHeight(config: LovelaceCardConfig, house: RemoteHouse = {}
           16 +
           (config['apps_style'] === 'chips'
             ? 44 * chipRows(names, 'full', width, undefined, CHIP_GLYPH)
-            : appsBlock(names.length, appsLayout(names, width)));
+            : appsBlock(
+                names.length,
+                appsLayout(names, width, undefined, config['apps_names'] !== false),
+              ));
         break;
       }
       case 'custom': {
         const keys = count('custom', []);
         if (keys) height += 16 + keyRows(actionRows(keys, width));
+        break;
+      }
+      case 'gamepad': {
+        // its three keys (View, the Xbox button, Menu), else the config's, three at most
+        const own = config['gamepad_keys'];
+        const keys = Array.isArray(own) ? Math.min(3, own.length) : 3;
+        if (keyed)
+          height +=
+            16 +
+            diamondOf(width) +
+            (gamepadBeside(width) || !keys ? 0 : 16 + keyRows(actionRows(keys, width)));
         break;
       }
     }

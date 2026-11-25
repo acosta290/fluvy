@@ -3547,7 +3547,22 @@
     "editor.activity": "Android TV リンク",
     "editor.activity_helper": "Android TV Remote がアプリを開く手段:netflix:// のようなディープリンク（確実な方法）またはアプリ ID",
     "editor.commands": "このデバイスのコマンド",
-    "editor.commands_helper": "キーと、そのキーでデバイスが受け付けるコマンド。表より優先（back: KEY_RETURN）"
+    "editor.commands_helper": "キーと、そのキーでデバイスが受け付けるコマンド。表より優先（back: KEY_RETURN）",
+    "key.a": "A ボタン",
+    "key.b": "B ボタン",
+    "key.x": "X ボタン",
+    "key.y": "Y ボタン",
+    "key.view": "ビュー",
+    "key.nexus": "Xbox ボタン",
+    "group.gamepad": "コントローラーのボタン",
+    "option.console": "本体の色",
+    "editor.gamepad_keys": "コントローラーのボタンの横のキー",
+    "editor.gamepad_tint": "ボタンの色",
+    "editor.apps_names": "アプリの下に名前",
+    "editor.app_id": "アプリ ID",
+    "editor.app_id_helper": "プレーヤーがアプリを開く手段:9WZDNCRFJ3TJ のような Xbox ストア ID、Roku のチャンネル ID。空欄なら Xbox は Fluvy が知っているプラットフォームを開きます",
+    "editor.icons": "キーのアイコン",
+    "editor.icons_helper": "キーと、本来のアイコンの代わりに表示するアイコン（assistant: mdi:microsoft-xbox）"
   },
   "details": {
     "title": "履歴",

@@ -1,6 +1,7 @@
 /**
  * The streaming platforms the remote knows by name (1.18, #143): each with the colour its mark wears, the names a
- * player may list it under, the Android package a TV says is running, and the deep link an Android TV opens it by.
+ * player may list it under, the Android package a TV says is running, the deep link an Android TV opens it by, and the
+ * id an Xbox opens it by (1.26, #255).
  * Their logos are in the `app-logos` chunk (`app:<id>`), fetched the first time a card draws one; this table stays with
  * the card so a source can be matched before the logos land. A platform without a mark of its own in an open set wears
  * Fluvy's monogram (`mono`).
@@ -21,6 +22,12 @@ export interface Platform {
   readonly link?: string;
   /** A short name for a narrow cell ("Prime"), said where the title would not hold under its circle. */
   readonly short?: string;
+  /**
+   * The Microsoft Store's product id of its Xbox app: what Home Assistant's Xbox integration opens it by
+   * (`media_player.play_media` as an `app`); by the house's country where the store sells it apart in some (`*` the
+   * rest of the world's).
+   */
+  readonly xbox?: string | Readonly<Record<string, string>>;
 }
 
 /** A name as the match reads it: lower case, `+` as plus, letters and figures alone. */
@@ -31,6 +38,10 @@ export const normalise = (name: string): string =>
     .replace(/[^a-z0-9]/g, '');
 
 /*
+ * The Xbox's ids: each read from its app's page in the Microsoft Store (apps.microsoft.com/detail/<id>, 2026-11), which
+ * names Xbox among the platforms it installs on; the reporter's five (#255) also opened on his console. An app the store
+ * has for no Xbox, or only as a console app of 2014, has none.
+ *
  * The links: Home Assistant's Android TV Remote page (YouTube, Netflix, Prime Video, Disney+, Plex, Twitch), else a
  * report of the link opening the app in its community's deep-linking guide (community.home-assistant.io/t/567921) or
  * an issue of a remote card's; a web address only where the service's `/.well-known/assetlinks.json` names the TV
@@ -43,6 +54,7 @@ export const PLATFORMS: readonly Platform[] = [
     hex: '#E50914',
     android: 'com.netflix.ninja',
     link: 'netflix://',
+    xbox: '9WZDNCRFJ3TJ',
   },
   {
     id: 'disneyplus',
@@ -51,6 +63,7 @@ export const PLATFORMS: readonly Platform[] = [
     names: ['disney'],
     android: 'com.disney.disneyplus',
     link: 'https://www.disneyplus.com',
+    xbox: '9NXQXXLFST89',
   },
   {
     id: 'movistarplus',
@@ -67,6 +80,13 @@ export const PLATFORMS: readonly Platform[] = [
     android: 'com.amazon.amazonvideo.livingroom',
     link: 'https://app.primevideo.com',
     short: 'Prime',
+    xbox: {
+      US: '9NBLGGH4VGD7',
+      GB: '9NHRLPH6FFCT',
+      DE: '9NXMJ01DF4G2',
+      JP: '9PJVGJJK0XVL',
+      '*': '9P750F5JP2K0',
+    },
   },
   {
     id: 'appletv',
@@ -75,6 +95,7 @@ export const PLATFORMS: readonly Platform[] = [
     names: ['appletvplus', 'appletvapp'],
     android: 'com.apple.atve.androidtv.appletv',
     link: 'https://tv.apple.com',
+    xbox: '9MW0ZWQFH0M2',
   },
   {
     id: 'rakutentv',
@@ -90,6 +111,7 @@ export const PLATFORMS: readonly Platform[] = [
     hex: '#FF0000',
     android: 'com.google.android.youtube.tv',
     link: 'https://www.youtube.com',
+    xbox: '9NDP7KTLK7W3',
   },
   {
     id: 'youtubemusic',
@@ -105,6 +127,7 @@ export const PLATFORMS: readonly Platform[] = [
     hex: '#FF0000',
     android: 'com.google.android.youtube.tvunplugged',
     short: 'YT TV',
+    xbox: '9NCPJ3XP3FN8',
   },
   {
     id: 'youtubekids',
@@ -120,9 +143,10 @@ export const PLATFORMS: readonly Platform[] = [
     names: ['hbo', 'hbogo', 'hbonow'],
     android: 'com.wbd.stream',
     link: 'https://play.max.com',
+    xbox: '9NN5NTKVGL4R',
   },
-  { id: 'max', title: 'Max', hex: '#525252' },
-  { id: 'hulu', title: 'Hulu', hex: '', android: 'com.hulu.livingroomplus' },
+  { id: 'max', title: 'Max', hex: '#525252', xbox: '9NN5NTKVGL4R' },
+  { id: 'hulu', title: 'Hulu', hex: '', android: 'com.hulu.livingroomplus', xbox: '9WZDNCRFJ3L1' },
   {
     id: 'paramountplus',
     title: 'Paramount+',
@@ -130,6 +154,7 @@ export const PLATFORMS: readonly Platform[] = [
     names: ['paramount', 'cbsallaccess'],
     android: 'com.cbs.ott',
     short: 'Paramount',
+    xbox: '9WZDNCRFJ0WK',
   },
   {
     id: 'peacock',
@@ -137,6 +162,7 @@ export const PLATFORMS: readonly Platform[] = [
     hex: '',
     names: ['peacocktv'],
     android: 'com.peacocktv.peacockandroid',
+    xbox: '9PL67R4P9PG5',
   },
   {
     id: 'dazn',
@@ -144,6 +170,7 @@ export const PLATFORMS: readonly Platform[] = [
     hex: '#F8F8F5',
     android: 'com.dazn',
     link: 'https://open.dazn.com/',
+    xbox: '9NBLGGH52BXF',
   },
   { id: 'filmin', title: 'Filmin', hex: '' },
   { id: 'skyshowtime', title: 'SkyShowtime', hex: '', short: 'Sky' },
@@ -153,6 +180,7 @@ export const PLATFORMS: readonly Platform[] = [
     hex: '#FF5E00',
     android: 'com.crunchyroll.crunchyroid',
     link: 'crunchyroll://',
+    xbox: '9WZDNCRFJ15T',
   },
   {
     id: 'plutotv',
@@ -161,6 +189,7 @@ export const PLATFORMS: readonly Platform[] = [
     names: ['pluto'],
     android: 'tv.pluto.android',
     link: 'https://pluto.tv/en/live-tv',
+    xbox: '9P9LV240KQ9R',
   },
   {
     id: 'tubi',
@@ -169,6 +198,7 @@ export const PLATFORMS: readonly Platform[] = [
     names: ['tubitv'],
     android: 'com.tubitv',
     link: 'tubitv://open',
+    xbox: '9N1SV6841F0B',
   },
   {
     id: 'twitch',
@@ -176,23 +206,39 @@ export const PLATFORMS: readonly Platform[] = [
     hex: '#9146FF',
     android: 'tv.twitch.android.app',
     link: 'twitch://home',
+    xbox: '9PFJP1Q9R4FK',
   },
-  { id: 'plex', title: 'Plex', hex: '#EBAF00', android: 'com.plexapp.android', link: 'plex://' },
-  { id: 'jellyfin', title: 'Jellyfin', hex: '#00A4DC', android: 'org.jellyfin.androidtv' },
+  {
+    id: 'plex',
+    title: 'Plex',
+    hex: '#EBAF00',
+    android: 'com.plexapp.android',
+    link: 'plex://',
+    xbox: '9NBLGGH3ZZVF',
+  },
+  {
+    id: 'jellyfin',
+    title: 'Jellyfin',
+    hex: '#00A4DC',
+    android: 'org.jellyfin.androidtv',
+    xbox: '9P2DRTG62QF8',
+  },
   {
     id: 'emby',
     title: 'Emby',
     hex: '#52B54B',
     android: 'tv.emby.embyatv',
     link: 'embyatv://tv.emby.embyatv/startapp',
+    xbox: '9NBLGGH4T70L',
   },
-  { id: 'kodi', title: 'Kodi', hex: '#17B2E7', android: 'org.xbmc.kodi' },
+  { id: 'kodi', title: 'Kodi', hex: '#17B2E7', android: 'org.xbmc.kodi', xbox: '9NBLGGH4T892' },
   {
     id: 'spotify',
     title: 'Spotify',
     hex: '#1ED760',
     android: 'com.spotify.tv.android',
     link: 'spotify://',
+    xbox: '9NFQ49H668TB',
   },
   {
     id: 'applemusic',
@@ -200,6 +246,7 @@ export const PLATFORMS: readonly Platform[] = [
     hex: '#FA243C',
     android: 'com.apple.android.music',
     short: 'Music',
+    xbox: '9PP5M2PJ95GX',
   },
   { id: 'applepodcasts', title: 'Apple Podcasts', hex: '#9933CC', short: 'Podcasts' },
   {
@@ -208,6 +255,7 @@ export const PLATFORMS: readonly Platform[] = [
     hex: '',
     android: 'com.amazon.music.tv',
     short: 'Amazon',
+    xbox: '9MV42N00241D',
   },
   { id: 'deezer', title: 'Deezer', hex: '#A238FF', android: 'deezer.android.tv' },
   { id: 'tidal', title: 'TIDAL', hex: '#000000', android: 'com.aspiro.tidal' },
@@ -241,17 +289,17 @@ export const PLATFORMS: readonly Platform[] = [
   { id: 'mubi', title: 'MUBI', hex: '#000000', android: 'com.mubi' },
   { id: 'vimeo', title: 'Vimeo', hex: '#1AB7EA' },
   { id: 'dailymotion', title: 'Dailymotion', hex: '#0A0A0A' },
-  { id: 'viaplay', title: 'Viaplay', hex: '#FE365F' },
+  { id: 'viaplay', title: 'Viaplay', hex: '#FE365F', xbox: '9NX851B5M7CQ' },
   { id: 'googletv', title: 'Google TV', hex: '#4285F4', names: ['googleplaymoviestv'] },
   { id: 'googleplay', title: 'Google Play', hex: '#414141', names: ['playstore'], short: 'Play' },
-  { id: 'channel4', title: 'Channel 4', hex: '#AAFF89', names: ['all4'] },
-  { id: 'itvx', title: 'ITVx', hex: '#DEEB52', names: ['itvhub', 'itv'] },
+  { id: 'channel4', title: 'Channel 4', hex: '#AAFF89', names: ['all4'], xbox: '9WZDNCRFHWC9' },
+  { id: 'itvx', title: 'ITVx', hex: '#DEEB52', names: ['itvhub', 'itv'], xbox: '9WZDNCRFHZH7' },
   { id: 'zdf', title: 'ZDF', hex: '#FA7D19', names: ['zdfmediathek'] },
   { id: 'starz', title: 'STARZ', hex: '#082125' },
   { id: 'showtime', title: 'Showtime', hex: '#B10000' },
-  { id: 'now', title: 'NOW', hex: '#001211', names: ['nowtv'] },
+  { id: 'now', title: 'NOW', hex: '#001211', names: ['nowtv'], xbox: '9WZDNCRDM157' },
   { id: 'nebula', title: 'Nebula', hex: '#2CADFE' },
-  { id: 'fubo', title: 'Fubo', hex: '#C83D1E', names: ['fubotv'] },
+  { id: 'fubo', title: 'Fubo', hex: '#C83D1E', names: ['fubotv'], xbox: '9P59XJ69CJ1D' },
   { id: 'tiktok', title: 'TikTok', hex: '#000000' },
   { id: 'roku', title: 'Roku', hex: '#662D91', names: ['rokuchannel', 'therokuchannel'] },
   { id: 'bilibili', title: 'Bilibili', hex: '#00A1D6' },
@@ -311,6 +359,26 @@ export const appActivity = (
   app: Readonly<{ activity?: unknown }>,
   pf: Platform | undefined,
 ): string | undefined => ownActivity(app.activity) ?? pf?.link ?? pf?.android;
+
+/** An id a player opens an app by: one word of letters, figures, `.`, `:`, `_` and `-`, 64 at most. */
+const APP_ID = /^[\w.:-]{1,64}$/;
+
+/**
+ * What a player opens an app of the row by (`media_player.play_media` as an `app`, 1.26, #255): the person's own
+ * `app_id` where it is one word an id can be, else on an Xbox its platform's store id, in the house's country where the
+ * store sells it apart; none on another player, whose ids the table does not hold.
+ */
+export function appId(
+  app: Readonly<{ app_id?: unknown }>,
+  pf: Platform | undefined,
+  integration: string | undefined,
+  country: unknown,
+): string | undefined {
+  if (typeof app.app_id === 'string' && APP_ID.test(app.app_id)) return app.app_id;
+  const xbox = integration === 'xbox' ? pf?.xbox : undefined;
+  if (typeof xbox !== 'object') return xbox;
+  return typeof country === 'string' && Object.hasOwn(xbox, country) ? xbox[country] : xbox['*'];
+}
 
 /**
  * An Android application id, as Android writes one (`applicationId`): two parts or more joined by dots, each a letter

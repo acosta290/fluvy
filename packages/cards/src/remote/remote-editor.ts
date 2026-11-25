@@ -16,6 +16,7 @@ import { configKeys } from '../shared/config.js';
 import {
   accentField,
   actionFields,
+  boolField,
   choiceField,
   colourFields,
   editorLabels,
@@ -34,7 +35,13 @@ import {
 import type { EditorDefaults, RowsListSpec } from '../shared/rows-editor.js';
 import { KEYS, type Key } from './keys.js';
 import { PLATFORMS, platform } from './platforms.js';
-import { DEFAULT_NAV, DEFAULT_TRANSPORT, DPADS, type RemoteCardConfig } from './remote-card.js';
+import {
+  DEFAULT_GAMEPAD,
+  DEFAULT_NAV,
+  DEFAULT_TRANSPORT,
+  DPADS,
+  type RemoteCardConfig,
+} from './remote-card.js';
 
 /** The remote card's editor: fetched by its `editor()` the first time the card is edited, never by a dashboard. */
 
@@ -53,6 +60,9 @@ const draws =
     (full(data) && (remoteGroups(data['groups']) as readonly string[]).includes(group)) ||
     (group === 'dpad' && variantOf(data) === 'pad');
 const ring = (data: Data): boolean => draws('dpad')(data) && (data['dpad'] ?? 'ring') === 'ring';
+/** The apps are drawn as circles, whose names may go. */
+const circles = (data: Data): boolean =>
+  draws('apps')(data) && (data['apps_style'] ?? 'circles') === 'circles';
 
 /** A key's word of the card's own namespace. */
 const keyWord = (key: Key): MessageKey => `remote.key.${key}`;
@@ -76,18 +86,27 @@ const platformField = (): HaFormSchemaItem => ({
 /** The logos' chunk, so the apps' rows draw their marks. */
 const logos = (): Promise<unknown> => import('../app-logos/paths.js');
 
-/** An app's fields; its `activity` goes to the card's remote, and is asked for only where the card names one. */
+/**
+ * An app's fields; its `app_id` goes to the card's player and its `activity` to the card's remote, each asked for only
+ * where the card names one.
+ */
 const APP_FIELDS: readonly HaFormSchemaItem[] = [
   platformField(),
   fieldRow(textField('name'), iconField()),
   textField('image'),
   accentField('color', { item: 'own' }),
   fieldRow(textField('source'), choiceField('key', keyChoices())),
+  textField('app_id'),
   textField('activity'),
   // its tap opens it where none is chosen
   actionFields({ tap: null, hold: 'none' }),
 ];
-const APP_FIELDS_NO_REMOTE = APP_FIELDS.filter((field) => field.name !== 'activity');
+const appFields = (card: Data | undefined): readonly HaFormSchemaItem[] =>
+  APP_FIELDS.filter(
+    (field) =>
+      (field.name !== 'app_id' || Boolean(card?.['entity'])) &&
+      (field.name !== 'activity' || Boolean(card?.['remote'])),
+  );
 
 export const base = HEAD_BASE;
 
@@ -102,14 +121,18 @@ export const keys = configKeys<RemoteCardConfig>()([
   'volume',
   'apps_style',
   'apps_tint',
+  'apps_names',
+  'gamepad_tint',
   'groups',
   'nav',
   'transport',
   'keys',
   'controls',
+  'gamepad_keys',
   'apps',
   'custom',
   'commands',
+  'icons',
 ]);
 
 /** What the editor shows where the config says nothing: what the card does then. */
@@ -122,11 +145,14 @@ export const defaults: EditorDefaults = () => ({
   volume: 'auto',
   apps_style: 'circles',
   apps_tint: 'open',
+  apps_names: true,
+  gamepad_tint: 'console',
   groups: [...DEFAULT_GROUPS],
   nav: [...DEFAULT_NAV],
   transport: [...DEFAULT_TRANSPORT],
   keys: [...DEFAULT_KEYS],
   controls: [...DEFAULT_CONTROLS],
+  gamepad_keys: [...DEFAULT_GAMEPAD],
 });
 
 export const lists: readonly RowsListSpec[] = [
@@ -137,7 +163,7 @@ export const lists: readonly RowsListSpec[] = [
     idKey: 'app',
     picker: platformField(),
     schema: APP_FIELDS,
-    schemaOf: (_item, card) => (card?.['remote'] ? APP_FIELDS : APP_FIELDS_NO_REMOTE),
+    schemaOf: (_item, card) => appFields(card),
     keys: [
       'app',
       'name',
@@ -146,6 +172,7 @@ export const lists: readonly RowsListSpec[] = [
       'color',
       'source',
       'key',
+      'app_id',
       'activity',
       'tap_action',
       'hold_action',
@@ -229,6 +256,14 @@ export function getConfigForm(): LovelaceConfigForm {
       onlyWhen(draws('dpad'), orderedField('nav', keyOptions())),
       onlyWhen(draws('transport'), orderedField('transport', keyOptions())),
       onlyWhen(
+        draws('gamepad'),
+        choiceField('gamepad_tint', [
+          ['console', 'remote.option.console'],
+          ['plain', 'option.plain'],
+        ]),
+      ),
+      onlyWhen(draws('gamepad'), orderedField('gamepad_keys', keyOptions())),
+      onlyWhen(
         draws('volume'),
         choiceField('volume', [
           ['auto', 'option.auto'],
@@ -250,10 +285,12 @@ export function getConfigForm(): LovelaceConfigForm {
           ]),
         ),
       ),
+      onlyWhen(circles, boolField('apps_names')),
       onlyWhen(compact, orderedField('keys', keyOptions())),
       onlyWhen(row, orderedField('controls', keyOptions())),
-      // a key's command for this device, over the table's: edited as YAML (Home Assistant's object field)
+      // a key's command for this device, and its icon, over the table's: edited as YAML (Home Assistant's object field)
       { name: 'commands', selector: { object: {} } },
+      { name: 'icons', selector: { object: {} } },
       ...colourFields(),
       actionFields({ icon: true }),
     ],
@@ -267,16 +304,21 @@ export function getConfigForm(): LovelaceConfigForm {
       volume: 'editor.volume',
       apps_style: 'editor.apps_style',
       apps_tint: 'editor.apps_tint',
+      apps_names: 'editor.apps_names',
+      gamepad_tint: 'editor.gamepad_tint',
+      gamepad_keys: 'editor.gamepad_keys',
       groups: 'editor.groups',
       nav: 'editor.nav',
       transport: 'editor.transport',
       keys: 'editor.keys',
       controls: 'editor.controls',
       commands: 'editor.commands',
+      icons: 'editor.icons',
       app: 'editor.app',
       image: 'editor.image',
       source: 'editor.source',
       key: 'editor.key',
+      app_id: 'editor.app_id',
       activity: 'editor.activity',
     }),
     computeHelper: (schema) => {
@@ -287,7 +329,9 @@ export function getConfigForm(): LovelaceConfigForm {
         off_keys: 'editor.off_keys_helper',
         volume: 'editor.volume_helper',
         commands: 'editor.commands_helper',
+        icons: 'editor.icons_helper',
         image: 'editor.image_helper',
+        app_id: 'editor.app_id_helper',
         activity: 'editor.activity_helper',
       };
       const key = helpers[schema.name];

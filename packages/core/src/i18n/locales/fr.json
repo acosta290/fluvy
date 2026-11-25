@@ -3547,7 +3547,22 @@
     "editor.activity": "Lien Android TV",
     "editor.activity_helper": "Ce par quoi Android TV Remote ouvre l’app : un lien profond comme netflix:// (la voie fiable) ou un ID d’application",
     "editor.commands": "Commandes de cet appareil",
-    "editor.commands_helper": "Une touche et la commande que l’appareil accepte pour elle, par-dessus la table (back: KEY_RETURN)"
+    "editor.commands_helper": "Une touche et la commande que l’appareil accepte pour elle, par-dessus la table (back: KEY_RETURN)",
+    "key.a": "Bouton A",
+    "key.b": "Bouton B",
+    "key.x": "Bouton X",
+    "key.y": "Bouton Y",
+    "key.view": "Affichage",
+    "key.nexus": "Bouton Xbox",
+    "group.gamepad": "Boutons de la manette",
+    "option.console": "Celles de la console",
+    "editor.gamepad_keys": "Touches à côté des boutons de la manette",
+    "editor.gamepad_tint": "Couleurs des boutons",
+    "editor.apps_names": "Noms sous les applis",
+    "editor.app_id": "ID de l’appli",
+    "editor.app_id_helper": "Ce par quoi le lecteur ouvre l’appli : un ID du Store Xbox comme 9WZDNCRFJ3TJ, un ID de chaîne Roku ; vide, une Xbox ouvre les plateformes que Fluvy connaît",
+    "editor.icons": "Icônes des touches",
+    "editor.icons_helper": "Une touche et l’icône qu’elle porte à la place de la sienne (assistant: mdi:microsoft-xbox)"
   },
   "details": {
     "title": "Historique",

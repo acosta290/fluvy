@@ -1,4 +1,4 @@
-import type { GlyphName } from '@fluvy/ui';
+import type { IconRef } from '@fluvy/ui';
 
 /**
  * The remote's keys (1.18, #143) and what each integration takes for them, read from Home Assistant core's sources
@@ -38,14 +38,26 @@ export const KEYS = [
   'mute',
   'channel_up',
   'channel_down',
+  // a game controller's (1.26, #255): its four face buttons, View and the Xbox button
+  'a',
+  'b',
+  'x',
+  'y',
+  'view',
+  'nexus',
 ] as const;
 export type Key = (typeof KEYS)[number];
 
 export const isKey = (value: unknown): value is Key =>
   typeof value === 'string' && (KEYS as readonly string[]).includes(value);
 
-/** The glyph each key is drawn with. */
-export const KEY_GLYPHS: Readonly<Record<Key, GlyphName>> = {
+/** The face buttons, drawn as their letters in the card's type, never translated. */
+export const LETTERS = ['a', 'b', 'x', 'y'] as const;
+export type Letter = (typeof LETTERS)[number];
+export const isLetter = (key: Key): key is Letter => (LETTERS as readonly string[]).includes(key);
+
+/** The glyph each other key is drawn with: one of Fluvy's, or a platform's mark from the logos' chunk (`app:xbox`). */
+export const KEY_GLYPHS: Readonly<Record<Exclude<Key, Letter>, IconRef>> = {
   power: 'power',
   up: 'up',
   down: 'down',
@@ -76,6 +88,8 @@ export const KEY_GLYPHS: Readonly<Record<Key, GlyphName>> = {
   mute: 'volumeOff',
   channel_up: 'plus',
   channel_down: 'minus',
+  view: 'copy',
+  nexus: 'app:xbox',
 };
 
 /** The integrations whose keys the table knows, by the `platform` of the entity's registry entry. */
@@ -93,8 +107,9 @@ export type Integration = (typeof PLATFORMS)[number];
 type Commands = Readonly<Partial<Record<Key, string>>>;
 
 /**
- * Android TV Remote: `remote.send_command` with an Android key code's name without its `KEYCODE_` (androidtvremote2);
- * an app is launched with `remote.turn_on` and its deep link, else its package, as the `activity` (`appActivity`).
+ * Android TV Remote: `remote.send_command` with an Android key code's name without its `KEYCODE_` (androidtvremote2),
+ * a game controller's as Android names an Xbox controller's (View its select, the Xbox button its mode); an app is
+ * launched with `remote.turn_on` and its deep link, else its package, as the `activity` (`appActivity`).
  */
 const ANDROID_TV_REMOTE: Commands = {
   power: 'POWER',
@@ -127,6 +142,12 @@ const ANDROID_TV_REMOTE: Commands = {
   mute: 'VOLUME_MUTE',
   channel_up: 'CHANNEL_UP',
   channel_down: 'CHANNEL_DOWN',
+  a: 'BUTTON_A',
+  b: 'BUTTON_B',
+  x: 'BUTTON_X',
+  y: 'BUTTON_Y',
+  view: 'BUTTON_SELECT',
+  nexus: 'BUTTON_MODE',
 };
 
 /**
@@ -288,6 +309,12 @@ const XBOX: Commands = {
   pause: 'Pause',
   previous: 'Previous',
   next: 'Next',
+  a: 'A',
+  b: 'B',
+  x: 'X',
+  y: 'Y',
+  view: 'View',
+  nexus: 'Nexus',
 };
 
 const TABLE: Readonly<Record<Integration, Commands>> = {

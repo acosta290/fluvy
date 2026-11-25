@@ -68,7 +68,9 @@ transport:
 volume: auto
 apps_style: circles
 apps_tint: open
+apps_names: true
 # commands:
+# icons:
 # tone:
 # color:
 # card_color:
@@ -102,18 +104,22 @@ apps_tint: open
 | `icon` |  | The card’s icon, in place of the entity’s own. |
 | `variant` | `full` | The card’s layout. `full` · `compact` · `pad` · `row`. |
 | `off_keys` | `live` | Keeps every key alive while the device is off, or only the power key. `live` · `power` (Only power). |
-| `groups` | `source`, `dpad`, `transport`, `volume`, `apps` | The groups of keys the remote shows, in this order. Any of `source` · `dpad` (Direction pad) · `transport` (Playback) · `volume` · `channel` · `apps` · `custom`. |
+| `groups` | `source`, `dpad`, `transport`, `volume`, `apps` | The groups of keys the remote shows, in this order. Any of `source` · `dpad` (Direction pad) · `transport` (Playback) · `volume` · `channel` · `apps` · `custom` · `gamepad` (Controller buttons). |
 | `dpad` | `ring` | Draws the arrow keys round a ring, or in a grid. `ring` · `grid`. |
 | `ok_label` | `word` | Writes "OK" on the middle key, or leaves it plain. `word` (With the word) · `plain`. |
 | `side_keys` | `auto` | Where the keys round the pad stand. `auto` · `sides` (Beside the pad) · `row`. |
-| `nav` | `back`, `menu`, `captions`, `home` | Which keys stand round the arrow pad, in this order. Any of `power` · `up` · `down` · `left` · `right` · `ok` · `back` · `home` · `menu` · `info` · `guide` · `captions` (Subtitles) · `settings` · `input` · `assistant` · `exit` · `play_pause` (Play or pause) · `play` · `pause` · `stop` · `rewind` · `forward` (Fast forward) · `previous` · `next` · `record` · `volume_up` · `volume_down` · `mute` · `channel_up` · `channel_down`. |
-| `transport` | `rewind`, `play_pause`, `forward` | The playback keys, in this order. Any of `power` · `up` · `down` · `left` · `right` · `ok` · `back` · `home` · `menu` · `info` · `guide` · `captions` (Subtitles) · `settings` · `input` · `assistant` · `exit` · `play_pause` (Play or pause) · `play` · `pause` · `stop` · `rewind` · `forward` (Fast forward) · `previous` · `next` · `record` · `volume_up` · `volume_down` · `mute` · `channel_up` · `channel_down`. |
+| `nav` | `back`, `menu`, `captions`, `home` | Which keys stand round the arrow pad, in this order. Any of `power` · `up` · `down` · `left` · `right` · `ok` · `back` · `home` · `menu` · `info` · `guide` · `captions` (Subtitles) · `settings` · `input` · `assistant` · `exit` · `play_pause` (Play or pause) · `play` · `pause` · `stop` · `rewind` · `forward` (Fast forward) · `previous` · `next` · `record` · `volume_up` · `volume_down` · `mute` · `channel_up` · `channel_down` · `a` · `b` · `x` · `y` · `view` · `nexus` (Xbox button). |
+| `transport` | `rewind`, `play_pause`, `forward` | The playback keys, in this order. Any of `power` · `up` · `down` · `left` · `right` · `ok` · `back` · `home` · `menu` · `info` · `guide` · `captions` (Subtitles) · `settings` · `input` · `assistant` · `exit` · `play_pause` (Play or pause) · `play` · `pause` · `stop` · `rewind` · `forward` (Fast forward) · `previous` · `next` · `record` · `volume_up` · `volume_down` · `mute` · `channel_up` · `channel_down` · `a` · `b` · `x` · `y` · `view` · `nexus` (Xbox button). |
+| `gamepad_tint` | `console` | Letters the controller’s buttons in the console’s colours, or in the card’s ink. `console` (The console’s) · `plain`. |
+| `gamepad_keys` | `view`, `nexus`, `menu` | The keys beside the controller’s A, B, X and Y, three at most, in this order. Any of `power` · `up` · `down` · `left` · `right` · `ok` · `back` · `home` · `menu` · `info` · `guide` · `captions` (Subtitles) · `settings` · `input` · `assistant` · `exit` · `play_pause` (Play or pause) · `play` · `pause` · `stop` · `rewind` · `forward` (Fast forward) · `previous` · `next` · `record` · `volume_up` · `volume_down` · `mute` · `channel_up` · `channel_down` · `a` · `b` · `x` · `y` · `view` · `nexus` (Xbox button). |
 | `volume` | `auto` | How the volume is set: a ruler, keys, or − and +. `auto` · `ruler` · `keys` · `stepper`. |
 | `apps_style` | `circles` | Draws the apps as rounds with their logos, or as chips. `circles` · `chips`. |
 | `apps_tint` | `open` | Paints each app in its own colour while it is open, or always. `open` (The open app) · `always`. |
-| `keys` | `back`, `home`, `play_pause`, `volume_down`, `volume_up` | The keys the compact remote shows in its row, in this order. Any of `power` · `up` · `down` · `left` · `right` · `ok` · `back` · `home` · `menu` · `info` · `guide` · `captions` (Subtitles) · `settings` · `input` · `assistant` · `exit` · `play_pause` (Play or pause) · `play` · `pause` · `stop` · `rewind` · `forward` (Fast forward) · `previous` · `next` · `record` · `volume_up` · `volume_down` · `mute` · `channel_up` · `channel_down`. |
-| `controls` | `back`, `home`, `power` | The rounds of the row layout, in this order. Any of `power` · `up` · `down` · `left` · `right` · `ok` · `back` · `home` · `menu` · `info` · `guide` · `captions` (Subtitles) · `settings` · `input` · `assistant` · `exit` · `play_pause` (Play or pause) · `play` · `pause` · `stop` · `rewind` · `forward` (Fast forward) · `previous` · `next` · `record` · `volume_up` · `volume_down` · `mute` · `channel_up` · `channel_down`. |
+| `apps_names` | `true` | Writes each app’s name under its round, or leaves the rounds alone. |
+| `keys` | `back`, `home`, `play_pause`, `volume_down`, `volume_up` | The keys the compact remote shows in its row, in this order. Any of `power` · `up` · `down` · `left` · `right` · `ok` · `back` · `home` · `menu` · `info` · `guide` · `captions` (Subtitles) · `settings` · `input` · `assistant` · `exit` · `play_pause` (Play or pause) · `play` · `pause` · `stop` · `rewind` · `forward` (Fast forward) · `previous` · `next` · `record` · `volume_up` · `volume_down` · `mute` · `channel_up` · `channel_down` · `a` · `b` · `x` · `y` · `view` · `nexus` (Xbox button). |
+| `controls` | `back`, `home`, `power` | The rounds of the row layout, in this order. Any of `power` · `up` · `down` · `left` · `right` · `ok` · `back` · `home` · `menu` · `info` · `guide` · `captions` (Subtitles) · `settings` · `input` · `assistant` · `exit` · `play_pause` (Play or pause) · `play` · `pause` · `stop` · `rewind` · `forward` (Fast forward) · `previous` · `next` · `record` · `volume_up` · `volume_down` · `mute` · `channel_up` · `channel_down` · `a` · `b` · `x` · `y` · `view` · `nexus` (Xbox button). |
 | `commands` |  | The command this device takes for a key, where it is not the one Fluvy knows. |
+| `icons` |  | An icon of your own for a key, by the key’s name (assistant: mdi:microsoft-xbox). |
 | [`apps`](#apps) |  | The apps the remote opens, as rounds or chips. A list: [its items](#apps). |
 | [`custom`](#custom) |  | Keys of your own, each a command the device takes or any action. A list: [its items](#custom). |
 
@@ -158,7 +164,8 @@ An item is a map with `app` and any of these fields.
 | `image` | A picture of your own for the app. |
 | `color` | The item’s colour, in place of the one the card gives it. |
 | `source` | The player’s source the app is. |
-| `key` | A key that opens the app. `power` · `up` · `down` · `left` · `right` · `ok` · `back` · `home` · `menu` · `info` · `guide` · `captions` (Subtitles) · `settings` · `input` · `assistant` · `exit` · `play_pause` (Play or pause) · `play` · `pause` · `stop` · `rewind` · `forward` (Fast forward) · `previous` · `next` · `record` · `volume_up` · `volume_down` · `mute` · `channel_up` · `channel_down`. |
+| `key` | A key that opens the app. `power` · `up` · `down` · `left` · `right` · `ok` · `back` · `home` · `menu` · `info` · `guide` · `captions` (Subtitles) · `settings` · `input` · `assistant` · `exit` · `play_pause` (Play or pause) · `play` · `pause` · `stop` · `rewind` · `forward` (Fast forward) · `previous` · `next` · `record` · `volume_up` · `volume_down` · `mute` · `channel_up` · `channel_down` · `a` · `b` · `x` · `y` · `view` · `nexus` (Xbox button). |
+| `app_id` | What the player opens the app by: an Xbox’s store id, a Roku’s channel id. Left out, an Xbox opens the platforms Fluvy knows. |
 | `activity` | How an Android TV opens the app. |
 | **Interactions** |  |
 | `tap_action` | What a tap on the item does. |
@@ -173,7 +180,7 @@ An item is a map with `name` and any of these fields.
 | --- | --- |
 | `name` | The item’s own name, in place of the one the card would give it. |
 | `icon` | The item’s own icon, in place of the one the card would give it. |
-| `key` | The key it stands in for. `power` · `up` · `down` · `left` · `right` · `ok` · `back` · `home` · `menu` · `info` · `guide` · `captions` (Subtitles) · `settings` · `input` · `assistant` · `exit` · `play_pause` (Play or pause) · `play` · `pause` · `stop` · `rewind` · `forward` (Fast forward) · `previous` · `next` · `record` · `volume_up` · `volume_down` · `mute` · `channel_up` · `channel_down`. |
+| `key` | The key it stands in for. `power` · `up` · `down` · `left` · `right` · `ok` · `back` · `home` · `menu` · `info` · `guide` · `captions` (Subtitles) · `settings` · `input` · `assistant` · `exit` · `play_pause` (Play or pause) · `play` · `pause` · `stop` · `rewind` · `forward` (Fast forward) · `previous` · `next` · `record` · `volume_up` · `volume_down` · `mute` · `channel_up` · `channel_down` · `a` · `b` · `x` · `y` · `view` · `nexus` (Xbox button). |
 | **Interactions** |  |
 | `tap_action` | What a tap on the item does. |
 | `hold_action` | What a long press on the item does. |
@@ -203,10 +210,11 @@ custom: # keys of your own
 ### Where a key goes
 
 1. The player's own service (power, volume, play, a source).
-2. Else the remote, as its integration takes it: Android TV Remote, Apple TV, Roku, LG webOS, Samsung, Fire TV.
+2. Else the remote, as its integration takes it: Android TV Remote, Apple TV, Roku, LG webOS, Samsung, Fire TV, Xbox.
 3. Else your own `commands`.
 
-A key nothing takes is drawn disabled. The D-pad and the channel need a `remote` (or an LG television).
+A key nothing takes is drawn disabled. The D-pad, the channel and the controller buttons need a `remote` (or an LG
+television). `icons` gives any key an icon of your own: `icons: { assistant: mdi:microsoft-xbox }`.
 
 ```yaml
 # a Samsung television whose back key has another name
@@ -228,7 +236,8 @@ commands:
 | `pad` | The head and the D-pad | 276 |
 | `row` | A mini row with its `controls` | 76 |
 
-`groups` picks and orders the parts: `source`, `dpad`, `transport`, `volume`, `apps`, `channel`, `custom`.
+`groups` picks and orders the parts: `source`, `dpad`, `transport`, `volume`, `apps`, `channel`, `custom`, and
+`gamepad` (the controller's A, B, X and Y with View, Xbox and Menu beside them, never there unless you list it).
 
 ### Apps
 
@@ -239,6 +248,23 @@ with its logo. Your own take `app`, or a `source`, `key` or `tap_action`, with a
 
 On Android TV Remote, an app opens best by a deep link: `activity: netflix://`. Opening by application ID goes through
 the Play Store, which has not opened many apps since August 2026.
+
+`apps_names: false` keeps the circles alone; their names are still read out.
+
+### Xbox
+
+An Xbox takes the arrows, A, B, X, Y, View, Menu and the Xbox button (`nexus`), and opens an app by its Microsoft
+Store id: Netflix, YouTube, Disney+, Prime Video and about twenty more open with `app` alone. Give any other app its id
+from the console's media browser as `app_id`.
+
+```yaml
+type: custom:fluvy-remote-card
+entity: media_player.living_room_xbox
+remote: remote.living_room_xbox
+groups: [apps, dpad, gamepad, transport, volume]
+apps: [{ app: netflix }, { app: appletv }, { app: disneyplus }, { app: jellyfin }, { app: plutotv }]
+apps_names: false
+```
 
 <details>
 <summary>Older names the card still reads</summary>

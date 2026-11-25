@@ -3349,7 +3349,22 @@
     "editor.activity": "Ссылка Android TV",
     "editor.activity_helper": "Чем Android TV Remote открывает приложение: прямая ссылка, например netflix:// (надёжный способ), или идентификатор приложения",
     "editor.commands": "Команды этого устройства",
-    "editor.commands_helper": "Кнопка и команда, которую устройство принимает для неё, вместо команды из встроенной таблицы (back: KEY_RETURN)"
+    "editor.commands_helper": "Кнопка и команда, которую устройство принимает для неё, вместо команды из встроенной таблицы (back: KEY_RETURN)",
+    "key.a": "Кнопка A",
+    "key.b": "Кнопка B",
+    "key.x": "Кнопка X",
+    "key.y": "Кнопка Y",
+    "key.view": "Просмотр",
+    "key.nexus": "Кнопка Xbox",
+    "group.gamepad": "Кнопки геймпада",
+    "option.console": "Как у консоли",
+    "editor.gamepad_keys": "Кнопки рядом с кнопками геймпада",
+    "editor.gamepad_tint": "Цвета кнопок",
+    "editor.apps_names": "Названия под приложениями",
+    "editor.app_id": "Идентификатор приложения",
+    "editor.app_id_helper": "Чем плеер открывает приложение: идентификатор из магазина Xbox, например 9WZDNCRFJ3TJ, идентификатор канала Roku; если пусто, Xbox открывает платформы, известные Fluvy",
+    "editor.icons": "Значки кнопок",
+    "editor.icons_helper": "Кнопка и значок, который она показывает вместо своего (assistant: mdi:microsoft-xbox)"
   },
   "room-editor": {
     "show_quick_actions": "Показывать быстрые действия",

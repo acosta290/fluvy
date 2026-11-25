@@ -6217,7 +6217,8 @@
             "volume": "Volume",
             "channel": "Channel",
             "apps": "Apps",
-            "custom": "Custom keys"
+            "custom": "Custom keys",
+            "gamepad": "Controller buttons"
           }
         },
         {
@@ -6296,7 +6297,13 @@
             "volume_down": "Volume down",
             "mute": "Mute",
             "channel_up": "Channel up",
-            "channel_down": "Channel down"
+            "channel_down": "Channel down",
+            "a": "A button",
+            "b": "B button",
+            "x": "X button",
+            "y": "Y button",
+            "view": "View",
+            "nexus": "Xbox button"
           }
         },
         {
@@ -6339,7 +6346,73 @@
             "volume_down": "Volume down",
             "mute": "Mute",
             "channel_up": "Channel up",
-            "channel_down": "Channel down"
+            "channel_down": "Channel down",
+            "a": "A button",
+            "b": "B button",
+            "x": "X button",
+            "y": "Y button",
+            "view": "View",
+            "nexus": "Xbox button"
+          }
+        },
+        {
+          "key": "gamepad_tint",
+          "label": "Colours of the buttons",
+          "does": "Letters the controller’s buttons in the console’s colours, or in the card’s ink.",
+          "type": "choice",
+          "default": "console",
+          "values": {
+            "console": "The console’s",
+            "plain": "Plain"
+          }
+        },
+        {
+          "key": "gamepad_keys",
+          "label": "Keys beside the controller buttons",
+          "does": "The keys beside the controller’s A, B, X and Y, three at most, in this order.",
+          "type": "choices",
+          "default": [
+            "view",
+            "nexus",
+            "menu"
+          ],
+          "values": {
+            "power": "Power",
+            "up": "Up",
+            "down": "Down",
+            "left": "Left",
+            "right": "Right",
+            "ok": "OK",
+            "back": "Back",
+            "home": "Home",
+            "menu": "Menu",
+            "info": "Info",
+            "guide": "Guide",
+            "captions": "Subtitles",
+            "settings": "Settings",
+            "input": "Input",
+            "assistant": "Assistant",
+            "exit": "Exit",
+            "play_pause": "Play or pause",
+            "play": "Play",
+            "pause": "Pause",
+            "stop": "Stop",
+            "rewind": "Rewind",
+            "forward": "Fast forward",
+            "previous": "Previous",
+            "next": "Next",
+            "record": "Record",
+            "volume_up": "Volume up",
+            "volume_down": "Volume down",
+            "mute": "Mute",
+            "channel_up": "Channel up",
+            "channel_down": "Channel down",
+            "a": "A button",
+            "b": "B button",
+            "x": "X button",
+            "y": "Y button",
+            "view": "View",
+            "nexus": "Xbox button"
           }
         },
         {
@@ -6377,6 +6450,13 @@
             "open": "The open app",
             "always": "Always"
           }
+        },
+        {
+          "key": "apps_names",
+          "label": "Names under the apps",
+          "does": "Writes each app’s name under its round, or leaves the rounds alone.",
+          "type": "boolean",
+          "default": true
         },
         {
           "key": "keys",
@@ -6420,7 +6500,13 @@
             "volume_down": "Volume down",
             "mute": "Mute",
             "channel_up": "Channel up",
-            "channel_down": "Channel down"
+            "channel_down": "Channel down",
+            "a": "A button",
+            "b": "B button",
+            "x": "X button",
+            "y": "Y button",
+            "view": "View",
+            "nexus": "Xbox button"
           }
         },
         {
@@ -6463,7 +6549,13 @@
             "volume_down": "Volume down",
             "mute": "Mute",
             "channel_up": "Channel up",
-            "channel_down": "Channel down"
+            "channel_down": "Channel down",
+            "a": "A button",
+            "b": "B button",
+            "x": "X button",
+            "y": "Y button",
+            "view": "View",
+            "nexus": "Xbox button"
           }
         },
         {
@@ -6471,6 +6563,13 @@
           "label": "Commands of this device",
           "does": "The command this device takes for a key, where it is not the one Fluvy knows.",
           "helper": "A key and the command the device takes for it, over the table’s (back: KEY_RETURN)",
+          "type": "object"
+        },
+        {
+          "key": "icons",
+          "label": "Icons of the keys",
+          "does": "An icon of your own for a key, by the key’s name (assistant: mdi:microsoft-xbox).",
+          "helper": "A key and the icon it wears, over its own (assistant: mdi:microsoft-xbox)",
           "type": "object"
         },
         {
@@ -6746,8 +6845,21 @@
                 "volume_down": "Volume down",
                 "mute": "Mute",
                 "channel_up": "Channel up",
-                "channel_down": "Channel down"
+                "channel_down": "Channel down",
+                "a": "A button",
+                "b": "B button",
+                "x": "X button",
+                "y": "Y button",
+                "view": "View",
+                "nexus": "Xbox button"
               }
+            },
+            {
+              "key": "app_id",
+              "label": "App ID",
+              "does": "What the player opens the app by: an Xbox’s store id, a Roku’s channel id. Left out, an Xbox opens the platforms Fluvy knows.",
+              "helper": "What the player opens the app by: an Xbox store ID such as 9WZDNCRFJ3TJ, a Roku channel ID; left empty, an Xbox opens the platforms Fluvy knows",
+              "type": "text"
             },
             {
               "key": "activity",
@@ -6835,7 +6947,13 @@
                 "volume_down": "Volume down",
                 "mute": "Mute",
                 "channel_up": "Channel up",
-                "channel_down": "Channel down"
+                "channel_down": "Channel down",
+                "a": "A button",
+                "b": "B button",
+                "x": "X button",
+                "y": "Y button",
+                "view": "View",
+                "nexus": "Xbox button"
               }
             },
             {

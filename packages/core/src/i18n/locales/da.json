@@ -3281,7 +3281,22 @@
     "editor.activity": "Android TV-link",
     "editor.activity_helper": "Det, Android TV Remote åbner appen med: et dybt link som netflix:// (den pålidelige måde) eller et program-id",
     "editor.commands": "Denne enheds kommandoer",
-    "editor.commands_helper": "En tast og den kommando, enheden tager for den, frem for tabellens (tilbage: KEY_RETURN)"
+    "editor.commands_helper": "En tast og den kommando, enheden tager for den, frem for tabellens (tilbage: KEY_RETURN)",
+    "key.a": "A-knap",
+    "key.b": "B-knap",
+    "key.x": "X-knap",
+    "key.y": "Y-knap",
+    "key.view": "Vis",
+    "key.nexus": "Xbox-knap",
+    "group.gamepad": "Controllerknapper",
+    "option.console": "Konsollens",
+    "editor.gamepad_keys": "Taster ved siden af controllerknapperne",
+    "editor.gamepad_tint": "Knappernes farver",
+    "editor.apps_names": "Navne under apps",
+    "editor.app_id": "App-id",
+    "editor.app_id_helper": "Det, afspilleren åbner appen med: et Xbox Store-id som 9WZDNCRFJ3TJ, et Roku-kanal-id; tomt åbner en Xbox de platforme, Fluvy kender",
+    "editor.icons": "Tasternes ikoner",
+    "editor.icons_helper": "En tast og det ikon, den bærer i stedet for sit eget (assistant: mdi:microsoft-xbox)"
   },
   "room-editor": {
     "show_quick_actions": "Vis hurtighandlingerne",

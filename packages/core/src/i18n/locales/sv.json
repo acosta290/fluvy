@@ -3281,7 +3281,22 @@
     "editor.activity": "Android TV-länk",
     "editor.activity_helper": "Det Android TV Remote öppnar appen med: en djuplänk som netflix:// (det pålitliga sättet) eller ett program-ID",
     "editor.commands": "Den här enhetens kommandon",
-    "editor.commands_helper": "En knapp och kommandot som enheten tar emot för den, före tabellens (back: KEY_RETURN)"
+    "editor.commands_helper": "En knapp och kommandot som enheten tar emot för den, före tabellens (back: KEY_RETURN)",
+    "key.a": "A-knapp",
+    "key.b": "B-knapp",
+    "key.x": "X-knapp",
+    "key.y": "Y-knapp",
+    "key.view": "Visa",
+    "key.nexus": "Xbox-knapp",
+    "group.gamepad": "Handkontrollens knappar",
+    "option.console": "Konsolens",
+    "editor.gamepad_keys": "Knappar bredvid handkontrollens knappar",
+    "editor.gamepad_tint": "Knapparnas färger",
+    "editor.apps_names": "Namn under apparna",
+    "editor.app_id": "App-ID",
+    "editor.app_id_helper": "Det spelaren öppnar appen med: ett Xbox Store-ID som 9WZDNCRFJ3TJ, ett Roku-kanal-ID; tomt öppnar en Xbox de plattformar Fluvy känner till",
+    "editor.icons": "Knapparnas ikoner",
+    "editor.icons_helper": "En knapp och ikonen den bär i stället för sin egen (assistant: mdi:microsoft-xbox)"
   },
   "room-editor": {
     "show_quick_actions": "Visa snabbåtgärderna",

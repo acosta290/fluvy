@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   appActivity,
+  appId,
   isPackage,
   MONOGRAMS,
   normalise,
@@ -157,5 +158,40 @@ describe('the platforms the remote knows by name (#143)', () => {
       ['Disney+', 'Disney+'],
     ]);
     expect(sourceChips(sources, true, 'androidtv')).toEqual([['HDMI 1', 'HDMI 1']]);
+  });
+
+  it('an Xbox opens a platform by its store id, Prime Video by the house’s country’s (#255)', () => {
+    const on = (id: string, country?: string) => appId({}, platform(id), 'xbox', country);
+    expect(on('netflix')).toBe('9WZDNCRFJ3TJ');
+    expect(on('appletv')).toBe('9MW0ZWQFH0M2');
+    expect(on('disneyplus')).toBe('9NXQXXLFST89');
+    expect(on('jellyfin')).toBe('9P2DRTG62QF8');
+    expect(on('plutotv')).toBe('9P9LV240KQ9R');
+    expect(on('primevideo', 'GB')).toBe('9NHRLPH6FFCT');
+    expect(on('primevideo', 'ES')).toBe('9P750F5JP2K0');
+    expect(on('primevideo')).toBe('9P750F5JP2K0');
+    // a country is a key of the table's own, never of every object's
+    expect(on('primevideo', 'constructor')).toBe('9P750F5JP2K0');
+    // a platform the store has no Xbox app of has none
+    expect(on('movistarplus')).toBeUndefined();
+    // every id is one the service call takes as it is
+    for (const pf of PLATFORMS)
+      for (const id of typeof pf.xbox === 'object' ? Object.values(pf.xbox) : [pf.xbox])
+        if (id) expect(id, pf.id).toMatch(/^[0-9A-Z]{12}$/);
+  });
+
+  it('a person’s own app id wins on any player, where it is one word an id can be', () => {
+    expect(appId({ app_id: '12' }, platform('netflix'), 'roku', undefined)).toBe('12');
+    expect(appId({ app_id: 'com.netflix.ninja' }, undefined, 'androidtv_remote', undefined)).toBe(
+      'com.netflix.ninja',
+    );
+    expect(appId({ app_id: '9NBLGGH4VGD7' }, platform('primevideo'), 'xbox', 'ES')).toBe(
+      '9NBLGGH4VGD7',
+    );
+    // a space, a quote, a slash or too long: no id; the platform's where there is one
+    for (const bad of ['9WZ DNC', 'x"y', 'a/b', 'x'.repeat(65), 7])
+      expect(appId({ app_id: bad }, platform('netflix'), 'xbox', undefined)).toBe('9WZDNCRFJ3TJ');
+    // another player's ids the table does not hold
+    expect(appId({}, platform('netflix'), 'roku', undefined)).toBeUndefined();
   });
 });

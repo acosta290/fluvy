@@ -34,6 +34,8 @@ import {
   appsLayout,
   DEFAULT_CONTROLS,
   DEFAULT_KEYS,
+  diamondOf,
+  gamepadBeside,
   remoteGroups,
   remoteHeight,
   ringFit,
@@ -43,11 +45,21 @@ import { Card, type CardEditor } from '../shared/base.js';
 import { chipRow, inForce } from '../shared/chips.js';
 import { iconOf } from '../shared/domain.js';
 import { drawnAs } from '../shared/heights.js';
+import { isIcon } from '../shared/icon-name.js';
 import { ring, ringStyles } from '../shared/ring.js';
 import { changedAt } from '../shared/since.js';
-import { buttonService, commandFor, isKey, KEY_GLYPHS, type Key } from './keys.js';
+import {
+  buttonService,
+  commandFor,
+  isKey,
+  isLetter,
+  KEY_GLYPHS,
+  type Key,
+  type Letter,
+} from './keys.js';
 import {
   appActivity,
+  appId,
   appPlatform,
   appTitle,
   platformOf,
@@ -76,6 +88,7 @@ export type AppsStyle = 'circles' | 'chips';
 export const APPS_STYLES: readonly AppsStyle[] = ['circles', 'chips'];
 export type AppsTint = 'open' | 'always';
 export const APPS_TINTS: readonly AppsTint[] = ['open', 'always'];
+export type GamepadTint = 'console' | 'plain';
 
 /** An app of the row: a platform (its logo, colour and name), a source of the player, a key, or an action of its own. */
 export interface RemoteApp {
@@ -92,6 +105,11 @@ export interface RemoteApp {
    * (`netflix://`) or an application id.
    */
   activity?: string;
+  /**
+   * What the player opens the app by (`media_player.play_media` as an `app`, #255), over its platform's on an Xbox: an
+   * Xbox's store id (`9WZDNCRFJ3TJ`), a Roku's channel id.
+   */
+  app_id?: string;
   /** What it answers: its tap opens it where none is said; a hold and a double tap nothing until set (#179). */
   tap_action?: ActionConfig;
   hold_action?: ActionConfig;
@@ -122,6 +140,10 @@ export interface RemoteCardConfig extends FluvyCardConfig {
   volume?: VolumeStyle;
   apps_style?: AppsStyle;
   apps_tint?: AppsTint;
+  /** The apps' names under their circles; `false`, the circles alone, their names still spoken (#255). */
+  apps_names?: boolean;
+  /** The face buttons' letters in the console's colours, or in the card's ink (#255). */
+  gamepad_tint?: GamepadTint;
   /** The groups drawn, in this order. */
   groups?: readonly RemoteGroup[];
   /** The four keys round the pad. */
@@ -132,10 +154,14 @@ export interface RemoteCardConfig extends FluvyCardConfig {
   keys?: readonly string[];
   /** The row's rounds. */
   controls?: readonly string[];
+  /** The keys beside the face buttons, three at most (#255). */
+  gamepad_keys?: readonly string[];
   apps?: readonly RemoteApp[];
   custom?: readonly RemoteCustom[];
   /** A key's command for this device, over the table's: a command word, or an action. */
   commands?: Readonly<Record<string, string | ActionConfig>>;
+  /** A key's icon on this card, over the table's glyph (`assistant: mdi:microsoft-xbox`, #255). */
+  icons?: Readonly<Record<string, string>>;
 }
 
 /* media_player supported_features */
@@ -147,6 +173,7 @@ const MEDIA = {
   NEXT: 32,
   TURN_ON: 128,
   TURN_OFF: 256,
+  PLAY_MEDIA: 512,
   VOLUME_STEP: 1024,
   SELECT_SOURCE: 2048,
   STOP: 4096,
@@ -168,6 +195,15 @@ const USUAL =
 
 export const DEFAULT_NAV: readonly Key[] = ['back', 'menu', 'captions', 'home'];
 export const DEFAULT_TRANSPORT: readonly Key[] = ['rewind', 'play_pause', 'forward'];
+/** The keys beside the face buttons, as the controller has them: View, the Xbox button, Menu. */
+export const DEFAULT_GAMEPAD: readonly Key[] = ['view', 'nexus', 'menu'];
+/** The face buttons' colours, the console's in the palette's tones: Y amber, X blue, B red, A green. */
+const FACE_TONES: Readonly<Record<Letter, string>> = {
+  y: 'amber',
+  x: 'blue',
+  b: 'red',
+  a: 'green',
+};
 /** A pressed quadrant lights this long. */
 const PRESS_MS = 180;
 /** A key held repeats after this long, this often. */
@@ -408,6 +444,20 @@ export class FluvyRemoteCard extends Card<RemoteCardConfig> {
       }
       .rm-app.is-active .rm-app__name {
         color: var(--fluvy-text);
+      }
+      /* a face button's letter where a glyph stands: the glyph's 20 box, its capital centred on the box's middle */
+      .rm-letter {
+        display: block;
+        width: 20px;
+        height: 20px;
+        font-size: 17px;
+        font-weight: 600;
+        line-height: 20px;
+        text-align: center;
+      }
+      /* the face buttons in the console's colours: their letters in their tone's text colour */
+      .rm-face[data-accent] {
+        color: var(--fluvy-accent-text);
       }
       /* out of reach: what would vanish into the card's page fill wears the dashed skin the card wears; quiet, none of
          it (the keys rest as they do, still and at full strength, and the quiet sheet answers the shared ones) */
@@ -748,17 +798,51 @@ export class FluvyRemoteCard extends Card<RemoteCardConfig> {
     return s(this.hass, `key.${key}`);
   }
 
-  private keyGlyph(key: Key): IconRef {
+  /** A key's icon of the config's (`icons`, #255), where it names one as Home Assistant names icons. */
+  private ownIcon(key: Key): IconRef | undefined {
+    const own = this.remote.icons?.[key];
+    return isIcon(own) ? own : undefined;
+  }
+
+  /** What a key wears: the person's icon, else its glyph (the play/pause and the mute as the device is); a letter none. */
+  private keyGlyph(key: Key): IconRef | undefined {
+    const own = this.ownIcon(key);
+    if (own) return own;
     if (key === 'play_pause') {
       const p = this.player();
       return this.stateOf(p) === 'playing' || this.stateOf(p) === 'buffering' ? 'pause' : 'play';
     }
     if (key === 'mute' && this.muted(this.volumeView())) return 'volumeOff';
-    return KEY_GLYPHS[key];
+    return isLetter(key) ? undefined : KEY_GLYPHS[key];
   }
 
-  /** A key as a 44 round (48 in the transport): the power on the primary fill while the device is off. */
-  private keyRound(key: Key, extra = '', kind: '' | 'quiet' | 'accent' = ''): TemplateResult {
+  /** A platform's mark drawn: the logos' chunk fetched the first time, the card drawn again as it lands. */
+  private marks<T extends string>(ref: T): T {
+    if (!this.logos_ && ref.startsWith('app:'))
+      void loadLogos().then(() => {
+        this.logos_ = true;
+      });
+    return ref;
+  }
+
+  /** A key's face: its glyph, or its letter in the card's type (the face buttons'). */
+  private face(key: Key): TemplateResult {
+    const glyph = this.keyGlyph(key);
+    return glyph
+      ? icon(this.marks(glyph))
+      : html`<span class="rm-letter">${key.toUpperCase()}</span>`;
+  }
+
+  /**
+   * A key as a 44 round (48 in the transport): the power on the primary fill while the device is off; a colour of its
+   * own (`accent`, a face button's) where asked.
+   */
+  private keyRound(
+    key: Key,
+    extra = '',
+    kind: '' | 'quiet' | 'accent' = '',
+    accent?: string,
+  ): TemplateResult {
     const still = !this.takes(key) || !this.alive(key);
     const { down, up, click } = this.repeating(key);
     const label = this.keyLabel(key);
@@ -767,6 +851,7 @@ export class FluvyRemoteCard extends Card<RemoteCardConfig> {
       class="fv-round ${primary ? 'fv-round--accent' : kind ? `fv-round--${kind}` : ''} ${extra}"
       data-control
       data-target
+      data-accent=${accent ?? nothing}
       aria-label=${label}
       title=${label}
       ?disabled=${still}
@@ -776,7 +861,7 @@ export class FluvyRemoteCard extends Card<RemoteCardConfig> {
       @pointercancel=${up}
       @click=${click}
     >
-      ${icon(this.keyGlyph(key))}
+      ${this.face(key)}
     </button>`;
   }
 
@@ -826,7 +911,7 @@ export class FluvyRemoteCard extends Card<RemoteCardConfig> {
           @contextmenu=${item.hold ? preventMenu : nothing}
           @keydown=${holdKey(item.hold)}
         >
-          ${icon(item.glyph ?? this.keyGlyph(item.key))}${item.word ? html`<span class="rm-cells__word">${item.word}</span>` : nothing}
+          ${item.glyph ? icon(this.marks(item.glyph)) : this.face(item.key)}${item.word ? html`<span class="rm-cells__word">${item.word}</span>` : nothing}
         </button>`;
       })}
     </div>`;
@@ -959,13 +1044,13 @@ export class FluvyRemoteCard extends Card<RemoteCardConfig> {
 
   /** The ring (`shared/ring.ts`): its four arrows the remote's, each repeating while held, OK in its middle. */
   private renderRing(size: number): TemplateResult {
-    const arrows: readonly Key[] = ['up', 'right', 'down', 'left'];
+    const arrows = ['up', 'right', 'down', 'left'] as const;
     return ring({
       size,
       arrows: arrows.map((k) => ({
         key: k,
         label: this.keyLabel(k),
-        glyph: KEY_GLYPHS[k],
+        glyph: this.marks(this.ownIcon(k) ?? KEY_GLYPHS[k]),
         still: !this.takes(k) || !this.alive(k),
         ...this.repeating(k, k),
       })),
@@ -1019,11 +1104,63 @@ export class FluvyRemoteCard extends Card<RemoteCardConfig> {
                 @pointercancel=${ok ? nothing : up}
                 @click=${ok ? () => this.press('ok') : click}
               >
-                ${ok ? (word ? s(this.hass, 'key.ok') : nothing) : icon(item.glyph ?? KEY_GLYPHS[item.key])}
+                ${ok ? (word ? s(this.hass, 'key.ok') : nothing) : item.glyph ? icon(item.glyph) : this.face(item.key)}
               </button>`;
             })}
           </div>`,
       )}`;
+  }
+
+  /**
+   * The controller's face buttons (#255): Y over X and B over A in three rows of 44 (closer in a narrow column), each
+   * in the console's colour (the palette's tone of it, or as named with `exact_colors`) or the card's ink; their keys
+   * (View, the Xbox button, Menu) on the same lattice beside them, the Xbox button over the other two as on the
+   * controller, each set centred in its half of the column, where the column holds the two; else the buttons centred
+   * over a row of their keys.
+   */
+  private renderGamepad(width: number): TemplateResult {
+    const keys = keysOf(this.remote.gamepad_keys, DEFAULT_GAMEPAD).slice(0, 3);
+    const tinted = (this.remote.gamepad_tint ?? 'console') === 'console';
+    const beside = gamepadBeside(width) && keys.length > 0;
+    const size = diamondOf(width);
+    const step = (size - 44) / 2;
+    // each set centred in its half, the two mirrored on the column's middle; alone, the buttons in its middle
+    const margin = Math.round((beside ? width / 2 - size : width - size) / 2);
+    const right = beside ? width - size - margin : margin;
+    const at = (key: Key, x: number, y: number, extra = '', accent?: string) =>
+      html`<span class="rm-pad__key" style="left:${x}px;top:${y}px"
+        >${this.keyRound(key, extra, '', accent)}</span
+      >`;
+    const face = (key: Letter, x: number, y: number) =>
+      at(key, right + x, y, 'rm-face', tinted ? this.accents.item(FACE_TONES[key]) : undefined);
+    // the keys beside on the buttons' lattice, centred on its rows: one in the middle, two on the middle row, three as
+    // the controller has them (the middle one over the others)
+    const [first, second, third] = keys;
+    const spots: ReadonlyArray<readonly [Key | undefined, number, number]> =
+      keys.length === 3
+        ? [
+            [first, 0, step * 1.5],
+            [second, step, step / 2],
+            [third, 2 * step, step * 1.5],
+          ]
+        : [
+            [first, keys.length === 1 ? step : 0, step],
+            [second, 2 * step, step],
+          ];
+    return html`<div class="rm-gap"></div>
+      <div class="rm-pad" style="height:${size}px">
+        ${face('y', step, 0)}${face('x', 0, step)}${face('b', 2 * step, step)}${face('a', step, 2 * step)}
+        ${beside ? spots.map(([key, x, y]) => (key ? at(key, margin + x, y) : nothing)) : nothing}
+      </div>
+      ${
+        beside || !keys.length
+          ? nothing
+          : html`<div class="rm-gap"></div>
+              ${this.cells(
+                keys.map((key) => ({ key })),
+                width,
+              )}`
+      }`;
   }
 
   /** Rewind · play/pause · forward as 48 rounds centred under the pad, 40 apart where the column holds them. */
@@ -1088,12 +1225,12 @@ export class FluvyRemoteCard extends Card<RemoteCardConfig> {
         ?disabled=${muteStill}
         @click=${() => this.press('mute')}
       >
-        ${icon(muted ? 'volumeOff' : 'volume')}
+        ${icon(this.marks(this.ownIcon('mute') ?? (muted ? 'volumeOff' : 'volume')))}
       </button>`;
     };
     if (mode === 'keys')
       return html`${label}${this.cells(
-        [{ key: 'volume_down' }, { key: 'mute', glyph: 'volumeOff' }, { key: 'volume_up' }],
+        [{ key: 'volume_down' }, { key: 'mute' }, { key: 'volume_up' }],
         width,
       )}`;
     if (mode === 'stepper')
@@ -1150,14 +1287,28 @@ export class FluvyRemoteCard extends Card<RemoteCardConfig> {
     const sources = this.sources(p);
     const current = this.usable() ? textAttr(p, 'app_name') || textAttr(p, 'source') : '';
     const r = this.remoteView();
+    // what the player says of an app it runs as its content (the Xbox's store id and title, #255)
+    const runsApp = textAttr(p, 'media_content_type') === 'app';
     // the platform running: by the package the device reports (Android TV Remote's `app_id` on its player,
-    // `current_activity` on its remote), else by the app's name or the source
+    // `current_activity` on its remote), else by the app's name or the source, else by the app's title
     const currentPlatform = this.usable()
-      ? [textAttr(p, 'app_id'), r ? textAttr(r, 'current_activity') : '', current]
+      ? [
+          textAttr(p, 'app_id'),
+          r ? textAttr(r, 'current_activity') : '',
+          current,
+          runsApp ? textAttr(p, 'media_title') : '',
+        ]
           .map(platformOf)
           .find(Boolean)
       : undefined;
+    // the app running by its id: the player's `app_id` (a Roku's channel), or the content's (an Xbox's store id)
+    const running = this.usable()
+      ? [textAttr(p, 'app_id'), runsApp ? textAttr(p, 'media_content_id') : ''].filter(Boolean)
+      : [];
     const integration = this.integration();
+    // a player that opens an app by its id (`play_media`), and its integration: which ids the table holds for it
+    const plays = p.domain === 'media_player' && p.supports(MEDIA.PLAY_MEDIA);
+    const launcher = this.hass?.entities?.[p.id]?.platform;
     const item = (
       id: string,
       name: string,
@@ -1170,15 +1321,25 @@ export class FluvyRemoteCard extends Card<RemoteCardConfig> {
       // through the Play Store, which no longer opens many apps); a remote of another integration, or one the registry
       // does not name, is sent none: Harmony's `activity` is one of its own
       const activity = appActivity(own, pf);
+      // a player that opens apps by their ids (an Xbox, a Roku) is sent the person's, else its platform's on an Xbox
+      const launch = plays ? appId(own, pf, launcher, this.hass?.config?.['country']) : undefined;
       const opens = own.tap_action
         ? () => this.tap(p.id, own.tap_action)
         : key
           ? () => this.press(key)
           : source
             ? () => this.call('media_player', 'select_source', { source }, p.id)
-            : activity && r && integration === 'androidtv_remote'
-              ? () => this.call('remote', 'turn_on', { activity }, r.id)
-              : undefined;
+            : launch
+              ? () =>
+                  this.call(
+                    'media_player',
+                    'play_media',
+                    { media_content_id: launch, media_content_type: 'app' },
+                    p.id,
+                  )
+              : activity && r && integration === 'androidtv_remote'
+                ? () => this.call('remote', 'turn_on', { activity }, r.id)
+                : undefined;
       // its tap opens it, waiting for a second where a double tap is set; a hold where set (#179)
       const alive = this.alive('ok');
       const run = this.tapper(
@@ -1197,7 +1358,10 @@ export class FluvyRemoteCard extends Card<RemoteCardConfig> {
           (pf ? `app:${pf.id}` : 'grid'),
         colour: own.color ?? (pf?.hex || undefined),
         active: Boolean(
-          this.usable() && ((pf && pf === currentPlatform) || (source && source === current)),
+          this.usable() &&
+          ((pf && pf === currentPlatform) ||
+            (source && source === current) ||
+            (launch && running.includes(launch))),
         ),
         // an app is a key of a kind: alive as the keys are (every key, or power alone, while the device is off)
         run: run && alive ? () => (haptic(this, 'selection'), run()) : undefined,
@@ -1219,10 +1383,7 @@ export class FluvyRemoteCard extends Card<RemoteCardConfig> {
   private renderApps(p: EntityView, width: number): TemplateResult | typeof nothing {
     const items = this.appItems(p);
     if (!items.length) return nothing;
-    if (!this.logos_ && items.some((item) => String(item.icon).startsWith('app:')))
-      void loadLogos().then(() => {
-        this.logos_ = true;
-      });
+    for (const item of items) this.marks(String(item.icon));
     const always = this.remote.apps_tint === 'always';
     if ((this.remote.apps_style ?? 'circles') === 'chips')
       return html`<div class="rm-gap"></div>
@@ -1248,6 +1409,7 @@ export class FluvyRemoteCard extends Card<RemoteCardConfig> {
       items.map((item) => item.name),
       width,
       (text) => this.head.ruler.width('rm-app__name', text),
+      this.remote.apps_names !== false,
     );
     const rows: AppItem[][] = [];
     for (let i = 0; i < items.length; i += perRow) rows.push(items.slice(i, i + perRow));
@@ -1315,7 +1477,8 @@ export class FluvyRemoteCard extends Card<RemoteCardConfig> {
           );
           return {
             key: key ?? 'ok',
-            glyph: item.icon ?? (key ? KEY_GLYPHS[key] : 'dots'),
+            // its own icon, else its key's face (a face button's letter), else the dots
+            ...(item.icon || !key ? { glyph: item.icon ?? 'dots' } : {}),
             label: item.name,
             ...(words ? { word: item.name } : {}),
             still:
@@ -1409,6 +1572,9 @@ export class FluvyRemoteCard extends Card<RemoteCardConfig> {
             break;
           case 'custom':
             parts.push(this.renderCustom(p, width));
+            break;
+          case 'gamepad':
+            if (keyed) parts.push(this.renderGamepad(width));
             break;
         }
     }

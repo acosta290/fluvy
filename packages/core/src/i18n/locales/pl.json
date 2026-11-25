@@ -3670,7 +3670,22 @@
     "editor.activity": "Link Android TV",
     "editor.activity_helper": "Czym Android TV Remote otwiera aplikację: precyzyjny link, np. netflix:// (niezawodny sposób), lub identyfikator aplikacji",
     "editor.commands": "Polecenia tego urządzenia",
-    "editor.commands_helper": "Przycisk i polecenie, które urządzenie przyjmuje za niego, ponad tabelą (back: KEY_RETURN)"
+    "editor.commands_helper": "Przycisk i polecenie, które urządzenie przyjmuje za niego, ponad tabelą (back: KEY_RETURN)",
+    "key.a": "Przycisk A",
+    "key.b": "Przycisk B",
+    "key.x": "Przycisk X",
+    "key.y": "Przycisk Y",
+    "key.view": "Widok",
+    "key.nexus": "Przycisk Xbox",
+    "group.gamepad": "Przyciski kontrolera",
+    "option.console": "Jak na konsoli",
+    "editor.gamepad_keys": "Przyciski obok przycisków kontrolera",
+    "editor.gamepad_tint": "Kolory przycisków",
+    "editor.apps_names": "Nazwy pod aplikacjami",
+    "editor.app_id": "Identyfikator aplikacji",
+    "editor.app_id_helper": "Czym odtwarzacz otwiera aplikację: identyfikator ze sklepu Xbox, np. 9WZDNCRFJ3TJ, identyfikator kanału Roku; puste: Xbox otwiera platformy znane Fluvy",
+    "editor.icons": "Ikony przycisków",
+    "editor.icons_helper": "Przycisk i ikona, którą nosi zamiast własnej (assistant: mdi:microsoft-xbox)"
   },
   "details": {
     "title": "Historia",

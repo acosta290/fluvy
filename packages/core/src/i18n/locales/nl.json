@@ -3547,7 +3547,22 @@
     "editor.activity": "Android TV-link",
     "editor.activity_helper": "Waarmee Android TV Remote de app opent: een deeplink zoals netflix:// (de betrouwbare manier) of een app-ID",
     "editor.commands": "Commando’s van dit apparaat",
-    "editor.commands_helper": "Een toets en het commando dat het apparaat ervoor neemt, boven de tabel (back: KEY_RETURN)"
+    "editor.commands_helper": "Een toets en het commando dat het apparaat ervoor neemt, boven de tabel (back: KEY_RETURN)",
+    "key.a": "A-knop",
+    "key.b": "B-knop",
+    "key.x": "X-knop",
+    "key.y": "Y-knop",
+    "key.view": "Weergeven",
+    "key.nexus": "Xbox-knop",
+    "group.gamepad": "Controllerknoppen",
+    "option.console": "Die van de console",
+    "editor.gamepad_keys": "Toetsen naast de controllerknoppen",
+    "editor.gamepad_tint": "Kleuren van de knoppen",
+    "editor.apps_names": "Namen onder de apps",
+    "editor.app_id": "App-ID",
+    "editor.app_id_helper": "Waarmee de speler de app opent: een Xbox Store-ID zoals 9WZDNCRFJ3TJ, een Roku-kanaal-ID; leeg opent een Xbox de platforms die Fluvy kent",
+    "editor.icons": "Pictogrammen van de toetsen",
+    "editor.icons_helper": "Een toets en het pictogram dat hij in plaats van zijn eigen draagt (assistant: mdi:microsoft-xbox)"
   },
   "details": {
     "title": "Geschiedenis",

@@ -345,9 +345,10 @@ describe('the TV remote card (#143)', () => {
     ]);
     // the default pad's subtitles, the transport's rewind and forward: nothing the console takes
     for (const label of ['Subtitles', 'Rewind', 'Fast forward'])
-      expect(root.querySelector<HTMLButtonElement>(`[aria-label="${label}"]`)?.disabled, label).toBe(
-        true,
-      );
+      expect(
+        root.querySelector<HTMLButtonElement>(`[aria-label="${label}"]`)?.disabled,
+        label,
+      ).toBe(true);
     calls.length = 0;
     // the power, the volume and the playback are the player's
     await press(root, 'Turn off');
@@ -812,6 +813,219 @@ describe('the TV remote card (#143)', () => {
       };
       const said = house(box(['HDMI 1', 'Netflix']), { 'media_player.box': 'androidtv' });
       expect(houseHeightOf(config, -1, hass)).toBe(houseHeightOf(config, -1, said.hass));
+    });
+  });
+  describe('an Xbox (#255)', () => {
+    /** The words a card's keys say: their labels, in order. */
+    const labels = (root: ShadowRoot, selector: string): string[] =>
+      [...root.querySelectorAll(selector)].map((el) => el.getAttribute('aria-label') ?? '');
+
+    it('declares the face buttons only where the group is listed: 132, their keys beside them or in a row under', () => {
+      expect(remoteHeight({ type: 'x', groups: ['gamepad'] })).toBe(64 + 16 + 132 + 20);
+      expect(remoteHeight({ type: 'x', groups: ['gamepad'], gamepad_keys: [] })).toBe(
+        64 + 16 + 132 + 20,
+      );
+      // half a section (132 of content): their keys under them, in the rows a row of cells takes there
+      const half = { type: 'x', groups: ['gamepad'], grid_options: { columns: 6 } };
+      expect(remoteHeight(half)).toBe(64 + 16 + 132 + 16 + 2 * 44 + 16 + 20);
+      expect(remoteHeight({ ...half, gamepad_keys: ['view', 'menu'] })).toBe(
+        64 + 16 + 132 + 16 + 44 + 20,
+      );
+      expect(remoteHeight({ ...half, gamepad_keys: [] })).toBe(64 + 16 + 132 + 20);
+      // nothing takes them: nothing drawn
+      expect(remoteHeight({ type: 'x', groups: ['gamepad'] }, { keyed: false })).toBe(64 + 20);
+      // the default groups never hold it: a card of 1.25 keeps its height
+      expect(remoteHeight({ type: 'x' })).toBe(572);
+    });
+
+    it('draws the face buttons in their diamond, in the console’s colours, View, Xbox and Menu beside them; A sends A', async () => {
+      const { hass, calls } = house(CONSOLE, CONSOLES);
+      const root = await draw(
+        { entity: 'media_player.xbox', remote: 'remote.xbox', groups: ['gamepad'] },
+        hass,
+      );
+      const faces = [...root.querySelectorAll<HTMLElement>('.rm-face')];
+      expect(faces.map((face) => face.textContent?.trim())).toEqual(['Y', 'X', 'B', 'A']);
+      expect(faces.map((face) => face.getAttribute('aria-label'))).toEqual([
+        'Y button',
+        'X button',
+        'B button',
+        'A button',
+      ]);
+      expect(faces.every((face) => face.hasAttribute('data-accent'))).toBe(true);
+      expect(new Set(faces.map((face) => face.dataset['accent'])).size).toBe(4);
+      expect(labels(root, '.rm-pad__key .fv-round:not(.rm-face)')).toEqual([
+        'View',
+        'Xbox button',
+        'Menu',
+      ]);
+      // the diamond on the right half, its keys on the left half, mirrored
+      const left = (el: Element | null | undefined) =>
+        parseInt((el?.parentElement as HTMLElement | undefined)?.style.left ?? '', 10);
+      const view = root.querySelector('[aria-label="View"]');
+      const x = root.querySelector('[aria-label="X button"]');
+      expect(left(view)).toBeLessThan(left(x));
+      await press(root, 'A button');
+      await press(root, 'Xbox button');
+      expect(calls.map((c) => `${c.service}:${String(c.data['command'])}`)).toEqual([
+        'remote.send_command:A',
+        'remote.send_command:Nexus',
+      ]);
+    });
+
+    it('plain: the letters in the card’s ink; a television that has no such keys draws them disabled', async () => {
+      const { hass } = house([...LIVING, ...CONSOLE], {
+        ...ANDROID,
+        ...CONSOLES,
+        'remote.box': 'roku',
+      });
+      const plain = await draw(
+        {
+          entity: 'media_player.xbox',
+          remote: 'remote.xbox',
+          groups: ['gamepad'],
+          gamepad_tint: 'plain',
+        },
+        hass,
+      );
+      expect(plain.querySelectorAll('.rm-face').length).toBe(4);
+      expect(plain.querySelectorAll('[data-accent]').length).toBe(0);
+      expect(plain.querySelectorAll('.rm-letter').length).toBe(4);
+      document.body.replaceChildren();
+      const roku = house(SET_TOP, { ...SET_TOPS, 'remote.box': 'roku' });
+      const tv = await draw(
+        { entity: 'media_player.box', remote: 'remote.box', groups: ['gamepad'] },
+        roku.hass,
+      );
+      // a Roku has its menu (its options key), none of the controller's
+      expect(
+        [...tv.querySelectorAll<HTMLButtonElement>('.rm-pad__key .fv-round')]
+          .filter((round) => !round.disabled)
+          .map((round) => round.getAttribute('aria-label')),
+      ).toEqual(['Menu']);
+    });
+
+    it('a key wears the person’s icon over its own; a word no icon is shaped like is none', async () => {
+      const { hass } = house(CONSOLE, CONSOLES);
+      const root = await draw(
+        {
+          entity: 'media_player.xbox',
+          remote: 'remote.xbox',
+          variant: 'compact',
+          keys: ['assistant', 'back', 'a', 'home'],
+          icons: { assistant: 'mdi:microsoft-xbox', a: 'mdi:gamepad-circle', back: 'url(x)' },
+        },
+        hass,
+      );
+      const cells = [...root.querySelectorAll('.rm-cells .fv-action')];
+      expect(
+        cells.map(
+          (cell) => (cell.querySelector('ha-icon') as { icon?: string } | null)?.icon ?? '',
+        ),
+      ).toEqual(['mdi:microsoft-xbox', '', 'mdi:gamepad-circle', '']);
+      // the back key keeps its glyph; the labels stay the keys' own
+      expect(cells[1]?.querySelector('svg')).not.toBeNull();
+      expect(cells.map((cell) => cell.getAttribute('aria-label'))).toEqual([
+        'Assistant',
+        'Back',
+        'A button',
+        'Home',
+      ]);
+    });
+
+    it('opens an app by its store id, the one running lit by it; a source, a key or an action of its own first', async () => {
+      const { hass, calls } = house(CONSOLE, CONSOLES);
+      const root = await draw(
+        {
+          entity: 'media_player.xbox',
+          remote: 'remote.xbox',
+          groups: ['apps'],
+          apps: [
+            { app: 'netflix' },
+            { app: 'disneyplus' },
+            { app: 'jellyfin', app_id: '9P2DRTG62QF8' },
+            { name: 'Halo', icon: 'mdi:controller', app_id: '9PP5G1F0C2B6' },
+            { app: 'plutotv', key: 'home' },
+            // no store id the table knows and none of the person's: nothing opens it
+            { app: 'movistarplus' },
+          ],
+        },
+        hass,
+      );
+      const circles = [...root.querySelectorAll<HTMLButtonElement>('.rm-app__circle')];
+      expect(circles.map((circle) => circle.disabled)).toEqual([
+        false,
+        false,
+        false,
+        false,
+        false,
+        true,
+      ]);
+      for (const circle of circles) circle.click();
+      await new Promise((resolve) => setTimeout(resolve));
+      expect(
+        calls.map(
+          (c) =>
+            `${c.service} ${String(c.data['media_content_id'] ?? c.data['command'])} ${String(c.data['media_content_type'] ?? '')}`,
+        ),
+      ).toEqual([
+        'media_player.play_media 9WZDNCRFJ3TJ app',
+        'media_player.play_media 9NXQXXLFST89 app',
+        'media_player.play_media 9P2DRTG62QF8 app',
+        'media_player.play_media 9PP5G1F0C2B6 app',
+        'remote.send_command GoHome ',
+      ]);
+      expect(calls[0]!.target).toEqual({ entity_id: 'media_player.xbox' });
+      expect(root.querySelector('.rm-app.is-active .rm-app__name')?.textContent).toBe('Netflix');
+    });
+
+    it('apps_names: false draws the circles alone, their names still spoken, the height the same as drawn', async () => {
+      const { hass } = house(CONSOLE, CONSOLES);
+      const config = {
+        entity: 'media_player.xbox',
+        remote: 'remote.xbox',
+        groups: ['apps'],
+        apps_names: false,
+        apps: [{ app: 'netflix' }, { app: 'appletv' }, { app: 'disneyplus' }],
+      };
+      const root = await draw(config, hass);
+      expect(root.querySelectorAll('.rm-app__name').length).toBe(0);
+      expect(labels(root, '.rm-app__circle')).toEqual([
+        'Open Netflix',
+        'Open Apple TV',
+        'Open Disney+',
+      ]);
+      expect(remoteHeight({ type: 'x', ...config })).toBe(64 + 16 + 44 + 20);
+    });
+
+    it('the editor offers the group, its colours and keys while it is drawn, the names where the apps are circles, an app’s id where the card names a player', async () => {
+      const shown = async (config: Record<string, unknown>): Promise<string[]> => {
+        const editor = await FluvyRemoteCard.getConfigElement();
+        const drawn = await drawEditor(editor, {
+          ...config,
+          type: 'custom:fluvy-remote-card',
+        } as LovelaceCardConfig);
+        return shownNames(cardForm(drawn).schema);
+      };
+      const pad = await shown({ entity: 'media_player.xbox', groups: ['gamepad', 'apps'] });
+      for (const name of ['gamepad_tint', 'gamepad_keys', 'apps_names', 'icons'])
+        expect(pad, name).toContain(name);
+      const plain = await shown({ entity: 'media_player.xbox' });
+      expect(plain).not.toContain('gamepad_tint');
+      expect(plain).not.toContain('gamepad_keys');
+      const chips = await shown({ entity: 'media_player.xbox', apps_style: 'chips' });
+      expect(chips).not.toContain('apps_names');
+      const itemFields = async (config: Record<string, unknown>): Promise<string[]> => {
+        const drawn = await drawEditor(await FluvyRemoteCard.getConfigElement(), {
+          ...config,
+          type: 'custom:fluvy-remote-card',
+          groups: ['apps'],
+          apps: [{ app: 'netflix' }],
+        } as LovelaceCardConfig);
+        return shownNames(drawn.shadowRoot!.querySelector<FormStub>('.item ha-form')!.schema);
+      };
+      expect(await itemFields({ entity: 'media_player.xbox' })).toContain('app_id');
+      expect(await itemFields({ remote: 'remote.xbox' })).not.toContain('app_id');
     });
   });
 });

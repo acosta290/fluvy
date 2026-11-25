@@ -3862,6 +3862,29 @@ Return to dock are in the row), the compact card's pad in a sheet.
   playground's `vacuum` sheet draws the mode held (`_drive`) and the sheet docked (`_sheet`), and
   `interactions-vacuum.mjs` drives it in a browser: the card's height before and in the mode, a held arrow, Done.
 
+## A remote's controller buttons (1.26, #255)
+
+The TV remote card's `gamepad` group, for a console (an Xbox; Android TV Remote takes the same keys as its gamepad
+codes): only where the config lists it, never among the default groups, so no card of 1.25 changes.
+
+- **The face buttons** are four 44 rounds in a diamond on a lattice of 44 (132 square): Y over X and B, A under them,
+  as on the controller. Each is a key of the remote's (its tap, its repeat while held, its disabled look where the
+  device has no command for it) with its letter where a glyph stands: 17/600 in Inter on the glyph's 20 box, its
+  capital's ink centred on the round's middle within a fifth of a pixel. In the console's colours (`gamepad_tint`, the
+  default) the letters wear their tone's text colour (`--fluvy-accent-text` of Y amber, X blue, B red, A green: the
+  palette's tones of them, or the colours as named with `exact_colors`), legible on the round's fill in both modes;
+  `plain`, the card's ink. The rounds keep the remote's fill: a colour is the letter's, never a coloured disc.
+- **Their keys** (`gamepad_keys`, View, the Xbox button and Menu by default, three at most) stand on the same lattice,
+  the Xbox button over the other two as on the controller, centred on the diamond's rows; each set is centred in its
+  half of the column, the two mirrored on its middle. Below 280 of content the two do not hold side by side: the
+  diamond stands centred and its keys go 16 under it in the remote's equal cells (one row, two where a narrow column
+  needs them); in a column under 132 the diamond closes up on the 4 grid down to 112, its rounds still 4 apart.
+- **Glyphs**: View is the set's two squares (`copy`); the Xbox button wears the console's mark from the logos' chunk
+  (`app:xbox`), fetched the first time a card draws it. A key wears the person's icon over its own wherever it is drawn
+  (`icons: { assistant: mdi:microsoft-xbox }`), a letter included.
+- **Height**: the diamond's (132, less where it closes up), and the row of cells under it where it has one: by the
+  config and the column alone (`remoteHeight`), whatever the device says; out of reach the same, in the dashed skin.
+
 ## Details sheets (1.20)
 
 What a Fluvy card opens for an entity's details (#162), where Home Assistant's dialog opened before: one family of
