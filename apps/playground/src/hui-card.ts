@@ -79,8 +79,9 @@ const PLATE = `
  * Inside Home Assistant's map (`ha-map`'s own root): the plan in a map's quiet colours, its markers, and MapLibre's
  * keys at their size and place (`maplibre-gl.css` 6.16, which Home Assistant 2026.11 links into this root) as Home
  * Assistant wears them (`ha-map.ts`): the zoom keys, a group of two 29 keys ringed by 2, 10 in from the top left; the
- * tiles' attribution folded to its 24 "i", 10 in from the bottom right and over what a card keeps clear
- * (`--ha-map-bottom-inset`); dark where the map is.
+ * tiles' attribution folded to its 24 "i", 10 in from the bottom right (over what a card keeps clear,
+ * `--ha-map-bottom-inset`), or open, a strip of its words reaching left from the "i" (8 before them, 28 after, 20
+ * tall); dark where the map is.
  */
 const MAP = `
   #map { position: relative; height: 100%; overflow: hidden; background: var(--land); font: 12px/20px "Helvetica Neue", Arial, Helvetica, sans-serif; --land: #ece8e1; --road: #fbfaf7; --park: #dce4cf; --water: #cfdde6; }
@@ -107,18 +108,24 @@ const MAP = `
   .maplibregl-ctrl-attrib-button { position: absolute; top: 0; right: 0; display: block; width: 24px; height: 24px; box-sizing: border-box; border-radius: 12px; background: hsla(0, 0%, 100%, 0.5); list-style: none; cursor: pointer; }
   .maplibregl-ctrl-attrib-button::-webkit-details-marker { display: none; }
   .maplibregl-ctrl-attrib-button > svg { display: block; }
+  .maplibregl-ctrl-attrib.maplibregl-compact-show { padding: 2px 28px 2px 8px; }
+  .maplibregl-compact-show .maplibregl-ctrl-attrib-inner { display: block; color: rgba(0, 0, 0, 0.75); white-space: nowrap; }
+  .maplibregl-compact-show .maplibregl-ctrl-attrib-button { background-color: rgba(0, 0, 0, 0.05); }
   .dark .maplibregl-ctrl-group { background-color: #1c1c1c; }
   .dark .maplibregl-ctrl-group button + button { border-top-color: #313131; }
   .dark .maplibregl-ctrl-icon, .dark .maplibregl-ctrl-attrib-button { filter: invert(1); }
   .dark .maplibregl-ctrl-attrib.maplibregl-compact { background-color: #1c1c1c; }
+  .dark .maplibregl-compact-show .maplibregl-ctrl-attrib-inner { color: rgba(255, 255, 255, 0.85); }
 `;
 
 /**
  * MapLibre's keys in the shape its controls take in the map (`maplibre-gl` 6.16): the zoom keys in the top left
- * corner's group, the attribution folded to its key in the bottom right's (Home Assistant folds it after a moment).
- * Words and pills of ours keep clear of each (`data-keep-clear`, which the measurer reads inside what it skips).
+ * corner's group, the attribution in the bottom right's, folded to its key (as Home Assistant leaves it after a
+ * moment) or `open` (as it stands for that moment, or after a tap on its "i"). Words and pills of ours keep clear of
+ * each key (`data-keep-clear`, which the measurer reads inside what it skips): of the folded attribution whole, of the
+ * open one its "i" alone — its strip of words is Home Assistant's transient, which a long pill may meet.
  */
-const CONTROLS = `<div class="maplibregl-control-container">
+const controls = (open: boolean): string => `<div class="maplibregl-control-container">
   <div class="maplibregl-ctrl-top-left">
     <div class="maplibregl-ctrl maplibregl-ctrl-group" data-keep-clear>
       <button class="maplibregl-ctrl-zoom-in" type="button" aria-label="Zoom in"><svg class="maplibregl-ctrl-icon" viewBox="0 0 29 29" aria-hidden="true"><path d="M14.5 8.5c-.75 0-1.5.75-1.5 1.5v3h-3c-.75 0-1.5.75-1.5 1.5S9.25 16 10 16h3v3c0 .75.75 1.5 1.5 1.5S16 19.75 16 19v-3h3c.75 0 1.5-.75 1.5-1.5S19.75 13 19 13h-3v-3c0-.75-.75-1.5-1.5-1.5" /></svg></button>
@@ -126,9 +133,9 @@ const CONTROLS = `<div class="maplibregl-control-container">
     </div>
   </div>
   <div class="maplibregl-ctrl-bottom-right">
-    <details class="maplibregl-ctrl maplibregl-ctrl-attrib maplibregl-compact" open data-keep-clear>
-      <summary class="maplibregl-ctrl-attrib-button" aria-label="Toggle attribution"><svg width="24" height="24" viewBox="0 0 20 20" fill-rule="evenodd" aria-hidden="true"><path d="M4 10a6 6 0 1 0 12 0 6 6 0 1 0-12 0m5-3a1 1 0 1 0 2 0 1 1 0 1 0-2 0m0 3a1 1 0 1 1 2 0v3a1 1 0 1 1-2 0" /></svg></summary>
-      <div class="maplibregl-ctrl-attrib-inner">© OpenStreetMap</div>
+    <details class="maplibregl-ctrl maplibregl-ctrl-attrib maplibregl-compact${open ? ' maplibregl-compact-show' : ''}" open${open ? '' : ' data-keep-clear'}>
+      <summary class="maplibregl-ctrl-attrib-button" aria-label="Toggle attribution"${open ? ' data-keep-clear' : ''}><svg width="24" height="24" viewBox="0 0 20 20" fill-rule="evenodd" aria-hidden="true"><path d="M4 10a6 6 0 1 0 12 0 6 6 0 1 0-12 0m5-3a1 1 0 1 0 2 0 1 1 0 1 0-2 0m0 3a1 1 0 1 1 2 0v3a1 1 0 1 1-2 0" /></svg></summary>
+      <div class="maplibregl-ctrl-attrib-inner">© OpenStreetMap contributors</div>
     </details>
   </div>
 </div>`;
@@ -149,7 +156,7 @@ const key = (label: string, path: string, dark: boolean): HTMLElement => {
  * Home Assistant's map as the playground draws it: a still plan of a few streets, a park and a river in a map's own
  * quiet colours, light or dark as the config says (`theme_mode`), nearer or further by its zoom (14 where it names
  * none), a trail's last points where it asks for hours of one — nothing of Home Assistant's cartography, its tiles or
- * its gestures; its keys are drawn (`CONTROLS`, and the card's own in `OWN.map`).
+ * its gestures; its keys are drawn (`controls`, and the card's own in `OWN.map`).
  */
 const PLAN = `<svg viewBox="0 0 320 160" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
   <g class="plan">
@@ -181,6 +188,9 @@ const trackersOf = (config: LovelaceCardConfig): string[] =>
   ((config['entities'] ?? []) as readonly unknown[]).map((entry) =>
     String(typeof entry === 'string' ? entry : (entry as { entity?: unknown } | null)?.entity),
   );
+
+/** The trackers whose map draws Home Assistant's attribution open (`openAttribution`). */
+const attributed = new Set<string>();
 
 /** Home Assistant's own cards the sheets name, each drawn into the plate. */
 const OWN: Readonly<
@@ -298,7 +308,10 @@ const OWN: Readonly<
         .slice(0, 3);
       drawn.append(marker);
     });
-    drawn.insertAdjacentHTML('beforeend', CONTROLS);
+    drawn.insertAdjacentHTML(
+      'beforeend',
+      controls(trackersOf(config).some((id) => attributed.has(id))),
+    );
     const buttons = document.createElement('div');
     buttons.id = 'buttons';
     buttons.dataset['measure'] = 'skip';
@@ -459,6 +472,14 @@ const mapped = new Set<string>();
 export function drawMaps(...trackers: readonly string[]): void {
   defineCardWrapper();
   for (const id of trackers) mapped.add(id);
+}
+
+/**
+ * A sheet's trackers whose map draws Home Assistant's tiles' attribution open, as it stands for a few seconds as the
+ * map loads, or after a tap on its "i": Home Assistant's transient (`controls`).
+ */
+export function openAttribution(...trackers: readonly string[]): void {
+  for (const id of trackers) attributed.add(id);
 }
 
 /** Home Assistant's map card of a config, as its card helpers make it; none unless a sheet draws its trackers' map. */

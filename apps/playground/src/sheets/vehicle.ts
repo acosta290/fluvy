@@ -1,7 +1,7 @@
 import type { HomeAssistant } from '@fluvy/core';
 import { FluvyVehicleCard } from '../../../../packages/cards/src/vehicle/vehicle-card.js';
 import type { StateSeed } from '../hass.js';
-import { drawMaps } from '../hui-card.js';
+import { drawMaps, openAttribution } from '../hui-card.js';
 import type { SheetSpec } from '../scenes.js';
 
 // its chunk lands after the page has drawn: the sheet defines the card from its module, as the web sheet does
@@ -36,10 +36,10 @@ if (!customElements.get('fluvy-vehicle-card'))
  * limit (its bubbles, the limit's hairline), a plug-in hybrid's two, a tank running low, the card's own colour, a car
  * out of reach, half a section; a mini map (Home Assistant's own, which the playground draws as a still plan with
  * Home Assistant's keys: `hui-card.ts`) at the foot with its address in its pill, in the picture's place, still, of two
- * cars with a trail, with no location, half a section, still and with no pill at its least height; and the card's parts
- * in an order of the person's own — the controls above the fuel
- * and the tyres below, the map first with no head, a head with its battery and its small icons alone, the compact
- * card's, half a section — and the card the issue pointed at, redrawn.
+ * cars with a trail, with no location, half a section, still at its least height, its attribution open; and the card's
+ * parts in an order of the person's own — the controls above the fuel and the tyres below, the map first with no head,
+ * a head with its battery and its small icons alone, the compact card's, half a section — and the card the issue
+ * pointed at, redrawn.
  */
 
 /** The mock's moment: the times to full are counted from it. */
@@ -936,6 +936,8 @@ drawMaps(
   'device_tracker.niro_location',
   'device_tracker.haval_h6_location',
 );
+// and a map that shows the Niro has Home Assistant's attribution open, as it stands for a moment at load
+openAttribution('device_tracker.niro_location');
 
 /** The house with some of its states said otherwise: a frame's own moment (a boot left open, a door). */
 const said =
@@ -1427,10 +1429,11 @@ export const sheet: SheetSpec = {
       ],
     },
     // #266: Home Assistant's own keys on the plate at its least height: none on a still map but the tiles'
-    // attribution, which stands over the pill; with no pill, it keeps its corner
+    // attribution, folded in its corner, the pill 8 short of it
     {
-      title: 'A still map, and a map with no pill · half a section',
+      title: 'A still map · half a section',
       width: 360,
+      hass: said({ 'device_tracker.haval_h6_location': 'not_home' }),
       cards: [
         card('d-ioniq-5', {
           map: 'auto',
@@ -1439,12 +1442,25 @@ export const sheet: SheetSpec = {
           show_controls: false,
           cols: 6,
         }),
-        card('d-model-y', {
+        haval({
           map: 'auto',
-          show_address: false,
+          map_interactive: false,
           show_rows: false,
           show_controls: false,
           cols: 6,
+        }),
+      ],
+    },
+    // #266: the attribution open, as Home Assistant has it for a moment at load (the Niro's map: `openAttribution`):
+    // its strip reaches left from its "i" and may meet a long pill's end, Home Assistant's transient
+    {
+      title: 'Its attribution open, as at load · two cars',
+      hass: said({ 'device_tracker.haval_h6_location': 'not_home' }),
+      cards: [
+        haval({
+          map: ['auto', 'device_tracker.niro_location'],
+          show_rows: false,
+          show_controls: false,
         }),
       ],
     },

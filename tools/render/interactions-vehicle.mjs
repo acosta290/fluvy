@@ -10,10 +10,10 @@
  * rounds do, a tyre under its threshold is said, a badge of the person's own is drawn, and the picture alone is the
  * card's button (#248, #251, #254); the battery and the tank as a liquid in the ruler's room, its bubbles while it
  * charges and its limit's hairline (#256); the mini map on its plate, its pill and what it opens, a still one as one
- * button, Home Assistant's own keys on it (its zoom keys where a finger moves it, never its fit key, its attribution
- * over the pill), its plate kept where there is no location, and the card's parts in an order of its own, each 16 under
- * the one before (#266); and in every language no round's word runs past its cell, nor the line or the head's line past
- * their column, nor the map's pill past its plate.
+ * button, Home Assistant's own keys on it (its zoom keys where a finger moves it, never its fit key, its attribution in
+ * its corner, folded or open), its plate kept where there is no location, and the card's parts in an order of its own,
+ * each 16 under the one before (#266); and in every language no round's word runs past its cell, nor the line or the
+ * head's line past their column, nor the map's pill past 8 short of the attribution.
  * Real cards on the playground's simulated hass. Exit code 1 on any failure.
  *   PLAYGROUND=http://127.0.0.1:5196/ node interactions-vehicle.mjs
  */
@@ -56,11 +56,12 @@ const overflows = (locator) =>
     }
     for (const line of root.querySelectorAll('.vh-line, .fv-card__sub, .fv-row__sub'))
       if (line.scrollWidth > line.clientWidth + 1) out.push(line.textContent);
-    // the map's pill keeps 8 of its plate clear on each side, whatever it says
+    // the map's pill stands 8 in and ends 8 short of Home Assistant's folded attribution (its 24 "i", 10 from the
+    // plate's end), whatever it says
     for (const pill of root.querySelectorAll('.vh-map__pill')) {
       const plate = pill.closest('.vh-map').getBoundingClientRect();
       const box = pill.getBoundingClientRect();
-      if (box.left < plate.left + 7.5 || box.right > plate.right - 7.5) out.push(pill.textContent);
+      if (box.left < plate.left + 7.5 || box.right > plate.right - 41.5) out.push(pill.textContent);
     }
     return out;
   });
@@ -573,11 +574,14 @@ const handed = () => page.evaluate(() => window.__handed.splice(0));
       const pill = plate.querySelector('.vh-map__pill')?.getBoundingClientRect();
       const where = plate.querySelector('.vh-map__where');
       // Home Assistant's keys where it draws them: its zoom keys and its tiles' attribution in its map's root, fitting
-      // and grouping in its card's (`#buttons`); each shown or not, and the pill's 44 clear of every one shown
+      // and grouping in its card's (`#buttons`); each shown or not, and the pill's 44 clear of every one shown — of
+      // the attribution folded, or of its "i" while it is open (its strip is Home Assistant's transient)
       const inside = drawn?.shadowRoot;
       const shown = (key) => Boolean(key?.checkVisibility());
       const zoom = inside?.querySelector('.maplibregl-ctrl-group');
       const attribution = inside?.querySelector('.maplibregl-ctrl-attrib');
+      const open = Boolean(attribution?.classList.contains('maplibregl-compact-show'));
+      const info = attribution?.querySelector('.maplibregl-ctrl-attrib-button');
       const keys = [...(own?.shadowRoot.querySelectorAll('#buttons > ha-icon-button') ?? [])];
       const target = where?.getBoundingClientRect();
       const apart = (key) => {
@@ -605,12 +609,20 @@ const handed = () => page.evaluate(() => window.__handed.splice(0));
         trail: inside?.querySelectorAll('.trail').length ?? 0,
         zoom: shown(zoom),
         attribution: shown(attribution),
+        open,
         keys: keys.filter(shown).length,
-        clear: !target || [zoom, attribution, ...keys].filter(shown).every(apart),
-        // the attribution's foot over the plate's: 10 in, over the pill's 44
-        lifted: shown(attribution)
-          ? Math.round(box.bottom - attribution.getBoundingClientRect().bottom)
+        clear: !target || [zoom, open ? info : attribution, ...keys].filter(shown).every(apart),
+        // the attribution's "i" from the plate's end and its foot: 10 and 10, in its corner
+        corner: shown(info)
+          ? [
+              box.right - info.getBoundingClientRect().right,
+              box.bottom - info.getBoundingClientRect().bottom,
+            ]
+              .map(Math.round)
+              .join(',')
           : null,
+        // the pill's end from the plate's: 8 short of the folded "i" (24, 10 from the end) at the least
+        end: pill && Math.round(box.right - pill.right),
         glyph: Boolean(plate.querySelector('.vh-map__view > svg')),
         said: (plate.querySelector('.vh-map__pill')?.textContent ?? '').trim(),
         label: where?.getAttribute('aria-label') ?? null,
@@ -625,17 +637,18 @@ const handed = () => page.evaluate(() => window.__handed.splice(0));
     });
   const foot = await map('A mini map at its foot · its address');
   check(
-    'the map at the foot: Home Assistant’s own on a 2:1 plate, the car’s tracker on it, its address in a pill 8 from the plate’s edges',
+    'the map at the foot: Home Assistant’s own on a 2:1 plate, the car’s tracker on it, its address in a pill 8 from the plate’s start and foot, whole parts of it short of the attribution',
     foot.width === 320 &&
       foot.height === 160 &&
       foot.fills &&
       !foot.empty &&
       foot.dark === false &&
       foot.markers.length === 1 &&
-      foot.said === '14 Station Road, Cambridge CB1 2JB' &&
+      foot.said === '14 Station Road' &&
       foot.label === 'Location · 14 Station Road, Cambridge CB1 2JB' &&
       foot.left === 8 &&
       foot.foot === 8 &&
+      foot.end >= 42 &&
       foot.target === 44 &&
       foot.touch !== 'none',
     JSON.stringify(foot),
@@ -687,35 +700,56 @@ const handed = () => page.evaluate(() => window.__handed.splice(0));
   );
   // Home Assistant's own keys (#266, seen on a real one): its map fits itself to its trackers, so its card's fit key
   // goes (and its grouping key, with two cars); a finger keeps the zoom keys, a still map loses them; the tiles'
-  // attribution always stays, over the pill's 44 (10 in)
-  check(
-    'a map a finger moves keeps Home Assistant’s zoom keys and loses its fit key; its attribution stands over the pill',
-    [foot, home, two].every(
-      (m) => m.zoom && m.keys === 0 && m.attribution && m.lifted === 54 && m.clear,
-    ),
+  // attribution always stays, folded in its corner where Home Assistant puts it, the pill 8 short of it
+  const keyed = (maps) =>
     JSON.stringify(
-      [foot, home, two].map(({ zoom, keys, attribution, lifted, clear }) => ({
+      maps.map(({ zoom, keys, attribution, open, corner, end, clear }) => ({
         zoom,
         keys,
         attribution,
-        lifted,
+        open,
+        corner,
+        end,
         clear,
       })),
+    );
+  check(
+    'a map a finger moves keeps Home Assistant’s zoom keys and loses its fit key; its attribution folded in its corner, the pill short of it',
+    [foot, home, two].every(
+      (m) =>
+        m.zoom &&
+        m.keys === 0 &&
+        m.attribution &&
+        !m.open &&
+        m.corner === '10,10' &&
+        m.end >= 42 &&
+        m.clear,
     ),
+    keyed([foot, home, two]),
   );
-  const least = await map('A still map, and a map with no pill · half a section', 0);
-  const bare = await map('A still map, and a map with no pill · half a section', 1);
+  const least = [
+    await map('A still map · half a section', 0),
+    await map('A still map · half a section', 1),
+  ];
   check(
-    'a still map has none of Home Assistant’s keys but the attribution, clear of its pill at its least height',
-    [still, least].every(
-      (m) => !m.zoom && m.keys === 0 && m.attribution && m.lifted === 54 && m.clear,
-    ) && least.height === 128,
-    JSON.stringify({ still, least }),
+    'a still map has none of Home Assistant’s keys but the attribution, its pill short of it at its least height',
+    [still, ...least].every(
+      (m) =>
+        !m.zoom && m.keys === 0 && m.attribution && m.corner === '10,10' && m.end >= 42 && m.clear,
+    ) && least.every((m) => m.height === 128),
+    keyed([still, ...least]),
   );
+  // Home Assistant's attribution open, as at load (the Niro's map): its "i" in its corner, the pill clear of it; its
+  // strip of words reaches left over the plate's foot for those seconds, Home Assistant's transient
+  const open = await map('Its attribution open, as at load · two cars');
   check(
-    'with no pill, the attribution keeps its corner',
-    bare.zoom && bare.keys === 0 && bare.lifted === 10 && bare.label === null,
-    JSON.stringify(bare),
+    'with its attribution open, its "i" stays in its corner and the pill clear of it',
+    open.open &&
+      open.corner === '10,10' &&
+      open.end >= 42 &&
+      open.clear &&
+      open.markers.length === 2,
+    keyed([open]),
   );
   const lost = await map('A map with no location · its plate kept', 0);
   const unplaced = await map('A map with no location · its plate kept', 1);
@@ -823,8 +857,8 @@ await page.close();
     };
   });
   check(
-    'in a 211 column the map keeps its least height, and its address gives its trailing parts up whole',
-    plate.width === 171 && plate.height === 128 && plate.said === '14 Station Road',
+    'in a 211 column the map keeps its least height, and its address gives way whole to the place’s word, short of the attribution',
+    plate.width === 171 && plate.height === 128 && plate.said === 'Not home',
     JSON.stringify(plate),
   );
   await narrow.close();

@@ -485,6 +485,11 @@ const MAP_MIN = 128;
 /** The address pill over the map (#266): its sides, and its pin with the 6 after it. */
 const PILL_SIDES = 24;
 const PILL_GLYPH = 16 + 6;
+/**
+ * What Home Assistant's tiles' attribution, folded, takes of the pill's line at the plate's end: its "i" (24, 10 from
+ * the end: MapLibre's) and the 8 the pill keeps clear of it, whether the map is drawn yet or not.
+ */
+const ATTRIBUTION = 10 + 24 + 8;
 /** The tyres' car from above: its box in the panel. */
 const CAR_WIDTH = 40;
 /** The wheels, in the order the tyres' panel reads them: the front's left and right, then the rear's. */
@@ -715,12 +720,9 @@ export class FluvyVehicleCard extends Card<VehicleCardConfig> {
         z-index: 1;
         border-radius: inherit;
       }
-      /* the tiles' attribution, Home Assistant's at the map's foot, over the pill's 44 (its own room for an overlay) */
-      .vh-map:has(> .vh-map__where) {
-        --ha-map-bottom-inset: 44px;
-      }
       /* where it is: a pill on the card's fill (solid on a see-through card too: it lies over the map) at the plate's
-         foot, 8 from its edges — a button 44 tall */
+         foot, 8 from its start and its foot, 8 short of Home Assistant's folded attribution at its end — a button 44
+         tall */
       .vh-map__where {
         all: unset;
         position: absolute;
@@ -2786,8 +2788,9 @@ export class FluvyVehicleCard extends Card<VehicleCardConfig> {
    * The mini map (#266): Home Assistant's own map on the picture's plate (`map_size`; 2:1 across the column where it
    * names none, 128 at least in a narrow one), its trackers on it — it pans and zooms as Home Assistant's does, or
    * stands still as one button that opens the car's tracker (`map_interactive: false`). Where it is in a pill over its
-   * foot (`show_address`), which opens the tracker's details too. While no tracker says where it is, or where Home
-   * Assistant's map cannot be made, the plate keeps its size with the map's glyph, the pill saying its state.
+   * foot (`show_address`), clear of Home Assistant's keys and its folded attribution, which opens the tracker's details
+   * too. While no tracker says where it is, or where Home Assistant's map cannot be made, the plate keeps its size with
+   * the map's glyph, the pill saying its state.
    */
   private renderMap(r: Reading): TemplateResult {
     const c = this.config;
@@ -2800,7 +2803,8 @@ export class FluvyVehicleCard extends Card<VehicleCardConfig> {
     const map = this.mapConfig() && this.map?.element;
     const still = c?.map_interactive === false;
     const open = lead ? (): void => this.tap(lead, MORE_INFO) : undefined;
-    const where = this.where(r, lead, plate.width - 16);
+    // from 8 in to 8 short of Home Assistant's folded attribution
+    const where = this.where(r, lead, plate.width - 8 - ATTRIBUTION);
     const label = `${s(this.hass, 'location')} · ${where.said}`;
     const pill = html`<span class="vh-map__pill" data-fit=${where.fits ? PILL_SIDES : 12}
       >${icon('pin')}${where.fits ? html`<span>${where.fits}</span>` : nothing}</span

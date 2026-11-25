@@ -3993,9 +3993,11 @@ Asked by @SentinelXS. Three looks on one card, each off until a config asks: the
   (`shared/ha-map.ts`, a chunk both fetch as they first draw a map). It is fitted to its trackers, at `map_zoom` where
   the card names one, with the trail of `hours_to_show`, in the card's own mode or the one it asks for (`map_theme`).
   Nothing is geocoded and no key is asked: the car's position never leaves the house.
-  - **Where it is**: a pill over the plate's foot, 8 from its start and its foot (28 tall, the card's fill with its
-    hairline, 13/600, the set's pin at 16 in the accent, 12 a side), inside a button 44 tall that opens the tracker's
-    details. It says the car's address away from home where its integration gives one, else its tracker's place in
+  - **Where it is**: a pill over the plate's foot, 8 from its start and its foot and ending at the latest 8 short of
+    Home Assistant's folded attribution (its 24 "i", 10 from the plate's end: the plate's width less 50, map drawn or
+    not), 28 tall, the card's fill with its hairline, 13/600, the set's pin at 16 in the accent, 12 a side, inside a
+    button 44 tall that opens the tracker's details. It says the car's address away from home where its integration
+    gives one, else its tracker's place in
     Home Assistant's words ("Home", a zone's name, "Away", "Unavailable"), the dash where it has no tracker. Never cut:
     an address gives its trailing parts up whole, at its commas ("14 Station Road" of "…, Cambridge CB1 2JB"), then
     gives way to the place's word, then the pill is its pin alone; a reader always hears it whole. The head's line no
@@ -4005,9 +4007,11 @@ Asked by @SentinelXS. Three looks on one card, each off until a config asks: the
   - **Home Assistant's own keys** on the plate, as its map card draws them (2026.11: MapLibre's zoom keys 10 in from
     the top left, its card's fit key under them, the tiles' attribution folded to its "i" 10 in from the bottom right):
     the fit key is never drawn (the map fits itself to its trackers; with it goes the grouping key two trackers bring),
-    the zoom keys only where a finger moves the map, and the attribution always, over the pill's 44 where the pill is
-    drawn (Home Assistant's own room for an overlay, `--ha-map-bottom-inset`), in its corner where it is not. One sheet
-    of ours in the map card's root and its map's, nothing else of Home Assistant's touched; the Map card asks none.
+    the zoom keys only where a finger moves the map, and the attribution always, where Home Assistant puts it: nothing
+    of ours moves its furniture onto the marker it keeps in the middle. Open (for some seconds as the map loads, or
+    after a tap on its "i"), the attribution's strip of words reaches left along the plate's foot and may meet the end
+    of a long pill: Home Assistant's transient, left be. One sheet of ours in the map card's root and its map's,
+    nothing else of Home Assistant's touched; the Map card asks none.
   - **Nothing to draw** (no tracker, out of reach, no coordinates, no card helpers): the plate keeps its size with the
     set's map glyph at 32 in the secondary ink, the pill saying the state.
   - It stands after the tyres and before the small icons; `sections` puts it anywhere, the picture's place among them.

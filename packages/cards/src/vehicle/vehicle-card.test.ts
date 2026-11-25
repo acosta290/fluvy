@@ -1826,11 +1826,13 @@ describe('the mini map (#266)', () => {
   it('fits the address by its leading parts, then the place’s word, then the pin alone: never cut', async () => {
     const address = (state: string): HomeAssistant =>
       house({
-        'device_tracker.ev6_location': { state: 'not_home' },
+        ...placed('device_tracker.ev6_location', 'not_home'),
         'sensor.ev6_geocoded_location': { state },
       });
     const long = '14 Station Road, Cambridge CB1 2JB, United Kingdom';
-    // at 7 a letter, a pill is its words, its pin's 22 and its sides' 24 on the 4 grid; the plate keeps 8 each side
+    // at 7 a letter, a pill is its words, its pin's 22 and its sides' 24 on the 4 grid; it stands 8 in and ends 8 short
+    // of Home Assistant's folded attribution (its 24 "i", 10 from the plate's end): the plate's width less 50, whether
+    // the map is drawn or not
     const said = async (width: number): Promise<string> => {
       const card = await mount({ device: KIA.device, map: 'auto' }, address(long), width, 7);
       const words = pill(card);
@@ -1838,14 +1840,19 @@ describe('the mini map (#266)', () => {
       expect(root(card).querySelector('.vh-map__where')?.getAttribute('aria-label')).toBe(
         `Location · ${long}`,
       );
+      // and it says the same once Home Assistant's map lands on the plate
+      await laidOut(card);
+      expect(plate(card).classList.contains('is-empty')).toBe(false);
+      expect(pill(card)).toBe(words);
       document.body.replaceChildren();
       return words;
     };
-    expect(await said(460)).toBe(long);
-    expect(await said(360)).toBe('14 Station Road, Cambridge CB1 2JB');
-    expect(await said(240)).toBe('14 Station Road');
-    expect(await said(200)).toBe('Not home');
-    expect(await said(120)).toBe('');
+    // (a plate of 460: 410 for a pill of 396; 360: 310 for 284; 320: 270 for 152; 180: 130 for 104; 120: 70)
+    expect(await said(500)).toBe(long);
+    expect(await said(400)).toBe('14 Station Road, Cambridge CB1 2JB');
+    expect(await said(360)).toBe('14 Station Road');
+    expect(await said(220)).toBe('Not home');
+    expect(await said(160)).toBe('');
   });
 
   it('stands still where it is asked to: no finger moves it, the plate one button that opens the tracker', async () => {
