@@ -1823,3 +1823,16 @@ describe('“Tell me when it’s done” (#47)', () => {
     expect(bell(named)?.getAttribute('aria-pressed')).toBe('false');
   });
 });
+
+describe('an appliance’s state with its badge asked away (#259’s sweep)', () => {
+  it('leads the line: what the appliance is doing is the card’s point, never left unsaid', async () => {
+    const badged = await mount({ device: 'miele-washer', variant: 'compact' });
+    const word = text(root(badged).querySelector('.fv-card__head .fv-badge'));
+    expect(word).not.toBe('');
+    badged.remove();
+    const card = await mount({ device: 'miele-washer', variant: 'compact', show_badge: false });
+    const head = root(card).querySelector('.fv-card__head');
+    expect(head?.querySelector('.fv-badge')).toBeNull();
+    expect(text(head?.querySelector('.fv-card__sub')).startsWith(word)).toBe(true);
+  });
+});

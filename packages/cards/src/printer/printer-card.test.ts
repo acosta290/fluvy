@@ -80,3 +80,28 @@ describe('a printer’s trays', () => {
     ]);
   });
 });
+
+describe('a printer’s state with its badge asked away (#259’s sweep)', () => {
+  /** The card's head for the P1S, its badge asked for or not. */
+  async function headOf(show_badge?: boolean): Promise<Element> {
+    const card = document.createElement('fluvy-printer-card') as CardElement;
+    card.setConfig({
+      type: 'custom:fluvy-printer-card',
+      device: 'd-p1s',
+      ...(show_badge === undefined ? {} : { show_badge }),
+    });
+    card.hass = { ...house(true), states: PRINTER_HOUSE.states } as HomeAssistant;
+    card.width = 360;
+    document.body.append(card);
+    await card.updateComplete;
+    return card.shadowRoot!.querySelector('.fv-card__head')!;
+  }
+
+  it('leads the line: what the printer is doing is the card’s point, never left unsaid', async () => {
+    const word = (await headOf()).querySelector('.fv-badge')?.textContent?.trim();
+    expect(word).toBeTruthy();
+    const head = await headOf(false);
+    expect(head.querySelector('.fv-badge')).toBeNull();
+    expect(head.querySelector('.fv-card__sub')?.textContent?.trim().startsWith(word!)).toBe(true);
+  });
+});

@@ -247,6 +247,9 @@ key hold.
   and the line's. A badge of the person's own (`badge`: words, an entity, a template) still shows. The editor offers
   the switch beside the circle's choice, only on those cards; a card whose badge is asked for already (the energy
   flow's `badge`, the openings' `show_count`) keeps its own key. The thermostat's `show_state` is its older name.
+  Two cards keep their word with the badge asked away, leading the line as where the badge gives way for room: the 3D
+  printer's state and an appliance's (its full card says it in the line already), since what the machine is doing is
+  the card's point (1.26, #259's sweep); their head is never left with nothing in it.
 - **Custom heads follow the same rule:** a player's art and its words are one button (the head's), a mini row's art
   and words likewise; the now-playing strip's art and titles; a greeting with no avatar (hidden, or no person to be)
   takes the tap and the hold on its words; a room's photo and its row run the room's `tap_action` (its path, or the
