@@ -45,7 +45,7 @@
   },
   "cards-about": {
     "light": "The precision dimmer: relative drag, slide away to slow down, hold for the 1 % scale, color temperature.",
-    "lights": "A room’s lights on one card: one tap for the whole room, a round, chip or tile for each light, in its color.",
+    "lights": "A room’s lights on one card: one tap for the whole room, a round, chip, tile or row for each light, in its color.",
     "cover": "Blinds, shutters, garage doors and valves: vertical position ruler, tilt, open · stop · close, favorites.",
     "gauge": "A ring gauge for any numeric sensor with min, max and average, or centered on zero for a meter that runs both ways.",
     "energy-flow": "Where the house’s energy comes from and where it goes, live or over a period: import and export at once, every source, lanes in their origin’s color.",
