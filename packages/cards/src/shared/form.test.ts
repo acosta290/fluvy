@@ -269,6 +269,38 @@ describe('a form that shows only what can act', () => {
       )[0],
     ).toBe(rows[0]);
   });
+
+  it('a group whose row is down to one field is picked too, though it holds as many items as before', () => {
+    const group: HaFormSchemaItem = {
+      type: 'expandable',
+      name: '',
+      flatten: true,
+      schema: [fieldRow(textField('title'), textField('subtitle')), textField('icon')],
+    };
+    expect(
+      shape(
+        pickFields(
+          [group],
+          byName((name) => name !== 'subtitle'),
+        ),
+      ),
+    ).toEqual(['title', 'icon']);
+  });
+
+  it('a group that holds its fields under a key of its own keeps those it has left under it', () => {
+    const held: HaFormSchemaItem = {
+      type: 'expandable',
+      name: 'map',
+      schema: [fieldRow(textField('image'), textField('topic')), textField('rooms')],
+    };
+    const [picked, ...rest] = pickFields(
+      [held],
+      byName((name) => name !== 'topic'),
+    );
+    expect(rest).toEqual([]);
+    expect(picked).toMatchObject({ type: 'expandable', name: 'map' });
+    expect(shape(picked?.schema ?? [])).toEqual(['image', 'rooms']);
+  });
 });
 
 describe('whether a card’s details sheet keeps its dial (#258)', () => {

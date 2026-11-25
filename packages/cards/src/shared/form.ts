@@ -470,7 +470,9 @@ export const sectionField = (
 
 /**
  * A form with only the items `keep` takes, asked of every row and every field: a row it refuses goes whole, and a row
- * that loses one of its fields keeps the other on its own line.
+ * that loses one of its fields keeps the other on its own line; a group that holds its fields under a key of its own
+ * (`holdsOwn`) keeps those it has left under it. A row or a group is itself, untouched, only where every item in it
+ * is: one of its rows down to a single field leaves it as many items, and is no longer the row it was.
  */
 export function pickFields(
   schema: readonly HaFormSchemaItem[],
@@ -479,9 +481,11 @@ export function pickFields(
   return schema.flatMap((item): HaFormSchemaItem[] => {
     if (!keep(item)) return [];
     if (!item.schema) return [item];
-    const inner = pickFields(item.schema, keep);
-    if (inner.length === item.schema.length) return [item];
-    return inner;
+    const { schema } = item;
+    const inner = pickFields(schema, keep);
+    if (inner.length === schema.length && inner.every((picked, at) => picked === schema[at]))
+      return [item];
+    return holdsOwn(item) ? [{ ...item, schema: inner }] : inner;
   });
 }
 
