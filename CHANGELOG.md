@@ -16,9 +16,10 @@ marks its reading with a needle. Everything else that changes without being aske
   (#267, requested by @Carl-Primitive).
 - Preferences › Language calls Fluvy's English "English (United Kingdom)", beside the new English (United States); a
   person who chose English keeps it (#267).
-- A ruler that is only read (a battery's level on the Batteries, EV charger, Vehicle and Vacuum cards, a timer's
-  elapsed time) marks its reading with a needle, the reading's own tick drawn tall and bold, where it drew a ring like
-  a slider's knob: a ring asks to be moved, and there is nothing to move there.
+- A ruler that is only read (a battery's level on the Batteries, EV charger, Vehicle and Vacuum cards, a room's
+  humidity in its comfort band, a timer's elapsed time) marks its reading with a needle, the reading's own tick drawn
+  tall and bold, where it drew a ring like a slider's knob: a ring asks to be moved, and there is nothing to move
+  there.
 - A card whose config leaves its head with nothing in it (no circle with `show_icon: never`, the name hidden with
   `name_lines: 0`, and its line, its badge and what trails its head switched off) no longer keeps a blank band: the
   head is not drawn, the card starts at its 20 and its height drops the head and the gap under it, on the Appliances
