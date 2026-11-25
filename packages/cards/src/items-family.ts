@@ -1,5 +1,6 @@
 import type { LovelaceCardConfig } from '@fluvy/core';
 import type { FamilyEntry } from './energy-family.js';
+import { headlessOf, noLine } from './shared/head-lines.js';
 import { HEAD, ROW, ROW_COMPACT, rowsOf } from './shared/heights.js';
 
 /**
@@ -35,7 +36,15 @@ export function itemsList(config: LovelaceCardConfig, columns = 2): number {
   return ROW * n;
 }
 
-/** The Items card at a 360 column: the head and the list's box. */
-export const itemsHeight = (config: LovelaceCardConfig): number => HEAD + itemsList(config);
+/** What leaves the head with nothing in it besides its circle and its name (#259): its line, the count's. */
+export const itemsQuiet = (config: LovelaceCardConfig | undefined): boolean =>
+  noLine(config, config?.['show_count'] === false);
+
+/**
+ * The Items card at a 360 column: the head and the list's box; a head left with nothing in it goes, with the 16 under
+ * it (#259).
+ */
+export const itemsHeight = (config: LovelaceCardConfig): number =>
+  HEAD - headlessOf(config, itemsQuiet(config), 16) + itemsList(config);
 
 export const ITEMS_FAMILY: readonly FamilyEntry[] = [['fluvy-items-card', itemsHeight]];

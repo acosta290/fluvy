@@ -19,6 +19,7 @@ import { repeat } from 'lit/directives/repeat.js';
 import {
   APPLIANCES_MAX_ROWS,
   appliancesHeight,
+  appliancesQuiet,
   applianceVariant,
   type ApplianceVariant,
 } from '../appliances-family.js';
@@ -554,6 +555,10 @@ export class FluvyAppliancesCard extends Card<AppliancesCardConfig> {
     return v === 'compact' || v === 'tiles' || v === 'cards' ? v : 'rows';
   }
 
+  protected override get quiet(): boolean {
+    return appliancesQuiet(this.config);
+  }
+
   /** Every change of the house reaches the whole cards, as Home Assistant's reaches its own: they read more of it. */
   override get hass(): HomeAssistant | undefined {
     return super.hass;
@@ -859,16 +864,20 @@ export class FluvyAppliancesCard extends Card<AppliancesCardConfig> {
     const tone: Tone = running ? 'accent' : 'neutral';
     const empty =
       this.config?.empty_text ?? s(this.hass, all.length ? 'nothing_running' : 'no_appliance');
-    return html`<article class="fv-card" data-card>
-      ${head({
-        icon: fitted.icon ? (this.config?.icon ?? 'washer') : null,
-        tone,
-        title,
-        name: this.config?.title !== undefined,
-        sub: fitted.sub,
-        cut: fitted.cut,
-        ...this.headActions(),
-      })}
+    return html`<article class="fv-card" data-card aria-label=${this.headless ? title : nothing}>
+      ${
+        this.headless
+          ? nothing
+          : head({
+              icon: fitted.icon ? (this.config?.icon ?? 'washer') : null,
+              tone,
+              title,
+              name: this.config?.title !== undefined,
+              sub: fitted.sub,
+              cut: fitted.cut,
+              ...this.headActions(),
+            })
+      }
       ${
         listed.length === 0
           ? html`<div class="al-empty">

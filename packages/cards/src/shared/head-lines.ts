@@ -57,3 +57,36 @@ export const headLines = (config: LovelaceCardConfig | undefined): number =>
  */
 export const hidesName = (config: LovelaceCardConfig | undefined): boolean =>
   String(config?.['name_lines']) === '0' && namesHead(config);
+
+/**
+ * Whether a card's head is left with nothing in it (#259): no circle (`show_icon: never`), its name hidden
+ * (`hidesName`) and `quiet`, the card's own answer read from its config alone (`Card.quiet`): its line, its badge and
+ * whatever trails its head all switched off. Never from what the house says, as a card's height follows its config: an
+ * Appliances count left empty while nothing runs keeps its head while `show_count` is on. Such a head is not drawn:
+ * the card's first part sits at its 20 all round, the card says its title aloud, and its height drops the head and the
+ * gap under it (`headlessOf`).
+ */
+export const headless = (config: LovelaceCardConfig | undefined, quiet: boolean): boolean =>
+  quiet && config?.['show_icon'] === 'never' && hidesName(config);
+
+/** What a head left with nothing in it (`headless`) takes off its card's height: its 44 and the `gap` under it. */
+export const headlessOf = (
+  config: LovelaceCardConfig | undefined,
+  quiet: boolean,
+  gap: number,
+): number => (headless(config, quiet) ? 44 + gap : 0);
+
+/**
+ * A head's line asked away: `subtitle: ''`, or no `subtitle` where the card's own line is off by its config (`off`:
+ * its count's switch, a line it draws only where asked).
+ */
+export const noLine = (config: LovelaceCardConfig | undefined, off = false): boolean =>
+  (config?.['subtitle'] ?? (off ? '' : undefined)) === '';
+
+/** A head's own badge asked away: `show_badge: false` (#203), or the card's own switch for it (`off`). */
+export const noBadge = (config: LovelaceCardConfig | undefined, off = false): boolean =>
+  off || config?.['show_badge'] === false;
+
+/** The `quiet` of a head with a line and a badge of its own: both asked away. */
+export const muted = (config: LovelaceCardConfig | undefined): boolean =>
+  noLine(config) && noBadge(config);

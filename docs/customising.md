@@ -29,7 +29,7 @@ entity: light.living_room_lamp
 | `exact_colors` | `true`: the colours the card names as Home Assistant draws them and a hex as typed, not the palette's tones ([theme](theme.md#exact-colours)). | `exact_colors: true` |
 | `unavailable` | Out of reach: `dashed` (the default) or `quiet` (as when off). The card keeps its size either way. | `unavailable: quiet` |
 | `show_icon` | The head's circle: `auto`, `always` or `never`. | `show_icon: never` |
-| `name_lines` | `2`: the name may take two lines; the head is a line taller whatever the name. `0` hides the name; the head keeps its circle and its line. | `name_lines: 2` |
+| `name_lines` | `2`: the name may take two lines; the head is a line taller whatever the name. `0` hides the name; the head keeps its circle and its line, and a head with nothing left in it (`show_icon: never`, its line and its badge off) is not drawn. | `name_lines: 2` |
 | `show_badge` | `false` hides the badge (a state or a count). Your own `badge` still shows. | `show_badge: false` |
 | `names` | How a list names items with no `name`: `full`, `entity`, `device`, or Home Assistant's parts. | `names: entity` |
 | `slider_style`, `slider_words` | `ruler`, `bar`, `liquid`, `fill` (a tile) or `house`; the figures under the slider: `ends` or `none`. | `slider_style: bar` |

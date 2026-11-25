@@ -1,6 +1,7 @@
 import type { LovelaceCardConfig } from '@fluvy/core';
 import { applianceVariant, type ApplianceVariant } from './appliance-variant.js';
 import type { FamilyEntry } from './energy-family.js';
+import { headlessOf, noLine } from './shared/head-lines.js';
 import { HEAD, ROW_BAR, ROW_COMPACT, rowsOf } from './shared/heights.js';
 
 /**
@@ -187,12 +188,16 @@ export const countsButtons = (
 /** Rows before a "{count} more" row takes the others, when the config says nothing. */
 export const APPLIANCES_MAX_ROWS = 6;
 
+/** What leaves the list's head with nothing in it besides its circle and its name (#259): its line, the count's. */
+export const appliancesQuiet = (config: LovelaceCardConfig | undefined): boolean =>
+  noLine(config, config?.['show_count'] === false);
+
 /**
  * The list of the house's appliances at a 360 column: the head, then a bar row each (76; 48 compact) 4 under it, or
  * tiles two a row (88, 8 apart; 84 with a circle) 16 under it, as many as the config lists; the house's, which the
  * config cannot count, as many as the fold allows (`max_rows`, six) and the fold row (4 + 48) after them, so a
  * dashboard reserves the most the card draws. An empty list's panel. Or each appliance's whole card, one under the
- * other.
+ * other. A head left with nothing in it goes, with the gap under it (#259).
  */
 export const appliancesHeight = (config: LovelaceCardConfig): number => {
   const listed = config['appliances'];
@@ -215,13 +220,20 @@ export const appliancesHeight = (config: LovelaceCardConfig): number => {
   const max = Number.isFinite(asked) ? Math.min(30, Math.max(1, asked)) : APPLIANCES_MAX_ROWS;
   const n = Array.isArray(listed) ? Math.min(listed.length, max) : max;
   const fold = Array.isArray(listed) && listed.length <= max ? 0 : 4 + ROW_COMPACT;
-  if (n === 0) return HEAD + 120;
+  const quiet = appliancesQuiet(config);
+  if (n === 0) return HEAD + 120 - headlessOf(config, quiet, 16);
   if (config['variant'] === 'tiles') {
     const rows = rowsOf(n, 2);
     const tile = config['picture'] === 'icon' || config['picture'] === 'none' ? 84 : 88;
-    return HEAD + rows * tile + (rows - 1) * 8 + fold;
+    return HEAD - headlessOf(config, quiet, 16) + rows * tile + (rows - 1) * 8 + fold;
   }
-  return HEAD - 12 + n * (config['variant'] === 'compact' ? ROW_COMPACT : ROW_BAR) + fold;
+  return (
+    HEAD -
+    12 -
+    headlessOf(config, quiet, 4) +
+    n * (config['variant'] === 'compact' ? ROW_COMPACT : ROW_BAR) +
+    fold
+  );
 };
 
 export const APPLIANCES_FAMILY: readonly FamilyEntry[] = [

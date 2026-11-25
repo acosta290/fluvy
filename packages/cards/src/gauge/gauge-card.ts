@@ -40,6 +40,7 @@ import { Card, type CardEditor } from '../shared/base.js';
 
 import { classWord, iconOf, stateWord } from '../shared/domain.js';
 import type { TextRuler } from '../shared/fit.js';
+import { headlessOf, muted } from '../shared/head-lines.js';
 import { SECTION_COLUMN } from '../shared/heights.js';
 import { statsRow, statsSize, type StatsRow, type StatText } from '../shared/readouts.js';
 import { Refresher } from '../shared/refresh.js';
@@ -238,14 +239,28 @@ export function gaugeLabel(
 }
 
 /**
+ * What leaves the head with nothing in it besides its circle and its name (#259): its line and its badge asked away,
+ * and no badge of the person's own, nor a threshold's label, which say themselves whatever `show_badge` asks.
+ */
+const gaugeQuiet = (config: GaugeCardConfig | undefined): boolean =>
+  muted(config) &&
+  !config?.badge &&
+  !(config?.thresholds ?? []).some((threshold) => threshold.label);
+
+/**
  * A numeric sensor as the read-only ring gauge: the tick ring lit to its fraction, the figure in the
  * open centre under an uppercase label, the range under the ring, and Min / Max / Average of the
  * window below — centred in their columns, so the row mirrors the ring above it.
  */
 export class FluvyGaugeCard extends Card<GaugeCardConfig> {
-  /** The card's height at a 360 column, for the automatic dashboard's columns. */
+  /**
+   * The card's height at a 360 column, for the automatic dashboard's columns; a head left with nothing in it goes, with
+   * the 16 under it (#259).
+   */
   static override layoutHeight(config: GaugeCardConfig): number {
-    const height = config.variant === 'bar' ? 256 : config.variant === 'signed' ? 372 : 384;
+    const height =
+      (config.variant === 'bar' ? 256 : config.variant === 'signed' ? 372 : 384) -
+      headlessOf(config, gaugeQuiet(config), 16);
     return statsOf(config).length ? height : height - STATS_ROW;
   }
 
@@ -484,6 +499,10 @@ export class FluvyGaugeCard extends Card<GaugeCardConfig> {
     );
   }
 
+  protected override get quiet(): boolean {
+    return gaugeQuiet(this.config);
+  }
+
   /**
    * Unavailable, unknown or missing, the gauge is the live one in the off skin (the owner's rule, 1.9): its ring or
    * bar, its range, its label and its row of the window, the value "—"; the window is history and stays.
@@ -596,20 +615,25 @@ export class FluvyGaugeCard extends Card<GaugeCardConfig> {
     return html`<article
       class="fv-card so-card ${tinted.cls} ${unusable ? 'is-unavailable is-off' : ''}"
       data-card
+      aria-label=${this.headless ? name : nothing}
       data-accent=${band?.accent ?? nothing}
       data-surface=${tinted.surface}
       data-edge=${tinted.edge}
     >
-      ${head({
-        icon: fitted.icon ? iconOf(view, band?.icon ?? this.config?.icon) : null,
-        tone: headTone,
-        title: name,
-        sub: fitted.sub,
-        trailing: fitted.badge,
-        cut: fitted.cut,
-        ...this.headActions(view.id),
-        name: true,
-      })}
+      ${
+        this.headless
+          ? nothing
+          : head({
+              icon: fitted.icon ? iconOf(view, band?.icon ?? this.config?.icon) : null,
+              tone: headTone,
+              title: name,
+              sub: fitted.sub,
+              trailing: fitted.badge,
+              cut: fitted.cut,
+              ...this.headActions(view.id),
+              name: true,
+            })
+      }
       ${
         this.bar
           ? html`<div class="so-top fv-value-row">
@@ -910,20 +934,25 @@ export class FluvyGaugeCard extends Card<GaugeCardConfig> {
     return html`<article
       class="fv-card so-card ${tinted.cls} ${unusable ? 'is-unavailable is-off' : ''}"
       data-card
+      aria-label=${this.headless ? name : nothing}
       data-accent=${band?.accent ?? nothing}
       data-surface=${tinted.surface}
       data-edge=${tinted.edge}
     >
-      ${head({
-        icon: fitted.icon ? iconOf(view, band?.icon ?? this.config?.icon) : null,
-        tone: headTone,
-        title: name,
-        sub: fitted.sub,
-        trailing: fitted.badge,
-        cut: fitted.cut,
-        ...this.headActions(view.id),
-        name: true,
-      })}
+      ${
+        this.headless
+          ? nothing
+          : head({
+              icon: fitted.icon ? iconOf(view, band?.icon ?? this.config?.icon) : null,
+              tone: headTone,
+              title: name,
+              sub: fitted.sub,
+              trailing: fitted.badge,
+              cut: fitted.cut,
+              ...this.headActions(view.id),
+              name: true,
+            })
+      }
       <div class="en-gauge fv-tone--${tone}" style="height:${g.height}px">
         <svg
           width=${width}

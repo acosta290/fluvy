@@ -31,6 +31,7 @@ import { ChartLoader } from '../shared/chart-load.js';
 import { Card, type CardEditor } from '../shared/base.js';
 
 import { iconOf } from '../shared/domain.js';
+import { headlessOf, muted } from '../shared/head-lines.js';
 import { Refresher } from '../shared/refresh.js';
 import type { AliasSpec } from '../shared/config.js';
 import { toneOf } from '../shared/colour.js';
@@ -96,11 +97,16 @@ const clampPercent = (value: number): number => Math.min(100, Math.max(0, value)
  * underneath where it is heading and the humidifier that answers it.
  */
 export class FluvyHumidityCard extends Card<HumidityCardConfig> {
-  /** The card's height at a 360 column, for the automatic dashboard's columns. */
+  /**
+   * The card's height at a 360 column, for the automatic dashboard's columns; a head left with nothing in it goes, with
+   * the 16 under it (#259).
+   */
   static override layoutHeight(config: HumidityCardConfig): number {
     const trend = config.show_trend === false || config.hours === 0 ? 0 : 1;
     const rows = trend + (config.humidifier_entity ? 1 : 0);
-    return 236 + (rows ? 16 + ROW * rows : 0) + rowsUnder(config);
+    return (
+      236 - headlessOf(config, muted(config), 16) + (rows ? 16 + ROW * rows : 0) + rowsUnder(config)
+    );
   }
   static override takesRows = true;
 
@@ -274,6 +280,10 @@ export class FluvyHumidityCard extends Card<HumidityCardConfig> {
     });
   }
 
+  protected override get quiet(): boolean {
+    return muted(this.config);
+  }
+
   protected renderCard(): TemplateResult {
     const view = this.entity();
     const name = this.nameFor(view, this.config?.name);
@@ -394,17 +404,22 @@ export class FluvyHumidityCard extends Card<HumidityCardConfig> {
     return html`<article
       class="fv-card so-card ${unusable ? 'is-unavailable is-off' : ''}"
       data-card
+      aria-label=${this.headless ? name : nothing}
     >
-      ${head({
-        icon: fitted.icon ? iconOf(view, this.config?.icon) : null,
-        tone,
-        title: name,
-        sub: fitted.sub,
-        trailing: fitted.badge,
-        cut: fitted.cut,
-        ...this.headActions(view.id),
-        name: true,
-      })}
+      ${
+        this.headless
+          ? nothing
+          : head({
+              icon: fitted.icon ? iconOf(view, this.config?.icon) : null,
+              tone,
+              title: name,
+              sub: fitted.sub,
+              trailing: fitted.badge,
+              cut: fitted.cut,
+              ...this.headActions(view.id),
+              name: true,
+            })
+      }
       <div class="so-top fv-value-row ${stacked ? 'is-stacked' : ''}">
         ${readout({ label: relative, value: parts.value, unit: value === null ? '' : parts.unit || '%', size: 'l' })}
         ${side ? html`<div class="so-top__side">${readout({ label: side.label, value: side.value, unit: side.unit, size: 's' })}</div>` : nothing}

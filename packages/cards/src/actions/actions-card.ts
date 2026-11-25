@@ -17,6 +17,7 @@ import { Card, type CardEditor } from '../shared/base.js';
 import { iconOf } from '../shared/domain.js';
 import { ITEM_ALIASES, type AliasSpec } from '../shared/config.js';
 import { toneOf } from '../shared/colour.js';
+import { headlessOf, noLine } from '../shared/head-lines.js';
 import { EMPTY, entryCount, HEAD, rowsOf } from '../shared/heights.js';
 import { emptyPanel, itemsOf, listOf, type EmptyList } from '../shared/lists.js';
 import { isTemplate, TemplateTexts } from '../shared/templates.js';
@@ -85,12 +86,16 @@ const sentence = (text: string): string => text.charAt(0).toLocaleUpperCase() + 
  * the surface gives under the finger and the glyph becomes a check for a beat.
  */
 export class FluvyActionsCard extends Card<ActionsCardConfig> {
-  /** The card's height at a 360 column, for the automatic dashboard's columns. */
+  /**
+   * The card's height at a 360 column, for the automatic dashboard's columns; a head left with nothing in it goes, with
+   * the 16 under it (#259).
+   */
   static override layoutHeight(config: ActionsCardConfig): number {
     const n = entryCount(config, ['rows', 'entities']);
-    if (!n) return HEAD + EMPTY;
+    const head = headlessOf(config, noLine(config), 16);
+    if (!n) return HEAD + EMPTY - head;
     const columns = Math.min(3, Math.max(1, Math.round(Number(config.columns ?? 1)) || 1));
-    return 92 + 68 * rowsOf(n, columns);
+    return 92 - head + 68 * rowsOf(n, columns);
   }
 
   static override styles: CSSResultGroup = [
@@ -336,6 +341,10 @@ export class FluvyActionsCard extends Card<ActionsCardConfig> {
     return { glyph, play, room: cell - (play ? BESIDE_BOTH : glyph ? BESIDE_GLYPH : BARE) };
   }
 
+  protected override get quiet(): boolean {
+    return noLine(this.config);
+  }
+
   protected renderCard(): TemplateResult {
     const rows = this.rows();
     const panel = emptyPanel(this, !rows.length, 'bolt', 'common.no_actions');
@@ -350,16 +359,20 @@ export class FluvyActionsCard extends Card<ActionsCardConfig> {
       sub: this.config?.subtitle ?? s(this.hass, 'subtitle'),
     });
 
-    return html`<article class="fv-card" data-card>
-      ${head({
-        icon: fitted.icon ? (this.config?.icon ?? 'bolt') : null,
-        tone: toneOf(this.config, 'accent'),
-        title,
-        sub: fitted.sub,
-        cut: fitted.cut,
-        // the head is the card's button where its tap has somewhere to go: a card of many has no details of its own
-        ...this.headActions(),
-      })}
+    return html`<article class="fv-card" data-card aria-label=${this.headless ? title : nothing}>
+      ${
+        this.headless
+          ? nothing
+          : head({
+              icon: fitted.icon ? (this.config?.icon ?? 'bolt') : null,
+              tone: toneOf(this.config, 'accent'),
+              title,
+              sub: fitted.sub,
+              cut: fitted.cut,
+              // the head is the card's button where its tap has somewhere to go: a card of many has no details of its own
+              ...this.headActions(),
+            })
+      }
       <div
         class="in-actions ${layout.play ? '' : 'in-actions--still'} ${layout.glyph ? '' : 'in-actions--bare'}"
         style="--in-columns:${columns};--in-gap:${gap}px"

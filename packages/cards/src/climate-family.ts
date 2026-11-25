@@ -1,5 +1,6 @@
 import type { LovelaceCardConfig } from '@fluvy/core';
 import type { FamilyEntry } from './energy-family.js';
+import { headlessOf, muted } from './shared/head-lines.js';
 import {
   CHIP_GLYPH,
   chipBlock,
@@ -63,6 +64,13 @@ export interface ThermostatOffers {
 const UNDESCRIBED: ThermostatOffers = { modes: DEFAULT_MODES, presets: [], fans: [], range: false };
 
 /**
+ * What leaves the thermostat's head with nothing in it besides its circle and its name (#259): its line and its badge
+ * asked away, and no battery asked for, whose low charge leads the line.
+ */
+export const thermostatQuiet = (config: LovelaceCardConfig | undefined): boolean =>
+  muted(config) && !config?.['battery_entity'] && !config?.['show_battery'];
+
+/**
  * The card's height at a 360 column, for the automatic dashboard's columns: the head and the dial (a dial without
  * its stepper is 56 shorter), the readout and its ruler (two rulers for a range) — the same row whichever figure it
  * makes large (`focus`) — the readings under it (`readouts`: one row of up to four, 60), then the modes under their
@@ -70,7 +78,8 @@ const UNDESCRIBED: ThermostatOffers = { modes: DEFAULT_MODES, presets: [], fans:
  * count alone (`iconColumns`), chips in rows of 44 — and the presets and the fan speeds as rows of chips, each under
  * its label. The modes are the config's, else what the entity offers as the house describes it (`house-heights.ts`);
  * the presets and the fan speeds are the entity's; under them, the rows it lists (#262). A card that keeps to the
- * essentials while off is reserved its height when on.
+ * essentials while off is reserved its height when on. A head left with nothing in it goes, with the 16 under it
+ * (#259).
  */
 export function thermostatHeight(
   config: LovelaceCardConfig,
@@ -121,7 +130,15 @@ export function thermostatHeight(
   const fans =
     config['show_fan'] === false ? 0 : chips(offers.fans.map(pretty), config['fan_style']);
   const readings = statsBlock(Math.min(1, entryCount(config, ['readouts'])));
-  return height + readings + modes + presets + fans + rowsUnder(config);
+  return (
+    height -
+    headlessOf(config, thermostatQuiet(config), 16) +
+    readings +
+    modes +
+    presets +
+    fans +
+    rowsUnder(config)
+  );
 }
 
 export const CLIMATE_FAMILY: readonly FamilyEntry[] = [['fluvy-thermostat-card', thermostatHeight]];

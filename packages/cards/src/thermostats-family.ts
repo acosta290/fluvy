@@ -1,5 +1,6 @@
 import type { LovelaceCardConfig } from '@fluvy/core';
 import type { FamilyEntry } from './energy-family.js';
+import { headless } from './shared/head-lines.js';
 import {
   chipRows,
   CHIP_GLYPH,
@@ -33,9 +34,14 @@ const ALL_OFF = 'All off';
 export const TILE = 84;
 export const TILE_GAP = 8;
 
-/** Whether the card draws its head: it has a title of its own, or says how many heat or the average. */
-export const hasHead = (config: LovelaceCardConfig): boolean =>
-  Boolean(config['title'] || config['show_count'] === true || config['show_average'] === true);
+/**
+ * Whether the card draws its head: it has a title of its own, or says how many heat or the average — never a head left
+ * with nothing in it (#259), a title hidden with no circle, no count and no average.
+ */
+export const hasHead = (config: LovelaceCardConfig): boolean => {
+  const said = config['show_count'] === true || config['show_average'] === true;
+  return Boolean(config['title'] || said) && !headless(config, !said);
+};
 
 /** What the card does for every thermostat at once, where asked: All off, and the presets they offer. */
 export type HouseAction = 'all_off' | 'presets';

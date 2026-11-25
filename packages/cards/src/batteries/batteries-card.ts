@@ -27,6 +27,7 @@ import { HeadFit } from '../energy/head.js';
 import { durationFigure, durationReadout } from '../energy/duration.js';
 import { MARK_LABEL, markedRuler } from '../energy/marked-ruler.js';
 import { modeRow } from '../energy/mode-row.js';
+import { muted } from '../shared/head-lines.js';
 import { valueRow, type Figure } from '../shared/value-row.js';
 import { deviceName, scaled, scaleOf, type Scale } from '../energy/power.js';
 import { ACTIONS_BASE, Card, ICON_ACTIONS_BASE, type BaseKey } from '../shared/base.js';
@@ -335,6 +336,10 @@ export class FluvyBatteriesCard extends Card<BatteriesCardConfig> {
 
   /* ---------- render ---------- */
 
+  protected override get quiet(): boolean {
+    return muted(this.config);
+  }
+
   protected renderCard(): TemplateResult {
     const w = this.contentWidth;
     const all = this.read();
@@ -355,17 +360,25 @@ export class FluvyBatteriesCard extends Card<BatteriesCardConfig> {
     const fitted = this.head.fit({ width: w, title, sub: this.sub(all, net, scale), badge });
     const first = all[0]?.entity;
     const waiting = !this.own().length && this.prefs === undefined;
-    return html`<article class="fv-card ef-card en-card" data-card>
-      ${head({
-        icon: fitted.icon ? (this.config?.icon ?? 'battery') : null,
-        tone: active ? tone : 'neutral',
-        title,
-        sub: fitted.sub,
-        trailing: fitted.badge,
-        name: Boolean(this.config?.title),
-        cut: fitted.cut,
-        ...this.headActions(first),
-      })}
+    return html`<article
+      class="fv-card ef-card en-card"
+      data-card
+      aria-label=${this.headless ? title : nothing}
+    >
+      ${
+        this.headless
+          ? nothing
+          : head({
+              icon: fitted.icon ? (this.config?.icon ?? 'battery') : null,
+              tone: active ? tone : 'neutral',
+              title,
+              sub: fitted.sub,
+              trailing: fitted.badge,
+              name: Boolean(this.config?.title),
+              cut: fitted.cut,
+              ...this.headActions(first),
+            })
+      }
       ${
         all.length
           ? this.renderBody(all, net, scale, tone, title, w)

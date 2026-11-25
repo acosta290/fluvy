@@ -1,4 +1,4 @@
-import { historyBarsHeight } from '../energy-family.js';
+import { historyBarsHeight, historyBarsQuiet } from '../energy-family.js';
 import {
   actionRuns,
   dateFormat,
@@ -1375,6 +1375,10 @@ export class FluvyHistoryBarsCard extends Card<HistoryBarsCardConfig> {
 
   /* ---------- the render ---------- */
 
+  protected override get quiet(): boolean {
+    return historyBarsQuiet(this.config);
+  }
+
   protected renderCard(): TemplateResult {
     const view = this.entity();
     const name = this.nameFor(view, this.config?.name);
@@ -1458,7 +1462,7 @@ export class FluvyHistoryBarsCard extends Card<HistoryBarsCardConfig> {
     // gives way, where a badge in a narrow head would
     const period = this.config?.subtitle ?? this.periodLine();
     const sub = unusable ? `${stateText(this.hass, view)} · ${period}` : period;
-    const showHead = this.shows('show_head');
+    const showHead = this.shows('show_head') && !this.headless;
     // the readouts sit beside the title only on a wide card where nothing of the head gives way for them
     const tryHead =
       showHead && variant !== 'mini' && readouts.length > 0 && width >= READOUTS_IN_HEAD;
@@ -1492,7 +1496,11 @@ export class FluvyHistoryBarsCard extends Card<HistoryBarsCardConfig> {
             ? html`<div class="hb-empty">${this.renderNone(view, failed, width)}</div>`
             : this.renderChart(buckets, values, unit, tone, unusable, { hovered, running }, name);
 
-    return html`<article class="fv-card ${unusable ? 'is-unavailable is-off' : ''}" data-card>
+    return html`<article
+      class="fv-card ${unusable ? 'is-unavailable is-off' : ''}"
+      data-card
+      aria-label=${this.headless ? name : nothing}
+    >
       ${
         showHead
           ? head({

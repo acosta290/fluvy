@@ -70,6 +70,7 @@ import {
   STOP,
   usualFor,
 } from '../cover-family.js';
+import { muted } from '../shared/head-lines.js';
 import { drawnAs, listedRows } from '../shared/heights.js';
 import { stateLook, tintOf, type StateTintConfig } from '../shared/state-tint.js';
 import {
@@ -724,6 +725,10 @@ export class FluvyCoverCard extends Card<CoverCardConfig> {
     </div>`;
   }
 
+  protected override get quiet(): boolean {
+    return muted(this.config);
+  }
+
   protected renderCard(): TemplateResult {
     // out of reach (unavailable, missing; never read: its usual parts) it keeps its anatomy and its size, its controls
     // disabled: only the colours change (1.9)
@@ -967,20 +972,25 @@ export class FluvyCoverCard extends Card<CoverCardConfig> {
       class="fv-card dv-card ${unusable ? 'is-unavailable is-off' : ''} ${this.horizontal ? 'cv-card--across' : ''} ${tinted.cls}"
       style="--dv-action-gap:${cells.gap}px"
       data-card
+      aria-label=${this.headless ? name : nothing}
       data-accent=${colour.accent ?? nothing}
       data-surface=${tinted.surface}
       data-edge=${tinted.edge}
     >
-      ${head({
-        icon: fitted.icon ? iconOf(view, this.config?.icon) : null,
-        tone,
-        title: name,
-        name: true,
-        sub: fitted.line,
-        trailing: fitted.badge,
-        cut: fitted.cut,
-        ...this.headActions(view.id),
-      })}
+      ${
+        this.headless
+          ? nothing
+          : head({
+              icon: fitted.icon ? iconOf(view, this.config?.icon) : null,
+              tone,
+              title: name,
+              name: true,
+              sub: fitted.line,
+              trailing: fitted.badge,
+              cut: fitted.cut,
+              ...this.headActions(view.id),
+            })
+      }
       ${
         side
           ? html` <div

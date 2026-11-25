@@ -72,6 +72,7 @@ import {
   headFields,
   titleFields,
 } from '../shared/form.js';
+import { noLine } from '../shared/head-lines.js';
 import type { EditorChoices, EditorDefaults, RowsListSpec } from '../shared/rows-editor.js';
 import { LADDERS, type NumberKeys } from '../shared/units.js';
 import { BAR, layoutSankey, type LaidNode, type SankeyLayout } from './layout.js';
@@ -470,6 +471,10 @@ export class FluvyEnergySankeyCard extends Card<EnergySankeyCardConfig> {
 
   /* ---------- render ---------- */
 
+  protected override get quiet(): boolean {
+    return noLine(this.config);
+  }
+
   protected renderCard(): TemplateResult {
     const w = this.contentWidth;
     const title = this.config?.title ?? s(this.hass, 'title');
@@ -514,16 +519,24 @@ export class FluvyEnergySankeyCard extends Card<EnergySankeyCardConfig> {
       ></div>`;
     else if (empty) body = emptyState('bolt', s(this.hass, 'nothing_yet'));
     else body = this.renderDiagram(scene, w);
-    return html`<article class="fv-card en-card" data-card>
-      ${head({
-        icon: fitted.icon ? (this.config?.icon ?? 'swap') : null,
-        tone: toneOf(this.config, 'accent'),
-        title,
-        sub: fitted.sub,
-        name: Boolean(this.config?.title),
-        cut: fitted.cut,
-        ...this.headActions(),
-      })}
+    return html`<article
+      class="fv-card en-card"
+      data-card
+      aria-label=${this.headless ? title : nothing}
+    >
+      ${
+        this.headless
+          ? nothing
+          : head({
+              icon: fitted.icon ? (this.config?.icon ?? 'swap') : null,
+              tone: toneOf(this.config, 'accent'),
+              title,
+              sub: fitted.sub,
+              name: Boolean(this.config?.title),
+              cut: fitted.cut,
+              ...this.headActions(),
+            })
+      }
       ${
         configured && this.config?.show_period !== false && !this.follower.following
           ? html`<div class="en-period">

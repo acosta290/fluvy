@@ -40,7 +40,7 @@ import { climateStyles } from '@fluvy/ui/styles/climate';
 
 import { css, html, nothing, type CSSResultGroup, type TemplateResult } from 'lit';
 
-import { DEFAULT_MODES, SHOWN, thermostatHeight } from '../climate-family.js';
+import { DEFAULT_MODES, SHOWN, thermostatHeight, thermostatQuiet } from '../climate-family.js';
 import type { TileReadout } from '../tile/tile-card.js';
 
 import { Card, type CardEditor, type ControlHost } from '../shared/base.js';
@@ -1134,6 +1134,10 @@ export class FluvyThermostatCard extends Card<ThermostatCardConfig> {
     );
   }
 
+  protected override get quiet(): boolean {
+    return thermostatQuiet(this.config);
+  }
+
   protected renderCard(): TemplateResult {
     const view = this.entity();
     const name = this.nameFor(view, this.config?.name);
@@ -1208,11 +1212,12 @@ export class FluvyThermostatCard extends Card<ThermostatCardConfig> {
     return html`<article
       class="fv-card cl-card ${unusable ? 'is-unavailable is-off' : ''} ${this.contentWidth < 292 ? 'is-narrow' : ''} ${tinted.cls}"
       data-card
+      aria-label=${this.headless ? name : nothing}
       data-accent=${act.accent ?? mode.accent ?? nothing}
       data-surface=${tinted.surface}
       data-edge=${tinted.edge}
     >
-      ${head({ icon: fitted.icon ? iconOf(view, this.config?.icon) : null, picture: this.pictures.shown(imageOf(this.hass, this.config?.image)), pictureFailed: this.pictures.failed, tone, title: name, sub: fitted.line, trailing: fitted.badge, name: true, cut: fitted.cut, ...this.headActions(view.id) })}
+      ${this.headless ? nothing : head({ icon: fitted.icon ? iconOf(view, this.config?.icon) : null, picture: this.pictures.shown(imageOf(this.hass, this.config?.image)), pictureFailed: this.pictures.failed, tone, title: name, sub: fitted.line, trailing: fitted.badge, name: true, cut: fitted.cut, ...this.headActions(view.id) })}
       ${
         this.variant() !== 'dial'
           ? this.renderValueRow(view, m, name, unusable, figure, edge, now, tone)

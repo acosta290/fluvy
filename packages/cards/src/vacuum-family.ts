@@ -1,5 +1,6 @@
 import type { LovelaceCardConfig } from '@fluvy/core';
 import type { FamilyEntry } from './energy-family.js';
+import { headlessOf, muted } from './shared/head-lines.js';
 import { chipBlock, chipRows, COMPACT } from './shared/heights.js';
 import { pretty } from './shared/mode-words.js';
 
@@ -56,10 +57,12 @@ export interface RobotDoes {
  * The card's height at a 360 column, for the automatic dashboard's columns: the head; the readouts' row (16 + 44)
  * where the config names a sensor; the battery (a label, the gauge and its marks: 112) where the robot has one; the
  * commands (16 + 44) it takes; its suction as a row of chips under a label — what it does as the house describes it
- * (`house-heights.ts`); where the house is not there to say, every part, and two rows of suction chips.
+ * (`house-heights.ts`); where the house is not there to say, every part, and two rows of suction chips. A head left
+ * with nothing in it goes, with the 16 under it (#259).
  */
 export function vacuumHeight(config: LovelaceCardConfig, does?: RobotDoes): number {
-  if (config['variant'] === 'compact') return COMPACT;
+  const head = headlessOf(config, muted(config), 16);
+  if (config['variant'] === 'compact') return COMPACT - head;
   const id = config['entity'];
   const bits = typeof id === 'string' && id.startsWith('lawn_mower.') ? MOWER_BITS : VACUUM_BITS;
   const features = does?.features ?? usual(bits);
@@ -77,7 +80,7 @@ export function vacuumHeight(config: LovelaceCardConfig, does?: RobotDoes): numb
   const suction = has('suction')
     ? chipBlock(does ? chipRows(does.speeds.map(pretty), style) : 2, style)
     : 0;
-  return 64 + readouts + battery + commands + suction + 20;
+  return 64 - head + readouts + battery + commands + suction + 20;
 }
 
 export const VACUUM_FAMILY: readonly FamilyEntry[] = [['fluvy-vacuum-card', vacuumHeight]];

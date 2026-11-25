@@ -10,7 +10,7 @@ import {
 import { head, sheetStyles } from '@fluvy/ui';
 import { css, html, nothing, type CSSResultGroup, type TemplateResult } from 'lit';
 import { HeadFit } from '../energy/head.js';
-import { roundsGrid, roundsHeight } from '../rounds-family.js';
+import { roundsGrid, roundsHeaded, roundsHeight } from '../rounds-family.js';
 import { Card, type CardEditor } from '../shared/base.js';
 import { toneOf, type LightColours } from '../shared/colour.js';
 import type { AliasSpec } from '../shared/config.js';
@@ -220,7 +220,7 @@ export class FluvyRoundsCard extends Card<RoundsCardConfig> {
     const items = this.items();
     const w = this.contentWidth;
     const host = this.host();
-    const title = this.config?.title;
+    const title = roundsHeaded(this.config) ? this.config?.title : undefined;
     const ids = items.map((item) => item.entity ?? '');
     const on = ids.filter((id) => isActive(this.entity(id))).length;
     const count = this.config?.show_count !== false;
@@ -233,7 +233,11 @@ export class FluvyRoundsCard extends Card<RoundsCardConfig> {
           shorter: count && on ? onOfShort(this.hass, on, ids.length) : [],
         })
       : undefined;
-    return html`<article class="fv-card rd-card" data-card>
+    return html`<article
+      class="fv-card rd-card"
+      data-card
+      aria-label=${title ? nothing : (this.config?.title ?? nothing)}
+    >
       ${
         title && fitted
           ? head({

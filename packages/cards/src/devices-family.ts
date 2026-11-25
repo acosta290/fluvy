@@ -1,6 +1,7 @@
 import type { LovelaceCardConfig } from '@fluvy/core';
 import type { FamilyEntry } from './energy-family.js';
 import { columnsOf } from './shared/config.js';
+import { headlessOf, muted } from './shared/head-lines.js';
 import {
   COLUMN,
   COMPACT,
@@ -20,10 +21,12 @@ import {
 
 /**
  * The lock: the compact head and its slide, the latch's row (16 + 44) where the lock has one (`latch`: `lock.open`,
- * as the house describes it — `house-heights.ts`; none where it is not there to say), then its rows.
+ * as the house describes it — `house-heights.ts`; none where it is not there to say), then its rows; a head left with
+ * nothing in it goes, with the 16 under it (#259).
  */
 export const lockHeight = (config: LovelaceCardConfig, latch = false): number =>
-  config['variant'] === 'compact' ? COMPACT : COMPACT + (latch ? 60 : 0) + rowsUnder(config);
+  (config['variant'] === 'compact' ? COMPACT : COMPACT + (latch ? 60 : 0) + rowsUnder(config)) -
+  headlessOf(config, muted(config), 16);
 
 /** A panel's arm modes by their `supported_features` bits; disarm every panel has. */
 const ARM_BITS: Readonly<Record<string, number>> = {
@@ -52,15 +55,15 @@ const alarmModes = (config: LovelaceCardConfig, features: number): number => {
 /**
  * The alarm: the head, then the modes as option tiles under their label (a row of three; two rows for a panel
  * that arms four ways or more), then its rows; the compact card is one row. The panel's `features` are the house's
- * (`house-heights.ts`).
+ * (`house-heights.ts`). A head left with nothing in it goes, with the 16 under it (#259).
  */
 export const alarmHeight = (config: LovelaceCardConfig, features = 0): number =>
-  config['variant'] === 'compact'
+  (config['variant'] === 'compact'
     ? COMPACT
     : 64 +
       optionBlock(rowsOf(Math.max(1, alarmModes(config, features)), 3)) +
       rowsUnder(config) +
-      20;
+      20) - headlessOf(config, muted(config), 16);
 
 /** The shapes a camera's picture can take (`aspect_ratio`): width over height; `native` is the camera's own. */
 export const CAMERA_RATIOS = ['16:9', '4:3', '3:2', '1:1', '2:1', '21:9', 'native'] as const;

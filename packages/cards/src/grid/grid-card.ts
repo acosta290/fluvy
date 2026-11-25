@@ -86,6 +86,7 @@ import {
   headFields,
   titleFields,
 } from '../shared/form.js';
+import { muted } from '../shared/head-lines.js';
 import { statsSize } from '../shared/readouts.js';
 import type { EditorChoices, EditorDefaults, RowsListSpec } from '../shared/rows-editor.js';
 import type { NumberKeys } from '../shared/units.js';
@@ -513,6 +514,10 @@ export class FluvyGridCard extends Card<GridCardConfig> {
 
   /* ---------- render ---------- */
 
+  protected override get quiet(): boolean {
+    return muted(this.config);
+  }
+
   protected renderCard(): TemplateResult {
     const m = this.model ?? this.build();
     const w = this.contentWidth;
@@ -532,17 +537,25 @@ export class FluvyGridCard extends Card<GridCardConfig> {
     });
     const first = m.source ? sourceIds(m.source)[0] : undefined;
     const empty = !m.source && (!!this.own() || this.prefs !== undefined);
-    return html`<article class="fv-card ef-card en-card" data-card>
-      ${head({
-        icon: fitted.icon ? (this.config?.icon ?? 'tower') : null,
-        tone: m.dead || !m.way ? 'neutral' : toneOf(this.config, 'grid'),
-        title,
-        sub: fitted.sub,
-        trailing: fitted.badge,
-        name: true,
-        cut: fitted.cut,
-        ...this.headActions(first),
-      })}
+    return html`<article
+      class="fv-card ef-card en-card"
+      data-card
+      aria-label=${this.headless ? title : nothing}
+    >
+      ${
+        this.headless
+          ? nothing
+          : head({
+              icon: fitted.icon ? (this.config?.icon ?? 'tower') : null,
+              tone: m.dead || !m.way ? 'neutral' : toneOf(this.config, 'grid'),
+              title,
+              sub: fitted.sub,
+              trailing: fitted.badge,
+              name: true,
+              cut: fitted.cut,
+              ...this.headActions(first),
+            })
+      }
       ${
         empty
           ? this.head.empty(

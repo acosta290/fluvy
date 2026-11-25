@@ -1,4 +1,4 @@
-import { flowHeight, flowStage, UNSPACED } from '../energy-family.js';
+import { flowHeight, flowQuiet, flowStage, UNSPACED } from '../energy-family.js';
 import {
   strings,
   type EntityName,
@@ -990,6 +990,10 @@ export class FluvyEnergyFlowCard extends Card<EnergyFlowCardConfig> {
     return 'rows';
   }
 
+  protected override get quiet(): boolean {
+    return flowQuiet(this.config);
+  }
+
   protected renderCard(): TemplateResult {
     const scene = this.scene ?? this.build();
     this.scene = scene;
@@ -1021,17 +1025,25 @@ export class FluvyEnergyFlowCard extends Card<EnergyFlowCardConfig> {
             )
           : this.renderBody(scene, w);
     const totals = this.readouts();
-    return html`<article class="fv-card ef-card en-card" data-card>
-      ${head({
-        icon: fitted.icon ? (this.config?.icon ?? 'bolt') : null,
-        tone: toneOf(this.config, 'accent'),
-        title,
-        sub: fitted.sub,
-        trailing: fitted.badge,
-        name: Boolean(this.config?.title),
-        cut: fitted.cut,
-        ...this.headActions(),
-      })}
+    return html`<article
+      class="fv-card ef-card en-card"
+      data-card
+      aria-label=${this.headless ? title : nothing}
+    >
+      ${
+        this.headless
+          ? nothing
+          : head({
+              icon: fitted.icon ? (this.config?.icon ?? 'bolt') : null,
+              tone: toneOf(this.config, 'accent'),
+              title,
+              sub: fitted.sub,
+              trailing: fitted.badge,
+              name: Boolean(this.config?.title),
+              cut: fitted.cut,
+              ...this.headActions(),
+            })
+      }
       ${
         period && this.config?.show_period !== false && !this.follower.following
           ? html`<div class="en-period">

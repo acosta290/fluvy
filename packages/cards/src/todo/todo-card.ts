@@ -28,6 +28,7 @@ import { HeadFit } from '../energy/head.js';
 import { Card, type CardEditor } from '../shared/base.js';
 import type { AliasSpec } from '../shared/config.js';
 import { toneOf } from '../shared/colour.js';
+import { headlessOf, noLine } from '../shared/head-lines.js';
 
 const s = strings('todo');
 
@@ -71,6 +72,10 @@ const MAX_PLACEHOLDERS = 8;
  */
 const RESTING = 5;
 
+/** What leaves the head with nothing in it besides its circle and its name (#259): its line and its "+" asked away. */
+const todoQuiet = (config: TodoCardConfig | undefined): boolean =>
+  noLine(config) && config?.show_add === false;
+
 /**
  * A to-do list the way the sheet draws it: the count and the accent "+" in the head, then 60 px rows
  * whose check ring sits in the 44 icon column. A tick answers under the finger and the service follows.
@@ -78,9 +83,12 @@ const RESTING = 5;
  * subscription is refused, or stays silent, the list is read again whenever the entity changes.
  */
 export class FluvyTodoCard extends Card<TodoCardConfig> {
-  /** The card's height at a 360 column, for the automatic dashboard's columns. */
-  static override layoutHeight(): number {
-    return 100 + RESTING * 60; // a list of five
+  /**
+   * The card's height at a 360 column, for the automatic dashboard's columns: a list of five; a head left with nothing
+   * in it goes, with the 16 under it (#259).
+   */
+  static override layoutHeight(config: TodoCardConfig): number {
+    return 100 - headlessOf(config, todoQuiet(config), 16) + RESTING * 60;
   }
 
   static override styles: CSSResultGroup = [
@@ -440,6 +448,10 @@ export class FluvyTodoCard extends Card<TodoCardConfig> {
     )}`;
   }
 
+  protected override get quiet(): boolean {
+    return todoQuiet(this.config);
+  }
+
   protected renderCard(): TemplateResult {
     const view = this.entity();
     const name = this.nameFor(view, this.config?.name);
@@ -479,27 +491,35 @@ export class FluvyTodoCard extends Card<TodoCardConfig> {
       ...(adds ? { trailing: 44 } : {}),
     });
 
-    return html`<article class="fv-card ${unusable ? 'is-unavailable is-off' : ''}" data-card>
-      ${head({
-        icon: fitted.icon ? (this.config?.icon ?? 'list') : null,
-        small: fitted.small,
-        tone: unusable ? 'off' : toneOf(this.config, 'accent'),
-        title: name,
-        name: true,
-        sub: fitted.sub,
-        cut: fitted.cut,
-        trailing: adds
-          ? round(
-              'plus',
-              'accent',
-              adding ? s(this.hass, 'close') : this.t('todo.add'),
-              () => this.setAdding(!this.adding_),
-              !canCreate,
-              `in-add ${adding ? 'is-open' : ''}`,
-            )
-          : nothing,
-        ...this.headActions(view.id),
-      })}
+    return html`<article
+      class="fv-card ${unusable ? 'is-unavailable is-off' : ''}"
+      data-card
+      aria-label=${this.headless ? name : nothing}
+    >
+      ${
+        this.headless
+          ? nothing
+          : head({
+              icon: fitted.icon ? (this.config?.icon ?? 'list') : null,
+              small: fitted.small,
+              tone: unusable ? 'off' : toneOf(this.config, 'accent'),
+              title: name,
+              name: true,
+              sub: fitted.sub,
+              cut: fitted.cut,
+              trailing: adds
+                ? round(
+                    'plus',
+                    'accent',
+                    adding ? s(this.hass, 'close') : this.t('todo.add'),
+                    () => this.setAdding(!this.adding_),
+                    !canCreate,
+                    `in-add ${adding ? 'is-open' : ''}`,
+                  )
+                : nothing,
+              ...this.headActions(view.id),
+            })
+      }
       ${
         adding
           ? html`<div class="fv-swap">

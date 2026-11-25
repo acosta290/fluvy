@@ -35,6 +35,7 @@ import {
   ALERTS_VARIANTS,
   alertsColumns,
   alertsHeight,
+  alertsQuiet,
   type AlertsVariant,
 } from '../alerts-family.js';
 import { HeadFit, type FittedHead } from '../energy/head.js';
@@ -550,9 +551,16 @@ export class FluvyAlertsCard extends Card<AlertsCardConfig> {
 
   /* ---------- what a tap does ---------- */
 
-  /** Whether the card has no head: its own tap and hold are then each alert's. */
-  private get headless(): boolean {
-    return this.variant !== 'rows';
+  /**
+   * Whether the card draws no head (a layout without one, or one left with nothing in it, #259): its own tap and hold
+   * are then each alert's.
+   */
+  private get noHead(): boolean {
+    return this.variant !== 'rows' || this.headless;
+  }
+
+  protected override get quiet(): boolean {
+    return alertsQuiet(this.config);
   }
 
   /**
@@ -561,8 +569,8 @@ export class FluvyAlertsCard extends Card<AlertsCardConfig> {
    */
   private tapOf(result: AlertResult): (() => void) | undefined {
     const { tapAction, doubleTapAction } = result.definition;
-    const action = tapAction ?? (this.headless ? this.config?.tap_action : undefined);
-    const double = doubleTapAction ?? (this.headless ? this.config?.double_tap_action : undefined);
+    const action = tapAction ?? (this.noHead ? this.config?.tap_action : undefined);
+    const double = doubleTapAction ?? (this.noHead ? this.config?.double_tap_action : undefined);
     return this.tapper(
       double,
       `alert_${result.key}`,
@@ -580,7 +588,7 @@ export class FluvyAlertsCard extends Card<AlertsCardConfig> {
   /** An alert's hold: its own action, else (without a head) the card's, else the overview of every alert. */
   private holdOf(result: AlertResult): (() => void) | undefined {
     const action =
-      result.definition.holdAction ?? (this.headless ? this.config?.hold_action : undefined);
+      result.definition.holdAction ?? (this.noHead ? this.config?.hold_action : undefined);
     if (!action) return () => void this.openSheet();
     return actionRuns(action as ActionConfig, result.rows[0]?.id)
       ? () => this.runFor(result, action as AlertAction)
@@ -1034,7 +1042,7 @@ export class FluvyAlertsCard extends Card<AlertsCardConfig> {
     const values = bare ? counts.map(() => '') : counts;
     const chevron = bare ? nothing : html`<span class="fv-row__chevron">${icon('chevron')}</span>`;
     const label = s(this.hass, 'more', { n: more });
-    return html`<article class="fv-card" data-card>
+    return html`<article class="fv-card" data-card aria-label=${this.spoken}>
       ${this.renderHead(
         top,
         this.config?.show_count === false
@@ -1088,14 +1096,21 @@ export class FluvyAlertsCard extends Card<AlertsCardConfig> {
     </article>`;
   }
 
+  /** What the rows' card is called where its head is not drawn (#259): its title, which the head said. */
+  private get spoken(): string | typeof nothing {
+    return this.headless ? (this.config?.title ?? s(this.hass, 'title')) : nothing;
+  }
+
   /**
    * The head (rows): the title (the card's own, a name, or "Needs attention") and its line, how many alerts in the
-   * gravest one's tone; what gives way does so in the head's order — the badge, the line's tail, the circle.
+   * gravest one's tone; what gives way does so in the head's order — the badge, the line's tail, the circle. None
+   * where it is left with nothing in it (#259).
    */
   private renderHead(
     tone: Tone,
     badge: { readonly text: string; readonly tone: Tone } | null,
-  ): TemplateResult {
+  ): TemplateResult | typeof nothing {
+    if (this.headless) return nothing;
     const fit = (title: string): FittedHead =>
       this.headFit.fit({
         width: this.contentWidth,
@@ -1209,7 +1224,7 @@ export class FluvyAlertsCard extends Card<AlertsCardConfig> {
         : s(this.hass, 'nothing');
     const open = (): void => void this.openSheet();
     if (variant === 'rows')
-      return html`<article class="fv-card" data-card>
+      return html`<article class="fv-card" data-card aria-label=${this.spoken}>
         ${this.renderHead('neutral', null)}
         <div class="al-empty">${this.headFit.empty('check', text, hint, this.contentWidth)}</div>
       </article>`;

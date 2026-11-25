@@ -1,5 +1,6 @@
 import type { LovelaceCardConfig } from '@fluvy/core';
 import type { FamilyEntry } from './energy-family.js';
+import { headlessOf, muted } from './shared/head-lines.js';
 import { columnOf, HEAD, SECTION_COLUMN } from './shared/heights.js';
 
 /**
@@ -83,15 +84,17 @@ const COMPASS_UNDER = 76;
  */
 export function compassHeight(config: LovelaceCardConfig): number {
   if (config['variant'] === 'row') return 76;
+  // a head left with nothing in it goes, with the 16 under it (#259)
+  const head = HEAD - headlessOf(config, muted(config), 16);
   const stats = config['stats'];
   const count =
     config['show_stats'] !== false && Array.isArray(stats) ? Math.min(3, stats.length) : 0;
   const width = columnOf(config);
   const rows = width < SECTION_COLUMN ? count : Math.min(1, count);
   if (config['variant'] === 'compact')
-    return HEAD + COMPASS_SMALL_RING + (compassBeside(width) ? 0 : COMPASS_UNDER) + 56 * rows;
+    return head + COMPASS_SMALL_RING + (compassBeside(width) ? 0 : COMPASS_UNDER) + 56 * rows;
   const r = compassRadius(width);
-  return HEAD + 2 * (r + COMPASS_RIM) + (r < COMPASS_INSIDE ? COMPASS_UNDER : 0) + 60 * rows;
+  return head + 2 * (r + COMPASS_RIM) + (r < COMPASS_INSIDE ? COMPASS_UNDER : 0) + 60 * rows;
 }
 
 export const WEATHER_FAMILY: readonly FamilyEntry[] = [

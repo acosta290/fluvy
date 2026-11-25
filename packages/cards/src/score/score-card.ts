@@ -66,6 +66,7 @@ import {
   headFields,
   titleFields,
 } from '../shared/form.js';
+import { noLine } from '../shared/head-lines.js';
 import type { EditorChoices, EditorDefaults } from '../shared/rows-editor.js';
 import type { NumberKeys } from '../shared/units.js';
 import {
@@ -411,6 +412,10 @@ export class FluvyEnergyScoreCard extends Card<EnergyScoreCardConfig> {
 
   /* ---------- render ---------- */
 
+  protected override get quiet(): boolean {
+    return noLine(this.config);
+  }
+
   protected renderCard(): TemplateResult {
     const w = this.contentWidth;
     const period = this.period();
@@ -431,16 +436,24 @@ export class FluvyEnergyScoreCard extends Card<EnergyScoreCardConfig> {
       title = s(this.hass, 'title_short');
       fitted = fit(title);
     }
-    return html`<article class="fv-card en-card" data-card>
-      ${head({
-        icon: fitted.icon ? (this.config?.icon ?? 'leaf') : null,
-        tone: toneOf(this.config, 'accent'),
-        title,
-        sub: fitted.sub,
-        name: Boolean(this.config?.title),
-        cut: fitted.cut,
-        ...this.headActions(),
-      })}
+    return html`<article
+      class="fv-card en-card"
+      data-card
+      aria-label=${this.headless ? title : nothing}
+    >
+      ${
+        this.headless
+          ? nothing
+          : head({
+              icon: fitted.icon ? (this.config?.icon ?? 'leaf') : null,
+              tone: toneOf(this.config, 'accent'),
+              title,
+              sub: fitted.sub,
+              name: Boolean(this.config?.title),
+              cut: fitted.cut,
+              ...this.headActions(),
+            })
+      }
       ${
         configured && this.config?.show_period !== false && !this.follower.following
           ? html`<div class="en-period">

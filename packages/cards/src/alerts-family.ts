@@ -1,5 +1,6 @@
 import type { LovelaceCardConfig } from '@fluvy/core';
 import type { FamilyEntry } from './energy-family.js';
+import { headlessOf, noBadge, noLine } from './shared/head-lines.js';
 import { EMPTY, HEAD, ROW, ROW_COMPACT, rowsOf } from './shared/heights.js';
 
 /**
@@ -27,11 +28,15 @@ export const alertsColumns = (config: LovelaceCardConfig): number => {
       : 2;
 };
 
+/** What leaves the rows' head with nothing in it besides its circle and its name (#259): a line of its own, the count. */
+export const alertsQuiet = (config: LovelaceCardConfig | undefined): boolean =>
+  noLine(config, true) && noBadge(config, config?.['show_count'] === false);
+
 /**
  * The alerts card at a 360 column with every alert it lists showing (one tile, chip or row each — a split alert as
  * one — and the fold past `max_alerts`): tiles two a row (minis three), chips three a row, the rows under the head
- * (60, 48 compact), the banner one tile. With nothing listed, what it draws while all is clear: the "All clear" tile,
- * chip or panel.
+ * (60, 48 compact; a head left with nothing in it gone, with the gap under it, #259), the banner one tile. With
+ * nothing listed, what it draws while all is clear: the "All clear" tile, chip or panel.
  */
 export const alertsHeight = (config: LovelaceCardConfig): number => {
   const listed = config['alerts'];
@@ -40,9 +45,15 @@ export const alertsHeight = (config: LovelaceCardConfig): number => {
   const n = Number.isFinite(max) && max >= 1 && all > max ? max + 1 : all;
   const variant = config['variant'];
   if (variant === 'rows') {
-    if (!n) return HEAD + EMPTY;
+    const quiet = alertsQuiet(config);
+    if (!n) return HEAD + EMPTY - headlessOf(config, quiet, 16);
     // the rows start 4 under the head, not a list's 16
-    return HEAD - 12 + n * (config['compact'] === true ? ROW_COMPACT : ROW);
+    return (
+      HEAD -
+      12 -
+      headlessOf(config, quiet, 4) +
+      n * (config['compact'] === true ? ROW_COMPACT : ROW)
+    );
   }
   if (variant === 'banner' || !n) return variant === 'chips' ? CHIP : TILE;
   if (variant === 'chips') return rowsOf(n, 3) * CHIP;

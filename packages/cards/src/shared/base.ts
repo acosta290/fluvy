@@ -18,7 +18,7 @@ import type { HeadFit, ShowIcon } from '../energy/head.js';
 import { loadChartEngine } from './chart-load.js';
 import { COMMON_ALIASES, normaliseConfig, type AliasSpec, type KnownKeys } from './config.js';
 import { FontsSettled } from './fonts.js';
-import { headLines, hidesName } from './head-lines.js';
+import { headless, headLines, hidesName } from './head-lines.js';
 import { listedRows, type HeadNameLines } from './heights.js';
 import type { EditorChoices, EditorDefaults, RowsListSpec } from './rows-editor.js';
 import { readFigure, type Own, type OwnHost } from './own-values.js';
@@ -381,6 +381,8 @@ export abstract class Card<C extends FluvyCardConfig = FluvyCardConfig> extends 
     const lines = this.nameLines;
     if (lines === 1) this.removeAttribute('name-lines');
     else this.setAttribute('name-lines', String(lines));
+    // a head left with nothing in it is not drawn: the first part's sheet takes it from the host
+    this.toggleAttribute('headless', this.headless);
   }
 
   /**
@@ -468,6 +470,22 @@ export abstract class Card<C extends FluvyCardConfig = FluvyCardConfig> extends 
    */
   get nameLines(): 0 | 1 | 2 {
     return headLines(this.config) ? 2 : hidesName(this.config) ? 0 : 1;
+  }
+
+  /**
+   * Whether the card's head is left with nothing in it (#259, `headless`): its circle and its name asked away, and the
+   * card `quiet`. None is drawn; the card says its title aloud.
+   */
+  get headless(): boolean {
+    return headless(this.config, this.quiet);
+  }
+
+  /**
+   * The card's own answer to `headless`, read from its config alone: its line, its badge and whatever trails its head
+   * all switched off. None on a card whose head always holds something.
+   */
+  protected get quiet(): boolean {
+    return false;
   }
 
   /** An action as a surface runs it for `entityId`, where it can (`actionRuns`): none where it is unset. */

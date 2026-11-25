@@ -37,6 +37,7 @@ import {
   headFields,
   textField,
 } from '../shared/form.js';
+import { noLine } from '../shared/head-lines.js';
 import type { EditorDefaults } from '../shared/rows-editor.js';
 import { MINUTE, Ticker } from '../shared/ticker.js';
 import { webHeight } from '../web-family.js';
@@ -750,6 +751,10 @@ export class FluvyWebCard extends Card<WebCardConfig> {
     </div>`;
   }
 
+  protected override get quiet(): boolean {
+    return noLine(this.config);
+  }
+
   protected renderCard(): TemplateResult | typeof nothing {
     const page = this.page;
     const config = this.config;
@@ -769,16 +774,24 @@ export class FluvyWebCard extends Card<WebCardConfig> {
     // the head gives way in its order (the sub, then the circle) before the title is cut; a host too long for a half
     // card's line ("grafana.local:3000") goes whole rather than cut
     const fitted = this.head.fit({ width, title, sub, shorter: [''] });
-    return html`<article class="fv-card wb-card" data-card>
-      ${head({
-        icon: fitted.icon ? (config.icon ?? 'globe') : null,
-        small: fitted.small,
-        tone: toneOf(config, 'accent'),
-        title,
-        sub: fitted.sub,
-        cut: fitted.cut,
-        ...this.headActions(),
-      })}
+    return html`<article
+      class="fv-card wb-card"
+      data-card
+      aria-label=${this.headless ? title : nothing}
+    >
+      ${
+        this.headless
+          ? nothing
+          : head({
+              icon: fitted.icon ? (config.icon ?? 'globe') : null,
+              small: fitted.small,
+              tone: toneOf(config, 'accent'),
+              title,
+              sub: fitted.sub,
+              cut: fitted.cut,
+              ...this.headActions(),
+            })
+      }
       ${this.renderPlate(config, page, width, title)}
     </article>`;
   }

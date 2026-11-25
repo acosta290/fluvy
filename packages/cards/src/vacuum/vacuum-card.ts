@@ -47,6 +47,7 @@ import {
 } from '../cover/common.js';
 import type { RowStyle } from '../shared/config.js';
 import { chipRow, inForce } from '../shared/chips.js';
+import { muted } from '../shared/head-lines.js';
 import { modeWord } from '../shared/mode-words.js';
 import { HeadFit } from '../energy/head.js';
 import { drawnAs } from '../shared/heights.js';
@@ -195,6 +196,10 @@ export class FluvyVacuumCard extends Card<VacuumCardConfig> {
         position: relative;
         display: flex;
         flex-direction: column;
+      }
+      /* a head left with nothing in it (#259): the body's first part at the card's 20 */
+      :host([headless]) .fv-card > .vc-body:first-child > :first-child {
+        margin-top: 0;
       }
       .vc-body.is-driving > .vc-part {
         visibility: hidden;
@@ -450,6 +455,10 @@ export class FluvyVacuumCard extends Card<VacuumCardConfig> {
     </div>`;
   }
 
+  protected override get quiet(): boolean {
+    return muted(this.config);
+  }
+
   protected renderCard(): TemplateResult | typeof nothing {
     if (this.config?._sheet) return padHere ? this.renderSheet(true) : nothing;
     // out of reach (unavailable, missing; never read: its usual parts) it keeps its anatomy and its size, its controls
@@ -610,20 +619,25 @@ export class FluvyVacuumCard extends Card<VacuumCardConfig> {
       class="fv-card dv-card ${unusable ? 'is-unavailable is-off' : ''} ${tinted.cls}"
       style="--dv-action-gap:${gap}px"
       data-card
+      aria-label=${this.headless ? name : nothing}
       data-accent=${colour.accent ?? nothing}
       data-surface=${tinted.surface}
       data-edge=${tinted.edge}
     >
-      ${head({
-        icon: fitted.icon ? iconOf(view, this.config?.icon) : null,
-        tone,
-        title: name,
-        name: true,
-        sub: fitted.line,
-        trailing: fitted.badge,
-        cut: fitted.cut,
-        ...this.headActions(view.id),
-      })}
+      ${
+        this.headless
+          ? nothing
+          : head({
+              icon: fitted.icon ? iconOf(view, this.config?.icon) : null,
+              tone,
+              title: name,
+              name: true,
+              sub: fitted.line,
+              trailing: fitted.badge,
+              cut: fitted.cut,
+              ...this.headActions(view.id),
+            })
+      }
       ${columns.length && !compact ? this.renderColumns(columns, w) : nothing}
       <div class="vc-body ${inCard ? 'is-driving' : ''}">
         ${

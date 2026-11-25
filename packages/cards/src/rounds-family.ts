@@ -1,5 +1,6 @@
 import { entriesOf, type LovelaceCardConfig } from '@fluvy/core';
 import type { FamilyEntry } from './energy-family.js';
+import { headless } from './shared/head-lines.js';
 import { EMPTY, ROW } from './shared/heights.js';
 
 /*
@@ -60,12 +61,19 @@ export function roundsGrid(config: LovelaceCardConfig, width: number): RoundsGri
 }
 
 /**
+ * Whether the card draws its head: it has a title, and its head holds more than that title hidden (#259): its circle
+ * or its count. A head left with nothing in it is none, as with no title.
+ */
+export const roundsHeaded = (config: LovelaceCardConfig | undefined): boolean =>
+  Boolean(config?.['title']) && !headless(config, config?.['show_count'] === false);
+
+/**
  * The card at a 360 column, from its config alone: its head where it has a title (44 and the 16 under it), then its
  * rounds in their lines across the 320 (`roundsGrid`), or the empty panel and its hint; or a 60 row each (`row`), 8
  * under the head as every list's, else 8 into the card's padding at each end.
  */
 export const roundsHeight = (config: LovelaceCardConfig): number => {
-  const head = config['title'] ? 60 : 0;
+  const head = roundsHeaded(config) ? 60 : 0;
   const count = entriesOf(listed(config)).length;
   if (!count) return 40 + head + EMPTY + 12;
   if (config['variant'] === 'row') return (head ? 92 : 24) + count * ROW;

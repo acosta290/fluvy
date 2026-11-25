@@ -33,6 +33,7 @@ import { Card, type CardEditor } from '../shared/base.js';
 
 import { iconOf } from '../shared/domain.js';
 import { byState, ITEM_ALIASES, type AliasSpec } from '../shared/config.js';
+import { headlessOf, noBadge, noLine } from '../shared/head-lines.js';
 import { EMPTY, entryCount, HEAD, ROW } from '../shared/heights.js';
 import { emptyPanel, itemsOf, listOf, type EmptyList } from '../shared/lists.js';
 import { fitValue, valueFitStyles, wrapsInWords } from '../shared/row-end.js';
@@ -167,6 +168,13 @@ const maxRowsOf = (config: Pick<OpeningsCardConfig, 'max_rows'>): number =>
   Math.max(1, Math.round(config.max_rows ?? 4));
 
 /**
+ * What leaves the head with nothing in it besides its circle and its name (#259): its line asked away and its count
+ * (`show_count: false`), which is its badge.
+ */
+const openingsQuiet = (config: OpeningsCardConfig | undefined): boolean =>
+  noLine(config) && noBadge(config, config?.show_count === false);
+
+/**
  * The house's binary sensors on one card: how many are open in the head, then a row each — the
  * state once at the right, the time in the sub ("14 min" while it is open, "2 h ago" once it is
  * over). Long lists collapse to the first few and an "All sensors" row that opens the rest in place.
@@ -184,7 +192,9 @@ export class FluvyOpeningsCard extends Card<OpeningsCardConfig> {
    */
   static override layoutHeight(config: OpeningsCardConfig): number {
     const n = entryCount(config, ['rows', 'entities']);
-    if (!n) return HEAD + EMPTY;
+    // a head left with nothing in it goes, with the 16 under it (#259)
+    const head = headlessOf(config, openingsQuiet(config), 16);
+    if (!n) return HEAD + EMPTY - head;
     const max = maxRowsOf(config);
     // one extra sensor is a row, not a "1 more" row (as the card lays them out)
     const more = n > max + 1 ? 1 : 0;
@@ -193,9 +203,9 @@ export class FluvyOpeningsCard extends Card<OpeningsCardConfig> {
     // a state too long for two a row lays one a row, measured at its width (the grid's height is an estimate of two)
     if (config.variant === 'tiles') {
       const rows = Math.ceil(shown / 2);
-      return HEAD + rows * 84 + (rows - 1) * 8 + more * (16 + 48);
+      return HEAD - head + rows * 84 + (rows - 1) * 8 + more * (16 + 48);
     }
-    return HEAD + (config.variant === 'compact' ? 48 : ROW) * (shown + more);
+    return HEAD - head + (config.variant === 'compact' ? 48 : ROW) * (shown + more);
   }
 
   static override styles: CSSResultGroup = [
@@ -482,6 +492,10 @@ export class FluvyOpeningsCard extends Card<OpeningsCardConfig> {
     return ongoing ? durationShort(this.hass, changed, now) : agoShort(this.hass, changed, now);
   }
 
+  protected override get quiet(): boolean {
+    return openingsQuiet(this.config);
+  }
+
   protected renderCard(): TemplateResult {
     const frozen = this.config?._now ? new Date(this.config._now) : null;
     const now = frozen && !Number.isNaN(frozen.getTime()) ? frozen : new Date();
@@ -559,17 +573,25 @@ export class FluvyOpeningsCard extends Card<OpeningsCardConfig> {
             .map(({ view }) => view)
         : [];
     const hidden = { count: hiddenAlerts.length, kind: alertKind(hiddenAlerts) };
-    return html`<article class="fv-card am-card" data-card>
-      ${head({
-        icon: fitted.icon ? (this.config?.icon ?? 'door') : null,
-        tone: alerts.length > 0 ? tone : 'neutral',
-        title,
-        name: true, // a typed title, or the card's own: a name, as the list rows' are
-        sub: fitted.sub,
-        trailing: fitted.badge,
-        cut: fitted.cut,
-        ...this.headActions(),
-      })}
+    return html`<article
+      class="fv-card am-card"
+      data-card
+      aria-label=${this.headless ? title : nothing}
+    >
+      ${
+        this.headless
+          ? nothing
+          : head({
+              icon: fitted.icon ? (this.config?.icon ?? 'door') : null,
+              tone: alerts.length > 0 ? tone : 'neutral',
+              title,
+              name: true, // a typed title, or the card's own: a name, as the list rows' are
+              sub: fitted.sub,
+              trailing: fitted.badge,
+              cut: fitted.cut,
+              ...this.headActions(),
+            })
+      }
       ${variant === 'tiles' && !panel ? this.renderTiles(shown, tone, timed, now) : nothing}
       ${
         panel || variant !== 'tiles' || collapsible

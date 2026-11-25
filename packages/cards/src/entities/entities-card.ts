@@ -32,6 +32,7 @@ import { chosenLabel, dropdown, dropdownEnd, SELECTS } from '../shared/dropdown.
 import type { RowConfig } from '../lock/rows.js';
 import { ITEM_ALIASES, type AliasSpec } from '../shared/config.js';
 import { statusToneOf, toneOf, type LightColours } from '../shared/colour.js';
+import { headless, noBadge, noLine } from '../shared/head-lines.js';
 import { lightLook, litColour, withMembers } from '../shared/light.js';
 import { stateLook } from '../shared/state-tint.js';
 import {
@@ -184,6 +185,14 @@ const setsNumber = (own: NumberControl | undefined): boolean =>
   own === 'stepper' || own === 'entry';
 
 /**
+ * Whether the card draws its head: it has a title, and its head holds more than that title hidden (#259): its circle,
+ * its line, or its count (`show_count`, its badge). A head left with nothing in it is none, as with no title.
+ */
+const headed = (config: EntitiesCardConfig | undefined): boolean =>
+  Boolean(config?.title) &&
+  !headless(config, noLine(config, true) && noBadge(config, !config?.show_count));
+
+/**
  * A card of 60 px rows: icon circle, title / sub, and ONE trailing element chosen by the entity —
  * a switch for what can be toggled, the value for what is measured, a chevron for the rest.
  * State is said once: the trailing element carries it, the sub line carries context (area or time).
@@ -200,12 +209,12 @@ export class FluvyEntitiesCard extends Card<EntitiesCardConfig> {
   static override layoutHeight(config: EntitiesCardConfig): number {
     const n = entryCount(config, ['rows', 'entities']) + (moreOf(config) ? 1 : 0);
     // nothing to list: the panel under the head, or alone in the card (20 + 120 + 20)
-    if (!n) return (config.title ? HEAD : 40) + EMPTY;
+    if (!n) return (headed(config) ? HEAD : 40) + EMPTY;
     // the head and 8 over the rows (20 + 44 + 8 + … + 20), else the rows alone, 8 into the padding at each end;
     // every row counted, whatever its condition says now, and the sections between them (a first one's label takes
     // the rows' 8 too)
     return (
-      (config.title ? 92 : 24) +
+      (headed(config) ? 92 : 24) +
       (config.variant === 'compact' ? ROW_COMPACT : ROW) * n +
       sectionsHeight(config.rows ?? config.entities, 28)
     );
@@ -387,7 +396,7 @@ export class FluvyEntitiesCard extends Card<EntitiesCardConfig> {
     const active = views.filter((v) => isActive(v)).length;
     const tone = toneOf(this.config, 'accent');
     const compact = this.config?.variant === 'compact';
-    const title = this.config?.title;
+    const title = headed(this.config) ? this.config?.title : undefined;
     // a lit light's row may wear its bulb's colour (`light_colors`, the house's where the card says none)
     const glows = this.config?.light_colors ?? lightDefaults().colors;
     const more = moreOf(this.config);
@@ -543,9 +552,13 @@ export class FluvyEntitiesCard extends Card<EntitiesCardConfig> {
       return at < 3 ? lines.forms[at]! : lines.name ? lines.forms[0] : '';
     };
 
-    return html`<article class="fv-card" data-card>
+    return html`<article
+      class="fv-card"
+      data-card
+      aria-label=${title ? nothing : (this.config?.title ?? nothing)}
+    >
       ${header}
-      <div class="fv-rows ${this.config?.title ? '' : 'fv-rows--bare'}">
+      <div class="fv-rows ${title ? '' : 'fv-rows--bare'}">
         ${panel}
         ${withSections(drawn, (row, i) => {
           const { view, usable, trailing, title, value, number, glyph } = laid[i]!;

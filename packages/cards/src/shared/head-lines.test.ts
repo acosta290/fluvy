@@ -177,6 +177,7 @@ describe('the editors (#191)', () => {
     expect(offered('fluvy-weather-card', {})).toBe(false);
     expect(offered('fluvy-weather-card', { variant: 'compact' })).toBe(true);
     expect(offered('fluvy-printer-card', { variant: 'row' })).toBe(false);
+    expect(offered('fluvy-compass-card', { variant: 'row' })).toBe(false);
     expect(offered('fluvy-lock-card', {})).toBe(true);
   });
 });

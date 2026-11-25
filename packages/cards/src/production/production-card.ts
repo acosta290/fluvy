@@ -71,6 +71,7 @@ import {
 
 import { BADGE_BASE, Card } from '../shared/base.js';
 import { stateWord } from '../shared/domain.js';
+import { muted } from '../shared/head-lines.js';
 
 import {
   actionFields,
@@ -815,6 +816,10 @@ export class FluvyProductionCard extends Card<ProductionCardConfig> {
     return added(arrays.map((a, i) => this.arrayHours(i, this.entity(a.entity), hourNow)));
   }
 
+  protected override get quiet(): boolean {
+    return muted(this.config);
+  }
+
   protected renderCard(): TemplateResult {
     if (this.day !== 'today') return this.renderForecast();
     this.slots = HOURS;
@@ -994,24 +999,29 @@ export class FluvyProductionCard extends Card<ProductionCardConfig> {
     return html`<article
       class="fv-card so-card ${unusable ? 'is-unavailable is-off' : ''}"
       data-card
+      aria-label=${this.headless ? name : nothing}
     >
-      ${head({
-        icon: fitted.icon ? (this.config?.icon ?? 'sun') : null,
-        tone,
-        title: name,
-        sub: fitted.sub,
-        trailing:
-          heldWords && widestBadge
-            ? html`<span
-                class="pr-badge"
-                style="min-width:${this.head.ruler.pill('fv-badge', widestBadge.text, BADGE_SIDES)}px"
-                >${badge(heldWords.text, heldWords.tone)}</span
-              >`
-            : fitted.badge,
-        cut: fitted.cut,
-        ...this.headActions(view.id),
-        name: true,
-      })}
+      ${
+        this.headless
+          ? nothing
+          : head({
+              icon: fitted.icon ? (this.config?.icon ?? 'sun') : null,
+              tone,
+              title: name,
+              sub: fitted.sub,
+              trailing:
+                heldWords && widestBadge
+                  ? html`<span
+                      class="pr-badge"
+                      style="min-width:${this.head.ruler.pill('fv-badge', widestBadge.text, BADGE_SIDES)}px"
+                      >${badge(heldWords.text, heldWords.tone)}</span
+                    >`
+                  : fitted.badge,
+              cut: fitted.cut,
+              ...this.headActions(view.id),
+              name: true,
+            })
+      }
       ${
         compact
           ? nothing
@@ -1179,22 +1189,28 @@ export class FluvyProductionCard extends Card<ProductionCardConfig> {
       // a compact card writes no figure under its head: the day's total, or the days', is its badge
       badge: compact && known ? { text: `${shown(total)} ${scale.unit}`, tone } : null,
     });
-    const chrome = head({
-      icon: fitted.icon ? (this.config?.icon ?? 'sun') : null,
-      tone,
-      title: name,
-      sub: fitted.sub,
-      trailing: fitted.badge,
-      cut: fitted.cut,
-      ...this.headActions(view.id),
-      name: true,
-    });
+    const chrome = this.headless
+      ? nothing
+      : head({
+          icon: fitted.icon ? (this.config?.icon ?? 'sun') : null,
+          tone,
+          title: name,
+          sub: fitted.sub,
+          trailing: fitted.badge,
+          cut: fitted.cut,
+          ...this.headActions(view.id),
+          name: true,
+        });
     if (!known && !loading)
-      return html`<article class="fv-card so-card" data-card>
+      return html`<article
+        class="fv-card so-card"
+        data-card
+        aria-label=${this.headless ? name : nothing}
+      >
         ${chrome}
         <div
           class="pr-none ${compact ? '' : 'pr-none--full'}"
-          style="min-height:${FluvyProductionCard.layoutHeight(this.config ?? { type: '' }) - NONE_FRAME}px"
+          style="min-height:${FluvyProductionCard.layoutHeight(this.config ?? { type: '' }) - (this.headless ? 40 : NONE_FRAME)}px"
         >
           ${this.head.empty(
             'sun',
@@ -1244,7 +1260,11 @@ export class FluvyProductionCard extends Card<ProductionCardConfig> {
     const best = values.indexOf(Math.max(...values));
     const ceiling = ceilingFor(Math.max(0, ...values));
     const step = stepOn(ceiling);
-    return html`<article class="fv-card so-card" data-card>
+    return html`<article
+      class="fv-card so-card"
+      data-card
+      aria-label=${this.headless ? name : nothing}
+    >
       ${chrome}
       ${
         compact

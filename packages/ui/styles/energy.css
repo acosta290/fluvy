@@ -485,6 +485,12 @@
   margin-top: 16px;
 }
 
+/* its chips at its top: the row's 16 is the gap under the head, which a head left with nothing in it takes away
+   (#259), the chips then at the card's 20 */
+.en-period > .fv-chips {
+  margin-top: 0;
+}
+
 /* an empty card's panel keeps the body's rhythm: 16 under the head, as any body does */
 .ef-card > .fv-empty-state,
 .en-card > .fv-empty-state {

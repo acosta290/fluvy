@@ -57,6 +57,7 @@ import {
 
 import './keypad.js';
 import type { FluvyKeypad, KeypadAction } from './keypad.js';
+import { muted } from '../shared/head-lines.js';
 import type { EditorChoices, EditorDefaults, RowsListSpec } from '../shared/rows-editor.js';
 import { configKeys, ITEM_ALIASES, type AliasSpec } from '../shared/config.js';
 import { chipRow, fitsOneRow } from '../shared/chips.js';
@@ -496,6 +497,10 @@ export class FluvyAlarmCard extends RowsCard<AlarmCardConfig> {
     return 4;
   }
 
+  protected override get quiet(): boolean {
+    return muted(this.config);
+  }
+
   protected renderCard(): TemplateResult {
     const view = this.entity();
     const name = this.nameFor(view, this.config?.name);
@@ -574,20 +579,25 @@ export class FluvyAlarmCard extends RowsCard<AlarmCardConfig> {
     return html`<article
         class="fv-card dv-card ${unusable ? 'is-unavailable is-off' : ''} ${narrow ? 'is-compact' : ''} ${tinted.cls}"
         data-card
+        aria-label=${this.headless ? name : nothing}
         data-accent=${colour.accent ?? nothing}
         data-surface=${tinted.surface}
         data-edge=${tinted.edge}
       >
-        ${head({
-          icon: fitted.icon ? iconOf(view, this.config?.icon) : null,
-          tone,
-          title: name,
-          name: true,
-          sub: fitted.line,
-          trailing: fitted.badge,
-          cut: fitted.cut,
-          ...this.headActions(view.id),
-        })}
+        ${
+          this.headless
+            ? nothing
+            : head({
+                icon: fitted.icon ? iconOf(view, this.config?.icon) : null,
+                tone,
+                title: name,
+                name: true,
+                sub: fitted.line,
+                trailing: fitted.badge,
+                cut: fitted.cut,
+                ...this.headActions(view.id),
+              })
+        }
         ${
           compact
             ? html`<div class="dv-alarm__row">

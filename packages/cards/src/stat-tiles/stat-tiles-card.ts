@@ -27,6 +27,7 @@ import { html, nothing, type CSSResultGroup, type TemplateResult } from 'lit';
 
 import { HeadFit } from '../energy/head.js';
 
+import { headlessOf, noBadge, noLine } from '../shared/head-lines.js';
 import {
   askedParts,
   baseOf,
@@ -171,6 +172,13 @@ export function statTileColumns(
 }
 
 /**
+ * What leaves the head with nothing in it besides its circle and its name (#259): its line (its lead's area where it has
+ * one) and its badge (`badge_entity`'s) asked away.
+ */
+const statTilesQuiet = (config: StatTilesCardConfig | undefined): boolean =>
+  noLine(config, !config?.entity) && noBadge(config, !config?.badge_entity);
+
+/**
  * The card's height at a 360 column, for the automatic dashboard's columns: the lead readout, the tiles and the rows
  * 16 under them. `auto` is laid out by the words (`statTileColumns`): three a row while the widest label holds a
  * cell, four as two by two, else two — the names the config's or the house's (`nameOf`, read by `house-heights.ts`),
@@ -186,7 +194,8 @@ export function statTilesHeight(config: StatTilesCardConfig, nameOf?: NameOf): n
     .map((item) => (typeof item === 'string' ? { entity: item } : item));
   const count = items.length;
   const rows = entryCount(config, ['rows']);
-  const lead = config.entity ? LEAD : 0;
+  // a head left with nothing in it goes, with the 16 under it (#259)
+  const lead = (config.entity ? LEAD : 0) - headlessOf(config, statTilesQuiet(config), 16);
   if (!count && !rows) return HEAD + lead + EMPTY;
   const asked = statColumns(config.columns, compact ? 'auto' : 2);
   const labels = nameOf
@@ -323,6 +332,10 @@ export class FluvyStatTilesCard extends Card<StatTilesCardConfig> {
     return parts.unit ? `${parts.value} ${parts.unit}` : parts.value;
   }
 
+  protected override get quiet(): boolean {
+    return statTilesQuiet(this.config);
+  }
+
   protected renderCard(): TemplateResult {
     const tiles = this.tiles();
     const views = tiles.map((tile) => this.entity(tile.entity));
@@ -403,17 +416,22 @@ export class FluvyStatTilesCard extends Card<StatTilesCardConfig> {
     return html`<article
       class="fv-card so-card ${unusable ? 'is-unavailable is-off' : ''}"
       data-card
+      aria-label=${this.headless ? title : nothing}
     >
-      ${head({
-        icon: fitted.icon ? (this.config?.icon ?? (lead ? iconOf(lead) : 'grid')) : null,
-        tone: headTone,
-        title,
-        sub: fitted.sub,
-        trailing: fitted.badge,
-        ...this.headActions(lead?.id),
-        name: Boolean(this.config?.title),
-        cut: fitted.cut,
-      })}
+      ${
+        this.headless
+          ? nothing
+          : head({
+              icon: fitted.icon ? (this.config?.icon ?? (lead ? iconOf(lead) : 'grid')) : null,
+              tone: headTone,
+              title,
+              sub: fitted.sub,
+              trailing: fitted.badge,
+              ...this.headActions(lead?.id),
+              name: Boolean(this.config?.title),
+              cut: fitted.cut,
+            })
+      }
       ${lead && leadParts ? html`<div class="so-top fv-value-row">${readout({ label: this.nameFor(lead, this.config?.name), value: leadParts.value, unit: leadParts.unit, size: 'l' })}</div>` : nothing}
       ${
         // the rows alone sit where the tiles would; nothing at all, the panel does

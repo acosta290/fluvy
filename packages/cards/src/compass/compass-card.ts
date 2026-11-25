@@ -34,6 +34,7 @@ import { Card, type CardEditor } from '../shared/base.js';
 import { toneOf } from '../shared/colour.js';
 import { classWord, iconOf, stateWord } from '../shared/domain.js';
 import { withUnit } from '../shared/duration.js';
+import { muted } from '../shared/head-lines.js';
 import { statsSize } from '../shared/readouts.js';
 import { bandTint, type TintConfig } from '../shared/state-tint.js';
 import type { Band, ThresholdsConfig } from '../shared/thresholds.js';
@@ -1000,6 +1001,10 @@ export class FluvyCompassCard extends Card<CompassCardConfig> {
     return all;
   }
 
+  protected override get quiet(): boolean {
+    return muted(this.config);
+  }
+
   protected renderCard(): TemplateResult {
     const c = this.config!;
     const width = this.contentWidth;
@@ -1121,20 +1126,25 @@ export class FluvyCompassCard extends Card<CompassCardConfig> {
     return html`<article
       class="fv-card so-card ${tinted.cls} ${unusable ? 'is-unavailable is-off' : ''}"
       data-card
+      aria-label=${this.headless ? name : nothing}
       data-accent=${band?.accent ?? nothing}
       data-surface=${tinted.surface}
       data-edge=${tinted.edge}
     >
-      ${head({
-        icon: fitted.icon ? this.headIcon(main, band) : null,
-        tone: headTone,
-        title: name,
-        sub: fitted.sub,
-        trailing: fitted.badge,
-        cut: fitted.cut,
-        ...this.headActions(main.id),
-        name: true,
-      })}
+      ${
+        this.headless
+          ? nothing
+          : head({
+              icon: fitted.icon ? this.headIcon(main, band) : null,
+              tone: headTone,
+              title: name,
+              sub: fitted.sub,
+              trailing: fitted.badge,
+              cut: fitted.cut,
+              ...this.headActions(main.id),
+              name: true,
+            })
+      }
       <div class="so-gauge ${where === 'beside' ? 'cp-beside' : ''}">
         ${this.renderDial({
           r,

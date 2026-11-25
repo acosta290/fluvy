@@ -13,7 +13,7 @@ import {
 
 import { barRow, head, listRow, sheetStyles, type Tone } from '@fluvy/ui';
 
-import { html, type CSSResultGroup, type TemplateResult } from 'lit';
+import { html, nothing, type CSSResultGroup, type TemplateResult } from 'lit';
 
 import type { Segment } from '../shared/fit.js';
 import { HeadFit } from '../energy/head.js';
@@ -22,6 +22,7 @@ import { softIn, type ChartKeys } from '../shared/chart-config.js';
 import { baseOf, figureText, scaleFor, toBase } from '../gauge/units.js';
 
 import { Card, type CardEditor } from '../shared/base.js';
+import { headlessOf, noBadge, noLine } from '../shared/head-lines.js';
 import type { Own } from '../shared/own-values.js';
 
 import { iconOf, stateWord } from '../shared/domain.js';
@@ -158,6 +159,10 @@ const subEntities = (row: BarRowConfig): string[] =>
 const rowHeight = (row: BarRowConfig, compact: boolean): number =>
   compact ? ROW_COMPACT : row.plain ? ROW : ROW_BAR;
 
+/** What leaves the head with nothing in it besides its circle and its name (#259): a line of its own, its badge. */
+const barsQuiet = (config: BarsCardConfig | undefined): boolean =>
+  noLine(config, true) && noBadge(config);
+
 /**
  * The bar-row list: one 76 px row per entity — icon circle, name and context, the value at the right
  * and a 4 px bar under the text — or, compact, 48 px rows with the name and the value on one line over
@@ -174,11 +179,13 @@ export class FluvyBarsCard extends Card<BarsCardConfig> {
     // auto-entities hands its rows over as `entities` (read as `rows` once the card has them)
     const list = config.rows ?? config.entities;
     const rows = itemsOf<BarRowConfig>(list);
-    if (!rows.length) return HEAD + EMPTY;
+    // a head left with nothing in it goes, with the 16 under it (#259)
+    const head = headlessOf(config, barsQuiet(config), 16);
+    if (!rows.length) return HEAD + EMPTY - head;
     // every row counted, whatever its condition says now, and the sections between them
     return rows.reduce(
       (height, row) => height + rowHeight(row, compact),
-      HEAD + sectionsHeight(list),
+      HEAD - head + sectionsHeight(list),
     );
   }
 
@@ -282,6 +289,10 @@ export class FluvyBarsCard extends Card<BarsCardConfig> {
     const unit = this.entity(row.entity).unit;
     const read = (raw: unknown): Own<number> => this.ownFigure(raw, unit, row.entity);
     return { min: read(row.min), max: read(row.max), low: read(row.low), high: read(row.high) };
+  }
+
+  protected override get quiet(): boolean {
+    return barsQuiet(this.config);
   }
 
   protected renderCard(): TemplateResult {
@@ -435,17 +446,25 @@ export class FluvyBarsCard extends Card<BarsCardConfig> {
             },
     });
 
-    return html`<article class="fv-card so-card" data-card>
-      ${head({
-        icon: fitted.icon ? (this.config?.icon ?? 'sliders') : null,
-        tone,
-        title,
-        sub: fitted.sub,
-        trailing: fitted.badge,
-        name: Boolean(this.config?.title),
-        cut: fitted.cut,
-        ...this.headActions(),
-      })}
+    return html`<article
+      class="fv-card so-card"
+      data-card
+      aria-label=${this.headless ? title : nothing}
+    >
+      ${
+        this.headless
+          ? nothing
+          : head({
+              icon: fitted.icon ? (this.config?.icon ?? 'sliders') : null,
+              tone,
+              title,
+              sub: fitted.sub,
+              trailing: fitted.badge,
+              name: Boolean(this.config?.title),
+              cut: fitted.cut,
+              ...this.headActions(),
+            })
+      }
       <div class=${list}>${panel ?? body}</div>
     </article>`;
   }

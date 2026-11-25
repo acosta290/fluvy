@@ -1,5 +1,6 @@
 import type { LovelaceCardConfig } from '@fluvy/core';
 import type { FamilyEntry } from './energy-family.js';
+import { headlessOf, noLine } from './shared/head-lines.js';
 import { HEAD, ROW, ROW_COMPACT, rowsOf } from './shared/heights.js';
 
 /**
@@ -22,24 +23,30 @@ const FILTERS = 60;
 /** The empty panel under the head's 16: its ring, its line and the administrator's hint (132; a guest's is the 120 minimum). */
 const EMPTY = 132;
 
+/** What leaves the head with nothing in it besides its circle and its name (#259): its line and its "+" asked away. */
+export const automationsQuiet = (config: LovelaceCardConfig | undefined): boolean =>
+  noLine(config) && config?.['show_add'] === false;
+
 /**
  * The automations card at a 360 column: the head, the filter chips when shown, then the rows (60, 48 compact) or
  * the tiles (two a row of 84, 8 apart) with the fold row counted as the openings card counts it (one extra
- * automation is a row, not a "1 more" row). Listing the whole house, the card is as tall as its fold allows.
+ * automation is a row, not a "1 more" row). Listing the whole house, the card is as tall as its fold allows. A head
+ * left with nothing in it goes, with the 16 under it (#259).
  */
 export const automationsHeight = (config: LovelaceCardConfig): number => {
   const entities = config['entities'];
   const max = automationsMaxRows(config['max_rows']);
   const n = Array.isArray(entities) ? entities.length : max;
+  const top = HEAD - headlessOf(config, automationsQuiet(config), 16);
   const filters = config['show_filters'] === true ? FILTERS : 0;
-  if (n === 0) return HEAD + filters + EMPTY;
+  if (n === 0) return top + filters + EMPTY;
   const more = n > max + 1 ? 1 : 0;
   const shown = more ? max : n;
   if (config['variant'] === 'tiles') {
     const rows = rowsOf(shown, 2);
-    return HEAD + filters + rows * 84 + (rows - 1) * 8 + more * (16 + ROW_COMPACT);
+    return top + filters + rows * 84 + (rows - 1) * 8 + more * (16 + ROW_COMPACT);
   }
-  return HEAD + filters + (config['variant'] === 'compact' ? ROW_COMPACT : ROW) * (shown + more);
+  return top + filters + (config['variant'] === 'compact' ? ROW_COMPACT : ROW) * (shown + more);
 };
 
 export const AUTOMATIONS_FAMILY: readonly FamilyEntry[] = [

@@ -164,6 +164,12 @@
   line-height: 0;
 }
 
+/* a head left with nothing in it is not drawn (#259: its circle, its name, its line, its badge and what trails it all
+   asked away; the card marks its host): the first part sits at the card's 20 all round */
+:host([headless]) .fv-card > :first-child {
+  margin-top: 0;
+}
+
 .fv-card__sub {
   font-size: 13px;
   font-weight: 500;

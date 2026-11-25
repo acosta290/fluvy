@@ -1,4 +1,5 @@
 import type { LovelaceCardConfig } from '@fluvy/core';
+import { headless, headlessOf, muted, noBadge, noLine } from './shared/head-lines.js';
 import {
   textWidth,
   chipBlock,
@@ -75,7 +76,17 @@ export function flowStage(count: number): number {
   return up4(Math.max(last + 28, house + 72, 62 * count + 44));
 }
 
-/** The flow at a 360 column: its nodes (or the cross), the period chips, the consumers' rows, the totals. */
+/**
+ * What leaves the flow's head with nothing in it besides its circle and its name (#259): its line and its badge
+ * (`badge: none`, its own key) asked away.
+ */
+export const flowQuiet = (config: LovelaceCardConfig | undefined): boolean =>
+  noLine(config) && noBadge(config, config?.['badge'] === 'none');
+
+/**
+ * The flow at a 360 column: its nodes (or the cross), the period chips, the consumers' rows, the totals; a head left
+ * with nothing in it goes, with the 16 under it (#259).
+ */
 export function flowHeight(config: LovelaceCardConfig, nameOf?: NameOf): number {
   const sources = Array.isArray(config['sources']) ? config['sources'].length : 0;
   const stage = config['variant'] === 'cross' ? 292 : flowStage(Math.max(1, sources || 3));
@@ -83,7 +94,8 @@ export function flowHeight(config: LovelaceCardConfig, nameOf?: NameOf): number 
   // at a 360 column consumers are rows with bars (76), and the rest of the house one more
   const consumers = listLength(config, ['consumers']);
   return (
-    HEAD +
+    HEAD -
+    headlessOf(config, flowQuiet(config), 16) +
     stage +
     (period ? periodChips(config) : 0) +
     (consumers ? 16 + ROW_BAR * (consumers + 1) : 0) +
@@ -109,16 +121,19 @@ const PHASE_PITCH = 40;
 
 /**
  * The balance at a 360 column: its two blocks (a legend row each), the phases of a grid read by phase (live), the
- * period's chips and its money. A card that reads the Energy dashboard's sources is counted without phases.
+ * period's chips and its money. A card that reads the Energy dashboard's sources is counted without phases. A head
+ * left with nothing in it goes, with the gap under it: the chips' 16, else the first block's 20 (#259).
  */
 export function balanceHeight(config: LovelaceCardConfig): number {
   const period = config['period'] !== undefined && config['period'] !== 'live';
   const sources = Array.isArray(config['sources']) ? (config['sources'] as unknown[]) : [];
   const grid = sources.filter((s) => (s as Record<string, unknown> | null)?.['type'] === 'grid');
   const phases = period || config['show_phases'] === false ? 0 : Math.max(0, ...grid.map(phasesOf));
+  const chips = period ? periodChips(config) : 0;
   return (
-    64 +
-    (period ? periodChips(config) : 0) +
+    64 -
+    headlessOf(config, muted(config), chips ? 16 : 20) +
+    chips +
     2 * BALANCE_BLOCK +
     (phases ? 20 + 28 + phases * PHASE_PITCH - 8 + 20 : 0) +
     (period && config['show_cost'] !== false ? 60 : 0) +
@@ -128,13 +143,14 @@ export function balanceHeight(config: LovelaceCardConfig): number {
 
 /**
  * The grid at a 360 column: its value row, its phases, the price, the totals (today's two when none are named; the
- * readouts named, in the rows their labels take).
+ * readouts named, in the rows their labels take); a head left with nothing in it goes, with the 16 under it (#259).
  */
 export function gridHeight(config: LovelaceCardConfig, nameOf?: NameOf): number {
   const phases = phasesOf(config);
   const labels = readoutLabels(config, nameOf);
   return (
-    64 +
+    64 -
+    headlessOf(config, muted(config), 16) +
     80 +
     (phases ? 20 + phases * PHASE_PITCH - 8 + 20 : 0) +
     (config['price'] ? 76 : 0) +
@@ -143,14 +159,25 @@ export function gridHeight(config: LovelaceCardConfig, nameOf?: NameOf): number 
   );
 }
 
+/**
+ * What leaves the energy card's head with nothing in it besides its circle and its name (#259): by sources or as the
+ * overview, its line asked away and no `entity`, whose details its "…" opens; its other layouts always end in that one.
+ */
+export const energyQuiet = (config: LovelaceCardConfig | undefined): boolean =>
+  (config?.['variant'] === 'sources' || config?.['variant'] === 'overview') &&
+  noLine(config) &&
+  !config['entity'];
+
+/** The energy card at a 360 column; a head left with nothing in it goes, with the 16 under it (#259). */
 export const energyHeight = (config: LovelaceCardConfig): number =>
-  config['variant'] === 'compact'
+  (config['variant'] === 'compact'
     ? 240
     : config['variant'] === 'sources'
       ? 468 // the legend's five items (three origins, charged, exported) fold into two rows
       : config['variant'] === 'overview'
         ? 492 // the taller chart (184) over the same legend
-        : 320 + (listLength(config, ['legend']) ? 60 : 0);
+        : 320 + (listLength(config, ['legend']) ? 60 : 0)) -
+  headlessOf(config, energyQuiet(config), 16);
 
 /**
  * The devices at a 360 column: a 76 bar row each, one more under each parent (what its devices leave unmeasured) and
@@ -207,15 +234,17 @@ export function legendRows(names: readonly string[], width = COLUMN): number {
 /**
  * Production at a 360 column; several arrays draw a taller chart (112) and their legend (a row of 40, 16 under the
  * axis, one a row where a name runs long) instead of the figures — today: a forecast day (`day`) draws none. The
- * names are the config's, else the house's (`nameOf`, read by `house-heights.ts`).
+ * names are the config's, else the house's (`nameOf`, read by `house-heights.ts`). A head left with nothing in it
+ * goes, with the 16 under it (#259).
  */
 export function productionHeight(config: LovelaceCardConfig, nameOf?: NameOf): number {
   const arrays =
     Array.isArray(config['arrays']) && !['tomorrow', 'ahead'].includes(config['day'] as string)
       ? (config['arrays'] as unknown[])
       : [];
-  if (config['variant'] === 'compact') return arrays.length ? 288 : 204;
-  if (!arrays.length) return 344;
+  const head = headlessOf(config, muted(config), 16);
+  if (config['variant'] === 'compact') return (arrays.length ? 288 : 204) - head;
+  if (!arrays.length) return 344 - head;
   const names = arrays.slice(0, 4).map((item, i) => {
     const entry = (typeof item === 'string' ? { entity: item } : (item ?? {})) as Record<
       string,
@@ -227,7 +256,7 @@ export function productionHeight(config: LovelaceCardConfig, nameOf?: NameOf): n
     return typeof name === 'string' ? name : '';
   });
   const rows = legendRows(names);
-  return 328 + rows * LEGEND_ROW + (rows - 1) * 8;
+  return 328 - head + rows * LEGEND_ROW + (rows - 1) * 8;
 }
 
 /* the history bars' pieces: the card's padding (20 above and below), the head (44), the readouts' own row (16 under
@@ -338,16 +367,24 @@ const listed = (config: LovelaceCardConfig, key: string, fallback: number): numb
 };
 
 /**
+ * What leaves the history bars' head with nothing in it besides its circle and its name (#259): its line asked away
+ * and no readouts asked for (`head: []`), which a wide card would set in it.
+ */
+export const historyBarsQuiet = (config: LovelaceCardConfig | undefined): boolean =>
+  noLine(config) && listed(config ?? { type: '' }, 'head', 2) === 0;
+
+/**
  * The history bars at a 360 column: the head, its readouts on their own row (a 360 column never holds a title and
  * two readouts beside the circle), the chart 20 under them — the values over the bars, the plot, the dates — and
  * the facts strip 24 under it, two facts a row with their circles (three where the labels are short, one where one
  * runs long). Compact is the head, its readouts, the bars and their dates; mini the head and one row of readouts
- * and a sparkline. A head switched off gives its row to the readouts; a chart with nothing above it starts at the
- * padding.
+ * and a sparkline. A head switched off, or left with nothing in it (#259), gives its row to the readouts; a chart
+ * with nothing above it starts at the padding.
  */
 export function historyBarsHeight(config: LovelaceCardConfig): number {
   const variant = config['variant'];
-  const head = config['show_head'] !== false ? BARS_HEAD : 0;
+  const head =
+    config['show_head'] !== false && !headless(config, historyBarsQuiet(config)) ? BARS_HEAD : 0;
   const readouts = listed(config, 'head', 2) > 0 ? (head ? BARS_UNDER_HEAD : 0) + BARS_READOUTS : 0;
   if (variant === 'mini') return BARS_PADDING + head + (head ? BARS_UNDER_HEAD : 0) + BARS_MINI_ROW;
   const above = head + readouts;
@@ -395,14 +432,18 @@ const MODE_OPTIONS = ['a', 'b', 'c'];
 const modeOptions = (options: readonly string[] | undefined): readonly string[] =>
   options?.length ? options : MODE_OPTIONS;
 
-/** Batteries at a 360 column: the charge on its ruler, a row per battery when there are several, the mode. */
+/**
+ * Batteries at a 360 column: the charge on its ruler, a row per battery when there are several, the mode; a head left
+ * with nothing in it goes, with the 16 under it (#259).
+ */
 export function batteriesHeight(config: LovelaceCardConfig, options?: readonly string[]): number {
   const listed = Array.isArray(config['batteries']) ? (config['batteries'] as unknown[]) : [];
   // none listed: the Energy dashboard's, most often one with its state of charge
   const count = Math.max(1, listed.length);
   const level = !listed.length || listed.some((b) => typeof b === 'object' && b && 'level' in b);
   return (
-    HEAD +
+    HEAD -
+    headlessOf(config, muted(config), 16) +
     VALUE_ROW +
     (level ? RULER : 0) +
     (count > 1 ? 16 + ROW_BAR * count : 0) +
@@ -465,12 +506,18 @@ function sankeyLegend(config: LovelaceCardConfig): number {
 export const sankeyBody = (config: LovelaceCardConfig): number =>
   SANKEY_DRAWING + sankeyLegend(config);
 
+/** The sankey at a 360 column; a head left with nothing in it goes, with the 16 under it (#259). */
 export const sankeyHeight = (config: LovelaceCardConfig): number =>
-  HEAD + periodChips(config) + sankeyBody(config);
+  HEAD - headlessOf(config, noLine(config), 16) + periodChips(config) + sankeyBody(config);
 
-/** The score: three rings (88 and their label, 20 under what is above) and a row of three readouts. */
-export const scoreHeight = (config: LovelaceCardConfig): number =>
-  HEAD + periodChips(config) + 4 + 112 + 60;
+/**
+ * The score: three rings (88 and their label, 20 under what is above) and a row of three readouts; a head left with
+ * nothing in it goes, with the gap under it: the chips' 16, else the rings' 20 (#259).
+ */
+export const scoreHeight = (config: LovelaceCardConfig): number => {
+  const chips = periodChips(config);
+  return HEAD - headlessOf(config, noLine(config), chips ? 16 : 20) + chips + 4 + 112 + 60;
+};
 
 /** The Energy period card's chips row, under its row: the day, week, month and year (custom stays in its sheet). */
 const GRAINS = ['day', 'week', 'month', 'year'];
@@ -525,12 +572,13 @@ export function usagePlot(config: LovelaceCardConfig): number {
  * the house lacks of it, and folding sources into "Other" (`max_sources`) never takes a row more. A water or gas
  * card's legend is its meters' (a meter the house names, by its kind's word; the Energy dashboard's, one row), whose
  * last fold into "Other" where the house's would need more. Compact is the head, its plot and its axis; mini the head
- * and a 48 strip.
+ * and a 48 strip. A head left with nothing in it goes, with the 16 under it (#259).
  */
 export function usageHeight(config: LovelaceCardConfig): number {
   const plot = usagePlot(config);
-  if (config['variant'] === 'mini') return HEAD + 20 + plot;
-  if (config['variant'] === 'compact') return HEAD + 44 + plot;
+  const head = HEAD - headlessOf(config, muted(config), 16);
+  if (config['variant'] === 'mini') return head + 20 + plot;
+  if (config['variant'] === 'compact') return head + 44 + plot;
   const kind = config['kind'];
   const words = config['mode'] === 'flows' ? FLOWS_WORDS : USAGE_WORDS;
   const names = new Map<unknown, string>();
@@ -554,7 +602,7 @@ export function usageHeight(config: LovelaceCardConfig): number {
       },
     );
   const rows = config['show_legend'] === false ? 0 : legendRows(shown);
-  return HEAD + periodChips(config) + 44 + plot + (rows && 4 + rows * 52);
+  return head + periodChips(config) + 44 + plot + (rows && 4 + rows * 52);
 }
 
 /** A card of a family: its tag and how tall it is at a 360 column (its name and what it is are the catalogue's). */

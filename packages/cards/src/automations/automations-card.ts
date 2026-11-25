@@ -26,6 +26,7 @@ import {
   AUTOMATIONS_MAX_ROWS,
   automationsHeight,
   automationsMaxRows,
+  automationsQuiet,
 } from '../automations-family.js';
 import { HeadFit, SWITCH_SLOT } from '../energy/head.js';
 import { ACTIONS_BASE, Card, ICON_ACTIONS_BASE, type BaseKey } from '../shared/base.js';
@@ -935,6 +936,10 @@ export class FluvyAutomationsCard extends Card<AutomationsCardConfig> {
       : s(this.hass, 'empty_for', { name });
   }
 
+  protected override get quiet(): boolean {
+    return automationsQuiet(this.config);
+  }
+
   protected renderCard(): TemplateResult {
     const now = this.now();
     const admin = this.admin;
@@ -1020,18 +1025,22 @@ export class FluvyAutomationsCard extends Card<AutomationsCardConfig> {
       compact,
     );
 
-    return html`<article class="fv-card" data-card>
-      ${head({
-        icon: fitted.icon ? (this.config?.icon ?? 'automation') : null,
-        small: fitted.small,
-        tone: onCount > 0 ? tone : 'neutral',
-        title,
-        name: this.config?.title !== undefined,
-        sub: fitted.sub,
-        trailing,
-        cut: fitted.cut,
-        ...this.headActions(),
-      })}
+    return html`<article class="fv-card" data-card aria-label=${this.headless ? title : nothing}>
+      ${
+        this.headless
+          ? nothing
+          : head({
+              icon: fitted.icon ? (this.config?.icon ?? 'automation') : null,
+              small: fitted.small,
+              tone: onCount > 0 ? tone : 'neutral',
+              title,
+              name: this.config?.title !== undefined,
+              sub: fitted.sub,
+              trailing,
+              cut: fitted.cut,
+              ...this.headActions(),
+            })
+      }
       ${this.config?.show_filters ? this.renderFilters() : nothing}
       ${
         waiting

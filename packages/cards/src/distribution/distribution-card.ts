@@ -23,6 +23,7 @@ import { Card, MORE_INFO, type CardEditor } from '../shared/base.js';
 import { ITEM_ALIASES, type AliasSpec } from '../shared/config.js';
 import { toneOf } from '../shared/colour.js';
 import { iconOf } from '../shared/domain.js';
+import { headlessOf, muted } from '../shared/head-lines.js';
 import { EMPTY, entryCount, HEAD, ROW } from '../shared/heights.js';
 import { emptyPanel, itemsOf, listOf, type EmptyList } from '../shared/lists.js';
 
@@ -73,13 +74,17 @@ const SLIVER = 0.005;
  * set in the same unit, so the legend reads as one column.
  */
 export class FluvyDistributionCard extends Card<DistributionCardConfig> {
-  /** The card's height at a 360 column, for the automatic dashboard's columns. */
+  /**
+   * The card's height at a 360 column, for the automatic dashboard's columns; a head left with nothing in it goes, with
+   * the 16 under it (#259).
+   */
   static override layoutHeight(config: DistributionCardConfig): number {
     const n = Math.min(entryCount(config, ['entities']), 5);
-    if (!n) return HEAD + EMPTY;
+    const head = headlessOf(config, muted(config), 16);
+    if (!n) return HEAD + EMPTY - head;
     // what the total leaves unmeasured is one more legend row
     const rest = config.total ? 1 : 0;
-    return config.variant === 'rows' ? HEAD + ROW * (n + rest) : 124 + 36 * (n + rest);
+    return (config.variant === 'rows' ? HEAD + ROW * (n + rest) : 124 + 36 * (n + rest)) - head;
   }
 
   static override styles: CSSResultGroup = [
@@ -226,6 +231,10 @@ export class FluvyDistributionCard extends Card<DistributionCardConfig> {
     return parts;
   }
 
+  protected override get quiet(): boolean {
+    return muted(this.config);
+  }
+
   protected renderCard(): TemplateResult {
     const sources = this.sources();
     const views = sources.map((row) => this.entity(row.entity));
@@ -279,17 +288,25 @@ export class FluvyDistributionCard extends Card<DistributionCardConfig> {
     // soft: each part of the stack a pill, its ink deepening along it
     const soft = softIn(this.config) ? 'is-soft' : '';
 
-    return html`<article class="fv-card so-card ${dead ? 'is-unavailable is-off' : ''}" data-card>
-      ${head({
-        icon: fitted.icon ? (this.config?.icon ?? 'plug') : null,
-        tone,
-        title,
-        sub: fitted.sub,
-        trailing: fitted.badge,
-        name: Boolean(this.config?.title),
-        cut: fitted.cut,
-        ...this.headActions(),
-      })}
+    return html`<article
+      class="fv-card so-card ${dead ? 'is-unavailable is-off' : ''}"
+      data-card
+      aria-label=${this.headless ? title : nothing}
+    >
+      ${
+        this.headless
+          ? nothing
+          : head({
+              icon: fitted.icon ? (this.config?.icon ?? 'plug') : null,
+              tone,
+              title,
+              sub: fitted.sub,
+              trailing: fitted.badge,
+              name: Boolean(this.config?.title),
+              cut: fitted.cut,
+              ...this.headActions(),
+            })
+      }
       ${
         asRows
           ? html`<div class="so-rows">

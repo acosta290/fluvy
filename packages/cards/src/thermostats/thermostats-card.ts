@@ -458,7 +458,11 @@ export class FluvyThermostatsCard extends Card<ThermostatsCardConfig> {
     const fitted = hasHead(config)
       ? this.head.fit({ width: w, title, sub: line.sub, shorter: line.shorter })
       : undefined;
-    return html`<article class="fv-card ts-card" data-card>
+    return html`<article
+      class="fv-card ts-card"
+      data-card
+      aria-label=${config.title && !fitted ? config.title : nothing}
+    >
       ${
         fitted
           ? head({
