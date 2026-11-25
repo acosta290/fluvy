@@ -30,6 +30,8 @@ export interface RulerWindowDetail {
 const HOLD_MS = 450;
 /** A still press on a tile's fill is the tile's hold (the press cover's 500 ms), never the fine scale. */
 const FILL_HOLD_MS = 500;
+/** A read-only marker's needle: 4 wide (`fv-knob--marker`), where a knob is a ring to hold. */
+const NEEDLE = 4;
 
 /**
  * The styles a slider is drawn in (1.18, #144): the ruler (ticks and knob, the fine scale on a hold), the bar, the
@@ -174,7 +176,7 @@ export class FluvyRuler extends LitElement {
   declare minor: number;
   declare major: number;
   declare vertical: boolean;
-  /** Read-only gauge: a ring marker, no lift, no interaction. */
+  /** Read-only gauge: a needle at the reading in the knob's place, no interaction (there is nothing to hold). */
   declare marker: boolean;
   /** Read-only, its knob whole (the thermostat's ball, lifted on its halo): a chart's ruler gauge. */
   declare readonly: boolean;
@@ -684,10 +686,12 @@ export class FluvyRuler extends LitElement {
     const pos = (Number.isFinite(this.shown) ? clamp(this.shown, 0, 1) : 0) * len;
     const drawn = this.drawn;
     // At the ends the knob would hang half its width outside the content column. It stops with a 4 px
-    // overhang instead — the optical overshoot a circle needs to look flush with the text above it.
-    const inset = Math.max(0, size / 2 - 4);
+    // overhang instead — the optical overshoot a circle needs to look flush with the text above it. A read-only
+    // marker is a needle 4 wide (`fv-knob--marker`): it stands whole inside the ruler's ends, and only the ticks
+    // within 4 of it give way.
+    const inset = this.marker ? NEEDLE / 2 : Math.max(0, size / 2 - 4);
     const centre = clamp(pos, inset, len - inset);
-    const haloR = size / 2 + 7; // ring + 4 px halo + half a stroke
+    const haloR = this.marker ? NEEDLE / 2 + 5 : size / 2 + 7; // ring + 4 px halo + half a stroke
     const lines: TemplateResult[] = [];
     // Full scale: ticks by fraction. Fine scale: ticks on the ABSOLUTE value grid (whole percents),
     // so they keep meaning real values even though the window is anchored wherever the knob was.

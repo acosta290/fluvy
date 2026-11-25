@@ -38,14 +38,18 @@
   background: var(--knob-dot, var(--tone-ink));
 }
 
+/* read-only (a battery's level, a tank's, a timer's elapsed): there is nothing to hold, so nothing a finger would
+   reach for — no ring, no lift: a needle, the reading's own tick drawn tall and bold in the tone's ink (4 wide, 32
+   tall), the ticks within 4 of it giving way (the owner's review of 1.26: a knob asks to be moved) */
 .fv-knob--marker {
-  box-shadow:
-    0 0 0 2px var(--tone-ink),
-    0 0 0 6px var(--knob-halo); /* read-only: no lift */
+  border-radius: 0;
+  background: none;
+  box-shadow: none;
 }
 
 .fv-knob--marker::after {
-  display: none;
+  inset: 2px calc(50% - 2px);
+  border-radius: 2px;
 }
 
 .fv-knob.is-focus {

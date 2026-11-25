@@ -7,10 +7,13 @@ import { html, nothing, type TemplateResult } from 'lit';
  * that matters (the reserve, the target) and the labels under it — `0 · 50 · 100` and the mark's word at its place.
  */
 
-/** The knob's ring and its halo: a mark closer to the marker's centre than this is under it. */
-const UNDER_KNOB = 18 + 4;
-/** The marker stops 4 px past the ruler's ends (the ruler's own rule): its centre never comes nearer the ends. */
-const KNOB_INSET = 36 / 2 - 4;
+/**
+ * The marker is a needle 4 wide (the ruler's read-only marker), the ticks within 4 of it giving way: a mark closer to
+ * its centre than this stands in that room, and goes under it.
+ */
+const UNDER_NEEDLE = 2 + 4 + 1;
+/** The needle stands whole inside the ruler's ends (the ruler's own rule): its centre never comes nearer them. */
+const NEEDLE_INSET = 2;
 
 export interface RulerLabel {
   readonly text: string;
@@ -54,10 +57,10 @@ export function markAt(
   const x = Math.round(Math.min(width - 1, Math.max(1, fraction * width)));
   if (value === null) return { x, covered: false };
   const centre = Math.min(
-    width - KNOB_INSET,
-    Math.max(KNOB_INSET, (Math.min(100, Math.max(0, value)) / 100) * width),
+    width - NEEDLE_INSET,
+    Math.max(NEEDLE_INSET, (Math.min(100, Math.max(0, value)) / 100) * width),
   );
-  return { x, covered: Math.abs(x - centre) < UNDER_KNOB };
+  return { x, covered: Math.abs(x - centre) < UNDER_NEEDLE };
 }
 
 export interface MarkedRulerOptions {

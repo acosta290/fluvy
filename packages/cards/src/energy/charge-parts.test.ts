@@ -89,9 +89,13 @@ describe('the labels under a marked ruler', () => {
 
   it('draws the mark inside the ruler, and under the marker when the level is there', () => {
     expect(markAt(320, 0.2, 64)).toEqual({ x: 64, covered: false });
-    expect(markAt(320, 0.2, 25)).toEqual({ x: 64, covered: true });
+    // the marker is a needle 4 wide with 4 clear beside it: a level 5 % off the mark (16 px) stands beside it
+    expect(markAt(320, 0.2, 25)).toEqual({ x: 64, covered: false });
+    // …and one 2 % off it (6 px) stands on it: the mark goes under the needle
+    expect(markAt(320, 0.2, 22)).toEqual({ x: 64, covered: true });
+    expect(markAt(320, 0.2, 20)).toEqual({ x: 64, covered: true });
     expect(markAt(320, 1, null)).toEqual({ x: 319, covered: false });
-    // the marker stops 4 px past the ruler's end: a mark at 100 % is under a full charge
+    // the needle stands whole inside the ruler's end: a mark at 100 % is under a full charge
     expect(markAt(320, 1, 100).covered).toBe(true);
   });
 });
