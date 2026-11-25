@@ -3056,7 +3056,13 @@
     "quick_states_help": "Pod ikoną lub obok niej: odczyt z jednostką, drzwi otwarte lub zamknięte, jasność światła.",
     "quick_state_position": "Ich stany",
     "under": "Pod ikoną",
-    "beside": "Obok ikony"
+    "beside": "Obok ikony",
+    "gauge_help": "Wymaga zakresu: własnego zakresu encji, od 0 do 100 dla procentów albo minimum i maksimum poniżej",
+    "gauge_arc": "Łuk",
+    "gauge_zero_arc": "Od zera",
+    "gauge_sector": "Wycinek",
+    "gauge_fill": "Wypełnienie",
+    "attribute": "Atrybut"
   },
   "scene": {
     "devices": "{count} urządzeń",

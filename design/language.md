@@ -3338,7 +3338,7 @@ details. An item's own name, icon, tone, colour, actions and `show_state`.
   no word against an edge; this card's cells, the Vehicle card's foot): every state in the longest form they all hold
   in **12 from each side** of their keys (a temperature's degree alone, a count's short words), else **8** (the
   radius leaves the words a straight side: the key is then its cell's width); else each in its own longest that holds;
-  else **a word ends in an ellipsis** 8 from the sides ("Geschlos…": the one text besides a name that may, `data-word`
+  else **a word ends in an ellipsis** 8 from the sides ("Geschlos…": the one text besides a name that may, `.lt-said`
   to the measurer), and **a figure is never cut**: its key keeps its glyph alone, on the keys' glyph line. A reader
   hears every state whole.
 - **Row**: a list row each (60), its circle lit as its round, its name over its state; the whole row its round's tap
@@ -3361,6 +3361,46 @@ details. An item's own name, icon, tone, colour, actions and `show_state`.
   (de "Kinderzimmer" beside a room's three places in a phone's 328), the places give way first: the list stands its
   rounds packed at that width, every row together, never one row out of its columns. A list a round of which says
   its state keeps its rounds packed, the pill pushing no column apart.
+
+## A round's gauge (1.26, #257, after @zokmedov's proposal)
+
+A reading drawn on the round itself (`gauge` on a round; `shared/round-gauge.ts`, a chunk of its own), on every card
+that draws rounds: the Rounds card, a room's quick actions, the Rooms card, a thermostat's rounds, a car's small
+icons. **One layer in the round's own shape** — the 44 circle, a key, a pill, a list row's circle — over its fill and
+under its glyph and its words: the round's box, its line's widths and every declared height stay what they are.
+
+- **One family of two parts: a line is the ink, 3 px along the round's edge; an area is the wash**, 20 % of that ink,
+  on which a resting glyph and a key's words keep 3:1 in every palette, light and dark. A track is 16 %. Its ends are
+  cut square, as its track's are: the layer follows whatever shape the round has, where a cap has no place.
+- **Arc** (`arc`): its share of a whole turn from the top, clockwise, on its track.
+- **From zero** (`zero`): zero at the top under a tick (2 × 7, the ink), a reading over it to the right and one under
+  it to the left, each side 135° of the turn and its own scale (the Gauge card's signed sweep, `fractionOf`), the two
+  ends apart at the foot. What the issue asked for: a room's drift of −0.24 °C an hour on a range of ±2.
+- **Sector** (`sector`): its share of the turn washed, its rim the ink; no track.
+- **Fill** (`fill`): washed from the foot up to its share, the edge it wets the ink. No waterline: a line across the
+  round strikes through its glyph, and through a key's words.
+- **Its colour** is its reading's band's (`thresholds`: the band's tone or colour, its icon in the glyph's place, its
+  label said), else the round's own `tone` or `color`, else its kind's. **The round itself rests**: a reading that
+  names a tone is not lit by it where it draws a gauge, its gauge wears it. On a round that is on (a lamp's
+  `brightness`, a fan's `percentage`) the gauge takes the fill's ink, in its level ring's place.
+- **What it cannot draw**: out of reach, the dashed ring alone; no number, or no range known, its track alone (an arc,
+  from zero) or nothing (a sector, a fill), the state's words saying the rest; past an end, it stands on it.
+- **Its range**: `min` and `max`, each a number, an entity or a template (a figure of the card's own, `readFigure`);
+  left out, the entity's own `min` and `max`, else 0 to 100 for a share (a percentage, a battery, a humidity, a
+  moisture); from zero, `min` is `max` below it. `attribute` reads a number of the entity's attributes in its state's
+  place, its unit as Home Assistant writes it.
+- **Its reading is always said** to a reader with its band's name ("Drift, −0.24 °C/h, Cooling"), drawn or not;
+  `decimals` (0 to 3) writes it in exactly that many, with a real minus, and a reading rounded to nothing has no sign.
+  A rate keeps its unit whole ("0.4 °C/h" has no "0.4°").
+- **In a key or a pill** (a round that says its state) **the key is the gauge's ground**: the line runs along its
+  border from the top's middle, the wash stands in its body, its glyph and its words where they are. A 44 gauge
+  inside a 64 key would leave its words no room, and outside a key they would stand bare on a room's photo.
+- **Motion**: it eases to a new reading in `--fv-slow` with the house's easing (its share is a registered custom
+  property; an engine that registers none steps), at rest under reduced motion.
+- **In the editor** its style is chosen from tiles, each a small drawing of it (Home Assistant's boxes, Fluvy's
+  tiles: no radio dot), "None" first; its range, attribute, decimals and thresholds show once one is chosen. A list
+  inside a room's or a thermostat's form offers the styles from a dropdown, its thresholds YAML's.
+- A set (a room's lights, its blinds) draws none: a gauge is one entity's reading; its level ring says the set's.
 
 ## Rooms (1.23, #225)
 

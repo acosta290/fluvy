@@ -871,6 +871,14 @@ const HAVAL_QUICK = [
   { entity: 'sensor.haval_h6_next_service', name: 'Service', icon: 'fluvy:wrench' },
   { entity: 'binary_sensor.haval_h6_tailgate', name: 'Tailgate' },
 ];
+/** …its signal and its service each with a gauge (#257). */
+const HAVAL_GAUGES = HAVAL_QUICK.map((item) =>
+  item.name === 'GSM'
+    ? { ...item, gauge: 'arc', max: 5 }
+    : item.name === 'Service'
+      ? { ...item, gauge: 'fill', max: 15000 }
+      : item,
+);
 /** …saying their states, the card its head, its tank and them alone. */
 const HAVAL_STATES = {
   quick_actions: HAVAL_QUICK,
@@ -1262,6 +1270,15 @@ export const sheet: SheetSpec = {
       cards: [
         haval({ ...HAVAL_STATES, cols: 6 }),
         haval({ ...HAVAL_STATES, quick_state_position: 'beside', cols: 6 }),
+      ],
+    },
+    // #257: a gauge on a small icon — its signal's bars of five as an arc, the way to its service of 15,000 km as a
+    // flood — plain and saying their states
+    {
+      title: 'GWM · gauges on its small icons',
+      cards: [
+        haval({ quick_actions: HAVAL_GAUGES, show_rows: false, show_controls: false }),
+        haval({ ...HAVAL_STATES, quick_actions: HAVAL_GAUGES }),
       ],
     },
     {

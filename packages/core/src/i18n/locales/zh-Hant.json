@@ -3364,7 +3364,13 @@
     "quick_states_help": "顯示在每個圖示下方或旁邊：含單位的讀數、門的開啟或關閉、燈的亮度。",
     "quick_state_position": "狀態位置",
     "under": "圖示下方",
-    "beside": "圖示旁邊"
+    "beside": "圖示旁邊",
+    "gauge_help": "需要一個範圍：實體本身的範圍，百分比為 0 到 100，或下方的最小值與最大值",
+    "gauge_arc": "圓弧",
+    "gauge_zero_arc": "從零開始",
+    "gauge_sector": "扇形",
+    "gauge_fill": "填滿",
+    "attribute": "屬性"
   },
   "rooms-card": {
     "count_one": "{count} 個房間",

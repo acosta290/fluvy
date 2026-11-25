@@ -900,6 +900,8 @@ export const MEANINGS: Readonly<Record<string, string>> = {
   '[].sub_entity': 'Entities whose states make the row’s second line.',
   '[].subtitle': 'The line under the scene’s name.',
   '[].switch_style': 'Draws the tile’s switch as a toggle, or as a wall rocker.',
+  '[].gauge':
+    'Draws the round’s reading on it as a gauge: an arc round its edge, an arc from zero, a sector or a flood.',
   '[].tap_action': 'What a tap on the item does.',
   '[].temperature': 'The temperature a new schedule sets.',
   '[].template': 'A template of your own for the figure.',
@@ -974,6 +976,14 @@ export const MEANINGS: Readonly<Record<string, string>> = {
   'remote.apps[].key': 'A key that opens the app.',
   'remote.apps[].source': 'The player’s source the app is.',
   'remote.custom[].key': 'The key it stands in for.',
+  'room.quick_actions[].attribute': 'An attribute its gauge reads in place of the state.',
+  'room.quick_actions[].decimals': 'How many decimals its gauge’s reading has.',
+  'room.quick_actions[].max':
+    'The top of its gauge’s range: a figure, an entity or a template. Left out, the entity’s own, or 100 for a percentage.',
+  'room.quick_actions[].min':
+    'The bottom of its gauge’s range: a figure, an entity or a template. Left out, the entity’s own or 0; from zero, the maximum below it.',
+  'room.quick_actions[].thresholds':
+    'Thresholds of its gauge: the band its reading is in colours it, gives the round its icon and is read out by its label.',
   'room.quick_actions[].show_state':
     'Shows this quick action’s state in its round, or hides it, whatever the card says.',
   'rooms.rooms[].area': 'The room: its area.',
@@ -984,6 +994,14 @@ export const MEANINGS: Readonly<Record<string, string>> = {
     'The rounds at the room’s end: its lights, blinds, fans, players or thermostat by their words, or any entity; left out, the card’s default actions.',
   'rooms.rooms[].temperature_entity':
     'The room’s temperature sensor, or a thermostat; left out, the area’s.',
+  'rounds.items[].attribute': 'An attribute its gauge reads in place of the state.',
+  'rounds.items[].decimals': 'How many decimals its gauge’s reading has.',
+  'rounds.items[].max':
+    'The top of its gauge’s range: a figure, an entity or a template. Left out, the entity’s own, or 100 for a percentage.',
+  'rounds.items[].min':
+    'The bottom of its gauge’s range: a figure, an entity or a template. Left out, the entity’s own or 0; from zero, the maximum below it.',
+  'rounds.items[].thresholds':
+    'Thresholds of its gauge: the band its reading is in colours it, gives the round its icon and is read out by its label.',
   'rounds.items[].show_state':
     'Shows this round’s state under its icon, or hides it, whatever the layout says.',
   'schedule.presets[].preset':
@@ -994,6 +1012,14 @@ export const MEANINGS: Readonly<Record<string, string>> = {
     'One of the car’s controls; `entity`, or none, for the item’s entity of your own.',
   'vehicle.controls[].entity':
     'An entity of your own in the row: a switch, a button, a script, a scene, its name under its round.',
+  'vehicle.quick_actions[].attribute': 'An attribute its gauge reads in place of the state.',
+  'vehicle.quick_actions[].decimals': 'How many decimals its gauge’s reading has.',
+  'vehicle.quick_actions[].max':
+    'The top of its gauge’s range: a figure, an entity or a template. Left out, the entity’s own, or 100 for a percentage.',
+  'vehicle.quick_actions[].min':
+    'The bottom of its gauge’s range: a figure, an entity or a template. Left out, the entity’s own or 0; from zero, the maximum below it.',
+  'vehicle.quick_actions[].thresholds':
+    'Thresholds of its gauge: the band its reading is in colours it, gives the round its icon and is read out by its label.',
   'vehicle.quick_actions[].show_state':
     'Shows this quick action’s state in its round, or hides it, whatever the card says.',
   'vehicle.roles[].role': 'What the entity is to the car.',

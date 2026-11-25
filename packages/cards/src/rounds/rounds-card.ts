@@ -7,7 +7,7 @@ import {
   type HomeAssistant,
   type LovelaceGridOptions,
 } from '@fluvy/core';
-import { head, sheetStyles } from '@fluvy/ui';
+import { head, icon, sheetStyles } from '@fluvy/ui';
 import { css, html, nothing, type CSSResultGroup, type TemplateResult } from 'lit';
 import { HeadFit } from '../energy/head.js';
 import { roundsGrid, roundsHeaded, roundsHeight } from '../rounds-family.js';
@@ -24,6 +24,7 @@ import {
   keyStates,
   keyWidth,
   roundOf,
+  spoken,
   wear,
   type RoundSpec,
   type RoundsHost,
@@ -111,6 +112,10 @@ export class FluvyRoundsCard extends Card<RoundsCardConfig> {
       .rd-rows--bare {
         margin: -8px 0;
       }
+      /* a row's circle holds its gauge's layer (#257) */
+      .rd-rows .fv-ico {
+        position: relative;
+      }
     `,
   ];
 
@@ -179,6 +184,7 @@ export class FluvyRoundsCard extends Card<RoundsCardConfig> {
       accent: (colour) => this.accents.item(colour),
       ruler: this.head.ruler,
       root: this.renderRoot,
+      card: this,
     };
   }
 
@@ -277,7 +283,8 @@ export class FluvyRoundsCard extends Card<RoundsCardConfig> {
 
   /**
    * A row each (`row`): its circle lit in its tone while on, the dashed ring out of reach, its name over its state,
-   * the whole row its round's tap and hold (`roundsRows`).
+   * the whole row its round's tap and hold (`roundsRows`); its gauge, where it names one, on its circle (#257), its
+   * band's name said with its reading.
    */
   private renderRows(
     host: RoundsHost,
@@ -287,13 +294,19 @@ export class FluvyRoundsCard extends Card<RoundsCardConfig> {
   ): TemplateResult {
     const rows = items.map((item): RoundsRowSpec => {
       const round = roundOf(host, { ...item, show_state: true });
+      const tone = !round.usable ? 'off' : round.on ? round.tone : 'neutral';
       return {
-        icon: round.glyph,
-        tone: !round.usable ? 'off' : round.on ? round.tone : 'neutral',
+        icon: round.gauge
+          ? html`<span class="fv-ico fv-ico--${tone}" data-icon
+              >${round.gauge}${icon(round.glyph)}</span
+            >`
+          : round.glyph,
+        tone,
         accent: round.on ? round.accent : undefined,
         title: round.name,
         sub: round.said?.[0],
         rounds: [],
+        label: round.heard && spoken(round),
         onTap: round.usable ? round.onTap : undefined,
         onHold: round.onHold,
       };

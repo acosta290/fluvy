@@ -23,6 +23,12 @@
     "quick_states_help": "Under or beside each icon: a reading with its unit, a door open or closed, a light’s brightness.",
     "quick_state_position": "Their states",
     "under": "Under the icon",
-    "beside": "Beside the icon"
+    "beside": "Beside the icon",
+    "gauge_help": "Needs a range: the entity’s own, 0 to 100 for a percentage, or the minimum and maximum below",
+    "gauge_arc": "Arc",
+    "gauge_zero_arc": "From zero",
+    "gauge_sector": "Sector",
+    "gauge_fill": "Fill",
+    "attribute": "Attribute"
   }
 }

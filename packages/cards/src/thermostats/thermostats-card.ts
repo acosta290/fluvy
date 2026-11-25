@@ -308,6 +308,7 @@ export class FluvyThermostatsCard extends Card<ThermostatsCardConfig> {
       accent: (colour) => this.accents.item(colour),
       ruler: this.head.ruler,
       root: this.renderRoot,
+      card: this,
     };
   }
 

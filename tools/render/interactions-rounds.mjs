@@ -8,7 +8,10 @@
  * round's details, the gone plug's too, whose tap does nothing. Of two doors, the unlocked one locks at a tap and the
  * locked one asks Home Assistant first (`hass-action`, `confirmation`), nothing unlocked before its yes. A row each
  * taps as its round. With their states, each says its own whole under its glyph, as the taps left it, in a key: every
- * key of the card one width, its words 12 from its sides at least.
+ * key of the card one width, its words 12 from its sides at least. And on the `round-gauges` sheet (#257): a round's
+ * gauge in its four styles at its reading's share of its range, either side of zero, in its band's tone, said to a
+ * reader; in its ring's place on a lit round, none out of reach; on its key and on a row's circle, no size changed;
+ * moved by a new reading; and drawn by a room's quick actions, the Rooms card and a thermostat's rounds.
  */
 import { calls, frame, moreInfo, reset, settle, startSuite } from './lib/suite.mjs';
 
@@ -164,4 +167,188 @@ check(
 );
 
 await page.close();
+
+/* ---------- #257: a gauge on a round ---------- */
+{
+  const gauges = await suite.sheet('round-gauges');
+  /** Each round of a frame's first card: its gauge's style and share, its box, its words and what a reader hears. */
+  const read = (title, selector = '.lt-bulb') =>
+    frame(gauges, title)
+      .locator('fluvy-rounds-card')
+      .first()
+      .evaluate(
+        (card, of) =>
+          [...card.shadowRoot.querySelectorAll(of)].map((round) => {
+            const layer = round.querySelector('.rg');
+            const box = round.getBoundingClientRect();
+            const over = layer?.getBoundingClientRect();
+            return {
+              style: layer ? layer.className.replace(/^rg rg--(\w+).*$/, '$1') : null,
+              tone: layer ? layer.className.replace(/^.*fv-tone--/, '') : null,
+              share: layer ? Number(getComputedStyle(layer).getPropertyValue('--fv-gauge')) : null,
+              // the layer is the round's own box, wherever it is drawn
+              fits: !over || (Math.abs(over.width - box.width) < 0.5 && over.left === box.left),
+              width: box.width,
+              height: box.height,
+              first: !layer || round.firstElementChild === layer,
+              off: round.classList.contains('fv-ico--off'),
+              lit: round.classList.contains('is-on'),
+              label: round.getAttribute('aria-label'),
+            };
+          }),
+        selector,
+      );
+  const five = await read('Quick picks · the issue’s five');
+  check(
+    'the issue’s five: an arc, an arc from zero, a sector, a flood and a plain round, each a 44 round at rest',
+    five.map((round) => round.style).join() === 'arc,zero,sector,fill,' &&
+      five.every(
+        ({ width, height, lit, fits, first }) =>
+          width === 44 && height === 44 && !lit && fits && first,
+      ),
+    JSON.stringify(five),
+  );
+  check(
+    'each stands where its reading is in its range: the battery’s share, the drift of ±2, the tank between 30 and 90',
+    five
+      .slice(0, 4)
+      .map((round) => round.share)
+      .join() === '0.72,0.21,0.267,0.35',
+    five.map((round) => round.share).join(),
+  );
+  check(
+    'a reader hears its reading in its decimals and its band’s name; the drift wears its band’s tone',
+    five[1].label === 'Bedroom drift, 0.42 °C/h, Heating' &&
+      five[1].tone === 'heat' &&
+      five[0].label === 'Wall tablet, 72 %',
+    JSON.stringify(five.map((round) => [round.label, round.tone])),
+  );
+  const across = await read('Arc · across its range');
+  const drifts = await read('From zero · either side of it');
+  check(
+    'a share of its range, and a reading past an end on it; either side of zero, cooling to the left',
+    across.map((round) => round.share).join() === '0,0.25,0.5,1,1' &&
+      drifts.map((round) => round.share).join() === '-1,-0.12,0,0.65,1' &&
+      drifts.map((round) => round.tone).join() === 'cool,cool,heat,heat,heat',
+    JSON.stringify({
+      across: across.map((r) => r.share),
+      drifts: drifts.map((r) => [r.share, r.tone]),
+    }),
+  );
+  const bands = await read('Thresholds · the house’s batteries');
+  check(
+    'a battery’s flood in its band’s colour: fine from 50 %, its own under it, low under 20 %, nearly empty under 10 %',
+    bands.map((round) => round.tone).join() === 'ok,accent,warning,danger' &&
+      bands[2].label === 'Remote, 16 %, Low',
+    JSON.stringify(bands.map((round) => [round.tone, round.label])),
+  );
+  const lit = await read('On a lit round');
+  check(
+    'on a round that is on, the gauge stands in its ring’s place',
+    lit.slice(0, 3).every((round) => round.lit && round.style) &&
+      (await frame(gauges, 'On a lit round').locator('fluvy-rounds-card .lt-ring').count()) === 0,
+    JSON.stringify(lit),
+  );
+  const none = await read('Out of reach, no number, no range');
+  check(
+    'out of reach, its dashed ring alone; no number or no range, its track alone',
+    none[0].off && none[0].style === null && none.slice(1, 4).every((round) => round.share === 0),
+    JSON.stringify(none),
+  );
+  // in a key and on a row's circle the layer is the round's own shape: nothing changes size
+  const keyed = await read('Quick picks · labels');
+  check(
+    'saying their states, each key is its gauge’s ground: 64 tall, one width, the layer its box',
+    keyed
+      .slice(0, 4)
+      .every(
+        ({ style, height, width, fits }) =>
+          style && height === 64 && fits && width === keyed[0].width,
+      ),
+    JSON.stringify(keyed),
+  );
+  const rowed = await read('Quick picks · rows', '.fv-row > .fv-ico');
+  check(
+    'a row each: its gauge on its circle, 44 round',
+    rowed
+      .slice(0, 4)
+      .every(({ style, width, height, fits }) => style && width === 44 && height === 44 && fits),
+    JSON.stringify(rowed),
+  );
+  const heights = await gauges.evaluate(() =>
+    [...document.querySelectorAll('[data-frame] fluvy-rounds-card')]
+      .filter((card) => Math.round(card.getBoundingClientRect().width) === 360)
+      .map((card) => ({
+        frame: card.closest('[data-frame]').dataset.frame,
+        drawn: Math.round(
+          card.shadowRoot.querySelector('[data-card]').getBoundingClientRect().height,
+        ),
+        declared: card.constructor.layoutHeight(card.config),
+      }))
+      .filter(({ drawn, declared }) => drawn !== declared),
+  );
+  check(
+    'every card with gauges draws the height it declares',
+    heights.length === 0,
+    JSON.stringify(heights),
+  );
+  // its taps are a round's: a sensor's opens its details
+  await reset(gauges);
+  const tablet = frame(gauges, 'Quick picks · the issue’s five')
+    .locator('fluvy-rounds-card .lt-bulb')
+    .first();
+  await press(gauges, tablet);
+  check(
+    'a tap on a round with a gauge opens its details',
+    JSON.stringify(await moreInfo(gauges)) === '["sensor.rg_tablet_battery"]',
+    JSON.stringify(await moreInfo(gauges)),
+  );
+  // a new reading moves the gauge, and what a reader hears with it
+  await gauges.evaluate(() => window.fluvyMock.set('sensor.rg_tablet_battery', '40'));
+  await settle(gauges, 600);
+  const moved = (await read('Quick picks · the issue’s five'))[0];
+  check(
+    'a new reading moves its gauge and what a reader hears',
+    moved.share === 0.4 && moved.label === 'Wall tablet, 40 %',
+    JSON.stringify(moved),
+  );
+  await gauges.close();
+}
+
+/* ---------- #257: the gauge is the round's, on every card that draws rounds ---------- */
+{
+  const gauges = await suite.sheet('round-gauges');
+  const layers = (title, tag) =>
+    frame(gauges, title)
+      .locator(tag)
+      .evaluateAll((cards) =>
+        cards.map((card) =>
+          [...card.shadowRoot.querySelectorAll('.rg')].map((layer) => {
+            const round = layer.parentElement.getBoundingClientRect();
+            const own = layer.getBoundingClientRect();
+            return (
+              layer.className.replace(/^rg rg--(\w+).*$/, '$1') +
+              (Math.abs(own.width - round.width) < 0.5 && Math.abs(own.height - round.height) < 0.5
+                ? ''
+                : '!')
+            );
+          }),
+        ),
+      );
+  const room = await layers('A room’s quick actions', 'fluvy-room-card');
+  check(
+    'a room’s quick actions draw their gauges: plain, in their keys and in a pill',
+    room.length === 3 && room.every((card) => card.join() === 'arc,fill'),
+    JSON.stringify(room),
+  );
+  const rooms = await layers('The Rooms card', 'fluvy-rooms-card');
+  const valves = await layers('A thermostat’s rounds', 'fluvy-thermostats-card');
+  check(
+    'the Rooms card and a thermostat’s own rounds draw theirs',
+    rooms[0].join() === 'arc,fill,arc' && valves[0].join() === 'arc,arc',
+    JSON.stringify({ rooms, valves }),
+  );
+  await gauges.close();
+}
+
 await suite.finish();

@@ -636,6 +636,7 @@ export class FluvyRoomCard extends FluvyTileCard {
         destination: this.destination(),
         ruler: this.headFit.ruler,
         root: this.renderRoot,
+        card: this,
       },
       room - (cls ? Math.min(ROW_NAME_MIN, this.headFit.ruler.width(cls, name)) : 0),
     );

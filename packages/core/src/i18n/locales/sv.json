@@ -3344,7 +3344,13 @@
     "quick_states_help": "Under eller bredvid varje ikon: ett mätvärde med sin enhet, en dörr öppen eller stängd, en lampas ljusstyrka.",
     "quick_state_position": "Deras tillstånd",
     "under": "Under ikonen",
-    "beside": "Bredvid ikonen"
+    "beside": "Bredvid ikonen",
+    "gauge_help": "Behöver ett intervall: entitetens eget, 0 till 100 för en procentsats, eller minimum och maximum nedan",
+    "gauge_arc": "Båge",
+    "gauge_zero_arc": "Från noll",
+    "gauge_sector": "Sektor",
+    "gauge_fill": "Fyllning",
+    "attribute": "Attribut"
   },
   "sheets": {
     "more": "Mer i Home Assistant",

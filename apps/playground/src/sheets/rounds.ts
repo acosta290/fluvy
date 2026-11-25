@@ -70,6 +70,27 @@ export const sheet: SheetSpec = {
       { friendly_name: 'TV', device_class: 'tv', supported_features: 21437 },
     ],
     ['scene.rd_movie_night', '2026-09-17T18:31:00+00:00', { friendly_name: 'Movie night' }],
+    // the docs' own example (the gallery's): a wall tablet low on charge and the lounge's air, each with a gauge
+    [
+      'sensor.tablet_battery',
+      '18',
+      {
+        friendly_name: 'Wall tablet',
+        device_class: 'battery',
+        unit_of_measurement: '%',
+        state_class: 'measurement',
+      },
+    ],
+    [
+      'sensor.lounge_humidity',
+      '48',
+      {
+        friendly_name: 'Lounge humidity',
+        device_class: 'humidity',
+        unit_of_measurement: '%',
+        state_class: 'measurement',
+      },
+    ],
     [
       'sensor.rd_lounge_humidity',
       '48',

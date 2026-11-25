@@ -27,6 +27,7 @@ import {
   entitiesField,
   entityField,
   fieldRow,
+  figureField,
   formLabels,
   iconField,
   joinsReadouts,
@@ -37,6 +38,7 @@ import {
   mostReadouts,
   nameIconFields,
   nameLinesField,
+  numberField,
   onlyWhen,
   readoutsLayoutField,
   selectField,
@@ -46,6 +48,7 @@ import {
   switches,
   switchStyleField,
   textField,
+  thresholdsField,
   tintField,
   toneField,
 } from '../shared/form.js';
@@ -194,25 +197,108 @@ const groupField = choiceField('group', [
   ...ROUND_GROUPS.map((group) => [group, `room.${group}`] as const),
   ['entity', 'editor.entity'],
 ]);
-/** A round's own colour, its state (empty: its card's say) and its actions: a round turns on and off what switches, else opens. */
-const ROUND_OWN: readonly HaFormSchemaItem[] = [
+/**
+ * A gauge's style as its tile draws it (1.26, #257): the round and the style's marks on it, in a mid grey and its
+ * tints — a picture reads no token, and this one reads on a light ground and on a dark one.
+ */
+const drawing = (marks: string): string =>
+  `data:image/svg+xml,${encodeURIComponent(
+    `<svg xmlns="http://www.w3.org/2000/svg" width="44" height="44" fill="none" stroke="#888" stroke-width="3"><circle cx="22" cy="22" r="22" fill="#888" fill-opacity=".16" stroke="none"/>${marks}</svg>`,
+  )}`;
+const WASH = 'fill="#888" fill-opacity=".3" stroke="none"';
+/** A gauge's styles: each its word and what its tile draws on the round. */
+const GAUGE_STYLES = [
+  [
+    'arc',
+    'room-editor.gauge_arc',
+    '<circle cx="22" cy="22" r="20.5" stroke-opacity=".3"/><path d="M22 1.5A20.5 20.5 0 1 1 2.5 28.3"/>',
+  ],
+  [
+    'zero',
+    'room-editor.gauge_zero_arc',
+    '<path d="M7.5 36.5A20.5 20.5 0 1 1 36.5 36.5" stroke-opacity=".3"/><path d="M22 1.5A20.5 20.5 0 0 1 36.5 7.5M22 0v7"/>',
+  ],
+  [
+    'sector',
+    'room-editor.gauge_sector',
+    `<path d="M22 22V0A22 22 0 0 1 42.9 28.8z" ${WASH}/><path d="M22 1.5A20.5 20.5 0 0 1 41.5 28.3"/>`,
+  ],
+  [
+    'fill',
+    'room-editor.gauge_fill',
+    `<path d="M.4 26.4h43.2A22 22 0 0 1 .4 26.4z" ${WASH}/><path d="M42 26.4A20.5 20.5 0 0 1 2 26.4"/>`,
+  ],
+] as const;
+/** A round's gauge: none, or one of its styles, each a tile with its drawing (Home Assistant's boxes, Fluvy's tiles). */
+const gaugeField: HaFormSchemaItem = {
+  name: 'gauge',
+  selector: {
+    select: {
+      mode: 'box',
+      options: ([['', 'option.none', ''], ...GAUGE_STYLES] as const).map(
+        ([value, word, marks]) => ({
+          value,
+          label: editorWord(word),
+          image: drawing(marks),
+        }),
+      ),
+    },
+  },
+};
+/** Whether a round names a gauge: what its range, its attribute, its decimals and its thresholds act on. */
+const gauged = ({ gauge }: Readonly<Record<string, unknown>>): boolean =>
+  typeof gauge === 'string' && gauge !== '';
+/**
+ * A gauge's own: its range (each end a figure, an entity or a template), an attribute read in its state's place and
+ * its reading's decimals, and its thresholds.
+ */
+const GAUGE_OWN: readonly HaFormSchemaItem[] = [
+  fieldRow(figureField('min'), figureField('max')),
+  fieldRow(textField('attribute'), numberField('decimals', 0, 3)),
+  thresholdsField(),
+];
+/** The words of a gauge's fields that are the rounds' own. */
+export const GAUGE_LABELS = { attribute: 'room-editor.attribute' } as const;
+/**
+ * A gauge's fields where a round is edited in a list inside its item's form (a room's rounds, a thermostat's): its
+ * style from a dropdown, its range, its attribute and its decimals; its thresholds are YAML's there.
+ */
+export const gaugeFlatFields = (): HaFormSchemaItem[] => [
+  choiceField(
+    'gauge',
+    GAUGE_STYLES.map(([value, word]) => [value, word] as const),
+  ),
+  figureField('min'),
+  figureField('max'),
+  textField('attribute'),
+  numberField('decimals', 0, 3),
+];
+/** A round's own colour and its state (empty: its card's say). */
+const ROUND_LOOK: readonly HaFormSchemaItem[] = [
   fieldRow(toneField(), accentField('color', { item: 'bulb' })),
   itemToggleField('show_state'),
-  actionFields({ tap: null }),
 ];
-/** An entity's round: the entity first, then its own name and icon. */
-const ROUND_ITEM: readonly HaFormSchemaItem[] = [
+/** Its actions: a round turns on and off what switches, else opens. */
+const ROUND_ACTIONS = actionFields({ tap: null });
+/** An entity's round: the entity first, then its own name and icon, its look, its gauge and its actions. */
+const ROUND_HEAD: readonly HaFormSchemaItem[] = [
   entityField(undefined, 'entity', false),
   nameIconFields(),
-  ...ROUND_OWN,
+  ...ROUND_LOOK,
+  gaugeField,
 ];
-/** A room's round, of a set or of an entity: what it stands for first, a set's own name and icon. */
+/** …with what a gauge takes once one is chosen, and without. */
+const ROUND_ITEM: readonly HaFormSchemaItem[] = [...ROUND_HEAD, ...GAUGE_OWN, ROUND_ACTIONS];
+const ROUND_PLAIN: readonly HaFormSchemaItem[] = [...ROUND_HEAD, ROUND_ACTIONS];
+/** A room's round, of a set or of an entity: what it stands for first, a set's own name and icon; a set has no gauge. */
 const GROUP_ITEM: readonly HaFormSchemaItem[] = [
   groupField,
   fieldRow(textField('name'), iconField()),
-  ...ROUND_OWN,
+  ...ROUND_LOOK,
+  ROUND_ACTIONS,
 ];
 const ENTITY_ITEM: readonly HaFormSchemaItem[] = [groupField, ...ROUND_ITEM];
+const ENTITY_PLAIN: readonly HaFormSchemaItem[] = [groupField, ...ROUND_PLAIN];
 /** What a round may carry, as `RoundSpec` declares it (a set's word beside them where it stands for a room's). */
 const ROUND_KEYS: readonly string[] = [
   'entity',
@@ -221,6 +307,12 @@ const ROUND_KEYS: readonly string[] = [
   'tone',
   'color',
   'show_state',
+  'gauge',
+  'min',
+  'max',
+  'attribute',
+  'decimals',
+  'thresholds',
   'tap_action',
   'hold_action',
   'double_tap_action',
@@ -230,7 +322,14 @@ const roundLabel = (schema: HaFormSchemaItem): string | undefined =>
     ? editorWord('room-editor.group')
     : schema.name === 'show_state'
       ? editorWord('room-editor.show_state')
-      : undefined;
+      : schema.name === 'attribute'
+        ? editorWord(GAUGE_LABELS.attribute)
+        : undefined;
+/** Under a gauge once one is chosen: the range it needs. */
+const roundHelper: NonNullable<RowsListSpec['computeHelper']> = (schema, _localize, item) =>
+  schema.name === 'gauge' && item && gauged(item)
+    ? editorWord('room-editor.gauge_help')
+    : undefined;
 
 /**
  * A list of rounds, one item form on every card that draws them (#224): an entity's round, its id and its own name,
@@ -252,6 +351,7 @@ export const roundsList = (
         keys: ['group', ...ROUND_KEYS],
         picker: groupField,
         computeLabel: roundLabel,
+        computeHelper: roundHelper,
         read: (raw) => roundEntry(raw) as Record<string, unknown> | null,
         write: ({ group, entity, ...own }) => {
           const kept = Object.fromEntries(
@@ -263,10 +363,20 @@ export const roundsList = (
           return bare ? entity : { entity, ...kept };
         },
         schema: ENTITY_ITEM,
-        schemaOf: (item) => (item['group'] === 'entity' ? ENTITY_ITEM : GROUP_ITEM),
+        schemaOf: (item) =>
+          item['group'] !== 'entity' ? GROUP_ITEM : gauged(item) ? ENTITY_ITEM : ENTITY_PLAIN,
         when,
       }
-    : { key, title, keys: ROUND_KEYS, schema: ROUND_ITEM, computeLabel: roundLabel, when };
+    : {
+        key,
+        title,
+        keys: ROUND_KEYS,
+        schema: ROUND_ITEM,
+        schemaOf: (item) => (gauged(item) ? ROUND_ITEM : ROUND_PLAIN),
+        computeLabel: roundLabel,
+        computeHelper: roundHelper,
+        when,
+      };
 
 /**
  * A list of rounds inside an item's form (1.23, #230: a thermostat's own, after the one that opens it): Home
@@ -275,13 +385,14 @@ export const roundsList = (
  * entity alone as its id.
  */
 export const roundsField = (name = 'rounds'): HaFormSchemaItem => {
-  const { computeLabel } = formLabels();
+  const { computeLabel } = formLabels(GAUGE_LABELS);
   const fields = [
     entityField(undefined, 'entity'),
     textField('name'),
     iconField(),
     toneField(),
     accentField('color'),
+    ...gaugeFlatFields(),
     actionField('tap_action'),
     actionField('hold_action'),
   ];

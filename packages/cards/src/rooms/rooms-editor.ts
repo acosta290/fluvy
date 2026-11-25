@@ -1,5 +1,5 @@
 import { lightDefaults, type HaFormSchemaItem, type LovelaceConfigForm } from '@fluvy/core';
-import { readingField } from '../room/room-editor.js';
+import { GAUGE_LABELS, gaugeFlatFields, readingField } from '../room/room-editor.js';
 import { houseRooms } from '../rooms-family.js';
 import { ACTIONS_BASE, ICON_ACTIONS_BASE, type BaseKey } from '../shared/base.js';
 import { configKeys } from '../shared/config.js';
@@ -79,6 +79,7 @@ const roundsField = (): HaFormSchemaItem => {
   const { computeLabel } = formLabels({
     group: 'room-editor.group',
     show_state: 'room-editor.show_state',
+    ...GAUGE_LABELS,
   });
   return {
     name: 'quick_actions',
@@ -98,6 +99,7 @@ const roundsField = (): HaFormSchemaItem => {
             accentField('color', { item: 'bulb' }),
             // a switch, not a choice: Home Assistant's list writes a choice's words as they are ("false")
             boolField('show_state'),
+            ...gaugeFlatFields(),
             actionField('tap_action'),
             actionField('hold_action'),
             actionField('double_tap_action', 'none'),

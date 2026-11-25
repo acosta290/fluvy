@@ -3344,7 +3344,13 @@
     "quick_states_help": "Under eller ved siden af hvert ikon: en måling med dens enhed, en dør, der er åben eller lukket, et lys' lysstyrke.",
     "quick_state_position": "Deres tilstande",
     "under": "Under ikonet",
-    "beside": "Ved siden af ikonet"
+    "beside": "Ved siden af ikonet",
+    "gauge_help": "Kræver et interval: entitetens eget, 0 til 100 for en procent, eller minimum og maksimum herunder",
+    "gauge_arc": "Bue",
+    "gauge_zero_arc": "Fra nul",
+    "gauge_sector": "Sektor",
+    "gauge_fill": "Fyld",
+    "attribute": "Egenskab"
   },
   "sheets": {
     "more": "Mere i Home Assistant",

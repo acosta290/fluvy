@@ -302,6 +302,54 @@ describe('the Rounds card (#224)', () => {
     expect(calls.map(([domain, service]) => `${domain}.${service}`)).toEqual(['switch.turn_on']);
   });
 
+  it('a gauge on a round is there from its first frame, on its key and on its row’s circle; the card’s height its config’s (#257)', async () => {
+    const states = {
+      ...STATES,
+      'sensor.tablet': state('sensor.tablet', '15', {
+        friendly_name: 'Tablet',
+        unit_of_measurement: '%',
+        device_class: 'battery',
+      }),
+    };
+    const items = [
+      {
+        entity: 'sensor.tablet',
+        gauge: 'fill',
+        thresholds: [{ value: 20, below: true, tone: 'warning', label: 'Low' }],
+      },
+      'switch.washer',
+    ];
+    const layer = (card: CardElement): HTMLElement | null =>
+      root(card).querySelector<HTMLElement>('.rg');
+    // the card waits for what draws it: its first frame has the gauge, in its band's tone, the round at rest
+    const card = await drawn({ items }, house(states).hass);
+    expect(layer(card)?.className).toBe('rg rg--fill fv-tone--warning');
+    expect(layer(card)?.style.getPropertyValue('--fv-gauge')).toBe('0.150');
+    expect(layer(card)?.parentElement?.className).toContain('lt-bulb fv-ico fv-ico--neutral');
+    expect(rounds(card)[0]!.getAttribute('aria-label')).toBe('Tablet, 15 %, Low');
+    expect(rounds(card)[1]!.querySelector('.rg')).toBeNull();
+    document.body.replaceChildren();
+    // its key is its gauge's ground
+    const keys = await drawn({ items, variant: 'labels' }, house(states).hass);
+    expect(layer(keys)?.parentElement?.className).toContain('lt-bulb--under');
+    expect(layer(keys)?.nextElementSibling?.tagName).not.toBe('SPAN');
+    document.body.replaceChildren();
+    // a row each: on its circle, its band's name said for the row
+    const rows = await drawn({ items, variant: 'row' }, house(states).hass);
+    expect(layer(rows)?.parentElement?.className).toBe('fv-ico fv-ico--neutral');
+    expect(root(rows).querySelector('.fv-row')?.getAttribute('aria-label')).toBe(
+      'Tablet, 15 %, Low',
+    );
+    for (const variant of ['rounds', 'labels', 'row'])
+      expect(FluvyRoundsCard.layoutHeight({ type: 'x', variant, items } as never), variant).toBe(
+        FluvyRoundsCard.layoutHeight({
+          type: 'x',
+          variant,
+          items: ['sensor.tablet', 'switch.washer'],
+        } as never),
+      );
+  });
+
   it('declares its height from its config alone: its lines, its rows, its head, never its states', () => {
     const height = (config: Partial<LovelaceCardConfig>): number =>
       FluvyRoundsCard.layoutHeight({

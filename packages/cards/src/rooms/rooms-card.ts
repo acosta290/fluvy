@@ -384,6 +384,7 @@ export class FluvyRoomsCard extends Card<RoomsCardConfig> {
       destination: room && this.destination(room),
       ruler: this.head.ruler,
       root: this.renderRoot,
+      card: this,
     };
   }
 

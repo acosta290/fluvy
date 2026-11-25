@@ -1849,7 +1849,13 @@
     "quick_states_help": "Her simgenin altında veya yanında: birimiyle bir ölçüm, açık ya da kapalı bir kapı, bir ışığın parlaklığı.",
     "quick_state_position": "Durumların yeri",
     "under": "Simgenin altında",
-    "beside": "Simgenin yanında"
+    "beside": "Simgenin yanında",
+    "gauge_help": "Bir aralık gerekir: varlığın kendi aralığı, yüzde için 0 ile 100 arası ya da aşağıdaki minimum ve maksimum",
+    "gauge_arc": "Yay",
+    "gauge_zero_arc": "Sıfırdan",
+    "gauge_sector": "Dilim",
+    "gauge_fill": "Dolgu",
+    "attribute": "Öznitelik"
   },
   "production": {
     "production": "Üretim",

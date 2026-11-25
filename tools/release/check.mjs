@@ -264,6 +264,9 @@ const BUDGETS = {
   // what the greeting draws beyond its words (1.26, #260): its date and its weather as buttons, its quick actions'
   // line and their sheet; fetched by the first greeting that asks for any of it. Measured at 1.2 KB
   'hello-more': 2048,
+  // what draws a round's gauge (1.26, #257): the four styles' sheet, what a gauge reads and its range; fetched by the
+  // first card whose rounds name one
+  'round-gauge': 2048,
   // the controls that set a number in place (1.23, #218): a row's value between − and +, a figure typed, their sheet;
   // fetched by the first card that asks for one
   'number-controls': 4096,

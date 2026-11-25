@@ -297,6 +297,30 @@ stats: [max, average] # the row under it; show_stats: false leaves it out
 A moving gauge on a sensor it does not fit draws the ticks; `animate: false` rests it. The humidity card takes
 `ticks`, `ruler` or `liquid`.
 
+### A gauge on a round
+
+A round draws its reading on itself wherever rounds are drawn: the Rounds card, a room's `quick_actions`, the Rooms
+card, a thermostat's `rounds` and a car's small icons.
+
+```yaml
+type: custom:fluvy-room-card
+area: living_room
+quick_actions:
+  - lights
+  - entity: sensor.living_room_humidity
+    gauge: arc # or zero, sector, fill
+  - entity: climate.living_room
+    gauge: fill
+    attribute: current_temperature # a number of its attributes, in its state's place
+    min: 15
+    max: 25
+```
+
+- `min` and `max` take a number, an entity or a template. Left out: the entity's own range, or 0 to 100 for a
+  percentage. `zero` runs left under zero and right over it.
+- `decimals` sets how its reading is written; `thresholds` colour it ([Thresholds](#thresholds)).
+- More in [the Rounds card](cards/rounds.md#a-gauge-on-a-round).
+
 ### Lights
 
 ```yaml

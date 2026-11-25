@@ -296,18 +296,21 @@ const selectorOf = (field: HaFormSchemaItem): readonly [kind: string, options: S
   return [kind, (options ?? {}) as Selector];
 };
 
-/** A select's choices, each value with the editor's word for it; a group's keys, where it holds its own. */
+/**
+ * A select's choices, each value with the editor's word for it; a group's keys, where it holds its own. A choice of
+ * no value (a row of tiles' "None", which takes its key out of the config) is none of the key's values.
+ */
 const choicesOf = (field: HaFormSchemaItem): { value: string; label: string }[] => {
   if (field.schema) return field.schema.map(({ name }) => ({ value: name, label: name }));
   const [kind, options] = selectorOf(field);
   if (kind !== 'select') return [];
-  return (
-    (options['options'] ?? []) as readonly (string | { value: string; label?: string })[]
-  ).map((option) =>
-    typeof option === 'string'
-      ? { value: option, label: option }
-      : { value: option.value, label: option.label ?? option.value },
-  );
+  return ((options['options'] ?? []) as readonly (string | { value: string; label?: string })[])
+    .map((option) =>
+      typeof option === 'string'
+        ? { value: option, label: option }
+        : { value: option.value, label: option.label ?? option.value },
+    )
+    .filter(({ value }) => value !== '');
 };
 
 /** What a field holds, in a word. */

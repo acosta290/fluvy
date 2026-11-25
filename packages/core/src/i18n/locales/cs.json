@@ -3248,7 +3248,13 @@
     "quick_states_help": "Pod ikonou nebo vedle ní: hodnota s jednotkou, otevřené či zavřené dveře, jas světla.",
     "quick_state_position": "Umístění stavů",
     "under": "Pod ikonou",
-    "beside": "Vedle ikony"
+    "beside": "Vedle ikony",
+    "gauge_help": "Potřebuje rozsah: vlastní rozsah entity, 0 až 100 u procent, nebo minimum a maximum níže",
+    "gauge_arc": "Oblouk",
+    "gauge_zero_arc": "Od nuly",
+    "gauge_sector": "Výseč",
+    "gauge_fill": "Výplň",
+    "attribute": "Atribut"
   },
   "slider": {
     "mute": "Ztlumit",

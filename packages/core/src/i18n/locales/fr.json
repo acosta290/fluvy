@@ -1849,7 +1849,13 @@
     "quick_states_help": "Sous ou à côté de chaque icône : une mesure avec son unité, une porte ouverte ou fermée, la luminosité d’une lumière.",
     "quick_state_position": "Leurs états",
     "under": "Sous l’icône",
-    "beside": "À côté de l’icône"
+    "beside": "À côté de l’icône",
+    "gauge_help": "Il lui faut une plage : celle de l’entité, de 0 à 100 pour un pourcentage, ou le minimum et le maximum ci-dessous",
+    "gauge_arc": "Arc",
+    "gauge_zero_arc": "Depuis zéro",
+    "gauge_sector": "Secteur",
+    "gauge_fill": "Remplissage",
+    "attribute": "Attribut"
   },
   "production": {
     "production": "Production",

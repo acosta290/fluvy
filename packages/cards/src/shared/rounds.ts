@@ -24,15 +24,19 @@ import { statusToneOf, type Coloured, type LightColours } from './colour.js';
 import { GATEWAYS, iconOf, toneFor } from './domain.js';
 import type { TextRuler } from './fit.js';
 import { DIMMABLE, lampsOf, lightLook, litColour, meanHex } from './light.js';
+import type { Own } from './own-values.js';
 import { shorterForms } from './secondary.js';
 import { levelRound, ROUND, ROUND_GAP, type LevelRound } from './round.js';
+import type { GaugeStyle } from './round-gauge.js';
+import type { Band, ThresholdItem } from './thresholds.js';
 
 /*
  * Rounds (#113, #224): an entity, or one of a room's sets, as a 44 round — lit in its tone with a ring of its level
  * while on, the dashed ring out of reach — whose tap turns it on and off and whose hold opens it, saying its state in a
- * pill where asked (#205). One engine for every card that draws them: a room's quick actions, the Rounds card, a row's
- * rounds (`rounds-row.ts`). Its own chunk with the room's quick actions (`quick-actions`), fetched with the families
- * as the bundle starts.
+ * pill or a key where asked (#205), its reading drawn on it as a gauge where it names one (#257, `round-gauge.ts`).
+ * One engine for every card that draws them: a room's quick actions, the Rounds card, a row's rounds
+ * (`rounds-row.ts`), a line of them across a card (`roundsAcross`). Its own chunk with the room's quick actions
+ * (`quick-actions`), fetched with the families as the bundle starts.
  */
 
 /** A room's own sets a round may stand for, each by the domain its devices are of. */
@@ -72,6 +76,30 @@ export interface RoundSpec {
   double_tap_action?: ActionConfig;
   /** Its state beside or under its glyph (#205); default: its card's. */
   show_state?: boolean;
+  /**
+   * Its reading drawn on it as a gauge (1.26, #257): an arc round its edge, an arc from zero, a sector, a flood; none
+   * by default. An entity's round alone: a set has no one reading.
+   */
+  gauge?: GaugeStyle;
+  /**
+   * The gauge's range, each a number, an entity or a template: the entity's own `min` and `max` by default, 0 to 100
+   * for a share (a percentage, a battery, a humidity); from zero, `min` is `max` below it. None known, its track alone.
+   */
+  min?: number | string;
+  max?: number | string;
+  /** The decimals its reading is said and shown in, 0 to 3; default: the entity's own. */
+  decimals?: number;
+  /** An attribute its reading is read from, in its state's place (`current_temperature`, `battery_level`). */
+  attribute?: string;
+  /** The gauge's thresholds: its reading's band colours it, its icon is the round's and its label is said. */
+  thresholds?: readonly ThresholdItem[];
+}
+
+/** What a round's gauge asks of its card (every `Card`): a figure of its own, a reading's band, another draw. */
+export interface GaugeCard {
+  ownFigure(raw: unknown, unit: string, entityId?: string): Own<number>;
+  band(own: object | undefined, view: EntityView, reading?: number | null): Band | undefined;
+  requestUpdate(): void;
 }
 
 /** A config's entry as a round: a set's word, an entity's id, or an entry; anything else none. */
@@ -123,8 +151,13 @@ export interface RoundsHost {
   readonly destination?: string | undefined;
   /** The card's ruler: the words and pills it lays out, in the card's own classes. */
   readonly ruler: Pick<TextRuler, 'pill' | 'width'>;
-  /** The card's root, which wears the pills' sheet once one is drawn. */
+  /** The card's root, which wears the rounds' sheet once a state is said, and the gauges' once one is drawn. */
   readonly root: Node | undefined;
+  /**
+   * The card itself, where its rounds may draw a gauge (1.26, #257): a range that names an entity or a template, and
+   * thresholds, are read through it; none, a gauge reads its range's numbers alone.
+   */
+  readonly card?: GaugeCard | undefined;
 }
 
 /** Rounds drawn in the room a card gives them, and what they take of its line: their width and 12 before. */
@@ -217,12 +250,28 @@ function saidOf(
     return [words, ...shorterForms(hass, view, words)];
   }
   const { value, unit } = valueParts(hass, view);
-  const text = unit ? `${value} ${unit}` : value;
+  const forms = figureForms(value, unit);
   // a figure keeps its unit in every form: the degree alone, a count's short words with the unit it was written in
-  return unit.startsWith('°')
-    ? [text, `${value}°`]
-    : [text, ...shorterForms(hass, view, text).filter((form) => unit && form.endsWith(` ${unit}`))];
+  return forms.length > 1
+    ? forms
+    : [
+        ...forms,
+        ...shorterForms(hass, view, forms[0] ?? '').filter(
+          (form) => unit && form.endsWith(` ${unit}`),
+        ),
+      ];
 }
+
+/**
+ * A figure and its unit in the forms a round says them in, longest first: whole, then a temperature's or an angle's
+ * with its degree alone ("21.5°") — never a rate's, whose unit says more ("0.4 °C/h").
+ */
+export const figureForms = (figure: string, unit: string): string[] =>
+  !unit
+    ? [figure]
+    : /^°[CF]?$/.test(unit)
+      ? [`${figure} ${unit}`, `${figure}°`]
+      : [`${figure} ${unit}`];
 
 /** States a blind moves in: a tap then stops it. */
 const MOVING: ReadonlySet<string> = new Set(['opening', 'closing']);
@@ -448,8 +497,50 @@ export const roundTap = (
     ? TOGGLE
     : MORE_INFO);
 
-/** A round as drawn, and its state's forms where it says it (longest first). */
-export type Round = LevelRound & { readonly said?: readonly string[] | undefined };
+/**
+ * A round as drawn, its state's forms where it says it (longest first), and what a reader hears of its state where it
+ * draws a gauge (its reading and its band's name), said or not.
+ */
+export type Round = LevelRound & {
+  readonly said?: readonly string[] | undefined;
+  readonly heard?: string | undefined;
+};
+
+/**
+ * What draws a round's gauge (`round-gauge.ts`, a chunk of its own, 1.26, #257), once the first card whose rounds
+ * name one has fetched it; `null` where it cannot be fetched: its rounds then stay rounds.
+ */
+let gauges: typeof import('./round-gauge.js') | null | undefined;
+let fetchingGauges: Promise<void> | undefined;
+
+/** The gauges' fetch, the first frame of a card that names one waiting on it (`Card.wearing`); none once it is over. */
+export const gaugesLanding = (): Promise<void> | undefined =>
+  gauges === undefined
+    ? (fetchingGauges ??= import('./round-gauge.js').then(
+        (module) => {
+          gauges = module;
+        },
+        () => {
+          gauges = null;
+        },
+      ))
+    : undefined;
+
+/**
+ * The gauge an entity's round names, as read now: none where it names none (or a style there is none of), where the
+ * entity is out of reach (its dashed ring says so), or while the gauges are on their way — its card, where it gave
+ * itself, draws again as they land (one named after its first frame: an editor's).
+ */
+function gaugeOf(host: RoundsHost, item: RoundSpec, view: EntityView) {
+  if (!item.gauge || !isUsable(view)) return undefined;
+  if (!gauges) {
+    void gaugesLanding()?.then(() => host.card?.requestUpdate());
+    return undefined;
+  }
+  if (!gauges.GAUGES.includes(item.gauge)) return undefined;
+  gauges.wearGauge(host.root);
+  return gauges.readGauge(host, item, view);
+}
 
 /**
  * A round as drawn: its name and glyph (its set's, else its entity's), on while any of it is, its ring the level of
@@ -457,7 +548,8 @@ export type Round = LevelRound & { readonly said?: readonly string[] | undefined
  * (a set of lights in what is lit, as the room's lights' row; else its own, else its kind's), its tap (on and off where
  * its card's rule flips its kind — every set, and what `toggles` names — else its details; none where none of it can,
  * and then it is drawn as one that cannot), its hold (its details) and, where it says it (its own `show_state`, else
- * its card's), its state.
+ * its card's), its state; and its gauge where it names one (#257), whose band's tone, colour and icon are the round's
+ * and whose reading a reader always hears.
  */
 export function roundOf(host: RoundsHost, item: RoundSpec): Round {
   const { hass, look } = host;
@@ -515,21 +607,31 @@ export function roundOf(host: RoundsHost, item: RoundSpec): Round {
     (lamps.length > 1
       ? group !== 'media'
       : LEVELLED.has(first.domain) && levelIn(first) !== undefined);
-  // a reading (never on) that names its own tone or colour wears it, drawn as lit
+  // its gauge, an entity's alone: its band's tone and colour are the round's, its icon the round's glyph
+  const gauge = group ? undefined : gaugeOf(host, item, first);
+  const band = gauge?.band;
+  const worn = band?.tone ?? tone;
+  const accent = band ? band.accent : host.accent(colour);
+  // a reading (never on) that names its own tone or colour wears it, drawn as lit; with a gauge, its gauge wears it
   const toned =
     says &&
+    !gauge &&
     isUsable(first) &&
     !isActiveState(first.domain, 'on') &&
     Boolean(item.tone ?? item.color);
+  const states =
+    says || gauge ? (gauge?.said ?? saidOf(host, views, levelled ? ring : undefined)) : undefined;
   return {
     name,
-    glyph: item.icon ?? (group && !single ? LOOKS[group][1] : iconOf(first)),
+    glyph: band?.icon ?? item.icon ?? (group && !single ? LOOKS[group][1] : iconOf(first)),
     usable: views.some(isUsable),
     on: on || toned,
     level: ring,
-    said: says ? saidOf(host, views, levelled ? ring : undefined) : undefined,
-    tone,
-    accent: host.accent(colour),
+    said: says ? states : undefined,
+    heard: gauge && [states?.[0], band?.label].filter(Boolean).join(', '),
+    gauge: gauge && item.gauge && gauges?.drawGauge(item.gauge, gauge.fraction, worn, accent),
+    tone: worn,
+    accent,
     switches: flip !== undefined,
     // a set none of whose members takes its call reads as it is and takes no tap; two taps its double where set
     onTap: host.tapper(
@@ -573,7 +675,7 @@ const PILLS = css`
     white-space: nowrap;
     color: var(--fluvy-text);
   }
-  /* a state's word that what the card sets it in cannot hold ends in an ellipsis (\`keyStates\`); a figure is never cut */
+  /* a state's word its key cannot hold ends in an ellipsis (\`keyStates\`); a figure is never cut */
   .lt-bulb > .lt-said {
     min-width: 0;
     max-width: 100%;
@@ -644,7 +746,7 @@ const BESIDE_SIDES = 56;
 const KEY_SIDES = [24, 16] as const;
 /** A key's least width where the card sets it: as wide as it is tall, never a sliver. */
 export const KEY = 64;
-/** …and a pill's, its words beside its glyph: the glyph and its 8, the 12 a side, and words a little wider than a round. */
+/** …and a pill's, its words beside its glyph: the glyph and its 8, the 12 a side, and words a little over a round's. */
 export const KEY_BESIDE = 96;
 /** What stands before a pill's words where the card centres both in it: its glyph and the 8 after it. */
 const GLYPH = 28;
@@ -731,8 +833,14 @@ export function keyStates(
   );
 }
 
-/** What a reader hears for a round: its name, and its state whole where it is asked to say it, drawn or not. */
-const spoken = ({ name, said }: Round): string => (said?.[0] ? `${name}, ${said[0]}` : name);
+/**
+ * What a reader hears for a round: its name, and its state whole where it is asked to say it, drawn or not; a
+ * gauge's reading always, and its band's name ("Drift, −0.24 °C/h, Cooling").
+ */
+export const spoken = ({ name, said, heard }: Round): string => {
+  const state = heard ?? said?.[0];
+  return state ? `${name}, ${state}` : name;
+};
 
 /**
  * A round drawn with the state it says (none: a round; '': its key or its pill with its glyph alone), as wide as its

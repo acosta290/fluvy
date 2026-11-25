@@ -1849,7 +1849,13 @@
     "quick_states_help": "Bajo o junto a cada icono: una lectura con su unidad, una puerta abierta o cerrada, el brillo de una luz.",
     "quick_state_position": "Sus estados",
     "under": "Bajo el icono",
-    "beside": "Junto al icono"
+    "beside": "Junto al icono",
+    "gauge_help": "Necesita un rango: el de la entidad, de 0 a 100 si es un porcentaje, o el mínimo y el máximo de abajo",
+    "gauge_arc": "Arco",
+    "gauge_zero_arc": "Desde cero",
+    "gauge_sector": "Sector",
+    "gauge_fill": "Relleno",
+    "attribute": "Atributo"
   },
   "production": {
     "production": "Producción",

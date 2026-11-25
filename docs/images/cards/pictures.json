@@ -140,17 +140,17 @@
     "height": 920
   },
   "rounds": {
-    "example": "68479628e45c",
+    "example": "1ee2394ab28c",
     "width": 784,
     "height": 352
   },
   "rounds.row": {
-    "example": "4cf48b5ebf52",
+    "example": "fe7eb8d4646c",
     "width": 784,
     "height": 968
   },
   "rounds.labels": {
-    "example": "56050b0cab2a",
+    "example": "2345d36112a5",
     "width": 784,
     "height": 632
   },

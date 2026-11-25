@@ -480,10 +480,30 @@ describe('the Rooms card (#225)', () => {
       'tone',
       'color',
       'show_state',
+      'gauge',
+      'min',
+      'max',
+      'attribute',
+      'decimals',
       'tap_action',
       'hold_action',
       'double_tap_action',
     ]);
+    // its gauge from a dropdown, in its words (#257): its thresholds are YAML's in a list inside a room's form
+    expect(fields['gauge']?.selector).toEqual({
+      select: {
+        mode: 'dropdown',
+        options: [
+          { value: 'arc', label: 'Arc' },
+          { value: 'zero', label: 'From zero' },
+          { value: 'sector', label: 'Sector' },
+          { value: 'fill', label: 'Fill' },
+        ],
+      },
+    });
+    expect(
+      ['gauge', 'min', 'max', 'attribute', 'decimals'].map((key) => fields[key]?.label),
+    ).toEqual(['Gauge', 'Minimum', 'Maximum', 'Attribute', 'Decimals']);
     // a switch for its state (a choice's words would be written as they are), Home Assistant's actions for its taps,
     // a double tap nothing until set; each in its words
     expect(fields['show_state']?.selector).toEqual({ boolean: {} });

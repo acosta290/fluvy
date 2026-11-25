@@ -30,6 +30,8 @@ export interface LevelRound {
   readonly onHold: (() => void) | undefined;
   /** Where it stands among rounds placed one by one (`left`, `top`). */
   readonly place?: string | undefined;
+  /** A gauge of its reading (1.26, #257: `round-gauge.ts`'s layer), drawn under its glyph in its ring's place. */
+  readonly gauge?: TemplateResult | undefined;
   /** What it says of its state (#205): the round grows into a pill as wide as `width` that holds its words beside its
    * glyph, or a key that holds them `under` it, in the rounds' own sheet (`rounds.ts`), and has no ring (the words
    * say its level); no words, its glyph alone in it. */
@@ -40,8 +42,9 @@ export interface LevelRound {
 /**
  * A round (`lt-bulb`): its glyph; on, its colour's fill and a 2 px ring of its level 4 inside its edge, from the top;
  * off, the neutral circle; unreadable, the dashed ring; a pill or a key with its words where it says its state (a
- * state's word, `data-word`, may end in an ellipsis; a figure never). A tap is its own, a hold its details: a press on
- * it never reaches what lies under it (the room's button, a head's).
+ * state's word, `lt-said`, may end in an ellipsis; a figure never); its gauge, where it has one, first in it, under
+ * its glyph and its words. A tap is its own, a hold its details: a press on it never reaches what lies under it (the
+ * room's button, a head's).
  */
 export function levelRound(round: LevelRound): TemplateResult {
   const tone: Tone = !round.usable ? 'off' : round.on ? round.tone : 'neutral';
@@ -62,11 +65,11 @@ export function levelRound(round: LevelRound): TemplateResult {
     @click=${clickOwn}
     @contextmenu=${preventMenu}
   >
-    ${icon(round.glyph)}
+    ${round.gauge}${icon(round.glyph)}
     ${
       said
-        ? html`<span class="lt-said" data-word>${said.text}</span>`
-        : round.on
+        ? html`<span class="lt-said">${said.text}</span>`
+        : round.on && !round.gauge
           ? svg`<svg class="lt-ring" viewBox="0 0 ${ROUND} ${ROUND}" aria-hidden="true"><circle cx=${ROUND / 2} cy=${ROUND / 2} r=${RING} stroke-dasharray="${((RING_LENGTH * round.level) / 100).toFixed(2)} ${RING_LENGTH.toFixed(2)}"></circle></svg>`
           : nothing
     }

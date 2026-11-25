@@ -886,7 +886,13 @@
     "quick_states_help": "各アイコンの下または横に、単位付きの測定値、ドアの開閉、照明の明るさを表示します。",
     "quick_state_position": "状態の位置",
     "under": "アイコンの下",
-    "beside": "アイコンの横"
+    "beside": "アイコンの横",
+    "gauge_help": "範囲が必要です。エンティティ自身の範囲、パーセントなら 0 から 100、または下の最小と最大を使います。",
+    "gauge_arc": "円弧",
+    "gauge_zero_arc": "ゼロから",
+    "gauge_sector": "扇形",
+    "gauge_fill": "塗りつぶし",
+    "attribute": "属性"
   },
   "readouts": {
     "rising": "上昇中",

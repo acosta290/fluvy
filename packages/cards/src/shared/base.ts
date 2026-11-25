@@ -130,22 +130,21 @@ export const MORE_INFO: ActionConfig = { action: 'more-info' };
  * that cannot be fetched leaves every reading in its card's own colours.
  */
 let reader: typeof import('./thresholds.js') | undefined;
-let fetchingReader: Promise<void> | undefined;
-/** Whether the fetch is over, landed or failed: a first frame never waits on one that cannot land. */
-let readerSettled = false;
-function fetchReader(): Promise<void> {
-  fetchingReader ??= import('./thresholds.js')
-    .then(
-      (module) => {
-        reader = module;
-      },
-      () => undefined,
-    )
-    .finally(() => {
-      readerSettled = true;
-    });
-  return fetchingReader;
-}
+const readerChunk = wornFrom(
+  () => import('./thresholds.js'),
+  (module) => {
+    reader = module;
+  },
+);
+
+/**
+ * What draws a round's gauge (1.26, #257: `round-gauge.ts`), fetched through the rounds' own module by the first card
+ * whose config names one; over once it has landed or failed, as the reader's is.
+ */
+const gaugesChunk = wornFrom(
+  () => import('./rounds.js').then((rounds) => rounds.gaugesLanding()),
+  () => undefined,
+);
 
 /** Whether a config or an item names thresholds. */
 const namesThresholds = (own: unknown): own is { readonly thresholds: readonly unknown[] } => {
@@ -314,7 +313,8 @@ export abstract class Card<C extends FluvyCardConfig = FluvyCardConfig> extends 
   /**
    * A card whose config names thresholds, or an item of a list it holds, draws its first frame once their reader is
    * here (`thresholds`), never in its own colours a moment before; a card that takes rows and lists some, once their
-   * engine is (`extraRows`), never without them a moment before.
+   * engine is (`extraRows`), never without them a moment before; one a round of which names a gauge, wherever in its
+   * config, once what draws it is (#257), never as a plain round first.
    */
   protected override wearing(): Promise<void> | undefined {
     const config = this.config as Readonly<Record<string, unknown>> | undefined;
@@ -323,9 +323,12 @@ export abstract class Card<C extends FluvyCardConfig = FluvyCardConfig> extends 
       Object.values(config ?? {}).some((list) => Array.isArray(list) && list.some(namesThresholds));
     return (
       super.wearing() ??
-      (asks && !readerSettled ? fetchReader() : undefined) ??
+      (asks && !readerChunk.settled ? readerChunk.fetch() : undefined) ??
       ((this.constructor as typeof Card).takesRows && listedRows(this.config) && !rowsChunk.settled
         ? rowsChunk.fetch()
+        : undefined) ??
+      (!gaugesChunk.settled && /"gauge":"(arc|zero|sector|fill)"/.test(JSON.stringify(config))
+        ? gaugesChunk.fetch()
         : undefined)
     );
   }
@@ -354,7 +357,7 @@ export abstract class Card<C extends FluvyCardConfig = FluvyCardConfig> extends 
   ): Thresholds | undefined {
     if (!namesThresholds(own)) return undefined;
     if (!reader) {
-      if (!readerSettled) void fetchReader().then(() => this.requestUpdate());
+      if (!readerChunk.settled) void readerChunk.fetch().then(() => this.requestUpdate());
       return undefined;
     }
     return reader.thresholdsOf(own.thresholds, unit, {
@@ -363,12 +366,11 @@ export abstract class Card<C extends FluvyCardConfig = FluvyCardConfig> extends 
     });
   }
 
-  /** The band `view`'s reading is in by `own`'s thresholds (`thresholds`), its template asked with the view's entity. */
-  protected band(
-    own: object | undefined,
-    view: EntityView,
-    reading = view.number,
-  ): Band | undefined {
+  /**
+   * The band `view`'s reading is in by `own`'s thresholds (`thresholds`), its template asked with the view's entity.
+   * A round's gauge asks it of its card too (`GaugeCard`).
+   */
+  band(own: object | undefined, view: EntityView, reading = view.number): Band | undefined {
     return this.thresholds(own, view.unit, view.id)?.band(reading);
   }
 
@@ -415,9 +417,9 @@ export abstract class Card<C extends FluvyCardConfig = FluvyCardConfig> extends 
    * A figure of the card's own (1.25, #253): a number, an entity's reading in `unit` (watched while it is read) or a
    * template's answer, asked with `entityId` as its entity (`readFigure`). A card asks for each of its figures every
    * render, whether it shows or not: a template no render asks for is let go, and subscribed to again (its answer
-   * pending) the next time it is.
+   * pending) the next time it is. A round's gauge asks its range of its card too (`GaugeCard`).
    */
-  protected ownFigure(raw: unknown, unit: string, entityId?: string): Own<number> {
+  ownFigure(raw: unknown, unit: string, entityId?: string): Own<number> {
     return readFigure(raw, unit, this.ownHost(entityId));
   }
 

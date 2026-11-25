@@ -208,6 +208,12 @@ An item is an entity id, or a map with `entity` and any of these fields.
 | `tone` | The item’s colour from the palette’s tones. `accent` · `light` · `heat` · `cool` · `dry` · `fan` · `water` · `solar` · `grid` · `media` · `presence` · `armed` · `battery` · `house` · `gas` · `vehicle` (Car) · `neutral` · `ok` (Good) · `warning` · `danger`. |
 | `color` | The item’s colour, in place of the one the card gives it. |
 | `show_state` | Shows this quick action’s state in its round, or hides it, whatever the card says. `true` (On) · `false` (Off). |
+| `gauge` | Draws the round’s reading on it as a gauge: an arc round its edge, an arc from zero, a sector or a flood. `arc` · `zero` (From zero) · `sector` · `fill`. |
+| `min` | The bottom of its gauge’s range: a figure, an entity or a template. Left out, the entity’s own or 0; from zero, the maximum below it. |
+| `max` | The top of its gauge’s range: a figure, an entity or a template. Left out, the entity’s own, or 100 for a percentage. |
+| `attribute` | An attribute its gauge reads in place of the state. |
+| `decimals` | How many decimals its gauge’s reading has. 0 to 3. |
+| `thresholds` | Thresholds of its gauge: the band its reading is in colours it, gives the round its icon and is read out by its label. |
 | **Interactions** |  |
 | `tap_action` | What a tap on the item does. |
 | `hold_action` | What a long press on the item does. |

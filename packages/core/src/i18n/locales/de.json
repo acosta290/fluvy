@@ -1849,7 +1849,13 @@
     "quick_states_help": "Unter oder neben jedem Symbol: ein Messwert mit Einheit, eine Tür offen oder geschlossen, die Helligkeit eines Lichts.",
     "quick_state_position": "Position des Status",
     "under": "Unter dem Symbol",
-    "beside": "Neben dem Symbol"
+    "beside": "Neben dem Symbol",
+    "gauge_help": "Braucht einen Bereich: den der Entität, 0 bis 100 bei Prozent oder Minimum und Maximum unten",
+    "gauge_arc": "Bogen",
+    "gauge_zero_arc": "Ab null",
+    "gauge_sector": "Sektor",
+    "gauge_fill": "Füllung",
+    "attribute": "Attribut"
   },
   "production": {
     "production": "Erzeugung",

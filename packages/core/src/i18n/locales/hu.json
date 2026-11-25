@@ -886,7 +886,13 @@
     "quick_states_help": "Minden ikon alatt vagy mellett: egy mért érték a mértékegységével, egy ajtó nyitva vagy zárva, egy lámpa fényereje.",
     "quick_state_position": "Az állapot helye",
     "under": "Az ikon alatt",
-    "beside": "Az ikon mellett"
+    "beside": "Az ikon mellett",
+    "gauge_help": "Tartomány kell hozzá: az entitásé, százaléknál 0-tól 100-ig, vagy az alábbi minimum és maximum",
+    "gauge_arc": "Ív",
+    "gauge_zero_arc": "Nullától",
+    "gauge_sector": "Körcikk",
+    "gauge_fill": "Kitöltés",
+    "attribute": "Attribútum"
   },
   "readouts": {
     "rising": "emelkedik",

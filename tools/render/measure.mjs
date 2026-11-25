@@ -29,7 +29,7 @@
  * `name` — never a state or a status line's: a class that says `sub`, `line`, `state` or `status`; a `title` that holds
  * the words is no proof, a head's button carries one wherever it is cut), or is one the house gives (an entity's, a
  * device's, an area's, a person's, what a player plays) or a card's config (its `name`, its `title`): a card writes it
- * as it is. One more box may end in one: a round's state in its key (`data-word`, 1.26), whose word a key too narrow for
+ * as it is. One more box may end in one: a round's state in its key (`.lt-said`, 1.26), whose word a key too narrow for
  * it cuts ("Geschlos…") and whose figure is never cut. Text cut with an ellipsis — or a line clamp's — is read
  * where the cut falls: a figure, a unit or a percentage cut anywhere (`cut-figure`: "Schauer · 6…"), a word inside a
  * button, a chip, a badge, a heading, a title, a date or a state (`ellipsis`), and any other word that is no name — a
@@ -673,7 +673,7 @@ function audit(opts) {
    * `name`: `'declared'`). A `title` that carries the words whole is no name's proof: a head's button carries its
    * title whole wherever it is cut, the card's own words ("Flights nearby") as much as a person's; only `data-name`
    * says the words are a person's own. A state or a status line (a class that says `sub`, `line`, `state` or
-   * `status`: what a thing is doing, "Préchauffage 7…") is never a name. A round's state in its key (`data-word`) is
+   * `status`: what a thing is doing, "Préchauffage 7…") is never a name. A round's state in its key (`.lt-said`) is
    * no name either, but its word may be cut as one is (`'word'`): its figure is still held whole.
    */
   const cls = (node) => (typeof node.className === 'string' ? node.className : '');
@@ -685,7 +685,7 @@ function audit(opts) {
   const namedBox = (el, frame) => {
     for (let node = el; node && node !== frame; node = up(node)) {
       if (node.hasAttribute?.('data-name') || /name/i.test(cls(node))) return 'declared';
-      if (node.hasAttribute?.('data-word')) return 'word';
+      if (/\blt-said\b/.test(cls(node))) return 'word';
       if (statusLine(node)) return false;
       if (node.tagName === 'BUTTON' || node.getAttribute?.('role') === 'button') return false;
     }

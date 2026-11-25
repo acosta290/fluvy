@@ -168,15 +168,20 @@ export const GALLERY: Readonly<Record<string, Example>> = {
     variants: { compact: {} },
   },
   'fluvy-rounds-card': {
-    // the reporter's own (#224)
+    // the reporter's own (#224), two of them with a gauge (#257): a battery's flood, a warning under 20 %, and the
+    // air's humidity as an arc
     config: {
       type: 'custom:fluvy-rounds-card',
       title: 'Quick picks',
       items: [
         'switch.kitchen_light',
-        'switch.washer',
+        {
+          entity: 'sensor.tablet_battery',
+          gauge: 'fill',
+          thresholds: [{ value: 20, below: true, tone: 'warning' }],
+        },
         'binary_sensor.kitchen_window',
-        'binary_sensor.motion_hall',
+        { entity: 'sensor.lounge_humidity', gauge: 'arc' },
         'lock.front_door',
         'switch.ghost',
       ],

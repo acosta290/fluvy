@@ -15,9 +15,15 @@ type: custom:fluvy-rounds-card
 title: Quick picks
 items:
   - switch.kitchen_light
-  - switch.washer
+  - entity: sensor.tablet_battery
+    gauge: fill
+    thresholds:
+      - value: 20
+        below: true
+        tone: warning
   - binary_sensor.kitchen_window
-  - binary_sensor.motion_hall
+  - entity: sensor.lounge_humidity
+    gauge: arc
   - lock.front_door
   - switch.ghost
 ```
@@ -50,9 +56,15 @@ show_names: false
 align: fill
 items:
   - switch.kitchen_light
-  - switch.washer
+  - entity: sensor.tablet_battery
+    gauge: fill
+    thresholds:
+      - value: 20
+        below: true
+        tone: warning
   - binary_sensor.kitchen_window
-  - binary_sensor.motion_hall
+  - entity: sensor.lounge_humidity
+    gauge: arc
   - lock.front_door
   - switch.ghost
 names: full
@@ -134,6 +146,12 @@ An item is an entity id, or a map with `entity` and any of these fields.
 | `tone` | The item’s colour from the palette’s tones. `accent` · `light` · `heat` · `cool` · `dry` · `fan` · `water` · `solar` · `grid` · `media` · `presence` · `armed` · `battery` · `house` · `gas` · `vehicle` (Car) · `neutral` · `ok` (Good) · `warning` · `danger`. |
 | `color` | The item’s colour, in place of the one the card gives it. |
 | `show_state` | Shows this round’s state under its icon, or hides it, whatever the layout says. `true` (On) · `false` (Off). |
+| `gauge` | Draws the round’s reading on it as a gauge: an arc round its edge, an arc from zero, a sector or a flood. `arc` · `zero` (From zero) · `sector` · `fill`. |
+| `min` | The bottom of its gauge’s range: a figure, an entity or a template. Left out, the entity’s own or 0; from zero, the maximum below it. |
+| `max` | The top of its gauge’s range: a figure, an entity or a template. Left out, the entity’s own, or 100 for a percentage. |
+| `attribute` | An attribute its gauge reads in place of the state. |
+| `decimals` | How many decimals its gauge’s reading has. 0 to 3. |
+| `thresholds` | Thresholds of its gauge: the band its reading is in colours it, gives the round its icon and is read out by its label. |
 | **Interactions** |  |
 | `tap_action` | What a tap on the item does. |
 | `hold_action` | What a long press on the item does. |
@@ -163,6 +181,48 @@ items:
 - A hold opens the details.
 - `variant`: `rounds` (in lines), `labels` (each with its state under it) or `row` (a list row each, the row its tap).
 - `columns` caps the rounds a line; `align` stands them from the start, in the middle or from edge to edge.
+
+### A gauge on a round
+
+A round can draw its reading on itself: an arc round its edge, an arc from zero, a sector or a flood.
+
+```yaml
+type: custom:fluvy-rounds-card
+items:
+  - entity: sensor.tablet_battery
+    gauge: fill # floods from its foot
+    thresholds:
+      - value: 20
+        below: true
+        tone: warning # low under 20 %
+  - entity: sensor.lounge_humidity
+    gauge: arc # round its edge, from the top
+  - entity: sensor.hot_water
+    gauge: sector # a slice of the round
+    min: 30
+    max: 90
+  - entity: sensor.bedroom_drift # °C an hour, from −2 to +2
+    gauge: zero # from the top: left under zero, right over it
+    max: 2
+    decimals: 2
+    thresholds:
+      - value: 0
+        below: true
+        tone: cool
+        label: Cooling
+      - value: 0
+        tone: heat
+        label: Heating
+```
+
+- `min` and `max` take a number, an entity or a template. Left out, the entity's own range is used, or 0 to 100 for a
+  percentage; with `zero`, `min` is `max` below zero. With no range known the gauge draws its track alone.
+- `attribute` reads a number from an attribute in place of the state (`current_temperature`); `decimals` sets how its
+  reading is written.
+- `thresholds` colour the gauge by its reading. A band's `icon` becomes the round's and its `label` is read out with
+  the reading.
+- The gauge is the round's, so it draws wherever rounds do: a room's `quick_actions`, the Rooms card, a thermostat's
+  `rounds`, a car's small icons. A round that says its state draws it on its key.
 
 <details>
 <summary>Older names the card still reads</summary>

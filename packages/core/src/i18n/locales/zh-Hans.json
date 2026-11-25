@@ -3189,7 +3189,13 @@
     "quick_states_help": "在每个图标下方或旁边：带单位的读数、门的开关、灯的亮度。",
     "quick_state_position": "状态位置",
     "under": "图标下方",
-    "beside": "图标旁边"
+    "beside": "图标旁边",
+    "gauge_help": "需要一个范围：实体自身的范围，百分比为 0 到 100，或下方的最小值和最大值",
+    "gauge_arc": "圆弧",
+    "gauge_zero_arc": "从零开始",
+    "gauge_sector": "扇形",
+    "gauge_fill": "填充",
+    "attribute": "属性"
   },
   "slider": {
     "mute": "静音",

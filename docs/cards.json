@@ -4581,9 +4581,22 @@
         "title": "Quick picks",
         "items": [
           "switch.kitchen_light",
-          "switch.washer",
+          {
+            "entity": "sensor.tablet_battery",
+            "gauge": "fill",
+            "thresholds": [
+              {
+                "value": 20,
+                "below": true,
+                "tone": "warning"
+              }
+            ]
+          },
           "binary_sensor.kitchen_window",
-          "binary_sensor.motion_hall",
+          {
+            "entity": "sensor.lounge_humidity",
+            "gauge": "arc"
+          },
           "lock.front_door",
           "switch.ghost"
         ]
@@ -4603,9 +4616,22 @@
           "title": "Quick picks",
           "items": [
             "switch.kitchen_light",
-            "switch.washer",
+            {
+              "entity": "sensor.tablet_battery",
+              "gauge": "fill",
+              "thresholds": [
+                {
+                  "value": 20,
+                  "below": true,
+                  "tone": "warning"
+                }
+              ]
+            },
             "binary_sensor.kitchen_window",
-            "binary_sensor.motion_hall",
+            {
+              "entity": "sensor.lounge_humidity",
+              "gauge": "arc"
+            },
             "lock.front_door",
             "switch.ghost"
           ],
@@ -4616,9 +4642,22 @@
           "title": "Quick picks",
           "items": [
             "switch.kitchen_light",
-            "switch.washer",
+            {
+              "entity": "sensor.tablet_battery",
+              "gauge": "fill",
+              "thresholds": [
+                {
+                  "value": 20,
+                  "below": true,
+                  "tone": "warning"
+                }
+              ]
+            },
             "binary_sensor.kitchen_window",
-            "binary_sensor.motion_hall",
+            {
+              "entity": "sensor.lounge_humidity",
+              "gauge": "arc"
+            },
             "lock.front_door",
             "switch.ghost"
           ],
@@ -4956,6 +4995,51 @@
                 "true": "On",
                 "false": "Off"
               }
+            },
+            {
+              "key": "gauge",
+              "label": "Gauge",
+              "does": "Draws the round’s reading on it as a gauge: an arc round its edge, an arc from zero, a sector or a flood.",
+              "type": "choice",
+              "values": {
+                "arc": "Arc",
+                "zero": "From zero",
+                "sector": "Sector",
+                "fill": "Fill"
+              }
+            },
+            {
+              "key": "min",
+              "label": "Minimum",
+              "does": "The bottom of its gauge’s range: a figure, an entity or a template. Left out, the entity’s own or 0; from zero, the maximum below it.",
+              "helper": "A figure, an entity or a template",
+              "type": "text"
+            },
+            {
+              "key": "max",
+              "label": "Maximum",
+              "does": "The top of its gauge’s range: a figure, an entity or a template. Left out, the entity’s own, or 100 for a percentage.",
+              "helper": "A figure, an entity or a template",
+              "type": "text"
+            },
+            {
+              "key": "attribute",
+              "label": "Attribute",
+              "does": "An attribute its gauge reads in place of the state.",
+              "type": "text"
+            },
+            {
+              "key": "decimals",
+              "label": "Decimals",
+              "does": "How many decimals its gauge’s reading has.",
+              "type": "number",
+              "range": "0 to 3"
+            },
+            {
+              "key": "thresholds",
+              "label": "Thresholds",
+              "does": "Thresholds of its gauge: the band its reading is in colours it, gives the round its icon and is read out by its label.",
+              "type": "object"
             },
             {
               "key": "tap_action",
@@ -13676,6 +13760,51 @@
               }
             },
             {
+              "key": "gauge",
+              "label": "Gauge",
+              "does": "Draws the round’s reading on it as a gauge: an arc round its edge, an arc from zero, a sector or a flood.",
+              "type": "choice",
+              "values": {
+                "arc": "Arc",
+                "zero": "From zero",
+                "sector": "Sector",
+                "fill": "Fill"
+              }
+            },
+            {
+              "key": "min",
+              "label": "Minimum",
+              "does": "The bottom of its gauge’s range: a figure, an entity or a template. Left out, the entity’s own or 0; from zero, the maximum below it.",
+              "helper": "A figure, an entity or a template",
+              "type": "text"
+            },
+            {
+              "key": "max",
+              "label": "Maximum",
+              "does": "The top of its gauge’s range: a figure, an entity or a template. Left out, the entity’s own, or 100 for a percentage.",
+              "helper": "A figure, an entity or a template",
+              "type": "text"
+            },
+            {
+              "key": "attribute",
+              "label": "Attribute",
+              "does": "An attribute its gauge reads in place of the state.",
+              "type": "text"
+            },
+            {
+              "key": "decimals",
+              "label": "Decimals",
+              "does": "How many decimals its gauge’s reading has.",
+              "type": "number",
+              "range": "0 to 3"
+            },
+            {
+              "key": "thresholds",
+              "label": "Thresholds",
+              "does": "Thresholds of its gauge: the band its reading is in colours it, gives the round its icon and is read out by its label.",
+              "type": "object"
+            },
+            {
               "key": "tap_action",
               "label": "Tap action",
               "does": "What a tap on the item does.",
@@ -18005,6 +18134,51 @@
                 "true": "On",
                 "false": "Off"
               }
+            },
+            {
+              "key": "gauge",
+              "label": "Gauge",
+              "does": "Draws the round’s reading on it as a gauge: an arc round its edge, an arc from zero, a sector or a flood.",
+              "type": "choice",
+              "values": {
+                "arc": "Arc",
+                "zero": "From zero",
+                "sector": "Sector",
+                "fill": "Fill"
+              }
+            },
+            {
+              "key": "min",
+              "label": "Minimum",
+              "does": "The bottom of its gauge’s range: a figure, an entity or a template. Left out, the entity’s own or 0; from zero, the maximum below it.",
+              "helper": "A figure, an entity or a template",
+              "type": "text"
+            },
+            {
+              "key": "max",
+              "label": "Maximum",
+              "does": "The top of its gauge’s range: a figure, an entity or a template. Left out, the entity’s own, or 100 for a percentage.",
+              "helper": "A figure, an entity or a template",
+              "type": "text"
+            },
+            {
+              "key": "attribute",
+              "label": "Attribute",
+              "does": "An attribute its gauge reads in place of the state.",
+              "type": "text"
+            },
+            {
+              "key": "decimals",
+              "label": "Decimals",
+              "does": "How many decimals its gauge’s reading has.",
+              "type": "number",
+              "range": "0 to 3"
+            },
+            {
+              "key": "thresholds",
+              "label": "Thresholds",
+              "does": "Thresholds of its gauge: the band its reading is in colours it, gives the round its icon and is read out by its label.",
+              "type": "object"
             },
             {
               "key": "tap_action",

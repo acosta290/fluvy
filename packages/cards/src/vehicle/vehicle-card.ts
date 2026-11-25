@@ -2155,7 +2155,7 @@ export class FluvyVehicleCard extends Card<VehicleCardConfig> {
       return nothing;
     const look = { ...c, states: c.show_quick_states, beside: c.quick_state_position === 'beside' };
     return html`<div class="vh-quick ${statesUnder(c) ? 'is-under' : ''}">
-      ${roundsAcross({ ...this.host(), look }, this.quickActions(), this.contentWidth)}
+      ${roundsAcross({ ...this.host(), look, card: this }, this.quickActions(), this.contentWidth)}
     </div>`;
   }
 

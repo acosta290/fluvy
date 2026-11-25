@@ -1849,7 +1849,13 @@
     "quick_states_help": "Sotto o accanto a ogni icona: una lettura con la sua unità, una porta aperta o chiusa, la luminosità di una luce.",
     "quick_state_position": "I loro stati",
     "under": "Sotto l’icona",
-    "beside": "Accanto all’icona"
+    "beside": "Accanto all’icona",
+    "gauge_help": "Serve un intervallo: quello dell’entità, da 0 a 100 per una percentuale, oppure il minimo e il massimo qui sotto",
+    "gauge_arc": "Arco",
+    "gauge_zero_arc": "Da zero",
+    "gauge_sector": "Settore",
+    "gauge_fill": "Riempimento",
+    "attribute": "Attributo"
   },
   "production": {
     "production": "Produzione",

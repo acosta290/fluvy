@@ -1849,7 +1849,13 @@
     "quick_states_help": "Onder of naast elk icoon: een meetwaarde met eenheid, een deur open of dicht, de helderheid van een lamp.",
     "quick_state_position": "Hun status",
     "under": "Onder het icoon",
-    "beside": "Naast het icoon"
+    "beside": "Naast het icoon",
+    "gauge_help": "Heeft een bereik nodig: dat van de entiteit, 0 tot 100 bij een percentage, of het minimum en maximum hieronder",
+    "gauge_arc": "Boog",
+    "gauge_zero_arc": "Vanaf nul",
+    "gauge_sector": "Sector",
+    "gauge_fill": "Vulling",
+    "attribute": "Attribuut"
   },
   "production": {
     "production": "Opwek",

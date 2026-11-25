@@ -435,6 +435,13 @@ const QUIET = /\/packages\/(core\/src\/look\/quiet|ui\/src\/styles\/(generated\/
 const THRESHOLDS = /\/packages\/cards\/src\/shared\/thresholds\.ts/;
 
 /**
+ * What draws a round's gauge (1.26, #257: the arc, the arc from zero, the sector and the flood, what they read and
+ * their sheet): fetched by the first card whose rounds name one, its first frame waiting for it; a dashboard of plain
+ * rounds never pays for it.
+ */
+const ROUND_GAUGE = /\/packages\/cards\/src\/shared\/round-gauge\.ts/;
+
+/**
  * The controls that set a number in place (1.23, #218: a row's value between − and + on the Entities card, a figure
  * typed on it and on the Helpers card, and their sheet): fetched by the first card that asks for one, its first frame
  * waiting for them; a dashboard whose cards ask for none never pays for them.
@@ -560,7 +567,7 @@ const FORMS =
  * sidebar, the Slider card, the ring, the Cover card, the drive pad, the Vacuum card, the Thermostat card, the platforms' logos, the
  * remote card, the Vehicle card, the Heating schedule card (its sheet on its own), Fluvy's own details, the items card (its sheet on its own), the light card's colours,
  * the Room lights card's rows, what the greeting draws beyond its words, colours worn as they are named, a room's quick actions, the cards' editor, the fields every editor is built of, the view icons, what a see-through
- * card wears, what a quiet one wears, what reads a card's thresholds, what sets a number in place, the slider styles,
+ * card wears, what a quiet one wears, what reads a card's thresholds, what draws a round's gauge, what sets a number in place, the slider styles,
  * the switch styles, the page's background, this device's sidebar beside the page, a list in groups, the icon set's
  * other part, what only the chunks fetched later share, and everything else (Fluvy's packages and Lit) in `core`. The
  * bundle's own entry stays in `fluvy.js`. Rolldown processes the groups in this order; the priorities only say so out
@@ -633,6 +640,7 @@ export const GROUPS = [
   { name: 'glass', test: GLASS },
   { name: 'quiet', test: QUIET },
   { name: 'thresholds', test: THRESHOLDS },
+  { name: 'round-gauge', test: ROUND_GAUGE },
   { name: 'number-controls', test: NUMBER_CONTROLS },
   { name: 'slider-styles', test: SLIDER_STYLES },
   { name: 'switch-styles', test: SWITCH_STYLES },
