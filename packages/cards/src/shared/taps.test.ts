@@ -40,6 +40,10 @@ const STATES = {
     hvac_modes: ['off', 'cool', 'heat'],
     supported_features: 128 + 256,
   }),
+  'climate.landing': state('climate.landing', 'heat', {
+    friendly_name: 'Landing radiator',
+    hvac_modes: ['heat'],
+  }),
 };
 
 /** The house, with the calls and the details it is asked for kept. */
@@ -464,6 +468,23 @@ describe('a circle’s own actions (#179)', () => {
       // drawn off under the finger, until Home Assistant says so
       await (root.host as CardElement).updateComplete;
       expect(root.querySelector('.fv-tile')!.classList.contains('is-on'), size).toBe(false);
+      document.body.replaceChildren();
+    }
+  });
+
+  it('are no buttons where their toggle cannot run: a radiator with neither its own off nor an Off mode', async () => {
+    for (const size of ['large', 'compact', 'mini']) {
+      const { root, heard } = await drawn({
+        type: 'custom:fluvy-tile-card',
+        entity: 'climate.landing',
+        size,
+        tap_action: TOGGLE,
+        icon_tap_action: TOGGLE,
+        hold_action: TOGGLE,
+      });
+      expect(root.querySelector('.fv-ico--tap'), size).toBeNull();
+      expect(root.querySelector('.fv-tile__tap'), size).toBeNull();
+      expect(heard, size).toEqual([]);
       document.body.replaceChildren();
     }
   });

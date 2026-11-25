@@ -950,7 +950,7 @@ export class FluvyTileCard extends Card<TileCardConfig> {
     // what cannot be read cannot be switched: its tap opens the details, its toggle (if asked) goes to Home Assistant;
     // a tap, a hold and a double tap of the tile all run so, in every size
     const runs = (action: ActionConfig | undefined): (() => void) | undefined =>
-      action && actionRuns(action, view.id)
+      action && actionRuns(action, view.id, this.hass)
         ? () => (usable ? this.act(view, lit, action) : this.tap(view.id, action))
         : undefined;
     const holdNow = runs(item.hold_action ?? MORE_INFO);

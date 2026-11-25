@@ -495,7 +495,7 @@ export function roundOf(host: RoundsHost, item: RoundSpec): Round {
       action.action === 'more-info' && !action.entity && !own && host.destination
         ? { ...action, action: 'navigate' as const, navigation_path: host.destination }
         : action;
-    return actionRuns(run, own) ? () => host.run(run, own) : undefined;
+    return actionRuns(run, own, hass) ? () => host.run(run, own) : undefined;
   };
   const tap = roundTap(host, item, first.domain);
   // its own on and off where its tap toggles it, asked first or not

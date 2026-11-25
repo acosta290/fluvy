@@ -1,6 +1,7 @@
 // @vitest-environment happy-dom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
+  actionRuns,
   confirmationOf,
   goBack,
   navigate,
@@ -522,8 +523,7 @@ describe('a toggle, as Home Assistant’s own cards decide it (#252)', () => {
     ['climate.den', ['dry', OWN_OFF], ['climate', 'turn_off']],
     ['climate.den', ['off', OWN_OFF], ['climate', 'turn_on']],
     ['climate.den', ['heat', MODES], ['climate', 'set_hvac_mode', { hvac_mode: 'off' }]],
-    // neither: its own off, for Home Assistant to say why not
-    ['climate.den', ['heat', { hvac_modes: ['heat'] }], ['climate', 'turn_off']],
+    // neither its own off nor an Off mode: nothing turns it off
     ['water_heater.tank', ['eco', { supported_features: 8 }], ['water_heater', 'turn_off']],
     ['water_heater.tank', ['off', { supported_features: 8 }], ['water_heater', 'turn_on']],
     [
@@ -547,6 +547,31 @@ describe('a toggle, as Home Assistant’s own cards decide it (#252)', () => {
     ['group.doors', 'locked', ['homeassistant', 'turn_on']],
   ])('%s that is %j: %j', (entity, stated, call) => {
     expect(toggleService(house({ [entity]: stated }), entity)).toEqual(call);
+  });
+
+  it('turns off nothing that has neither its own off nor an Off mode: no call, no button, nothing to ask', async () => {
+    const heatOnly = house({
+      'climate.landing': ['heat', { hvac_modes: ['heat'] }],
+      'water_heater.tank': ['eco', { operation_list: ['eco', 'performance'] }],
+    });
+    for (const entity of ['climate.landing', 'water_heater.tank']) {
+      expect(toggleService(heatOnly, entity), entity).toBeUndefined();
+      // a surface whose toggle cannot run is no button; without the house, as before
+      expect(actionRuns({ action: 'toggle' }, entity, heatOnly), entity).toBe(false);
+      expect(actionRuns({ action: 'toggle' }, entity), entity).toBe(true);
+      const handed = listen('hass-action');
+      await runAction(card, heatOnly, { action: 'toggle' }, entity);
+      await runAction(card, heatOnly, { action: 'toggle', confirmation: true }, entity);
+      expect(handed, entity).toEqual([]);
+    }
+    expect(callService).not.toHaveBeenCalled();
+    // what can turn off still runs, and what is off still comes on
+    expect(
+      actionRuns({ action: 'toggle' }, 'climate.den', house({ 'climate.den': ['heat', MODES] })),
+    ).toBe(true);
+    expect(
+      actionRuns({ action: 'toggle' }, 'climate.den', house({ 'climate.den': ['off', MODES] })),
+    ).toBe(true);
   });
 
   it('a tap on a cooling unit turns it off, not on', async () => {

@@ -143,9 +143,10 @@ export function offCall(view: EntityView): HassCall | undefined {
  * The call a toggle is, as Home Assistant's own cards decide it: what is off, closed or locked comes on, anything else
  * goes off (a state not known comes on), each by its domain's own service — a cover or a valve opens, a lock unlocks,
  * a running thermostat goes off as it takes it (`offCall`), a vacuum and a mower start or pause, a player asleep wakes
- * where it can, else plays or pauses — never a blind `homeassistant.toggle`.
+ * where it can, else plays or pauses — never a blind `homeassistant.toggle`. None where nothing turns it off: a
+ * thermostat with neither its own off nor an Off mode.
  */
-export function toggleService(hass: HomeAssistant, entityId: string): HassCall {
+export function toggleService(hass: HomeAssistant, entityId: string): HassCall | undefined {
   const view = resolveEntity(hass, entityId);
   const { domain, state } = view;
   const comesOn = view.status !== 'ok' || STATES_OFF.has(state);
@@ -167,7 +168,7 @@ export function toggleService(hass: HomeAssistant, entityId: string): HassCall {
       ];
     case 'climate':
     case 'water_heater':
-      return comesOn ? [domain, onOff] : (offCall(view) ?? [domain, onOff]);
+      return comesOn ? [domain, onOff] : offCall(view);
     case 'scene':
     case 'script':
       return [domain, 'turn_on'];
@@ -197,9 +198,9 @@ export function toggledState(domain: string, on: boolean): string {
   return on ? 'on' : 'off';
 }
 
-export function toggleEntity(hass: HomeAssistant, entityId: string): Promise<unknown> {
-  const [domain, service, data = {}] = toggleService(hass, entityId);
-  return hass.callService(domain, service, data, { entity_id: entityId });
+export async function toggleEntity(hass: HomeAssistant, entityId: string): Promise<unknown> {
+  const call = toggleService(hass, entityId);
+  return call && hass.callService(call[0], call[1], call[2] ?? {}, { entity_id: entityId });
 }
 
 export const TOGGLE_DOMAINS = new Set([
@@ -257,7 +258,7 @@ export function confirmationOf(
 ): ActionConfig['confirmation'] {
   if (action.confirmation !== undefined) return action.confirmation;
   return action.action === 'toggle' && entity !== undefined
-    ? toggleService(hass, entity)[1] === 'unlock' || undefined
+    ? toggleService(hass, entity)?.[1] === 'unlock' || undefined
     : undefined;
 }
 
@@ -275,8 +276,9 @@ function handOver(
 ): void {
   let action = config;
   if (config.action === 'toggle') {
-    if (!entity) return;
-    const [domain, service, data] = toggleService(hass, entity);
+    const call = entity && toggleService(hass, entity);
+    if (!call) return;
+    const [domain, service, data] = call;
     action = {
       ...config,
       action: 'perform-action',
@@ -290,13 +292,18 @@ function handOver(
 
 /**
  * Whether an action has something to do: never `none`, nor more-info or a toggle with no entity to act on (its own or
- * the card's — a card of many has none). A surface that would be drawn as a button asks first: one that does nothing
- * is not drawn.
+ * the card's — a card of many has none), nor, given the house, a toggle with no call (`toggleService`). A surface
+ * that would be drawn as a button asks first: one that does nothing is not drawn.
  */
-export function actionRuns(action: ActionConfig | undefined, fallbackEntity?: string): boolean {
+export function actionRuns(
+  action: ActionConfig | undefined,
+  fallbackEntity?: string,
+  hass?: HomeAssistant,
+): boolean {
   const kind = action?.action ?? 'more-info';
+  const entity = action?.entity ?? fallbackEntity;
   return kind === 'more-info' || kind === 'toggle'
-    ? Boolean(action?.entity ?? fallbackEntity)
+    ? Boolean(entity && (kind !== 'toggle' || !hass || toggleService(hass, entity)))
     : kind !== 'none';
 }
 

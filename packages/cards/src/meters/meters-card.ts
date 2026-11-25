@@ -853,9 +853,9 @@ export class FluvyMetersCard extends Card<MetersCardConfig> {
 
   /** The switch flips at once; the valve or switch is called through the card's own helper. */
   private flip(view: EntityView, next: boolean): void {
-    if (!this.hass) return;
+    const call = this.hass && toggleService(this.hass, view.id);
+    if (!call) return;
     this.expect(view.id, toggledState(view.domain, next));
-    const [domain, service, data] = toggleService(this.hass, view.id);
-    this.call(domain, service, data, view.id);
+    this.call(call[0], call[1], call[2], view.id);
   }
 }

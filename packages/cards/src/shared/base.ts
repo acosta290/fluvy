@@ -416,7 +416,9 @@ export abstract class Card<C extends FluvyCardConfig = FluvyCardConfig> extends 
     action: ActionConfig | null | undefined,
     entityId: string | undefined,
   ): (() => void) | undefined {
-    return action && actionRuns(action, entityId) ? () => this.tap(entityId, action) : undefined;
+    return action && actionRuns(action, entityId, this.hass)
+      ? () => this.tap(entityId, action)
+      : undefined;
   }
 
   /**
