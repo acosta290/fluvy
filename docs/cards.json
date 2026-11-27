@@ -31189,6 +31189,14 @@
           }
         },
         {
+          "key": "plot_height",
+          "label": "Chart height (px)",
+          "does": "The chart’s height in pixels.",
+          "type": "number",
+          "default": 120,
+          "range": "80 to 480, in steps of 4"
+        },
+        {
           "key": "show_head",
           "label": "Show the value now",
           "does": "Shows the value now, large, over the chart.",

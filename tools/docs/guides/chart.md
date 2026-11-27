@@ -97,6 +97,10 @@ tomorrow's prices are out). With `collection_key` it follows a
 `readouts: true` gives two series or more a readout each over the chart, in place of the legend, as the sensor card
 does for several sensors; where a column would cut a name, the legend's lines come back.
 
+`plot_height` sets the chart's height in the full and compact layouts (120 by default, 80 to 480): the card grows or
+shrinks with it. Without it, a card given a fixed number of rows in Home Assistant's Layout tab fills them, its chart
+taking the room.
+
 `thresholds` are written in the first series' unit and colour the series written in it
 ([thresholds](../customising.md#thresholds)); the chart style and its fine keys are the sensor card's
 ([charts](../customising.md#charts)).

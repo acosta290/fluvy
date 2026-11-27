@@ -81,8 +81,9 @@ const BUDGETS = {
   // the round's double tap on its rows and head, #179): measured at 16.6 KB; 16 before. 20 KB since 2026-11-19 (1.23:
   // states as strips under the chart with their colours by state, a history's `stat`, #228): measured at 18.7 KB.
   // 21 KB since 2026-11-25 (1.26, #264: a series' own thresholds, its lowest and highest points, a readout a series
-  // over the chart): measured at 20.6 KB
-  'chart-card': 21_504,
+  // over the chart): measured at 20.6 KB. 22 KB since 2026-11-26 (#285: `plot_height`, and a cell of fixed rows
+  // filled): measured at 21.1 KB
+  'chart-card': 22_528,
   // the energy family: every energy card, the flow's drawing and motion, the model they share, its sheet. 88 KB since
   // 2026-11-15 (1.22, #202, 0.6 KB: the flow's names on three lines and its last-resort lane, Production's badge by the
   // hour, Where it went's words said to a screen reader): measured at 87.0 KB; 87 KB since 2026-11-14 (1.21, #190,

@@ -5,6 +5,12 @@ and the versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- `plot_height` sets the Chart card's chart height (80 to 480 px, 120 by default) in the full and compact layouts, as
+  the Energy usage card's does, and its editor offers it. Without it, a Chart card given a fixed number of rows in
+  Home Assistant's Layout tab fills them, its chart taking the room, where it kept its own height under them.
+
 ## [1.26.0] — 2026-11-26
 
 ### Visible on upgrade

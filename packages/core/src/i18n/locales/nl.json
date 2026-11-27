@@ -3321,6 +3321,7 @@
     "editor.span_helper": "24h, today, today+tomorrow, 7d, of elke 12h of 3d",
     "editor.color_helper": "Leeg: de kleur van de kaart, of bij meerdere de reekskleuren van het palet. De kleuren van het palet volgen het; een kleurnaam of een #hex blijft zoals getypt",
     "editor.highlight_hours": "Uren om uit te lichten",
+    "editor.plot_height": "Grafiekhoogte (px)",
     "editor.show_legend": "Legenda tonen",
     "editor.show_head": "Huidige waarde tonen",
     "editor.kind_states": "Toestanden",

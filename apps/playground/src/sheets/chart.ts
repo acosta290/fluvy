@@ -556,6 +556,13 @@ export const sheet: SheetSpec = {
     { title: 'Chart · four rooms', cards: [ROOMS] },
     { title: 'Chart · compact', cards: [{ ...NORDPOOL, variant: 'compact' }] },
     {
+      title: 'Chart · plot height',
+      cards: [
+        { ...NORDPOOL, plot_height: 240 },
+        { ...NORDPOOL, variant: 'compact', plot_height: 200 },
+      ],
+    },
+    {
       title: 'Chart · tiles',
       cards: [
         { ...NORDPOOL, variant: 'tile', title: 'Price', cols: 6 },

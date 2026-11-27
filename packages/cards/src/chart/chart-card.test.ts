@@ -394,6 +394,55 @@ describe('the Chart card’s height at a 360 column', () => {
       expect(chart?.style.height).toBe('120px');
     }
   });
+
+  it('gives the chart the room a plot_height asks, 80 to 480 on the 4 grid; the tile keeps its spark', async () => {
+    const height = (config: Record<string, unknown>) =>
+      chartHeight({ type: 'custom:fluvy-chart-card', ...config });
+    expect(height({ plot_height: 240 })).toBe(440);
+    expect(height({ variant: 'compact', plot_height: 241 })).toBe(360);
+    expect(height({ variant: 'compact', plot_height: 20 })).toBe(200);
+    expect(height({ variant: 'compact', plot_height: 900 })).toBe(600);
+    expect(height({ variant: 'tile', plot_height: 240 })).toBe(168);
+    const card = await draw({ series: ['sensor.temperature'], plot_height: 240 });
+    expect(root(card).querySelector<HTMLElement>('.ch-chart')?.style.height).toBe('240px');
+    expect(card.getCardSize()).toBe(9);
+  });
+
+  it('fills a cell of the rows the Layout tab fixed, where no plot_height is written', async () => {
+    // the observers watching the cards, told of a cell's box as a browser tells them (happy-dom's never are)
+    const told: ResizeObserverCallback[] = [];
+    vi.stubGlobal(
+      'ResizeObserver',
+      class {
+        constructor(private readonly callback: ResizeObserverCallback) {}
+        observe() {
+          told.push(this.callback);
+        }
+        unobserve() {}
+        disconnect() {}
+      },
+    );
+    const cell = async (config: Record<string, unknown>): Promise<string | undefined> => {
+      told.length = 0;
+      const card = await draw({ series: ['sensor.temperature'], ...config });
+      for (const callback of told)
+        callback(
+          [
+            {
+              target: card,
+              contentRect: { width: 360, height: 480 },
+            } as unknown as ResizeObserverEntry,
+          ],
+          {} as ResizeObserver,
+        );
+      await card.updateComplete;
+      return root(card).querySelector<HTMLElement>('.ch-chart')?.style.height;
+    };
+    // a 480 cell: the card's 320 leaves the chart its 120 and 160 more
+    expect(await cell({ grid_options: { rows: 8 } })).toBe('280px');
+    expect(await cell({ grid_options: { rows: 8 }, plot_height: 200 })).toBe('200px');
+    expect(await cell({ grid_options: { rows: 'auto' } })).toBe('120px');
+  });
 });
 
 describe('a legend of four series or more', () => {
@@ -1111,6 +1160,17 @@ describe('the Chart card’s editor', () => {
     expect(capsIn({ series: ['sensor.temperature'], span: 'today' }).now).toBe(true);
     expect(capsIn({ series: ['weather.home'] }).now).toBe(true);
     expect(capsIn({ series: ['a', 'b'] }).several).toBe(true);
+  });
+
+  it('offers the chart’s height in the full and compact cards, 120 where none is written', () => {
+    const offered = (config: Record<string, unknown>): boolean =>
+      JSON.stringify(visibleFields(FluvyChartCard.getConfigForm().schema, config)).includes(
+        '"plot_height"',
+      );
+    expect(offered({})).toBe(true);
+    expect(offered({ variant: 'compact' })).toBe(true);
+    expect(offered({ variant: 'tile' })).toBe(false);
+    expect(FluvyChartCard.defaults?.({ type: 'x' }, undefined)?.['plot_height']).toBe(120);
   });
 
   it('shows the windows a stepped chart marks by default, and the style’s highlight never', () => {

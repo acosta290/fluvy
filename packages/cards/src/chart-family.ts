@@ -27,19 +27,27 @@ export const readable = (config: LovelaceCardConfig): boolean =>
 export const readsEach = (config: LovelaceCardConfig): boolean =>
   config['readouts'] === true && readable(config);
 
+/** The chart's room: 120, or the `plot_height` written (on the 4 grid, 80 to 480); the tile's spark keeps its own. */
+export function chartPlot(config: LovelaceCardConfig): number {
+  const asked = Number(config['plot_height']);
+  return config['variant'] !== 'tile' && asked > 0
+    ? Math.min(480, Math.max(80, Math.round(asked / 4) * 4))
+    : 120;
+}
+
 /**
  * The Chart card at a 360 column, by its variant and its series alone: the full card 320 — the head, the value row,
  * the chart and its axis — and 44 more where four series or more take two lines: a legend's under the axis, or their
  * readouts' (a line more, where a narrower card lays it one a row, is the plot's); the compact card 240 (the head, the
- * chart, the axis); each 16 more a series drawn as its states (its 12 strip and the 4 over it); the tile 168. At every
- * width, empty, loading or out of reach, it keeps them.
+ * chart, the axis); each 16 more a series drawn as its states (its 12 strip and the 4 over it), and what a
+ * `plot_height` adds to the chart's 120; the tile 168. At every width, empty, loading or out of reach, it keeps them.
  */
 export function chartHeight(config: LovelaceCardConfig): number {
   if (config['variant'] === 'tile') return 168;
-  const strips = 16 * stripCount(config);
-  if (config['variant'] === 'compact') return 240 + strips;
+  const more = 16 * stripCount(config) + chartPlot(config) - 120;
+  if (config['variant'] === 'compact') return 240 + more;
   const lines = config['show_legend'] !== false || readsEach(config);
-  return (seriesCount(config) >= 4 && lines ? 364 : 320) + strips;
+  return (seriesCount(config) >= 4 && lines ? 364 : 320) + more;
 }
 
 export const CHART_FAMILY: readonly FamilyEntry[] = [['fluvy-chart-card', chartHeight]];

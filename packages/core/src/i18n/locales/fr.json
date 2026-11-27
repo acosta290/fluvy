@@ -3321,6 +3321,7 @@
     "editor.span_helper": "24h, today, today+tomorrow, 7d, ou toute durée comme 12h ou 3d",
     "editor.color_helper": "Vide, la couleur de la carte, ou les couleurs des séries de la palette s’il y en a plusieurs. Les couleurs de la palette la suivent ; un nom de couleur ou un #hex reste tel qu’il est saisi",
     "editor.highlight_hours": "Heures à mettre en avant",
+    "editor.plot_height": "Hauteur du graphique (px)",
     "editor.show_legend": "Afficher la légende",
     "editor.show_head": "Afficher la valeur actuelle",
     "editor.kind_states": "États",

@@ -3321,6 +3321,7 @@
     "editor.span_helper": "24h、today、today+tomorrow、7d、または12hや3dのような任意の期間",
     "editor.color_helper": "空のときはカードの色、複数のときはパレットの系列の色。パレットの色はパレットに連動し、色名や#hexは入力したまま使われます",
     "editor.highlight_hours": "ハイライトする時間",
+    "editor.plot_height": "グラフの高さ（px）",
     "editor.show_legend": "凡例を表示",
     "editor.show_head": "現在の値を表示",
     "editor.kind_states": "状態",

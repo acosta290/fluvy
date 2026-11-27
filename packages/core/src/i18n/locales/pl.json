@@ -961,6 +961,7 @@
     "editor.span_helper": "24h, today, today+tomorrow, 7d albo dowolne 12h lub 3d",
     "editor.color_helper": "Puste: kolor karty albo kolory serii z palety przy kilku seriach. Kolory z palety zmieniają się razem z nią; nazwa koloru lub #hex zostaje jak wpisano",
     "editor.highlight_hours": "Godziny do wyróżnienia",
+    "editor.plot_height": "Wysokość wykresu (px)",
     "editor.show_legend": "Pokaż legendę",
     "editor.show_head": "Pokaż bieżącą wartość",
     "editor.kind_states": "Stany",

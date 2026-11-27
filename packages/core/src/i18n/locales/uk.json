@@ -1715,6 +1715,7 @@
     "editor.span_helper": "24h, today, today+tomorrow, 7d або будь-яке значення на кшталт 12h чи 3d",
     "editor.color_helper": "Порожньо: колір картки, а для кількох рядів — кольори рядів із палітри. Кольори палітри змінюються разом із нею; назва кольору чи #hex лишається, як введено",
     "editor.highlight_hours": "Годин для виділення",
+    "editor.plot_height": "Висота графіка (px)",
     "editor.show_legend": "Показувати легенду",
     "editor.show_head": "Показувати поточне значення",
     "editor.kind_states": "Стани",

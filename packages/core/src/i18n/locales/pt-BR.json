@@ -3321,6 +3321,7 @@
     "editor.span_helper": "24h, today, today+tomorrow, 7d, ou qualquer 12h ou 3d",
     "editor.color_helper": "Vazio, a cor do cartão, ou as cores das séries da paleta quando há várias. As cores da paleta a acompanham; um nome de cor ou um #hex fica como foi digitado",
     "editor.highlight_hours": "Horas para destacar",
+    "editor.plot_height": "Altura do gráfico (px)",
     "editor.show_legend": "Mostrar a legenda",
     "editor.show_head": "Mostrar o valor atual",
     "editor.kind_states": "Estados",

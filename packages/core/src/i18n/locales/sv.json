@@ -1614,6 +1614,7 @@
     "editor.span_helper": "24h, today, today+tomorrow, 7d, eller valfri 12h eller 3d",
     "editor.color_helper": "Tomt: kortets färg, eller palettens seriefärger för flera. Palettens färger följer den; ett färgnamn eller en #hex förblir som den skrevs",
     "editor.highlight_hours": "Timmar att markera",
+    "editor.plot_height": "Diagrammets höjd (px)",
     "editor.show_legend": "Visa förklaring",
     "editor.show_head": "Visa värdet nu",
     "editor.kind_states": "Tillstånd",

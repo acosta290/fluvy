@@ -773,6 +773,7 @@
     "editor.span_helper": "24h, today, today+tomorrow, 7d alebo vlastné 12h či 3d",
     "editor.color_helper": "Prázdne: farba karty alebo pri viacerých radoch farby palety. Farby palety sa menia so zvolenou paletou; názov farby či #hex zostanú nezmenené",
     "editor.highlight_hours": "Zvýraznené hodiny",
+    "editor.plot_height": "Výška grafu (px)",
     "editor.show_legend": "Zobraziť legendu",
     "editor.show_head": "Zobraziť aktuálnu hodnotu",
     "editor.kind_states": "Stavy",

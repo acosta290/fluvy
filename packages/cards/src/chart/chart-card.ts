@@ -37,7 +37,7 @@ import {
   type PropertyValues,
   type TemplateResult,
 } from 'lit';
-import { chartHeight, readable, readsEach } from '../chart-family.js';
+import { chartHeight, chartPlot, readable, readsEach } from '../chart-family.js';
 import { CollectionFollower, collectionKeyOf } from '../energy-model/collection.js';
 import { fullDays, stepFor } from '../energy-model/period.js';
 import { rangeWords } from '../energy-model/range-words.js';
@@ -231,6 +231,8 @@ export interface ChartCardConfig
   /** The value now, big, over the chart, with its change on the period before. */
   show_head?: boolean;
   variant?: ChartVariant;
+  /** The chart's room in px, 120 by default (80 to 480, on the 4 grid): the full and compact cards'. */
+  plot_height?: number;
   /**
    * A readout a series in the value row (#264), the several sensors' card's, in place of the legend's lines: the full
    * card with its head over two series of numbers or more (`readsEach`).
@@ -943,6 +945,7 @@ export class FluvyChartCard extends Card<ChartCardConfig> {
     'span',
     'collection_key',
     'variant',
+    'plot_height',
     'show_head',
     'show_legend',
     'readouts',
@@ -975,6 +978,7 @@ export class FluvyChartCard extends Card<ChartCardConfig> {
       span: houseSpanValue(),
       collection_key: '',
       variant: 'full',
+      plot_height: chartPlot(config),
       show_head: true,
       show_legend: true,
       readouts: false,
@@ -1017,7 +1021,10 @@ export class FluvyChartCard extends Card<ChartCardConfig> {
         { name: 'series', selector: { object: {} } },
         // its own window, or a date picker's range: Home Assistant's, or the Energy period card's
         fieldRow(collectionField(), onlyWhen(own, spanField())),
-        selectField('variant', ['full', 'compact', 'tile']),
+        fieldRow(
+          selectField('variant', ['full', 'compact', 'tile']),
+          onlyWhen((data) => data['variant'] !== 'tile', numberField('plot_height', 80, 480, 4)),
+        ),
         fieldRow(boolField('show_head'), onlyWhen(legended, boolField('show_legend'))),
         onlyWhen(reads, boolField('readouts')),
         fieldRow(
@@ -1042,6 +1049,7 @@ export class FluvyChartCard extends Card<ChartCardConfig> {
           series: 'editor.series',
           span: 'editor.span',
           highlight_hours: 'editor.highlight_hours',
+          plot_height: 'editor.plot_height',
           show_legend: 'editor.show_legend',
           show_head: 'editor.show_head',
           readouts: 'editor.readouts',
@@ -1096,6 +1104,44 @@ export class FluvyChartCard extends Card<ChartCardConfig> {
   private get variant(): ChartVariant {
     const variant = this.config?.variant;
     return variant === 'compact' || variant === 'tile' ? variant : 'full';
+  }
+
+  /** Its height where it fills a cell of the rows the Layout tab fixed (`grid_options.rows`). */
+  private cellHeight = 0;
+  private cell: ResizeObserver | undefined;
+
+  /** It fills such a cell, in the full and compact cards, where no `plot_height` is written. */
+  private get fills(): boolean {
+    return (
+      this.variant !== 'tile' &&
+      !(Number(this.config?.plot_height) > 0) &&
+      typeof this.config?.grid_options?.rows === 'number'
+    );
+  }
+
+  /** The chart's room: what the cell leaves it where the card fills one (80 at least), else `chartPlot`'s. */
+  private plot(): number {
+    const config = this.config ?? { type: '' };
+    return this.fills && this.cellHeight > 0
+      ? Math.max(80, down4(this.cellHeight - chartHeight(config) + CHART))
+      : chartPlot(config);
+  }
+
+  override connectedCallback(): void {
+    super.connectedCallback();
+    this.cell = new ResizeObserver(([entry]) => {
+      const height = Math.round(entry?.contentRect.height ?? 0);
+      if (!this.fills || height === this.cellHeight) return;
+      this.cellHeight = height;
+      this.requestUpdate();
+    });
+    this.cell.observe(this);
+  }
+
+  override disconnectedCallback(): void {
+    super.disconnectedCallback();
+    this.cell?.disconnect();
+    this.cell = undefined;
   }
 
   /** Watched: every series' entity. */
@@ -1232,6 +1278,8 @@ export class FluvyChartCard extends Card<ChartCardConfig> {
    */
   protected override willUpdate(changed: PropertyValues): void {
     super.willUpdate(changed);
+    // a cell of fixed rows: the card is as tall as it, its chart taking what its other parts leave (`plot`)
+    this.style.height = this.fills ? '100%' : '';
     const hass = this.hass;
     if (!hass) return;
     this.follower.attach(hass, this.config?.collection_key || undefined);
@@ -2122,7 +2170,7 @@ export class FluvyChartCard extends Card<ChartCardConfig> {
         ? Math.max(TOP, linesTall(total))
         : TOP;
     const legendMore = under ? UNDER + linesTall(Math.ceil(total / cols)) : row ? rowTall - TOP : 0;
-    const height = CHART + (full && !row ? ROW : 0) + room - legendMore;
+    const height = this.plot() + (full && !row ? ROW : 0) + room - legendMore;
     // and 16 a series of states: its strip under the plot, or the plot's own room where the strips take it (and where
     // the chart waits, or has nothing to say)
     const stripRoom = strips.length * (STRIP + STRIP_GAP);

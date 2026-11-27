@@ -1715,6 +1715,7 @@
     "editor.span_helper": "24h, today, today+tomorrow, 7d или любое значение вида 12h или 3d",
     "editor.color_helper": "Пусто: цвет карточки, а для нескольких рядов — цвета рядов из палитры. Цвета палитры меняются вместе с ней; название цвета или #hex остаётся как введено",
     "editor.highlight_hours": "Длина выделения (ч)",
+    "editor.plot_height": "Высота графика (px)",
     "editor.show_legend": "Показывать легенду",
     "editor.show_head": "Показывать текущее значение",
     "editor.kind_states": "Состояния",

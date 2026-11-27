@@ -1614,6 +1614,7 @@
     "editor.span_helper": "24h、today、today+tomorrow、7d，或任意如 12h、3d 的範圍",
     "editor.color_helper": "留空：使用卡片的顏色，多個數列時使用配色的數列顏色。配色的顏色會隨配色改變；顏色名稱或 #hex 則依輸入內容保留",
     "editor.highlight_hours": "醒目標示時數",
+    "editor.plot_height": "圖表高度（px）",
     "editor.show_legend": "顯示圖例",
     "editor.show_head": "顯示目前數值",
     "editor.kind_states": "狀態",

@@ -34,6 +34,7 @@
     "editor.span_helper": "24h, today, today+tomorrow, 7d, or any 12h or 3d",
     "editor.color_helper": "Empty: the card’s colour, or the palette’s series colours for several. The palette’s colours follow it; a colour name or a #hex stays as typed",
     "editor.highlight_hours": "Hours to highlight",
+    "editor.plot_height": "Chart height (px)",
     "editor.show_legend": "Show legend",
     "editor.show_head": "Show the value now",
     "editor.kind_states": "States",

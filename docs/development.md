@@ -94,7 +94,7 @@ budget (`BUDGETS`; the facts guard in `tools/docs` holds this table to it):
 | `house-heights` | 4 KB | the cards' heights counted with the house, for the automatic dashboards |
 | `wall` | 16 KB | wall mode |
 | `chart` | 25 KB | the chart engine: the scales, paths, bars, axes, rings and gauges every chart is drawn with, the gauges that move, the styles, their sheet, a house's series colours fitted to each mode |
-| `chart-card` | 21 KB | the Chart card: the readers of its series (history, statistics, a list, a forecast), its editor, its English |
+| `chart-card` | 22 KB | the Chart card: the readers of its series (history, statistics, a list, a forecast), its editor, its English |
 | `energy-period` | 17 KB | the Energy period card (the strip, its picker and its sheet) and the Energy usage card, their English |
 | `energy` | 88 KB | the energy family and its sheet, the history bars with it |
 | `history-bars-readings` | 8 KB | a counter read by its readings, the recorder's history |

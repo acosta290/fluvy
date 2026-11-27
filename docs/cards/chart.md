@@ -63,6 +63,7 @@ series:
 # collection_key:
 span: today+tomorrow
 variant: full
+plot_height: 120
 show_head: true
 highlight: both
 highlight_hours: 2
@@ -104,6 +105,7 @@ show_axis: true
 | `collection_key` | none | Makes the card follow an Energy date picker on the same dashboard. |
 | `span` | `12h` | The window of time the chart shows. `4h` (Last 4 h) · `12h` (Last 12 h) · `24h` (Last 24 h) · `today` · `today+tomorrow` (Today and tomorrow) · `48h` (Last 48 h) · `7d` (Last 7 days) · `30d` (Last 30 days), or your own. |
 | `variant` | `full` | The card’s layout. `full` · `compact` · `tile`. |
+| `plot_height` | `120` | The chart’s height in pixels. 80 to 480, in steps of 4. |
 | `show_head` | `true` | Shows the value now, large, over the chart. |
 | `show_legend` | `true` | Shows the legend under the chart. |
 | `readouts` | `false` | Gives each series a readout over the chart, in place of the legend. |
@@ -291,6 +293,10 @@ tomorrow's prices are out). With `collection_key` it follows a
 
 `readouts: true` gives two series or more a readout each over the chart, in place of the legend, as the sensor card
 does for several sensors; where a column would cut a name, the legend's lines come back.
+
+`plot_height` sets the chart's height in the full and compact layouts (120 by default, 80 to 480): the card grows or
+shrinks with it. Without it, a card given a fixed number of rows in Home Assistant's Layout tab fills them, its chart
+taking the room.
 
 `thresholds` are written in the first series' unit and colour the series written in it
 ([thresholds](../customising.md#thresholds)); the chart style and its fine keys are the sensor card's

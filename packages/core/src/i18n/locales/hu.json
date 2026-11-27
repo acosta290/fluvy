@@ -1989,6 +1989,7 @@
     "editor.span_helper": "24h, today, today+tomorrow, 7d, vagy bármilyen 12h vagy 3d",
     "editor.color_helper": "Üresen: a kártya színe, vagy több adatsor esetén a paletta adatsor-színei. A paletta színei követik; a színnév vagy a #hex úgy marad, ahogy beírtad",
     "editor.highlight_hours": "Kiemelendő órák",
+    "editor.plot_height": "A diagram magassága (px)",
     "editor.show_legend": "Jelmagyarázat megjelenítése",
     "editor.show_head": "A mostani érték megjelenítése",
     "editor.kind_states": "Állapotok",
