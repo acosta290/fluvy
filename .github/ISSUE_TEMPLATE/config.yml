@@ -1,5 +1,8 @@
 blank_issues_enabled: false
 contact_links:
+  - name: Question, or help with a setup
+    url: https://github.com/acosta290/fluvy/discussions/categories/q-a
+    about: How to set something up, or whether a card already does what you need.
   - name: Security report
     url: https://github.com/acosta290/fluvy/security/advisories/new
     about: Report a security problem privately; see SECURITY.md.

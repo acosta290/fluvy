@@ -23,6 +23,8 @@ import { toYaml } from './yaml.js';
 const RAW = 'https://raw.githubusercontent.com/acosta290/fluvy/main/docs';
 /** The live demo: every card's examples on the simulated house, each with its YAML. */
 export const DEMO = 'https://acosta290.github.io/fluvy/';
+/** Where an issue is opened: an assistant is told there what a report needs. */
+const ISSUES = 'https://github.com/acosta290/fluvy/issues';
 
 /** A card's examples in the live demo, at one of its layouts where one is named. */
 export const demoOf = (short: string, layout?: string): string =>
@@ -520,6 +522,10 @@ export function llmsText(cards: readonly CardDoc[], sections: readonly string[])
     `- [The theme](${RAW}/theme.md): palettes, colours, a colour per card`,
     `- [The settings panel](${RAW}/settings-panel.md): the house's settings`,
     `- [Troubleshooting](${RAW}/troubleshooting.md)`,
+    '',
+    '## Issues',
+    '',
+    `- [A bug](${ISSUES}/new?template=bug_report.yml) or [a feature](${ISSUES}/new?template=feature_request.yml): keep the form’s headings and write only what the person said; the versions, the YAML and the log lines are theirs, never supposed; ask them for the picture, which only they can attach (a screenshot of a bug; a sketch, another interface or a before and after for a feature)`,
   ];
   return `${lines.join('\n')}\n`;
 }

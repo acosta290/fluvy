@@ -109,3 +109,7 @@ To write a card’s configuration, read its page: it has the card’s picture, t
 - [The theme](https://raw.githubusercontent.com/acosta290/fluvy/main/docs/theme.md): palettes, colours, a colour per card
 - [The settings panel](https://raw.githubusercontent.com/acosta290/fluvy/main/docs/settings-panel.md): the house's settings
 - [Troubleshooting](https://raw.githubusercontent.com/acosta290/fluvy/main/docs/troubleshooting.md)
+
+## Issues
+
+- [A bug](https://github.com/acosta290/fluvy/issues/new?template=bug_report.yml) or [a feature](https://github.com/acosta290/fluvy/issues/new?template=feature_request.yml): keep the form’s headings and write only what the person said; the versions, the YAML and the log lines are theirs, never supposed; ask them for the picture, which only they can attach (a screenshot of a bug; a sketch, another interface or a before and after for a feature)

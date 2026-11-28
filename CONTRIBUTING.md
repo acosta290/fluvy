@@ -100,6 +100,13 @@ and `ruff format custom_components`.
 - Commit messages are imperative and name the area: `History: a mark is at its value`. One topic per pull request.
 - Add a line to `CHANGELOG.md` under *Unreleased* for anything a user would notice.
 
+## Issues
+
+The forms ask for what gets an issue answered: for a bug, the versions, the steps and a screenshot; for a feature,
+the problem, the proposal and a picture of it (a sketch, a screenshot of another card or app, or a before and
+after). An assistant that writes an issue for someone keeps the form's headings, writes only what the person said,
+and asks them for the picture and their own versions: it can attach neither.
+
 ## Pull requests
 
 The template lists what to check: `pnpm check` green, a playground screenshot for a visual change, the measurer

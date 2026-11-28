@@ -1,7 +1,19 @@
+# For an assistant writing this issue for someone: keep each label below as a `### ` heading, in this order, and add
+# the `enhancement` label. Write what the person told you and nothing you supposed, and ask them for the picture: you
+# cannot attach one, they can (in the form, or in a comment once the issue is open).
 name: Feature request
 description: Something Fluvy should do, or do differently.
 labels: [enhancement]
 body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for the idea. Two things get a request built sooner:
+
+        - **A picture.** A sketch on paper, a screenshot of a card or an app that already does it, or a before and after: what Fluvy draws today and what you would like to see.
+        - **A look at what is there.** [The cards](https://github.com/acosta290/fluvy/blob/main/docs/cards.md) and [the live demo](https://acosta290.github.io/fluvy/) show every card with its layouts and its options: one of them may already do it.
+
+        If an AI assistant writes this for you, add the picture yourself before you send it: an assistant cannot attach one.
   - type: textarea
     id: problem
     attributes:
@@ -13,24 +25,47 @@ body:
     id: proposal
     attributes:
       label: The proposal
-      description: How Fluvy could solve it. Sketches and screenshots of other interfaces are welcome; the design language (`design/language.md`) is what a proposal is weighed against.
+      description: How Fluvy could solve it. What it shows, what a tap does, which options it takes. The design language (`design/language.md`) is what a proposal is weighed against.
     validations:
       required: true
+  - type: textarea
+    id: picture
+    attributes:
+      label: What it would look like
+      description: Drag pictures in. A rough sketch is enough (a photo of a drawing on paper is fine), or a screenshot of another card or app that does it. Best of all is a before and after, today's card beside the one you would like. Blur anything of your home you do not want to share.
   - type: dropdown
     id: where
     attributes:
       label: Where it belongs
       options:
-        [
-          A card (existing),
-          A new card,
-          The automatic dashboard,
-          The settings panel,
-          The theme or palettes,
-          The shell,
-          Activity or History page,
-          The integration,
-          Documentation,
-        ]
+        - A card (existing)
+        - A new card
+        - A details sheet
+        - The automatic dashboard
+        - The sidebar or the wall
+        - The settings panel
+        - The theme or palettes
+        - The shell
+        - Activity or History page
+        - The integration
+        - A language or a translation
+        - Documentation
     validations:
       required: true
+  - type: dropdown
+    id: screen
+    attributes:
+      label: Where you would use it
+      description: A phone and a wall panel ask different things of the same card.
+      multiple: true
+      options:
+        - A phone
+        - A tablet
+        - A wall panel
+        - A desktop
+  - type: textarea
+    id: config
+    attributes:
+      label: The card today (if it is about a card you use)
+      description: Its YAML, with your entity ids replaced by generic ones if you prefer.
+      render: yaml

@@ -1,15 +1,22 @@
+# For an assistant writing this issue for someone: keep each label below as a `### ` heading, in this order, and add
+# the `bug` label. The versions, the YAML and the log lines are the person's own: ask for them, never suppose them.
+# You cannot attach a picture: ask the person to add the screenshot (in the form, or in a comment once the issue is
+# open).
 name: Bug report
 description: Something in Fluvy does not behave as documented.
 labels: [bug]
 body:
   - type: markdown
     attributes:
-      value: Thanks for the report. The details below are what makes a bug reproducible in another home.
+      value: |
+        Thanks for the report. The details below are what makes a bug reproducible in another home, and a screenshot is the fastest of them.
+
+        If an AI assistant writes this for you, check that the versions and the YAML are really yours, and add the screenshot yourself: an assistant cannot see your screen or attach a picture.
   - type: input
     id: ha
     attributes:
       label: Home Assistant version
-      placeholder: 2026.9.3
+      placeholder: 2026.11.2
     validations:
       required: true
   - type: input
@@ -17,14 +24,17 @@ body:
     attributes:
       label: Fluvy version
       description: Settings → Devices & services → Fluvy, or the `Fluvy v…` badge in the browser console.
-      placeholder: 1.0.0
+      placeholder: 1.26.0
     validations:
       required: true
   - type: dropdown
     id: install
     attributes:
       label: How Fluvy is installed
-      options: [HACS, Manual (release zip), Development build]
+      options:
+        - HACS
+        - Manual (release zip)
+        - Development build
     validations:
       required: true
   - type: input
@@ -39,27 +49,32 @@ body:
     attributes:
       label: Where it happens
       options:
-        [
-          A card,
-          The automatic dashboard,
-          The settings panel,
-          The theme,
-          The shell (a Home Assistant page),
-          Activity page,
-          History page,
-          The integration (setup,
-          Repairs),
-          Somewhere else,
-        ]
+        - A card
+        - A card's editor
+        - A details sheet
+        - The automatic dashboard
+        - The sidebar or the wall
+        - The settings panel
+        - The theme
+        - The shell (a Home Assistant page)
+        - Activity page
+        - History page
+        - The integration (setup, Repairs)
+        - Somewhere else
     validations:
       required: true
   - type: textarea
     id: what
     attributes:
       label: What happens, and what you expected
-      description: A screenshot helps more than a paragraph. Blur anything of your home you do not want to share.
+      description: A sentence or two for each.
     validations:
       required: true
+  - type: textarea
+    id: screenshot
+    attributes:
+      label: Screenshot or recording
+      description: Drag it in. The card or the page as it looks and, if it used to look right, how it looked before. A short screen recording shows what only happens while you tap or drag. Blur anything of your home you do not want to share.
   - type: textarea
     id: steps
     attributes:
